@@ -519,8 +519,10 @@
 .compact-mode div:has(> h1) > p[class*="text-muted-foreground"] {
   display: none;
 }
-/* CardDescription inside CardHeader (space-y-1.5 is the CardHeader default) */
-.compact-mode [class*="space-y-1.5"] > [class*="text-muted-foreground"]:last-child {
+/* CardDescription inside CardHeader (CardHeader is flex-col with space-y-1.5).
+   Scoping to flex-col avoids matching the sidebar nav, which uses space-y-1.5
+   without flex-col and would otherwise lose its last muted item. */
+.compact-mode [class*="flex-col"][class*="space-y-1.5"] > [class*="text-muted-foreground"]:last-child {
   display: none;
 }
 
