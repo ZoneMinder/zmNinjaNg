@@ -60,21 +60,22 @@ const calculateHeightUnits = (
 };
 
 /**
- * Migrate old layouts that used gridCols directly as the column count.
- * Old layouts have small w values (1–5); new layouts use 12-col space.
+ * Migrate legacy layouts from when the grid used `displayCols` columns directly
+ * (each item stored with `w=1`) to the current 12-column internal grid.
+ * Detection: legacy layouts always have every item at `w=1`. New-format layouts
+ * use `w = floor(12/displayCols)`, which is ≥ 2 for displayCols 1–10 (the UI cap).
  */
-const migrateLayout = (stored: Layout[], displayCols: number): Layout[] => {
+export const migrateLayout = (stored: Layout[], displayCols: number): Layout[] => {
   if (stored.length === 0) return stored;
   const maxW = Math.max(...stored.map((item) => item.w));
-  if (maxW <= 5) {
-    const scale = Math.floor(INTERNAL_COLS / displayCols);
-    return stored.map((item) => ({
-      ...item,
-      w: Math.min(INTERNAL_COLS, item.w * scale),
-      x: Math.min(INTERNAL_COLS - 1, item.x * scale),
-    }));
-  }
-  return stored;
+  if (maxW !== 1) return stored;
+
+  const scale = Math.floor(INTERNAL_COLS / displayCols);
+  return stored.map((item) => ({
+    ...item,
+    w: Math.min(INTERNAL_COLS, item.w * scale),
+    x: Math.min(INTERNAL_COLS - 1, item.x * scale),
+  }));
 };
 
 const areLayoutsEqual = (a: Layout[], b: Layout[]): boolean => {
