@@ -1037,10 +1037,7 @@
     "presets": "Presets",
     "show_controls": "Show Controls",
     "hide_controls": "Hide Controls",
-    "zoom": "Zoom",
-    "move": "Move",
-    "mode_hold": "hold",
-    "mode_step": "step"
+    "zoom": "Zoom"
   },
   "backgroundTasks": {
     "title": "Background Tasks",

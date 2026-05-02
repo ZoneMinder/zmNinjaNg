@@ -15,6 +15,11 @@ interface PTZControlsProps {
 interface HoldButtonProps {
   command: string;
   stopCommand?: string;
+  // If set, the command is re-fired every `repeatIntervalMs` while held.
+  // Used for Rel/Abs drivers where one button-press would otherwise produce
+  // only a single discrete step — repeating gives press-and-hold UX parity
+  // with continuous-mode drivers, at the cost of slightly stepped motion.
+  repeatIntervalMs?: number;
   onCommand: (command: string) => void;
   disabled?: boolean;
   className?: string;
@@ -25,15 +30,15 @@ interface HoldButtonProps {
   children: ReactNode;
 }
 
-// Mirrors ZM's classic UI: when the driver supports continuous motion the
-// classic UI binds mousedown to start the move and mouseup to send moveStop
-// (web/skins/classic/views/js/watch.js:398-447). Without this, a moveCon*
-// command starts the camera and there is nothing to stop it. Pointer events
-// give us a single code path that works on mouse, pen, and touch (web,
-// iOS Safari, Android Chrome, Capacitor WebView).
+// Press-to-start / release-to-stop. For continuous drivers we fire one start
+// command on pointerdown and rely on the camera to keep moving until moveStop.
+// For Rel/Abs drivers we re-fire the step command on a timer while held —
+// ZM's protocol has no "continuous" verb on those drivers, so a stream of
+// step commands is the only way to get hold-to-move UX.
 function HoldButton({
   command,
   stopCommand,
+  repeatIntervalMs,
   onCommand,
   disabled,
   className,
@@ -44,27 +49,37 @@ function HoldButton({
   children,
 }: HoldButtonProps) {
   const activePointerRef = useRef<number | null>(null);
+  const repeatTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const clearRepeat = useCallback(() => {
+    if (repeatTimerRef.current !== null) {
+      clearInterval(repeatTimerRef.current);
+      repeatTimerRef.current = null;
+    }
+  }, []);
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent<HTMLButtonElement>) => {
       if (disabled || activePointerRef.current !== null) return;
-      // Capture so pointermove/up keep firing on this button even if the
-      // pointer drifts off, and so dragging out doesn't strand the camera
-      // in motion.
       e.currentTarget.setPointerCapture(e.pointerId);
       activePointerRef.current = e.pointerId;
       onCommand(command);
+      if (repeatIntervalMs) {
+        clearRepeat();
+        repeatTimerRef.current = setInterval(() => onCommand(command), repeatIntervalMs);
+      }
     },
-    [command, disabled, onCommand]
+    [clearRepeat, command, disabled, onCommand, repeatIntervalMs]
   );
 
   const handlePointerEnd = useCallback(
     (e: React.PointerEvent<HTMLButtonElement>) => {
       if (activePointerRef.current !== e.pointerId) return;
       activePointerRef.current = null;
+      clearRepeat();
       if (stopCommand) onCommand(stopCommand);
     },
-    [onCommand, stopCommand]
+    [clearRepeat, onCommand, stopCommand]
   );
 
   return (
@@ -109,32 +124,25 @@ export function PTZControls({ onCommand, className, disabled, control }: PTZCont
   const movePrefix = canMoveCon ? 'moveCon' : (canMoveRel ? 'moveRel' : 'moveCon');
   const zoomPrefix = canZoomCon ? 'zoomCon' : (canZoomRel ? 'zoomRel' : 'zoomCon');
 
-  // Continuous-capable axes need press-to-start / release-to-stop semantics.
-  // Relative/absolute drivers move one step per click and don't need a stop.
-  const moveStopOnRelease = canMoveCon ? 'moveStop' : undefined;
-  const zoomStopOnRelease = canZoomCon ? 'moveStop' : undefined;
+  // Hold-to-move UX for both continuous and Rel/Abs drivers. moveStop is sent
+  // on release in both cases (continuous needs it; Rel/Abs ignores it but it
+  // costs nothing and is a safety net if a step is in flight).
+  const REPEAT_MS = 250;
+  const moveRepeatMs = canMoveCon ? undefined : REPEAT_MS;
+  const zoomRepeatMs = canZoomCon ? undefined : REPEAT_MS;
 
   if (!control) {
     return null;
   }
 
-  const moveModeKey = canMoveCon ? 'ptz.mode_hold' : 'ptz.mode_step';
-  const zoomModeKey = canZoomCon ? 'ptz.mode_hold' : 'ptz.mode_step';
-
   return (
     <div className={cn("flex flex-col items-center gap-4 p-4 bg-card/50 rounded-xl border shadow-sm backdrop-blur-sm", className)}>
-      {(canMove || canZoom) && (
-        <div className="text-[10px] text-muted-foreground/70 -mb-2 flex gap-2" data-testid="ptz-mode-indicator">
-          {canMove && <span>{t('ptz.move')}: {t(moveModeKey)}</span>}
-          {canMove && canZoom && <span>·</span>}
-          {canZoom && <span>{t('ptz.zoom')}: {t(zoomModeKey)}</span>}
-        </div>
-      )}
       {canMove && (
         <div className="grid grid-cols-3 gap-2">
           <HoldButton
             command={`${movePrefix}UpLeft`}
-            stopCommand={moveStopOnRelease}
+            stopCommand="moveStop"
+            repeatIntervalMs={moveRepeatMs}
             onCommand={onCommand}
             disabled={disabled}
             className={cn("rounded-full rotate-[-45deg]", !canMoveDiag && "invisible")}
@@ -145,7 +153,8 @@ export function PTZControls({ onCommand, className, disabled, control }: PTZCont
           </HoldButton>
           <HoldButton
             command={`${movePrefix}Up`}
-            stopCommand={moveStopOnRelease}
+            stopCommand="moveStop"
+            repeatIntervalMs={moveRepeatMs}
             onCommand={onCommand}
             disabled={disabled}
             className="rounded-full"
@@ -156,7 +165,8 @@ export function PTZControls({ onCommand, className, disabled, control }: PTZCont
           </HoldButton>
           <HoldButton
             command={`${movePrefix}UpRight`}
-            stopCommand={moveStopOnRelease}
+            stopCommand="moveStop"
+            repeatIntervalMs={moveRepeatMs}
             onCommand={onCommand}
             disabled={disabled}
             className={cn("rounded-full rotate-[45deg]", !canMoveDiag && "invisible")}
@@ -168,7 +178,8 @@ export function PTZControls({ onCommand, className, disabled, control }: PTZCont
 
           <HoldButton
             command={`${movePrefix}Left`}
-            stopCommand={moveStopOnRelease}
+            stopCommand="moveStop"
+            repeatIntervalMs={moveRepeatMs}
             onCommand={onCommand}
             disabled={disabled}
             className="rounded-full"
@@ -191,7 +202,8 @@ export function PTZControls({ onCommand, className, disabled, control }: PTZCont
           </Button>
           <HoldButton
             command={`${movePrefix}Right`}
-            stopCommand={moveStopOnRelease}
+            stopCommand="moveStop"
+            repeatIntervalMs={moveRepeatMs}
             onCommand={onCommand}
             disabled={disabled}
             className="rounded-full"
@@ -203,7 +215,8 @@ export function PTZControls({ onCommand, className, disabled, control }: PTZCont
 
           <HoldButton
             command={`${movePrefix}DownLeft`}
-            stopCommand={moveStopOnRelease}
+            stopCommand="moveStop"
+            repeatIntervalMs={moveRepeatMs}
             onCommand={onCommand}
             disabled={disabled}
             className={cn("rounded-full rotate-[-135deg]", !canMoveDiag && "invisible")}
@@ -214,7 +227,8 @@ export function PTZControls({ onCommand, className, disabled, control }: PTZCont
           </HoldButton>
           <HoldButton
             command={`${movePrefix}Down`}
-            stopCommand={moveStopOnRelease}
+            stopCommand="moveStop"
+            repeatIntervalMs={moveRepeatMs}
             onCommand={onCommand}
             disabled={disabled}
             className="rounded-full"
@@ -225,7 +239,8 @@ export function PTZControls({ onCommand, className, disabled, control }: PTZCont
           </HoldButton>
           <HoldButton
             command={`${movePrefix}DownRight`}
-            stopCommand={moveStopOnRelease}
+            stopCommand="moveStop"
+            repeatIntervalMs={moveRepeatMs}
             onCommand={onCommand}
             disabled={disabled}
             className={cn("rounded-full rotate-[135deg]", !canMoveDiag && "invisible")}
@@ -241,7 +256,8 @@ export function PTZControls({ onCommand, className, disabled, control }: PTZCont
         <div className="flex items-center gap-4 w-full justify-center border-t pt-4">
           <HoldButton
             command={`${zoomPrefix}Wide`}
-            stopCommand={zoomStopOnRelease}
+            stopCommand="moveStop"
+            repeatIntervalMs={zoomRepeatMs}
             onCommand={onCommand}
             disabled={disabled}
             className="rounded-full"
@@ -253,7 +269,8 @@ export function PTZControls({ onCommand, className, disabled, control }: PTZCont
           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('ptz.zoom')}</span>
           <HoldButton
             command={`${zoomPrefix}Tele`}
-            stopCommand={zoomStopOnRelease}
+            stopCommand="moveStop"
+            repeatIntervalMs={zoomRepeatMs}
             onCommand={onCommand}
             disabled={disabled}
             className="rounded-full"

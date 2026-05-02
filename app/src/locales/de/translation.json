@@ -1037,10 +1037,7 @@
     "presets": "Voreinstellungen",
     "show_controls": "Steuerung anzeigen",
     "hide_controls": "Steuerung ausblenden",
-    "zoom": "Zoom",
-    "move": "Bewegen",
-    "mode_hold": "halten",
-    "mode_step": "Schritt"
+    "zoom": "Zoom"
   },
   "backgroundTasks": {
     "title": "Hintergrundaufgaben",
