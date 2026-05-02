@@ -83,6 +83,7 @@ jobs:
           mkdir -p dist/android
           cp app/android/app/build/outputs/apk/release/*.apk dist/android/zmNinjaNg-${VERSION}-android.apk
           cp app/android/app/build/outputs/bundle/release/*.aab dist/android/zmNinjaNg-${VERSION}-android.aab
+          cp app/android/app/build/outputs/mapping/release/mapping.txt dist/android/zmNinjaNg-${VERSION}-android-mapping.txt
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
@@ -97,6 +98,13 @@ jobs:
           name: zmNinjaNg-android-aab-${{ github.event.inputs.version || github.ref_name }}
           path: dist/android/*.aab
           retention-days: 30
+
+      - name: Upload R8 mapping artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: zmNinjaNg-android-mapping-${{ github.event.inputs.version || github.ref_name }}
+          path: dist/android/*-mapping.txt
+          retention-days: 90
 
       - name: Upload to Release
         uses: softprops/action-gh-release@v1

@@ -1,21 +1,25 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
+# R8/ProGuard rules for the zmNinjaNG release build.
 #
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# @capacitor/android ships consumer proguard rules that keep subclasses of
+# com.getcapacitor.Plugin and @CapacitorPlugin-annotated members. Modern
+# AndroidX, Media3, Firebase, and ML Kit AARs bundle their own consumer
+# rules as well. This file covers app-level attributes and edge cases not
+# handled by transitive AAR rules.
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Preserve stack trace metadata so mapping.txt deobfuscates Play Console
+# crash reports.
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Annotations are read reflectively by Capacitor's plugin bridge, AndroidX,
+# Firebase, and JSON libraries. Generic signatures and inner-class metadata
+# are needed for some reflection paths (e.g. parameterized type tokens).
+-keepattributes *Annotation*
+-keepattributes Signature
+-keepattributes InnerClasses,EnclosingMethod
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# Any class exposed to a WebView via @JavascriptInterface must keep its
+# annotated methods reachable.
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
