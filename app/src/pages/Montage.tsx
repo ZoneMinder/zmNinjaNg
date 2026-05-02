@@ -218,6 +218,7 @@ export default function Montage() {
     const entry = { name, layout: [...layout], displayCols: gridCols };
     updateSettings(currentProfile.id, {
       montageSavedLayouts: [...saved, entry],
+      montageActiveLayoutName: name,
     });
   };
 
