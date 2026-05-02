@@ -118,8 +118,18 @@ export function PTZControls({ onCommand, className, disabled, control }: PTZCont
     return null;
   }
 
+  const moveModeKey = canMoveCon ? 'ptz.mode_hold' : 'ptz.mode_step';
+  const zoomModeKey = canZoomCon ? 'ptz.mode_hold' : 'ptz.mode_step';
+
   return (
     <div className={cn("flex flex-col items-center gap-4 p-4 bg-card/50 rounded-xl border shadow-sm backdrop-blur-sm", className)}>
+      {(canMove || canZoom) && (
+        <div className="text-[10px] text-muted-foreground/70 -mb-2 flex gap-2" data-testid="ptz-mode-indicator">
+          {canMove && <span>{t('ptz.move')}: {t(moveModeKey)}</span>}
+          {canMove && canZoom && <span>·</span>}
+          {canZoom && <span>{t('ptz.zoom')}: {t(zoomModeKey)}</span>}
+        </div>
+      )}
       {canMove && (
         <div className="grid grid-cols-3 gap-2">
           <HoldButton
