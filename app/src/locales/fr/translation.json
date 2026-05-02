@@ -1041,7 +1041,8 @@
     "move": "Bouger",
     "mode_continuous": "continu",
     "mode_relative": "relatif",
-    "mode_absolute": "absolu"
+    "mode_absolute": "absolu",
+    "hold_hint": "Maintenir pour bouger, relâcher pour arrêter"
   },
   "backgroundTasks": {
     "title": "Tâches en arrière-plan",

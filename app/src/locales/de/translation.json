@@ -1041,7 +1041,8 @@
     "move": "Bewegen",
     "mode_continuous": "kontinuierlich",
     "mode_relative": "relativ",
-    "mode_absolute": "absolut"
+    "mode_absolute": "absolut",
+    "hold_hint": "Halten zum Bewegen, loslassen zum Stoppen"
   },
   "backgroundTasks": {
     "title": "Hintergrundaufgaben",

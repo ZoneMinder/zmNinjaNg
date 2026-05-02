@@ -1041,7 +1041,8 @@
     "move": "Move",
     "mode_continuous": "continuous",
     "mode_relative": "relative",
-    "mode_absolute": "absolute"
+    "mode_absolute": "absolute",
+    "hold_hint": "Hold to move, release to stop"
   },
   "backgroundTasks": {
     "title": "Background Tasks",

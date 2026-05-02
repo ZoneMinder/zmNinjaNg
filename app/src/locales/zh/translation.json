@@ -1041,7 +1041,8 @@
     "move": "移动",
     "mode_continuous": "连续",
     "mode_relative": "相对",
-    "mode_absolute": "绝对"
+    "mode_absolute": "绝对",
+    "hold_hint": "按住移动，释放停止"
   },
   "backgroundTasks": {
     "title": "后台任务",

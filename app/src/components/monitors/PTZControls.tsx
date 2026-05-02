@@ -145,10 +145,13 @@ export function PTZControls({ onCommand, className, disabled, control }: PTZCont
   return (
     <div className={cn("flex flex-col items-center gap-4 p-4 bg-card/50 rounded-xl border shadow-sm backdrop-blur-sm", className)}>
       {(canMove || canZoom) && (moveModeKey || zoomModeKey) && (
-        <div className="text-[10px] text-muted-foreground/70 -mb-2 flex gap-2" data-testid="ptz-mode-indicator">
-          {canMove && moveModeKey && <span>{t('ptz.move')}: {t(moveModeKey)}</span>}
-          {canMove && canZoom && moveModeKey && zoomModeKey && <span>·</span>}
-          {canZoom && zoomModeKey && <span>{t('ptz.zoom')}: {t(zoomModeKey)}</span>}
+        <div className="-mb-2 flex flex-col items-center gap-0.5 text-[10px] text-muted-foreground/70" data-testid="ptz-mode-indicator">
+          <div className="flex gap-2">
+            {canMove && moveModeKey && <span>{t('ptz.move')}: {t(moveModeKey)}</span>}
+            {canMove && canZoom && moveModeKey && zoomModeKey && <span>·</span>}
+            {canZoom && zoomModeKey && <span>{t('ptz.zoom')}: {t(zoomModeKey)}</span>}
+          </div>
+          {(canMove || canZoom) && <div className="italic">{t('ptz.hold_hint')}</div>}
         </div>
       )}
       {canMove && (

@@ -1041,7 +1041,8 @@
     "move": "Mover",
     "mode_continuous": "continuo",
     "mode_relative": "relativo",
-    "mode_absolute": "absoluto"
+    "mode_absolute": "absoluto",
+    "hold_hint": "Mantén para mover, suelta para detener"
   },
   "backgroundTasks": {
     "title": "Tareas en segundo plano",
