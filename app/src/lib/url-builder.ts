@@ -183,12 +183,26 @@ export function getMonitorControlUrl(
 ): string {
   const { token, apiUrl, minStreamingPort } = options;
 
+  // The Perl driver method is `presetGoto` and reads its preset number from a
+  // separate `preset` parameter (scripts/ZoneMinder/lib/ZoneMinder/Control/*.pm).
+  // ZM's PHP layer accepts both the legacy concatenated `presetGoto<N>` form
+  // (matched by a regex in web/includes/control_functions.php:698) and the
+  // structured form (line 701: `control=presetGoto` + `preset=<N>`). Emit the
+  // structured form so the client doesn't depend on the server-side regex
+  // translation surviving future refactors.
+  const presetGotoMatch = /^presetGoto(\d+)$/.exec(command);
+  const controlCommand = presetGotoMatch ? 'presetGoto' : command;
+
   const params: Record<string, string> = {
     view: 'request',
     request: 'control',
     id: monitorId,
-    control: command,
+    control: controlCommand,
   };
+
+  if (presetGotoMatch) {
+    params.preset = presetGotoMatch[1];
+  }
 
   // ZM classic UI attaches xge/yge only when the HTML button carries
   // data-xtell/data-ytell — i.e. only for axis commands. Preset, home, reset,
@@ -197,9 +211,9 @@ export function getMonitorControlUrl(
   // of xge/yge as a routing key in web/includes/control_functions.php:9 — if
   // they're set it parses `control` as a movement-axis camelCase command and
   // logs "Invalid control parameter" for anything that doesn't match the
-  // axis regex (presetGoto<N>, moveStop, presetHome, reset). Match ZM's
-  // emit pattern: only attach xge/yge for axis + mode + direction commands.
-  if (/^(move|zoom|focus|iris|white|gain)(Con|Rel|Abs)[A-Z]/.test(command)) {
+  // axis regex. Match ZM's emit pattern: only attach xge/yge for axis +
+  // mode + direction commands.
+  if (/^(move|zoom|focus|iris|white|gain)(Con|Rel|Abs)[A-Z]/.test(controlCommand)) {
     params.xge = '0';
     params.yge = '0';
   }

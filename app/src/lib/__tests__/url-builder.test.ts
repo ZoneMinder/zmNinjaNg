@@ -164,11 +164,19 @@ describe('getMonitorControlUrl', () => {
     expect(getMonitorControlUrl(portalUrl, monitorId, 'focusConFar')).toContain('yge=0');
   });
 
-  it('omits xge/yge for presetGoto<N> so the server rewrites it to presetGoto + --preset=N', () => {
+  it('splits presetGoto<N> into the structured form control=presetGoto + preset=N', () => {
     const result = getMonitorControlUrl(portalUrl, monitorId, 'presetGoto3');
     expect(result).not.toContain('xge=');
     expect(result).not.toContain('yge=');
-    expect(result).toContain('control=presetGoto3');
+    expect(result).toContain('control=presetGoto');
+    expect(result).not.toContain('control=presetGoto3');
+    expect(result).toContain('preset=3');
+  });
+
+  it('preserves multi-digit preset numbers when splitting', () => {
+    const result = getMonitorControlUrl(portalUrl, monitorId, 'presetGoto42');
+    expect(result).toContain('control=presetGoto');
+    expect(result).toContain('preset=42');
   });
 
   it('omits xge/yge for moveStop, presetHome, and reset', () => {
