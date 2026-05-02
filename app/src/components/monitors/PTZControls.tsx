@@ -151,7 +151,7 @@ export function PTZControls({ onCommand, className, disabled, control }: PTZCont
             {canMove && canZoom && moveModeKey && zoomModeKey && <span>·</span>}
             {canZoom && zoomModeKey && <span>{t('ptz.zoom')}: {t(zoomModeKey)}</span>}
           </div>
-          {(canMove || canZoom) && <div className="italic">{t('ptz.hold_hint')}</div>}
+          {(canMove || canZoom) && <div>{t('ptz.hold_hint')}</div>}
         </div>
       )}
       {canMove && (
