@@ -1,5 +1,30 @@
 # Changelog
 
+## [zmNinjaNg-1.1.11](https://github.com/pliablepixels/zmNinjaNg/tree/zmNinjaNg-1.1.11) (2026-05-02)
+
+[Full Changelog](https://github.com/pliablepixels/zmNinjaNg/compare/zmNinjaNg-1.1.10...zmNinjaNg-1.1.11)
+
+**Implemented enhancements:**
+
+- chore: reduce low-quality issues via structured form + auto-close workflow [\#124](https://github.com/pliablepixels/zmNinjaNg/issues/124)
+
+**Fixed bugs:**
+
+- fix: PTZ control protocol mismatch with ZoneMinder server [\#137](https://github.com/pliablepixels/zmNinjaNg/issues/137)
+- fix: saving a montage layout doesn't update the dropdown label to the new name [\#136](https://github.com/pliablepixels/zmNinjaNg/issues/136)
+- fix: montage column layout reverts to 3 columns after navigation [\#135](https://github.com/pliablepixels/zmNinjaNg/issues/135)
+- fix: compact-mode CSS hides last sidebar nav item [\#133](https://github.com/pliablepixels/zmNinjaNg/issues/133)
+- fix\(montage\): saved default layout name shown but layout not applied on Windows Tauri startup [\#127](https://github.com/pliablepixels/zmNinjaNg/issues/127)
+- fix: monitor detail view fails when ZM Servers row has placeholder Hostname/Port=0 [\#120](https://github.com/pliablepixels/zmNinjaNg/issues/120)
+
+**Closed issues:**
+
+- DePress [\#123](https://github.com/pliablepixels/zmNinjaNg/issues/123)
+- Zonk [\#119](https://github.com/pliablepixels/zmNinjaNg/issues/119)
+- build\(android\): support 16 KB memory page sizes [\#117](https://github.com/pliablepixels/zmNinjaNg/issues/117)
+- build\(android\): upload native debug symbols with release AAB [\#116](https://github.com/pliablepixels/zmNinjaNg/issues/116)
+- build\(android\): enable R8/proguard minification for release AAB [\#115](https://github.com/pliablepixels/zmNinjaNg/issues/115)
+
 ## [zmNinjaNg-1.1.10](https://github.com/pliablepixels/zmNinjaNg/tree/zmNinjaNg-1.1.10) (2026-04-13)
 
 [Full Changelog](https://github.com/pliablepixels/zmNinjaNg/compare/zmNinjaNg-1.1.9...zmNinjaNg-1.1.10)
