@@ -1037,7 +1037,11 @@
     "presets": "预设",
     "show_controls": "显示控制",
     "hide_controls": "隐藏控制",
-    "zoom": "缩放"
+    "zoom": "缩放",
+    "move": "移动",
+    "mode_continuous": "连续",
+    "mode_relative": "相对",
+    "mode_absolute": "绝对"
   },
   "backgroundTasks": {
     "title": "后台任务",

@@ -1037,7 +1037,11 @@
     "presets": "Préréglages",
     "show_controls": "Afficher les contrôles",
     "hide_controls": "Masquer les contrôles",
-    "zoom": "Zoom"
+    "zoom": "Zoom",
+    "move": "Bouger",
+    "mode_continuous": "continu",
+    "mode_relative": "relatif",
+    "mode_absolute": "absolu"
   },
   "backgroundTasks": {
     "title": "Tâches en arrière-plan",

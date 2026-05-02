@@ -111,10 +111,12 @@ export function PTZControls({ onCommand, className, disabled, control }: PTZCont
   const canMoveDiag = control?.CanMoveDiag === '1';
   const canMoveCon = control?.CanMoveCon === '1';
   const canMoveRel = control?.CanMoveRel === '1';
+  const canMoveAbs = control?.CanMoveAbs === '1';
 
   const canZoom = control?.CanZoom === '1';
   const canZoomCon = control?.CanZoomCon === '1';
   const canZoomRel = control?.CanZoomRel === '1';
+  const canZoomAbs = control?.CanZoomAbs === '1';
 
   const hasPresets = control?.HasPresets === '1';
   const numPresets = parseInt(control?.NumPresets || '0', 10);
@@ -135,8 +137,18 @@ export function PTZControls({ onCommand, className, disabled, control }: PTZCont
     return null;
   }
 
+  const moveModeKey = canMoveCon ? 'ptz.mode_continuous' : (canMoveRel ? 'ptz.mode_relative' : (canMoveAbs ? 'ptz.mode_absolute' : null));
+  const zoomModeKey = canZoomCon ? 'ptz.mode_continuous' : (canZoomRel ? 'ptz.mode_relative' : (canZoomAbs ? 'ptz.mode_absolute' : null));
+
   return (
     <div className={cn("flex flex-col items-center gap-4 p-4 bg-card/50 rounded-xl border shadow-sm backdrop-blur-sm", className)}>
+      {(canMove || canZoom) && (moveModeKey || zoomModeKey) && (
+        <div className="text-[10px] text-muted-foreground/70 -mb-2 flex gap-2" data-testid="ptz-mode-indicator">
+          {canMove && moveModeKey && <span>{t('ptz.move')}: {t(moveModeKey)}</span>}
+          {canMove && canZoom && moveModeKey && zoomModeKey && <span>·</span>}
+          {canZoom && zoomModeKey && <span>{t('ptz.zoom')}: {t(zoomModeKey)}</span>}
+        </div>
+      )}
       {canMove && (
         <div className="grid grid-cols-3 gap-2">
           <HoldButton

@@ -1037,7 +1037,11 @@
     "presets": "Preajustes",
     "show_controls": "Mostrar controles",
     "hide_controls": "Ocultar controles",
-    "zoom": "Zoom"
+    "zoom": "Zoom",
+    "move": "Mover",
+    "mode_continuous": "continuo",
+    "mode_relative": "relativo",
+    "mode_absolute": "absoluto"
   },
   "backgroundTasks": {
     "title": "Tareas en segundo plano",
