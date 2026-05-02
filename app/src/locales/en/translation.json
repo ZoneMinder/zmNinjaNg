@@ -1037,7 +1037,6 @@
     "presets": "Presets",
     "show_controls": "Show Controls",
     "hide_controls": "Hide Controls",
-    "continuous_movement": "Continuous Movement",
     "zoom": "Zoom"
   },
   "backgroundTasks": {

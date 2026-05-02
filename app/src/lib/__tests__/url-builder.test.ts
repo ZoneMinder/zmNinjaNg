@@ -152,6 +152,32 @@ describe('getMonitorControlUrl', () => {
     });
     expect(result).toContain('token=mytoken');
   });
+
+  it('attaches xge/yge for pan/tilt commands so the server takes the movement-axis branch', () => {
+    const result = getMonitorControlUrl(portalUrl, monitorId, 'moveConUp');
+    expect(result).toContain('xge=0');
+    expect(result).toContain('yge=0');
+  });
+
+  it('attaches xge/yge for zoom and focus commands', () => {
+    expect(getMonitorControlUrl(portalUrl, monitorId, 'zoomConTele')).toContain('xge=0');
+    expect(getMonitorControlUrl(portalUrl, monitorId, 'focusConFar')).toContain('yge=0');
+  });
+
+  it('omits xge/yge for presetGoto<N> so the server rewrites it to presetGoto + --preset=N', () => {
+    const result = getMonitorControlUrl(portalUrl, monitorId, 'presetGoto3');
+    expect(result).not.toContain('xge=');
+    expect(result).not.toContain('yge=');
+    expect(result).toContain('control=presetGoto3');
+  });
+
+  it('omits xge/yge for moveStop, presetHome, and reset', () => {
+    for (const command of ['moveStop', 'presetHome', 'reset']) {
+      const result = getMonitorControlUrl(portalUrl, monitorId, command);
+      expect(result).not.toContain('xge=');
+      expect(result).not.toContain('yge=');
+    }
+  });
 });
 
 describe('getEventImageUrl', () => {

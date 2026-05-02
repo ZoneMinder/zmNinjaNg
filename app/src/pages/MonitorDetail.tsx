@@ -15,8 +15,6 @@ import { useSettingsStore } from '../stores/settings';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Switch } from '../components/ui/switch';
-import { Label } from '../components/ui/label';
 import { ArrowLeft, Settings, Maximize2, Minimize2, Clock, AlertTriangle, Download, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Layers, Video, Eye, Disc } from 'lucide-react';
 import { useState, useRef, useMemo, useCallback } from 'react';
 import { cn } from '../lib/utils';
@@ -48,7 +46,6 @@ export default function MonitorDetail() {
   const { t } = useTranslation();
 
   // Local UI state
-  const [isContinuous, setIsContinuous] = useState(true);
   const [showPTZ, setShowPTZ] = useState(true);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [showZones, setShowZones] = useState(false);
@@ -112,7 +109,6 @@ export default function MonitorDetail() {
     portalUrl: resolvedPortalUrl,
     monitorId: monitor?.Monitor.Id || '',
     accessToken,
-    isContinuous,
     minStreamingPort: currentProfile?.minStreamingPort,
   });
 
@@ -484,12 +480,6 @@ export default function MonitorDetail() {
 
             {showPTZ && (
               <div className="w-full flex flex-col items-center gap-4">
-                {controlData?.control.Control.CanMoveCon === '1' && (
-                  <div className="flex items-center space-x-2">
-                    <Switch id="continuous-mode" checked={isContinuous} onCheckedChange={setIsContinuous} />
-                    <Label htmlFor="continuous-mode">{t('ptz.continuous_movement')}</Label>
-                  </div>
-                )}
                 <PTZControls
                   onCommand={handlePTZCommand}
                   className="w-full"

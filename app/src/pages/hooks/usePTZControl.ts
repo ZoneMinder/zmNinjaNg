@@ -1,7 +1,8 @@
 /**
- * Hook for PTZ (Pan-Tilt-Zoom) camera control
+ * Hook for PTZ camera control.
  *
- * Handles sending PTZ commands with optional auto-stop for non-continuous mode.
+ * Press-to-start / release-to-stop is implemented in the PTZControls
+ * component via pointer events; this hook just dispatches each command.
  */
 
 import { useCallback } from 'react';
@@ -14,7 +15,6 @@ interface UsePTZControlOptions {
   portalUrl: string;
   monitorId: string;
   accessToken: string | null;
-  isContinuous: boolean;
   minStreamingPort?: number;
 }
 
@@ -26,7 +26,6 @@ export function usePTZControl({
   portalUrl,
   monitorId,
   accessToken,
-  isContinuous,
   minStreamingPort,
 }: UsePTZControlOptions): UsePTZControlReturn {
   const { t } = useTranslation();
@@ -37,24 +36,12 @@ export function usePTZControl({
 
       try {
         await controlMonitor(portalUrl, monitorId, command, accessToken || undefined, minStreamingPort);
-
-        // Auto-stop logic for non-continuous mode
-        // Only apply to moveCon* and zoomCon* commands
-        if (!isContinuous && (command.startsWith('moveCon') || command.startsWith('zoomCon'))) {
-          setTimeout(async () => {
-            try {
-              await controlMonitor(portalUrl, monitorId, 'moveStop', accessToken || undefined, minStreamingPort);
-            } catch (e) {
-              log.monitorDetail('Auto-stop command failed', LogLevel.WARN, { error: e });
-            }
-          }, 500);
-        }
       } catch (error) {
         log.monitorDetail('PTZ command failed', LogLevel.ERROR, { command, error });
         toast.error(t('monitor_detail.ptz_failed'));
       }
     },
-    [portalUrl, monitorId, accessToken, isContinuous, minStreamingPort, t]
+    [portalUrl, monitorId, accessToken, minStreamingPort, t]
   );
 
   return { handlePTZCommand };
