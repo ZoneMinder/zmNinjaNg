@@ -120,6 +120,54 @@ class Logger {
   }
 
   /**
+   * Banner log: a visually distinct one-line marker for high-level events
+   * (entering a view, app boot, profile switch). The console output is
+   * bold + colored via %c styling and wrapped in ASCII bars so it stays
+   * recognizable in plain text logs and the file sink. Single LogEntry
+   * goes to in-memory + file with the un-styled banner text.
+   */
+  banner(message: string, level: LogLevel = LogLevel.INFO): void {
+    if (this.shouldLog(level) === false) return;
+
+    const timestamp = new Date().toLocaleString();
+    const levelNames: Record<number, string> = { 0: 'DEBUG', 1: 'INFO', 2: 'WARN', 3: 'ERROR' };
+    const levelName = levelNames[level] ?? 'INFO';
+    const sanitizedMessage = sanitizeLogMessage(message);
+    const bars = '═'.repeat(10);
+    const banner = `${bars}┤ ${sanitizedMessage} ├${bars}`;
+
+    const emit =
+      level === LogLevel.ERROR ? console.error :
+      level === LogLevel.WARN ? console.warn :
+      level === LogLevel.DEBUG ? console.debug :
+      console.info;
+
+    // %c styling renders bold + color in DevTools that support it.
+    // Plain consoles ignore the directive and print the raw banner —
+    // still readable thanks to the unicode box-drawing bars.
+    emit(
+      `%c${banner}`,
+      'font-weight: bold; font-size: 1.05em; color: #00bcd4;',
+    );
+
+    const entry: LogEntry = {
+      id: crypto.randomUUID(),
+      timestamp,
+      rawTimestamp: Date.now(),
+      level: levelName,
+      message: banner,
+      context: { component: 'View' },
+    };
+    useLogStore.getState().addLog(entry);
+    try {
+      getLogFile().append(entry);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn('[logger] log-file append threw', err);
+    }
+  }
+
+  /**
    * Component-scoped collapsed group log: emits a single click-to-expand
    * row in the console and a single entry in the in-memory + file sinks.
    *
@@ -417,6 +465,7 @@ export const log = {
   dedupe: logDedupe,
   groupCollapsed: (componentName: string, message: string, level: LogLevel, body: unknown) =>
     logger.groupCollapsed(componentName, message, level, body),
+  banner: (message: string, level?: LogLevel) => logger.banner(message, level),
 
   // Component-specific loggers (generated dynamically)
   ...generatedComponentLoggers,

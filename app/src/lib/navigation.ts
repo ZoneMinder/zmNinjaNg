@@ -76,3 +76,41 @@ class NavigationService {
 
 // Singleton instance
 export const navigationService = new NavigationService();
+
+/**
+ * Map a pathname to the human-readable view name used in entry banners
+ * and any other place that wants to refer to the current page in plain
+ * language. Returns null for paths that shouldn't emit a banner (the
+ * setup flow, transient redirects).
+ */
+export function viewNameForPath(pathname: string): string | null {
+  const path = pathname.replace(/\/+$/, '') || '/';
+
+  const exact: Record<string, string> = {
+    '/': 'Home',
+    '/dashboard': 'Dashboard',
+    '/monitors': 'Monitors',
+    '/montage': 'Montage',
+    '/events': 'Events',
+    '/event-montage': 'Event Montage',
+    '/timeline': 'Timeline',
+    '/notifications': 'Notifications',
+    '/notification-settings': 'Notification Settings',
+    '/notification-history': 'Notification History',
+    '/server': 'Server',
+    '/profiles': 'Profiles',
+    '/settings': 'Settings',
+    '/logs': 'Logs',
+    '/kiosk': 'Kiosk',
+  };
+  if (path in exact) return exact[path];
+
+  // Setup-flow paths suppress the banner — they're transient and not "views".
+  if (path === '/setup' || path === '/profiles/new') return null;
+
+  if (/^\/monitors\/[^/]+$/.test(path)) return 'Monitor Detail';
+  if (/^\/events\/[^/]+$/.test(path)) return 'Event Detail';
+  if (/^\/profiles\/[^/]+\/edit$/.test(path)) return 'Profile Form';
+
+  return null;
+}
