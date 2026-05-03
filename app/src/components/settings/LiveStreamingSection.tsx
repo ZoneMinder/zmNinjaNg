@@ -138,6 +138,37 @@ export function LiveStreamingSection({
           </div>
         </SettingsRow>
 
+        {/* Snapshot Refresh Interval (only in snapshot mode — child of Streaming Mode) */}
+        {settings.viewMode === 'snapshot' && (
+          <div className="px-4 py-3 space-y-2">
+            <RowLabel
+              label={t('settings.refresh_interval')}
+              desc={t('settings.refresh_interval_desc')}
+            />
+            <div className="flex flex-wrap items-center gap-3">
+              <Input
+                id="refresh-interval"
+                type="number"
+                min="1"
+                max="30"
+                value={settings.snapshotRefreshInterval}
+                onChange={(e) => update('snapshotRefreshInterval', Number(e.target.value))}
+                className="w-20"
+                data-testid="settings-refresh-interval"
+              />
+              <span className="text-xs text-muted-foreground">{t('settings.seconds')}</span>
+              <div className="flex gap-1.5">
+                {[1, 3, 5].map((val) => (
+                  <Button key={val} variant="outline" size="sm" className="h-7 text-xs px-2"
+                    onClick={() => update('snapshotRefreshInterval', val)}>
+                    {val}s{val === 3 ? ` (${t('settings.default')})` : ''}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Go2RTC */}
         <SettingsRow>
           <RowLabel
@@ -207,37 +238,6 @@ export function LiveStreamingSection({
             data-testid="settings-protocol-label-switch"
           />
         </SettingsRow>
-
-        {/* Snapshot Refresh Interval (only in snapshot mode) */}
-        {settings.viewMode === 'snapshot' && (
-          <div className="px-4 py-3 space-y-2">
-            <RowLabel
-              label={t('settings.refresh_interval')}
-              desc={t('settings.refresh_interval_desc')}
-            />
-            <div className="flex flex-wrap items-center gap-3">
-              <Input
-                id="refresh-interval"
-                type="number"
-                min="1"
-                max="30"
-                value={settings.snapshotRefreshInterval}
-                onChange={(e) => update('snapshotRefreshInterval', Number(e.target.value))}
-                className="w-20"
-                data-testid="settings-refresh-interval"
-              />
-              <span className="text-xs text-muted-foreground">{t('settings.seconds')}</span>
-              <div className="flex gap-1.5">
-                {[1, 3, 5].map((val) => (
-                  <Button key={val} variant="outline" size="sm" className="h-7 text-xs px-2"
-                    onClick={() => update('snapshotRefreshInterval', val)}>
-                    {val}s{val === 3 ? ` (${t('settings.default')})` : ''}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Stream FPS */}
         <div className="px-4 py-3 space-y-2">
