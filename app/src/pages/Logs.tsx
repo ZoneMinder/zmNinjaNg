@@ -10,6 +10,7 @@ import { ScrollText, Trash2, Download, Share2, ChevronDown, ChevronUp, Server, S
 import { cn } from '../lib/utils';
 import { Capacitor } from '@capacitor/core';
 import { getLogFile } from '../lib/log-file';
+import { LOG_FILE_MAX_ENTRIES } from '../lib/log-file/types';
 import { useToast } from '../hooks/use-toast';
 import { useMemo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -89,6 +90,7 @@ export default function Logs() {
     const [logSource, setLogSource] = useState<LogSource>('zmng');
     const [zmLogs, setZmLogs] = useState<ZMLog[]>([]);
     const [isLoadingZmLogs, setIsLoadingZmLogs] = useState(false);
+    const [persistedPath, setPersistedPath] = useState<string | null>(null);
     const unassignedComponentValue = 'unassigned';
 
     // Use the appropriate component filter based on log source
@@ -118,6 +120,13 @@ export default function Logs() {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [logSource]);
+
+    // Resolve persisted log file path
+    useEffect(() => {
+        const lf = getLogFile();
+        if (!lf.capabilities.available) return;
+        void lf.getDisplayPath().then(setPersistedPath);
+    }, []);
 
     const handleLevelChange = (value: string) => {
         const level = parseInt(value, 10) as LogLevel;
@@ -538,6 +547,22 @@ export default function Logs() {
                         </AlertDialog>
                     )}
                 </div>
+                {getLogFile().capabilities.available && persistedPath && (
+                    <div
+                        className="text-xs text-muted-foreground px-1 py-1 flex flex-col gap-0.5"
+                        data-testid="logs-status-line"
+                    >
+                        <span className="truncate min-w-0" title={persistedPath}>
+                            {t('logs.persisted_to')} <span className="font-mono">{persistedPath}</span>
+                        </span>
+                        <span>
+                            {t('logs.entries_count', {
+                                current: logs.length.toLocaleString(),
+                                max: LOG_FILE_MAX_ENTRIES.toLocaleString(),
+                            })}
+                        </span>
+                    </div>
+                )}
             </div>
 
             <Card className="flex-1 overflow-hidden flex flex-col">
