@@ -1,11 +1,3 @@
-import {
-  writeTextFile,
-  readTextFile,
-  mkdir,
-  BaseDirectory,
-} from '@tauri-apps/plugin-fs';
-import { revealItemInDir } from '@tauri-apps/plugin-opener';
-import { appLogDir, join } from '@tauri-apps/api/path';
 import type { LogEntry } from '../../stores/logs';
 import type { LogFileStore, LogFileCapabilities } from './types';
 import {
@@ -26,6 +18,7 @@ export class TauriLogFileStore implements LogFileStore {
   async initialize(): Promise<void> {
     try {
       // Ensure the log dir exists
+      const { mkdir, BaseDirectory } = await import('@tauri-apps/plugin-fs');
       await mkdir('', { baseDir: BaseDirectory.AppLog, recursive: true });
     } catch {
       // mkdir on existing dir is OK; on real failure, subsequent writes will surface it
@@ -54,6 +47,7 @@ export class TauriLogFileStore implements LogFileStore {
     this.buffer = [];
     const data = toWrite.map((e) => JSON.stringify(e)).join('\n') + '\n';
     try {
+      const { writeTextFile, BaseDirectory } = await import('@tauri-apps/plugin-fs');
       await writeTextFile(LOG_FILE_NAME, data, {
         append: true,
         baseDir: BaseDirectory.AppLog,
@@ -72,6 +66,7 @@ export class TauriLogFileStore implements LogFileStore {
   private async rotate(): Promise<void> {
     this.rotationInProgress = true;
     try {
+      const { writeTextFile, BaseDirectory } = await import('@tauri-apps/plugin-fs');
       const all = await this.readAll();
       const kept = all.slice(-LOG_FILE_TRUNCATE_RETAIN);
       const data = kept.map((e) => JSON.stringify(e)).join('\n') + '\n';
@@ -87,6 +82,7 @@ export class TauriLogFileStore implements LogFileStore {
 
   async readAll(): Promise<LogEntry[]> {
     try {
+      const { readTextFile, BaseDirectory } = await import('@tauri-apps/plugin-fs');
       const text = await readTextFile(LOG_FILE_NAME, { baseDir: BaseDirectory.AppLog });
       const out: LogEntry[] = [];
       for (const line of text.split('\n')) {
@@ -110,6 +106,7 @@ export class TauriLogFileStore implements LogFileStore {
       clearTimeout(this.flushTimer);
       this.flushTimer = null;
     }
+    const { writeTextFile, BaseDirectory } = await import('@tauri-apps/plugin-fs');
     await writeTextFile(LOG_FILE_NAME, '', {
       append: false,
       baseDir: BaseDirectory.AppLog,
@@ -119,6 +116,8 @@ export class TauriLogFileStore implements LogFileStore {
 
   async getDisplayPath(): Promise<string | null> {
     try {
+      const { appLogDir } = await import('@tauri-apps/api/path');
+      const { join } = await import('@tauri-apps/api/path');
       const dir = await appLogDir();
       return join(dir, LOG_FILE_NAME);
     } catch {
@@ -133,6 +132,9 @@ export class TauriLogFileStore implements LogFileStore {
 
   async revealLocation(): Promise<void> {
     const path = await this.getDisplayPath();
-    if (path) await revealItemInDir(path);
+    if (path) {
+      const { revealItemInDir } = await import('@tauri-apps/plugin-opener');
+      await revealItemInDir(path);
+    }
   }
 }

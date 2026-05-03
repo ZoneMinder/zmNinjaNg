@@ -1,4 +1,3 @@
-import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import type { LogEntry } from '../../stores/logs';
 import type { LogFileStore, LogFileCapabilities } from './types';
 import {
@@ -41,6 +40,7 @@ export class CapacitorLogFileStore implements LogFileStore {
     this.buffer = [];
     const data = toWrite.map((e) => JSON.stringify(e)).join('\n') + '\n';
     try {
+      const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem');
       await Filesystem.appendFile({
         path: LOG_FILE_NAME,
         directory: Directory.Data,
@@ -61,6 +61,7 @@ export class CapacitorLogFileStore implements LogFileStore {
   private async rotate(): Promise<void> {
     this.rotationInProgress = true;
     try {
+      const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem');
       const all = await this.readAll();
       const kept = all.slice(-LOG_FILE_TRUNCATE_RETAIN);
       const data = kept.map((e) => JSON.stringify(e)).join('\n') + '\n';
@@ -78,6 +79,7 @@ export class CapacitorLogFileStore implements LogFileStore {
 
   async readAll(): Promise<LogEntry[]> {
     try {
+      const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem');
       const res = await Filesystem.readFile({
         path: LOG_FILE_NAME,
         directory: Directory.Data,
@@ -106,6 +108,7 @@ export class CapacitorLogFileStore implements LogFileStore {
       clearTimeout(this.flushTimer);
       this.flushTimer = null;
     }
+    const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem');
     await Filesystem.writeFile({
       path: LOG_FILE_NAME,
       directory: Directory.Data,
@@ -117,6 +120,7 @@ export class CapacitorLogFileStore implements LogFileStore {
 
   async getDisplayPath(): Promise<string | null> {
     try {
+      const { Filesystem, Directory } = await import('@capacitor/filesystem');
       const { uri } = await Filesystem.getUri({ path: LOG_FILE_NAME, directory: Directory.Data });
       return uri;
     } catch {
