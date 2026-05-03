@@ -4,7 +4,8 @@ export class NoopLogFileStore implements LogFileStore {
   capabilities: LogFileCapabilities = { share: false, reveal: false, available: false };
 
   async initialize(): Promise<void> {}
-  append(): void {}
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  append(_entry: import('../../stores/logs').LogEntry): void {}
   async flush(): Promise<void> {}
   async readAll() { return []; }
   async truncate(): Promise<void> {}
