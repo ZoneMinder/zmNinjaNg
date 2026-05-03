@@ -14,6 +14,17 @@ import { useToast } from '../hooks/use-toast';
 import { useMemo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from '../components/ui/alert-dialog';
 import { Checkbox } from '../components/ui/checkbox';
 import { Label } from '../components/ui/label';
 import type { LogEntry } from '../stores/logs';
@@ -336,6 +347,22 @@ export default function Logs() {
         URL.revokeObjectURL(url);
     };
 
+    const [confirmClearOpen, setConfirmClearOpen] = useState(false);
+
+    const handleConfirmedClear = async () => {
+        clearLogs();
+        try {
+            await getLogFile().truncate();
+        } catch {
+            toast({
+                variant: 'destructive',
+                title: t('common.error'),
+                description: t('common.error'),
+            });
+        }
+        setConfirmClearOpen(false);
+    };
+
     const getLevelColor = (level: string) => {
         switch (level) {
             case 'ERROR': return 'bg-destructive text-destructive-foreground hover:bg-destructive/80';
@@ -484,16 +511,31 @@ export default function Logs() {
                         </Button>
                     )}
                     {logSource === 'zmng' && (
-                        <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={clearLogs}
-                            disabled={logs.length === 0}
-                            data-testid="logs-clear-button"
-                        >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            {t('logs.clear_logs')}
-                        </Button>
+                        <AlertDialog open={confirmClearOpen} onOpenChange={setConfirmClearOpen}>
+                            <AlertDialogTrigger asChild>
+                                <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    disabled={logs.length === 0}
+                                    data-testid="logs-clear-button"
+                                >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    {t('logs.clear_logs')}
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>{t('logs.clear_confirm_title')}</AlertDialogTitle>
+                                    <AlertDialogDescription>{t('logs.clear_confirm_message')}</AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel data-testid="logs-clear-cancel">{t('common.cancel')}</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleConfirmedClear} data-testid="logs-clear-confirm">
+                                        {t('logs.clear_confirm_action')}
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     )}
                 </div>
             </div>

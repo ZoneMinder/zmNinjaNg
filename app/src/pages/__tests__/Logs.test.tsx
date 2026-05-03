@@ -106,6 +106,18 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
+const mockTruncate = vi.fn().mockResolvedValue(undefined);
+vi.mock('../../lib/log-file', () => ({
+  getLogFile: () => ({
+    truncate: mockTruncate,
+    readAll: vi.fn().mockResolvedValue([]),
+    append: vi.fn().mockResolvedValue(undefined),
+    revealLocation: vi.fn().mockResolvedValue(undefined),
+    initialize: vi.fn().mockResolvedValue(undefined),
+    capabilities: { share: false, reveal: false },
+  }),
+}));
+
 describe('Logs Page', () => {
   it('renders log entries and clears logs', async () => {
     const user = userEvent.setup();
@@ -114,7 +126,9 @@ describe('Logs Page', () => {
     expect(screen.getAllByTestId('log-entry')).toHaveLength(3);
 
     await user.click(screen.getByTestId('logs-clear-button'));
+    await user.click(screen.getByTestId('logs-clear-confirm'));
     expect(clearLogs).toHaveBeenCalled();
+    expect(mockTruncate).toHaveBeenCalled();
   });
 
   it('filters logs by component', async () => {

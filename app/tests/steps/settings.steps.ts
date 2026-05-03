@@ -270,6 +270,11 @@ Then('I clear logs if available', async ({ page }) => {
   if (await clearButton.first().isVisible({ timeout: 1000 }).catch(() => false)) {
     if (await clearButton.first().isEnabled()) {
       await clearButton.first().click();
+      // Confirm the AlertDialog if it appears
+      const confirmButton = page.getByTestId('logs-clear-confirm');
+      if (await confirmButton.isVisible({ timeout: 1000 }).catch(() => false)) {
+        await confirmButton.click();
+      }
     }
   }
 });
