@@ -87,6 +87,7 @@
     "@tauri-apps/plugin-dialog": "^2.7.0",
     "@tauri-apps/plugin-fs": "^2.5.0",
     "@tauri-apps/plugin-http": "^2.5.7",
+    "@tauri-apps/plugin-opener": "^2.5.4",
     "@use-gesture/react": "^10.3.1",
     "axios": "^1.13.2",
     "capacitor-barcode-scanner": "^2.5.0",
