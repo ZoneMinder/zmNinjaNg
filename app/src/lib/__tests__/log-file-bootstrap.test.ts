@@ -8,7 +8,7 @@ beforeEach(() => {
 });
 
 describe('hydrateLogStoreFromFile', () => {
-  it('replaces useLogStore.logs with file content', async () => {
+  it('replaces useLogStore.logs with file content (newest first)', async () => {
     const fake = {
       capabilities: { share: false, reveal: false, available: true },
       initialize: vi.fn().mockResolvedValue(undefined),
@@ -27,7 +27,8 @@ describe('hydrateLogStoreFromFile', () => {
 
     await hydrateLogStoreFromFile();
     const logs = useLogStore.getState().logs;
-    expect(logs.map((l) => l.id)).toEqual(['1', '2']);
+    // File order is oldest-first ['1', '2']; in-memory expects newest-first.
+    expect(logs.map((l) => l.id)).toEqual(['2', '1']);
   });
 
   it('leaves the store untouched when file is empty', async () => {

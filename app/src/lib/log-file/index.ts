@@ -34,7 +34,9 @@ export async function initializeLogFile(): Promise<void> {
 export async function hydrateLogStoreFromFile(): Promise<void> {
   const entries = await getLogFile().readAll();
   if (entries.length === 0) return;
-  useLogStore.setState({ logs: entries });
+  // File is appended chronologically (oldest-first); useLogStore expects
+  // newest-first ([0] is newest, set by addLog prepending). Reverse on hydrate.
+  useLogStore.setState({ logs: entries.slice().reverse() });
 }
 
 export type { LogFileStore } from './types';
