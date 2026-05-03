@@ -30,6 +30,10 @@
       ]
     },
     {
+      "identifier": "fs:allow-write-text-file",
+      "allow": [{ "path": "$APPLOG/**" }]
+    },
+    {
       "identifier": "fs:allow-read-text-file",
       "allow": [{ "path": "$APPLOG/**" }]
     },
