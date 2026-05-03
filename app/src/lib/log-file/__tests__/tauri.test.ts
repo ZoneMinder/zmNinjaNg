@@ -4,7 +4,7 @@ import * as opener from '@tauri-apps/plugin-opener';
 import { appLogDir } from '@tauri-apps/api/path';
 import { TauriLogFileStore } from '../tauri';
 import type { LogEntry } from '../../../stores/logs';
-import { LOG_FILE_NAME } from '../types';
+import { LOG_FILE_NAME, LOG_FILE_MAX_ENTRIES, LOG_FILE_TRUNCATE_RETAIN } from '../types';
 
 const entry = (id: string, message = 'hi'): LogEntry => ({
   id,
@@ -84,5 +84,32 @@ describe('TauriLogFileStore', () => {
     const store = new TauriLogFileStore();
     await store.revealLocation();
     expect(opener.revealItemInDir).toHaveBeenCalledWith(`/mock/applogdir/${LOG_FILE_NAME}`);
+  });
+
+  it('rotates when entry count exceeds cap', async () => {
+    // Stateful mock: the "file" lives in this string.
+    let fileContent = Array.from(
+      { length: LOG_FILE_MAX_ENTRIES },
+      (_, i) => JSON.stringify(entry(String(i))),
+    ).join('\n') + '\n';
+    (fs.readTextFile as ReturnType<typeof vi.fn>).mockImplementation(async () => fileContent);
+    (fs.writeTextFile as ReturnType<typeof vi.fn>).mockImplementation(async (_path: string, data: string, opts?: { append?: boolean }) => {
+      if (opts?.append) {
+        fileContent += data;
+      } else {
+        fileContent = data;
+      }
+    });
+
+    const store = new TauriLogFileStore();
+    await store.initialize();
+
+    store.append(entry('overflow'));
+    await store.flush();
+
+    await vi.runAllTimersAsync();
+
+    const lines = fileContent.split('\n').filter(Boolean);
+    expect(lines.length).toBe(LOG_FILE_TRUNCATE_RETAIN);
   });
 });
