@@ -6,11 +6,18 @@ pub fn run() {
     .plugin(tauri_plugin_http::init())
     .plugin(tauri_plugin_fs::init())
     .plugin(tauri_plugin_dialog::init())
+    .plugin(tauri_plugin_opener::init())
     .plugin(
+      // Persistent log file is owned by the JS-side LogFileStore (writes to
+      // <AppLog>/zmninja-ng.log). Don't add a LogDir target here — keeping
+      // only Stdout + Webview avoids creating a second on-disk log file
+      // that would orphan whenever the productName changes.
       tauri_plugin_log::Builder::default()
         .level(log::LevelFilter::Info)
-        .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepOne)
-        .max_file_size(10 * 1024 * 1024)
+        .targets([
+          tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::Stdout),
+          tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::Webview),
+        ])
         .build(),
     )
     .invoke_handler(tauri::generate_handler![

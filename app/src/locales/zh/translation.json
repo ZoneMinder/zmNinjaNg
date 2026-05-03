@@ -455,7 +455,13 @@
     "component_filter_label": "组件",
     "component_filter_all": "全部",
     "component_filter_selected": "{{count}} 个组件",
-    "component_unassigned": "未分配"
+    "component_unassigned": "未分配",
+    "open_location": "打开",
+    "persisted_to": "保存于：",
+    "entries_count": "{{current}} / {{max}} 条",
+    "clear_confirm_title": "清除日志？",
+    "clear_confirm_message": "将清空内存缓存和持久化文件。",
+    "clear_confirm_action": "清除"
   },
   "monitor_detail": {
     "events": "事件",

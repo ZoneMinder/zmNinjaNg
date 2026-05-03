@@ -185,6 +185,70 @@ vi.mock('capacitor-barcode-scanner', () => ({
   },
 }));
 
+// Mock Capacitor Filesystem
+vi.mock('@capacitor/filesystem', () => ({
+  Filesystem: {
+    appendFile: vi.fn().mockResolvedValue(undefined),
+    readFile: vi.fn().mockResolvedValue({ data: '' }),
+    writeFile: vi.fn().mockResolvedValue({ uri: 'file:///mock/zmninja-ng.log' }),
+    getUri: vi.fn().mockResolvedValue({ uri: 'file:///mock/zmninja-ng.log' }),
+    stat: vi.fn().mockResolvedValue({ size: 0, type: 'file', mtime: 0, uri: 'file:///mock/zmninja-ng.log' }),
+    deleteFile: vi.fn().mockResolvedValue(undefined),
+    mkdir: vi.fn().mockResolvedValue(undefined),
+  },
+  Directory: {
+    Data: 'DATA',
+    Cache: 'CACHE',
+    Documents: 'DOCUMENTS',
+  },
+  Encoding: {
+    UTF8: 'utf8',
+    ASCII: 'ascii',
+    UTF16: 'utf16',
+  },
+}));
+
+// Mock Capacitor Share
+vi.mock('@capacitor/share', () => ({
+  Share: {
+    share: vi.fn().mockResolvedValue({ activityType: 'mock' }),
+    canShare: vi.fn().mockResolvedValue({ value: true }),
+  },
+}));
+
+// Mock Tauri plugin-fs
+vi.mock('@tauri-apps/plugin-fs', () => ({
+  writeTextFile: vi.fn().mockResolvedValue(undefined),
+  readTextFile: vi.fn().mockResolvedValue(''),
+  exists: vi.fn().mockResolvedValue(true),
+  mkdir: vi.fn().mockResolvedValue(undefined),
+  remove: vi.fn().mockResolvedValue(undefined),
+  BaseDirectory: {
+    AppLog: 'AppLog',
+    AppData: 'AppData',
+    AppCache: 'AppCache',
+    AppConfig: 'AppConfig',
+    Download: 'Download',
+    Document: 'Document',
+    Desktop: 'Desktop',
+    Picture: 'Picture',
+    Video: 'Video',
+  },
+}));
+
+// Mock Tauri plugin-opener
+vi.mock('@tauri-apps/plugin-opener', () => ({
+  revealItemInDir: vi.fn().mockResolvedValue(undefined),
+  openPath: vi.fn().mockResolvedValue(undefined),
+  openUrl: vi.fn().mockResolvedValue(undefined),
+}));
+
+// Mock Tauri path APIs (used to resolve display path)
+vi.mock('@tauri-apps/api/path', () => ({
+  appLogDir: vi.fn().mockResolvedValue('/mock/applogdir'),
+  join: vi.fn(async (...parts: string[]) => parts.join('/')),
+}));
+
 // Mock @aparajita/capacitor-biometric-auth
 vi.mock('@aparajita/capacitor-biometric-auth', () => ({
   BiometricAuth: {

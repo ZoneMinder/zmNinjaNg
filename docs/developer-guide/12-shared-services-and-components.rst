@@ -1709,6 +1709,34 @@ Android, encrypted localStorage on web). Keys: ``kiosk_pin_hash`` and
 
 --------------
 
+log-file (``lib/log-file/``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Mirrors entries from ``useLogStore`` to a persistent file on disk.
+
+**Capabilities and file locations by platform:**
+
+- Capacitor (iOS / Android): NDJSON file at ``Directory.Data/zmninja-ng.log`` (sandboxed app data). Resolved at runtime to a ``file://`` URI on iOS and ``content://`` URI on Android. Share via the system share sheet — recipient receives the file as an attachment.
+- Tauri (desktop): NDJSON file at ``BaseDirectory::AppLog/zmninja-ng.log``. Concrete paths:
+
+  - macOS: ``~/Library/Logs/com.zoneminder.zmNinjaNG/zmninja-ng.log``
+  - Windows: ``%LOCALAPPDATA%\com.zoneminder.zmNinjaNG\logs\zmninja-ng.log``
+  - Linux: ``~/.local/share/com.zoneminder.zmNinjaNG/logs/zmninja-ng.log``
+
+  The "Open" button in the Logs page calls ``revealItemInDir`` (``tauri-plugin-opener``) to open the enclosing folder in Finder / Explorer / file manager.
+
+- Web: no-op fallback; Share reverts to today's blob download. ``getDisplayPath`` returns ``null`` and the status line is hidden.
+
+**Format:** NDJSON, one ``LogEntry`` per line. ``Logger.formatMessage`` constructs the entry once and passes it to both ``useLogStore.addLog`` and ``LogFileStore.append``.
+
+**Cap:** 10,000 entries. On overflow, the file is rewritten with the last 5,000 entries.
+
+**Hydration:** On app start, ``hydrateLogStoreFromFile()`` reads the file and replaces ``useLogStore.logs`` so prior-session entries are visible in the Logs page.
+
+**Used by:** ``lib/logger.ts``, ``pages/Logs.tsx``.
+
+--------------
+
 Next Steps
 ----------
 

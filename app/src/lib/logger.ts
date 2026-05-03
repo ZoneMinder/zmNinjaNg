@@ -1,10 +1,11 @@
 /**
  * Centralized Logging Utility
- * 
+ *
  * Provides a structured logging system with support for log levels, context, and sanitization.
- * Logs are output to the console and also persisted to an in-memory store (via useLogStore)
- * for display in the application's debug/logs view.
- * 
+ * Each accepted entry is sent to the console, the in-memory `useLogStore` (for the
+ * Logs view), and a platform-specific `LogFileStore` (Capacitor on mobile, Tauri on
+ * desktop, no-op on web) for persistent disk logging.
+ *
  * Features:
  * - Log levels (DEBUG, INFO, WARN, ERROR)
  * - Automatic sanitization of sensitive data (passwords, tokens)
@@ -13,9 +14,10 @@
  * - Supports log level preferences managed by profile settings
  */
 
-import { useLogStore } from '../stores/logs';
+import { useLogStore, type LogEntry } from '../stores/logs';
 import { sanitizeLogMessage, sanitizeObject, sanitizeLogArgs } from './log-sanitizer';
 import { LogLevel } from './log-level';
+import { getLogFile } from './log-file';
 
 interface LogContext {
   component?: string;
@@ -119,15 +121,26 @@ class Logger {
 
     console.log(...consoleArgs);
 
-    // Add to store (rawTimestamp for display-time formatting)
-    useLogStore.getState().addLog({
+    // formatMessage runs only after the global/per-component level filter has
+    // passed (every public log helper gates on shouldLog/effectiveLevel before
+    // calling here), so both sinks below are gated by the same filter.
+    const entry: LogEntry = {
+      id: crypto.randomUUID(),
       timestamp,
       rawTimestamp: Date.now(),
       level,
       message: sanitizedMessage,
       context: sanitizedContext,
       args: sanitizedArgs.length > 0 ? sanitizedArgs : undefined,
-    });
+    };
+    useLogStore.getState().addLog(entry);
+    try {
+      getLogFile().append(entry);
+    } catch (err) {
+      // Fire-and-forget contract: a buggy impl must not break the caller.
+      // eslint-disable-next-line no-console
+      console.warn('[logger] log-file append threw', err);
+    }
   }
 
   debug(message: string, context: LogContext = {}, ...args: unknown[]): void {
@@ -280,3 +293,11 @@ export const log = {
   // Component-specific loggers (generated dynamically)
   ...generatedComponentLoggers,
 };
+
+// Dev-only: expose a small global so e2e tests can trigger sample log entries.
+if (import.meta.env.DEV && typeof window !== 'undefined') {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (window as any).__zmng_test_log = (component: string) => {
+    log.app(`test sample from ${component}`, LogLevel.INFO);
+  };
+}

@@ -47,7 +47,11 @@ Key Directories Explained
 - ``lib/``: “Library” code - helpers that could theoretically be in
   a separate npm package.
 
-  - ``logger.ts``: Structured logging system.
+  - ``logger.ts``: Structured logging system. Each filtered entry is passed to
+    the platform ``LogFileStore`` (see :doc:`12-shared-services-and-components`)
+    for on-disk persistence. The same sanitized ``LogEntry`` reaches the
+    in-memory store, the file, and the browser console — there is no separate
+    filter path.
   - ``utils.ts``: String formatting, date helpers.
   - ``http.ts``: Fetch wrapper with error handling.
 

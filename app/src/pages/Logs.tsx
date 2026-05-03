@@ -6,13 +6,26 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { ScrollText, Trash2, Download, Share2, ChevronDown, ChevronUp, Server, Smartphone } from 'lucide-react';
+import { ScrollText, Trash2, Download, Share2, ChevronDown, ChevronUp, Server, Smartphone, FolderOpen } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Capacitor } from '@capacitor/core';
+import { getLogFile } from '../lib/log-file';
+import { LOG_FILE_MAX_ENTRIES } from '../lib/log-file/types';
 import { useToast } from '../hooks/use-toast';
 import { useMemo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from '../components/ui/alert-dialog';
 import { Checkbox } from '../components/ui/checkbox';
 import { Label } from '../components/ui/label';
 import type { LogEntry } from '../stores/logs';
@@ -66,6 +79,9 @@ export default function Logs() {
     const { toast } = useToast();
     const { t } = useTranslation();
     const isNative = Capacitor.isNativePlatform();
+    const logFile = getLogFile();
+    const showOpenLocation = logFile.capabilities.reveal;  // Tauri only
+    const showShareFile = logFile.capabilities.share;      // Capacitor only
     const { currentProfile, settings } = useCurrentProfile();
     const { logLevel } = settings;
     const updateProfileSettings = useSettingsStore((state) => state.updateProfileSettings);
@@ -74,6 +90,7 @@ export default function Logs() {
     const [logSource, setLogSource] = useState<LogSource>('zmng');
     const [zmLogs, setZmLogs] = useState<ZMLog[]>([]);
     const [isLoadingZmLogs, setIsLoadingZmLogs] = useState(false);
+    const [persistedPath, setPersistedPath] = useState<string | null>(null);
     const unassignedComponentValue = 'unassigned';
 
     // Use the appropriate component filter based on log source
@@ -103,6 +120,13 @@ export default function Logs() {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [logSource]);
+
+    // Resolve persisted log file path
+    useEffect(() => {
+        const lf = getLogFile();
+        if (!lf.capabilities.available) return;
+        void lf.getDisplayPath().then(setPersistedPath);
+    }, []);
 
     const handleLevelChange = (value: string) => {
         const level = parseInt(value, 10) as LogLevel;
@@ -275,22 +299,77 @@ export default function Logs() {
     };
 
     const handleShareLogs = async () => {
-        const logText = exportLogsAsText(filteredLogs);
+        // Tauri desktop: open the file's enclosing folder in the system file manager.
+        if (showOpenLocation) {
+            try {
+                await logFile.revealLocation();
+            } catch {
+                toast({
+                    variant: 'destructive',
+                    title: t('logs.share_failed'),
+                    description: t('logs.share_failed'),
+                });
+            }
+            return;
+        }
 
+        // Capacitor mobile: share the rendered .log as a file attachment.
+        if (showShareFile) {
+            try {
+                const persistedEntries = await logFile.readAll();
+                const sourceEntries = persistedEntries.length > 0 ? persistedEntries : filteredLogs;
+                const text = exportLogsAsText(sourceEntries);
+
+                const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem');
+                const tempName = `zmninja-ng-${Date.now()}.log`;
+                const wrote = await Filesystem.writeFile({
+                    path: tempName,
+                    directory: Directory.Cache,
+                    data: text,
+                    encoding: Encoding.UTF8,
+                });
+
+                const { Share } = await import('@capacitor/share');
+                await Share.share({
+                    title: t('logs.share_title'),
+                    dialogTitle: t('logs.share_dialog_title'),
+                    files: [wrote.uri],
+                });
+            } catch {
+                toast({
+                    variant: 'destructive',
+                    title: t('logs.share_failed'),
+                    description: t('logs.share_failed'),
+                });
+            }
+            return;
+        }
+
+        // Web fallback: blob download (preserves existing dev-environment behavior).
+        const text = exportLogsAsText(filteredLogs);
+        const blob = new Blob([text], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `zmninja-ng-${Date.now()}.log`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    const [confirmClearOpen, setConfirmClearOpen] = useState(false);
+
+    const handleConfirmedClear = async () => {
+        clearLogs();
         try {
-            const { Share } = await import('@capacitor/share');
-            await Share.share({
-                title: t('logs.share_title'),
-                text: logText,
-                dialogTitle: t('logs.share_dialog_title'),
-            });
-        } catch (error) {
+            await getLogFile().truncate();
+        } catch {
             toast({
-                title: t('common.error'),
-                description: t('logs.share_failed'),
                 variant: 'destructive',
+                title: t('common.error'),
+                description: t('common.error'),
             });
         }
+        setConfirmClearOpen(false);
     };
 
     const getLevelColor = (level: string) => {
@@ -408,7 +487,7 @@ export default function Logs() {
                             </PopoverContent>
                         </Popover>
                     </div>
-                    {isNative ? (
+                    {(isNative || showOpenLocation) ? (
                         <Button
                             variant="outline"
                             size="sm"
@@ -416,8 +495,17 @@ export default function Logs() {
                             disabled={filteredLogs.length === 0}
                             data-testid="logs-share-button"
                         >
-                            <Share2 className="h-4 w-4 mr-2" />
-                            {t('logs.share')}
+                            {showOpenLocation ? (
+                                <>
+                                    <FolderOpen className="h-4 w-4 mr-2" />
+                                    {t('logs.open_location')}
+                                </>
+                            ) : (
+                                <>
+                                    <Share2 className="h-4 w-4 mr-2" />
+                                    {t('logs.share')}
+                                </>
+                            )}
                         </Button>
                     ) : (
                         <Button
@@ -432,19 +520,55 @@ export default function Logs() {
                         </Button>
                     )}
                     {logSource === 'zmng' && (
-                        <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={clearLogs}
-                            disabled={logs.length === 0}
-                            data-testid="logs-clear-button"
-                        >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            {t('logs.clear_logs')}
-                        </Button>
+                        <AlertDialog open={confirmClearOpen} onOpenChange={setConfirmClearOpen}>
+                            <AlertDialogTrigger asChild>
+                                <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    disabled={logs.length === 0}
+                                    data-testid="logs-clear-button"
+                                >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    {t('logs.clear_logs')}
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>{t('logs.clear_confirm_title')}</AlertDialogTitle>
+                                    <AlertDialogDescription>{t('logs.clear_confirm_message')}</AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel data-testid="logs-clear-cancel">{t('common.cancel')}</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleConfirmedClear} data-testid="logs-clear-confirm">
+                                        {t('logs.clear_confirm_action')}
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     )}
                 </div>
             </div>
+            {logFile.capabilities.available && (
+                <div
+                    className="text-xs text-muted-foreground px-1 py-1 flex flex-col gap-0.5 shrink-0"
+                    data-testid="logs-status-line"
+                >
+                    {/* File path is only useful where the user can navigate to it
+                        (Tauri reveals in Finder/Explorer). On mobile the path is a
+                        sandboxed app-data URI the user can't open, so hide it. */}
+                    {showOpenLocation && persistedPath && (
+                        <span className="truncate min-w-0" title={persistedPath}>
+                            {t('logs.persisted_to')} <span className="font-mono">{persistedPath}</span>
+                        </span>
+                    )}
+                    <span>
+                        {t('logs.entries_count', {
+                            current: logs.length.toLocaleString(),
+                            max: LOG_FILE_MAX_ENTRIES.toLocaleString(),
+                        })}
+                    </span>
+                </div>
+            )}
 
             <Card className="flex-1 overflow-hidden flex flex-col">
                 <CardHeader className="py-3 px-4 border-b shrink-0">
@@ -465,7 +589,7 @@ export default function Logs() {
                             <p>{logSource === 'zmng' ? t('logs.no_logs_available') : t('logs.no_server_logs')}</p>
                         </div>
                     ) : (
-                        <div className="divide-y" data-testid="log-entries">
+                        <div className="divide-y" data-testid="logs-list">
                             {filteredLogs.map((log) => (
                                 <div key={log.id} className="p-2 sm:p-3 hover:bg-muted/50 transition-colors" data-testid="log-entry">
                                     <div className="flex items-start gap-2 sm:gap-3">

@@ -455,7 +455,13 @@
     "component_filter_label": "Componentes",
     "component_filter_all": "Todos",
     "component_filter_selected": "{{count}} componentes",
-    "component_unassigned": "Sin asignar"
+    "component_unassigned": "Sin asignar",
+    "open_location": "Abrir",
+    "persisted_to": "Guardado en:",
+    "entries_count": "{{current}} de {{max}} entradas",
+    "clear_confirm_title": "¿Borrar logs?",
+    "clear_confirm_message": "Borra el buffer y el archivo persistente.",
+    "clear_confirm_action": "Borrar"
   },
   "monitor_detail": {
     "events": "Eventos",

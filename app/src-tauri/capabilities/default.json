@@ -21,23 +21,27 @@
     {
       "identifier": "fs:allow-write-file",
       "allow": [
-        {
-          "path": "$DOWNLOADS/**"
-        },
-        {
-          "path": "$DOCUMENTS/**"
-        },
-        {
-          "path": "$DESKTOP/**"
-        },
-        {
-          "path": "$PICTURES/**"
-        },
-        {
-          "path": "$MOVIES/**"
-        }
+        { "path": "$DOWNLOADS/**" },
+        { "path": "$DOCUMENTS/**" },
+        { "path": "$DESKTOP/**" },
+        { "path": "$PICTURES/**" },
+        { "path": "$MOVIES/**" },
+        { "path": "$APPLOG/**" }
       ]
     },
-    "dialog:default"
+    {
+      "identifier": "fs:allow-write-text-file",
+      "allow": [{ "path": "$APPLOG/**" }]
+    },
+    {
+      "identifier": "fs:allow-read-text-file",
+      "allow": [{ "path": "$APPLOG/**" }]
+    },
+    {
+      "identifier": "fs:allow-mkdir",
+      "allow": [{ "path": "$APPLOG/**" }]
+    },
+    "dialog:default",
+    "opener:default"
   ]
 }

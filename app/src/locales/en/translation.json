@@ -455,7 +455,13 @@
     "component_filter_label": "Components",
     "component_filter_all": "All",
     "component_filter_selected": "{{count}} components",
-    "component_unassigned": "Unassigned"
+    "component_unassigned": "Unassigned",
+    "open_location": "Open",
+    "persisted_to": "Persisted to:",
+    "entries_count": "{{current}} of {{max}} entries",
+    "clear_confirm_title": "Clear logs?",
+    "clear_confirm_message": "This clears the in-memory buffer and the persisted log file.",
+    "clear_confirm_action": "Clear"
   },
   "monitor_detail": {
     "events": "Events",
