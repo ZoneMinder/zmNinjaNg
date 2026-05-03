@@ -118,8 +118,12 @@ export class TauriLogFileStore implements LogFileStore {
   }
 
   async getDisplayPath(): Promise<string | null> {
-    const dir = await appLogDir();
-    return join(dir, LOG_FILE_NAME);
+    try {
+      const dir = await appLogDir();
+      return join(dir, LOG_FILE_NAME);
+    } catch {
+      return null;
+    }
   }
 
   async getFileUri(): Promise<string | null> {
