@@ -14,6 +14,10 @@ Yes. On mobile (iOS/Android), enable **Allow self-signed certificates** in Setti
 
 Yes. zmNinjaNg is open source and free to use. The source code is available on [GitHub](https://github.com/pliablepixels/zmNinjaNg).
 
+### How is it free if you are charging for it in the playstore/appstore?
+
+The source code is free, under Apache License 2.0. I also make the binaries (except iOS) free for use in the release artifacts. On top of that, ZoneMinder makes the apps available on the stores for a free. I personally don't make any money off of it (they kindly offered, I declined). ZoneMinder is incredible software, offered for free. I think it is fair for them to charge a fee for this app. If you prefer not to pay, you can always just grab the android binary from the Github release page for zmNinjaNg. Unfortunately, there is no easy way to offer iOS there.
+
 ### How is zmNinjaNg different from zmNinja?
 
 zmNinjaNg is a ground-up rewrite of zmNinja using modern web technologies (React, TypeScript, Capacitor). It has the same core features but with a modern UI, better performance, and encrypted credential storage. See {doc}`Getting Started <getting-started>` for the full comparison.
