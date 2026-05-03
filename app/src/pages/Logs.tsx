@@ -6,9 +6,10 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { ScrollText, Trash2, Download, Share2, ChevronDown, ChevronUp, Server, Smartphone } from 'lucide-react';
+import { ScrollText, Trash2, Download, Share2, ChevronDown, ChevronUp, Server, Smartphone, FolderOpen } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Capacitor } from '@capacitor/core';
+import { getLogFile } from '../lib/log-file';
 import { useToast } from '../hooks/use-toast';
 import { useMemo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -66,6 +67,9 @@ export default function Logs() {
     const { toast } = useToast();
     const { t } = useTranslation();
     const isNative = Capacitor.isNativePlatform();
+    const logFile = getLogFile();
+    const showOpenLocation = logFile.capabilities.reveal;  // Tauri only
+    const showShareFile = logFile.capabilities.share;      // Capacitor only
     const { currentProfile, settings } = useCurrentProfile();
     const { logLevel } = settings;
     const updateProfileSettings = useSettingsStore((state) => state.updateProfileSettings);
@@ -275,22 +279,61 @@ export default function Logs() {
     };
 
     const handleShareLogs = async () => {
-        const logText = exportLogsAsText(filteredLogs);
-
-        try {
-            const { Share } = await import('@capacitor/share');
-            await Share.share({
-                title: t('logs.share_title'),
-                text: logText,
-                dialogTitle: t('logs.share_dialog_title'),
-            });
-        } catch (error) {
-            toast({
-                title: t('common.error'),
-                description: t('logs.share_failed'),
-                variant: 'destructive',
-            });
+        // Tauri desktop: open the file's enclosing folder in the system file manager.
+        if (showOpenLocation) {
+            try {
+                await logFile.revealLocation();
+            } catch {
+                toast({
+                    variant: 'destructive',
+                    title: t('logs.share_failed'),
+                    description: t('logs.share_failed'),
+                });
+            }
+            return;
         }
+
+        // Capacitor mobile: share the rendered .log as a file attachment.
+        if (showShareFile) {
+            try {
+                const persistedEntries = await logFile.readAll();
+                const sourceEntries = persistedEntries.length > 0 ? persistedEntries : filteredLogs;
+                const text = exportLogsAsText(sourceEntries);
+
+                const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem');
+                const tempName = `zmninja-ng-${Date.now()}.log`;
+                const wrote = await Filesystem.writeFile({
+                    path: tempName,
+                    directory: Directory.Cache,
+                    data: text,
+                    encoding: Encoding.UTF8,
+                });
+
+                const { Share } = await import('@capacitor/share');
+                await Share.share({
+                    title: t('logs.share_title'),
+                    dialogTitle: t('logs.share_dialog_title'),
+                    files: [wrote.uri],
+                });
+            } catch {
+                toast({
+                    variant: 'destructive',
+                    title: t('logs.share_failed'),
+                    description: t('logs.share_failed'),
+                });
+            }
+            return;
+        }
+
+        // Web fallback: blob download (preserves existing dev-environment behavior).
+        const text = exportLogsAsText(filteredLogs);
+        const blob = new Blob([text], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `zmninja-ng-${Date.now()}.log`;
+        a.click();
+        URL.revokeObjectURL(url);
     };
 
     const getLevelColor = (level: string) => {
@@ -408,7 +451,7 @@ export default function Logs() {
                             </PopoverContent>
                         </Popover>
                     </div>
-                    {isNative ? (
+                    {(isNative || showOpenLocation) ? (
                         <Button
                             variant="outline"
                             size="sm"
@@ -416,8 +459,17 @@ export default function Logs() {
                             disabled={filteredLogs.length === 0}
                             data-testid="logs-share-button"
                         >
-                            <Share2 className="h-4 w-4 mr-2" />
-                            {t('logs.share')}
+                            {showOpenLocation ? (
+                                <>
+                                    <FolderOpen className="h-4 w-4 mr-2" />
+                                    {t('logs.open_location')}
+                                </>
+                            ) : (
+                                <>
+                                    <Share2 className="h-4 w-4 mr-2" />
+                                    {t('logs.share')}
+                                </>
+                            )}
                         </Button>
                     ) : (
                         <Button
