@@ -548,14 +548,19 @@ export default function Logs() {
                     )}
                 </div>
             </div>
-            {getLogFile().capabilities.available && persistedPath && (
+            {logFile.capabilities.available && (
                 <div
                     className="text-xs text-muted-foreground px-1 py-1 flex flex-col gap-0.5 shrink-0"
                     data-testid="logs-status-line"
                 >
-                    <span className="truncate min-w-0" title={persistedPath}>
-                        {t('logs.persisted_to')} <span className="font-mono">{persistedPath}</span>
-                    </span>
+                    {/* File path is only useful where the user can navigate to it
+                        (Tauri reveals in Finder/Explorer). On mobile the path is a
+                        sandboxed app-data URI the user can't open, so hide it. */}
+                    {showOpenLocation && persistedPath && (
+                        <span className="truncate min-w-0" title={persistedPath}>
+                            {t('logs.persisted_to')} <span className="font-mono">{persistedPath}</span>
+                        </span>
+                    )}
                     <span>
                         {t('logs.entries_count', {
                             current: logs.length.toLocaleString(),
