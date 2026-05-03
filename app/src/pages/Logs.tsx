@@ -547,23 +547,23 @@ export default function Logs() {
                         </AlertDialog>
                     )}
                 </div>
-                {getLogFile().capabilities.available && persistedPath && (
-                    <div
-                        className="text-xs text-muted-foreground px-1 py-1 flex flex-col gap-0.5"
-                        data-testid="logs-status-line"
-                    >
-                        <span className="truncate min-w-0" title={persistedPath}>
-                            {t('logs.persisted_to')} <span className="font-mono">{persistedPath}</span>
-                        </span>
-                        <span>
-                            {t('logs.entries_count', {
-                                current: logs.length.toLocaleString(),
-                                max: LOG_FILE_MAX_ENTRIES.toLocaleString(),
-                            })}
-                        </span>
-                    </div>
-                )}
             </div>
+            {getLogFile().capabilities.available && persistedPath && (
+                <div
+                    className="text-xs text-muted-foreground px-1 py-1 flex flex-col gap-0.5 shrink-0"
+                    data-testid="logs-status-line"
+                >
+                    <span className="truncate min-w-0" title={persistedPath}>
+                        {t('logs.persisted_to')} <span className="font-mono">{persistedPath}</span>
+                    </span>
+                    <span>
+                        {t('logs.entries_count', {
+                            current: logs.length.toLocaleString(),
+                            max: LOG_FILE_MAX_ENTRIES.toLocaleString(),
+                        })}
+                    </span>
+                </div>
+            )}
 
             <Card className="flex-1 overflow-hidden flex flex-col">
                 <CardHeader className="py-3 px-4 border-b shrink-0">
