@@ -29,6 +29,7 @@ These are non-negotiable. Every rule applies to all communication: responses, co
 23. **Concise i18n labels** — button, tab, and action labels must be short across all languages. Prefer single-word synonyms (ES: "Ajustes" not "Configuración", DE: "Speichern" not "Änderungen speichern", FR: "Enregistrer" not "Enregistrer les modifications"). Test translations fit on a 320px-wide phone screen. Add `min-w-0` + `truncate` to flex containers with translated button text as a safety net.
 24. **Date/time formatting** — all user-facing date/time display must use `useDateTimeFormat()` hook (or `formatAppDate`/`formatAppTime`/`formatAppDateTime` from `lib/format-date-time.ts` outside React). Never hardcode date-fns `format()` with literal patterns for user-visible output. This includes canvas rendering, tooltips, labels, and scrubber overlays.
 25. **Self-updating rules** — when the user gives guidance that establishes a general pattern (e.g., "all X should use Y"), check whether it belongs as a persistent rule in this file. If so, add it here so future sessions follow it automatically.
+26. **Centralized constants** — every named constant (timeouts, thresholds, storage keys, animation durations, magic numbers with semantic meaning) lives in `lib/zmninja-ng-constants.ts` (app-level) or `lib/zm-constants.ts` (ZoneMinder protocol-level). Import from there; do not redeclare per file. CSS pixel values inline in JSX/styles are fine; ad-hoc numbers used once with no semantic name are fine.
 
 ---
 
