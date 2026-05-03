@@ -346,8 +346,10 @@ export async function httpRequest<T = unknown>(
   const requestId = ++requestIdCounter;
   const platform = Platform.isNative ? 'Native' : Platform.isTauri ? 'Tauri' : 'Web';
   const startTime = performance.now();
+  const corrTag = correlationPrefix(requestId, correlationId);
+  const path = shortPath(fullUrl);
 
-  // Prepare request body for logging
+  // Prepare request body for logging (form-data → object so logger can sanitize)
   let requestBodyForLog: unknown = body;
   if (body instanceof URLSearchParams) {
     const formData: Record<string, string> = {};
@@ -356,16 +358,6 @@ export async function httpRequest<T = unknown>(
     });
     requestBodyForLog = formData;
   }
-
-  log.http(`[HTTP] Request #${requestId} ${method} ${fullUrl}`, LogLevel.DEBUG, {
-    requestId,
-    platform,
-    method,
-    url: fullUrl,
-    params: Object.keys(finalParams).length > 0 ? finalParams : undefined,
-    headers: Object.keys(requestHeaders).length > 0 ? requestHeaders : undefined,
-    body: requestBodyForLog,
-  });
 
   try {
     let response: HttpResponse<T>;
@@ -407,48 +399,45 @@ export async function httpRequest<T = unknown>(
 
     const duration = Math.round(performance.now() - startTime);
 
-    // Prepare response data for logging (truncate large responses)
-    let responseDataForLog: unknown = response.data;
-    if (responseType === 'blob' || responseType === 'arraybuffer' || responseType === 'base64') {
-      responseDataForLog = `<Binary data: ${responseType}>`;
-    } else if (typeof response.data === 'string' && response.data.length > 1000) {
-      responseDataForLog = `${response.data.substring(0, 1000)}... (truncated, total: ${response.data.length} chars)`;
-    } else if (typeof response.data === 'object' && response.data !== null) {
-      const jsonString = JSON.stringify(response.data);
-      if (jsonString.length > 2000) {
-        responseDataForLog = `${jsonString.substring(0, 2000)}... (truncated, total: ${jsonString.length} chars)`;
-      }
+    // One-line completion log. Body is omitted when there's nothing useful
+    // to show (binary, empty, all-empty); otherwise it's flattened so the
+    // console renders an inline preview rather than a deep tree.
+    const ctx: Record<string, unknown> = { platform };
+    const isMutation = method !== 'GET' && method !== 'HEAD';
+    if (isMutation && requestBodyForLog !== undefined) {
+      ctx.req = flattenForLog(requestBodyForLog, 1);
+    }
+    const responseSummary = summarizeBody(response.data, responseType);
+    if (responseSummary !== undefined) {
+      ctx.res = responseSummary;
     }
 
-    log.http(`[HTTP] Response #${requestId} ${method} ${fullUrl}`, LogLevel.DEBUG, {
-      requestId,
-      platform,
-      method,
-      url: fullUrl,
-      status: response.status,
-      statusText: response.statusText || undefined,
-      duration: `${duration}ms`,
-      headers: Object.keys(response.headers).length > 0 ? response.headers : undefined,
-      data: responseDataForLog,
-    });
+    log.http(
+      `[HTTP] ${corrTag} ${method} ${path} → ${response.status} (${duration}ms)`,
+      LogLevel.DEBUG,
+      ctx,
+    );
 
     return response;
   } catch (error) {
     const duration = Math.round(performance.now() - startTime);
     const httpError = error as HttpError;
+    const status = httpError.status ?? 'ERR';
 
-    log.http(`[HTTP] Failed #${requestId} ${method} ${fullUrl}`, LogLevel.ERROR, {
-      requestId,
+    const errCtx: Record<string, unknown> = {
       platform,
-      method,
-      url: fullUrl,
-      duration: `${duration}ms`,
-      status: httpError.status || undefined,
-      statusText: httpError.statusText || undefined,
-      headers: httpError.headers && Object.keys(httpError.headers).length > 0 ? httpError.headers : undefined,
-      errorData: httpError.data || undefined,
-      error: httpError.message || error,
-    });
+      url: fullUrl, // full URL retained on error path for triage
+      message: httpError.message || String(error),
+    };
+    if (httpError.data !== undefined) {
+      errCtx.errorData = flattenForLog(httpError.data, 2);
+    }
+
+    log.http(
+      `[HTTP] ${corrTag} ${method} ${path} ✗ ${status} (${duration}ms)`,
+      LogLevel.ERROR,
+      errCtx,
+    );
     throw error;
   }
 }
