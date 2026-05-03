@@ -25,10 +25,16 @@ interface LogContext {
   [key: string]: unknown;
 }
 
+interface DedupeState {
+  lastEmit: number;
+  suppressed: number;
+}
+
 class Logger {
   private level: LogLevel;
   private isDev: boolean;
   private componentLevels: Record<string, LogLevel> = {};
+  private dedupeState = new Map<string, DedupeState>();
 
   constructor() {
     this.isDev = this.resolveIsDev();
@@ -93,6 +99,26 @@ class Logger {
     return level >= this.level;
   }
 
+  /**
+   * Dedupe gate: returns the suppressed count to inline into the message
+   * if the caller should emit now, otherwise null. First call always emits
+   * with suppressed=0; subsequent calls within `windowMs` are counted and
+   * suppressed; the next call after the window emits with the accumulated
+   * suppressed count so the user sees a single "(+N suppressed)" footnote.
+   */
+  dedupeGate(key: string, windowMs: number): { suppressed: number } | null {
+    const now = Date.now();
+    const state = this.dedupeState.get(key) ?? { lastEmit: 0, suppressed: 0 };
+    if (now - state.lastEmit >= windowMs) {
+      const suppressed = state.suppressed;
+      this.dedupeState.set(key, { lastEmit: now, suppressed: 0 });
+      return { suppressed };
+    }
+    state.suppressed += 1;
+    this.dedupeState.set(key, state);
+    return null;
+  }
+
   private formatMessage(level: string, context: LogContext, message: string, ...args: unknown[]): void {
     const timestamp = new Date().toLocaleString();
     const contextStr = context.component ? `[${context.component}]` : '';
@@ -119,7 +145,14 @@ class Logger {
       consoleArgs.push(...sanitizedArgs);
     }
 
-    console.log(...consoleArgs);
+    // Map our levels to the matching console method so DevTools
+    // severity filters and color cues work natively.
+    const emit =
+      level === 'ERROR' ? console.error :
+      level === 'WARN' ? console.warn :
+      level === 'DEBUG' ? console.debug :
+      console.info;
+    emit(...consoleArgs);
 
     // formatMessage runs only after the global/per-component level filter has
     // passed (every public log helper gates on shouldLog/effectiveLevel before
@@ -280,6 +313,28 @@ const generatedComponentLoggers = componentLoggers.reduce((acc, key) => {
   return acc;
 }, {} as ComponentLoggers);
 
+/**
+ * Dedupe wrapper for repetitive log lines (poller ticks, connkey churn).
+ * Within `windowMs` of the previous emit for the same `key`, the body is
+ * suppressed; the next emit after the window includes a "(+N suppressed)"
+ * suffix so the count is preserved in the visible record.
+ *
+ * Usage:
+ *   log.dedupe('connkey-regen', 5000, (suffix) =>
+ *     log.monitor(`Regenerating connkey${suffix}`, LogLevel.INFO, { monitorId }),
+ *   );
+ */
+function logDedupe(
+  key: string,
+  windowMs: number,
+  emit: (suffix: string) => void,
+): void {
+  const gate = logger.dedupeGate(key, windowMs);
+  if (!gate) return;
+  const suffix = gate.suppressed > 0 ? ` (+${gate.suppressed} suppressed)` : '';
+  emit(suffix);
+}
+
 export const log = {
   debug: (message: string, context?: LogContext, ...args: unknown[]) =>
     logger.debug(message, context, ...args),
@@ -289,6 +344,7 @@ export const log = {
     logger.warn(message, context, ...args),
   error: (message: string, context?: LogContext, error?: Error | unknown, ...args: unknown[]) =>
     logger.error(message, context, error, ...args),
+  dedupe: logDedupe,
 
   // Component-specific loggers (generated dynamically)
   ...generatedComponentLoggers,

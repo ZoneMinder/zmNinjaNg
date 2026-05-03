@@ -30,6 +30,12 @@ export interface HttpOptions {
   signal?: AbortSignal;
   validateStatus?: (status: number) => boolean;
   onDownloadProgress?: (progress: HttpProgress) => void;
+  /**
+   * Caller-supplied correlation ID (e.g., from api/client.ts) so the wire-level
+   * HTTP log can be tied back to the originating API request without inspecting
+   * stack traces. Rendered as `{api:N, http:M}` in the completion line.
+   */
+  correlationId?: number;
 }
 
 export interface HttpResponse<T = unknown> {
@@ -220,6 +226,66 @@ function withTimeoutSignal(timeoutMs?: number, signal?: AbortSignal): { signal?:
 }
 
 /**
+ * Extract the path + query for log lines so the host/proxy doesn't dominate.
+ */
+function shortPath(url: string): string {
+  try {
+    const u = new URL(url);
+    return `${u.pathname}${u.search ? '?…' : ''}`;
+  } catch {
+    return url;
+  }
+}
+
+/**
+ * Flatten one level deep so console renders a single-line preview:
+ * scalars stay, large strings truncate, arrays/nested objects collapse to a
+ * "[N items]" / "{N keys}" summary. Sensitive values are still redacted by
+ * the logger's sanitiser before this output reaches the console.
+ */
+function flattenForLog(value: unknown, depth = 1): unknown {
+  if (value === null || value === undefined) return value;
+  if (typeof value === 'string') {
+    return value.length > 80 ? `${value.slice(0, 80)}…` : value;
+  }
+  if (typeof value !== 'object') return value;
+  if (Array.isArray(value)) {
+    if (value.length === 0) return [];
+    if (depth <= 0) return `[${value.length} items]`;
+    // Show short arrays of scalars in full, otherwise summarize
+    const allScalar = value.every((v) => v === null || typeof v !== 'object');
+    if (allScalar && value.length <= 5) return value;
+    return `[${value.length} items]`;
+  }
+  const entries = Object.entries(value as Record<string, unknown>);
+  if (depth <= 0) return `{${entries.length} keys}`;
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of entries) {
+    out[k] = flattenForLog(v, depth - 1);
+  }
+  return out;
+}
+
+/** Decide whether a body summary is worth showing at all. */
+function summarizeBody(data: unknown, responseType: string): unknown {
+  if (responseType === 'blob' || responseType === 'arraybuffer' || responseType === 'base64') {
+    return undefined; // binary; not loggable
+  }
+  if (data === null || data === undefined) return undefined;
+  if (typeof data === 'string') {
+    if (data.length === 0) return undefined;
+    return data.length > 200 ? `${data.slice(0, 200)}… (+${data.length - 200} chars)` : data;
+  }
+  if (Array.isArray(data) && data.length === 0) return undefined;
+  if (typeof data === 'object' && Object.keys(data as object).length === 0) return undefined;
+  return flattenForLog(data, 1);
+}
+
+function correlationPrefix(requestId: number, correlationId?: number): string {
+  return correlationId !== undefined ? `{api:${correlationId}, http:${requestId}}` : `#${requestId}`;
+}
+
+/**
  * Make an HTTP request using the appropriate platform-specific method.
  *
  * @param url - The URL to request (full URL, not relative)
@@ -242,6 +308,7 @@ export async function httpRequest<T = unknown>(
     signal,
     validateStatus,
     onDownloadProgress,
+    correlationId,
   } = options;
 
   // Add token to params if provided

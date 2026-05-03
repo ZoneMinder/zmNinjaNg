@@ -127,6 +127,3 @@ Credentials are encrypted and stored locally on your device:
 - **Android**: Hardware-backed encryption via Android Keystore
 - **iOS**: iOS Keychain
 
-### Can I export my profiles?
-
-You can share profiles via QR code. Open a profile and select the share/QR option. The QR code contains the encrypted profile data.
