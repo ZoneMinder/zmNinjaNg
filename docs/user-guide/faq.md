@@ -108,6 +108,8 @@ The inspector is platform-specific: it renders the **webkit2gtk WebInspector** o
 
 For full details, see the [Tauri debugging guide](https://v2.tauri.app/develop/debug/#webview-console).
 
+For logs that survive across app restarts (and are easier to attach to a bug report), see {doc}`logs` — the in-app Logs page persists everything to a shareable file.
+
 ## Data & Privacy
 
 ### Does zmNinjaNg send data to third parties?

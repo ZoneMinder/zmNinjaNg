@@ -39,6 +39,10 @@ The on-disk file mirrors the in-memory Logs view, so anything filtered out by yo
 
 Lowering the level (e.g. to DEBUG for a specific component) writes more to disk; raising it writes less.
 
+## Live console output
+
+The Logs page mirrors what the in-app console shows. If you want to watch raw console output as it streams (including stack traces and source-mapped errors that don't make it into the structured logger), open the developer console — see [How do I open the developer console on the desktop app?](faq.md#how-do-i-open-the-developer-console-on-the-desktop-app) in the FAQ.
+
 ## Sharing logs for support
 
 Recommended flow:
