@@ -51,4 +51,3 @@ building/index
 - [Downloads](https://pliablepixels.github.io/zmNinjaNg/)
 - [Issue Tracker](https://github.com/pliablepixels/zmNinjaNg/issues)
 - [ZoneMinder](https://zoneminder.com/)
-- [Demo Video](https://youtu.be/ces_2ap-htc)
