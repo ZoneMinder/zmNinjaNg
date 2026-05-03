@@ -7,7 +7,7 @@
  * Features:
  * - Web: Uses standard browser download (Blob/Anchor)
  * - Mobile: Uses Capacitor Filesystem and Media plugins with chunked streaming to avoid OOM
- * - Desktop (Tauri): Uses native File System and Dialog plugins for robust downloads
+ * - Desktop (Tauri): Uses native File System and Dialog plugins
  * - Handles CORS issues via native HTTP or proxy
  * - Automatically saves media to device Photo/Video library on mobile
  */

@@ -809,6 +809,7 @@ Shared hook for ZMS stream connection key management and cleanup.
      monitorId: monitor.Id,
      portalUrl: profile.portalUrl,
      accessToken: auth.accessToken,
+     viewMode: 'streaming', // CMD_QUIT only fires in streaming mode
      mediaRef: imgRef,
      logFn: log.montageMonitor,
    });
