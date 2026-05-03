@@ -115,13 +115,27 @@ Redact sensitive values (URLs, credentials) from logs. Disable only when sharing
 
 ### Persistent Logs
 
-Log entries that pass your filter settings are written to disk so they survive app restarts:
+Log entries that pass your filter settings are written to disk so they survive app restarts. The file is named `zmninja-ng.log` and lives in the per-app log directory chosen by the OS:
 
-- **iOS / Android:** in the app's data directory. Use the **Share** button on the Logs page to send the `.log` file via system share sheet.
-- **Desktop (Tauri):** at `~/Library/Logs/com.zoneminder.zmNinjaNG/zmninja-ng.log` (macOS) or the equivalent app-log directory on Windows/Linux. Use the **Open Location** button to reveal it in Finder/Explorer.
-- **Web (browser, dev only):** no persistence; the Share button downloads a one-shot text file.
+| Platform | Path |
+|----------|------|
+| **macOS** (Tauri) | `~/Library/Logs/com.zoneminder.zmNinjaNG/zmninja-ng.log` |
+| **Windows** (Tauri) | `%LOCALAPPDATA%\com.zoneminder.zmNinjaNG\logs\zmninja-ng.log` |
+| **Linux** (Tauri) | `~/.local/share/com.zoneminder.zmNinjaNG/logs/zmninja-ng.log` |
+| **iOS** | App sandbox (`Application Support` directory). Not directly accessible via Files app. |
+| **Android** | App-private data directory (`/data/data/com.zoneminder.zmNinjaNG/`). Not user-browsable without root. |
+| **Web** (browser dev only) | No persistence. |
 
-The file is capped at 10,000 entries; the oldest half is dropped automatically when the cap is hit. **Clear** zeros the file and the in-memory buffer.
+What the buttons on the Logs page do:
+
+- **Share** (iOS / Android): sends the `.log` file via the system share sheet — pick AirDrop, email, Slack, etc. and the recipient gets a real file attachment.
+- **Open** (Desktop): reveals `zmninja-ng.log` in Finder, Explorer, or your file manager.
+- **Share** (Web): falls back to a one-shot text download.
+- **Clear**: prompts for confirmation, then zeros the file and clears the in-memory buffer.
+
+A status line below the action row shows the current entry count (e.g. *4,237 of 10,000 entries*). On desktop, it also shows the absolute path. On mobile the path is a sandboxed URI you can't navigate to anyway, so it's omitted.
+
+The file is capped at 10,000 entries; when the cap is hit, the oldest half is dropped automatically. Bad lines (e.g. from a crash mid-write) are skipped silently when the file is read back.
 
 ### Kiosk PIN
 
