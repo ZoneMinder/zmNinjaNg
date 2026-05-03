@@ -216,6 +216,39 @@ vi.mock('@capacitor/share', () => ({
   },
 }));
 
+// Mock Tauri plugin-fs
+vi.mock('@tauri-apps/plugin-fs', () => ({
+  writeTextFile: vi.fn().mockResolvedValue(undefined),
+  readTextFile: vi.fn().mockResolvedValue(''),
+  exists: vi.fn().mockResolvedValue(true),
+  mkdir: vi.fn().mockResolvedValue(undefined),
+  remove: vi.fn().mockResolvedValue(undefined),
+  BaseDirectory: {
+    AppLog: 'AppLog',
+    AppData: 'AppData',
+    AppCache: 'AppCache',
+    AppConfig: 'AppConfig',
+    Download: 'Download',
+    Document: 'Document',
+    Desktop: 'Desktop',
+    Picture: 'Picture',
+    Video: 'Video',
+  },
+}));
+
+// Mock Tauri plugin-opener
+vi.mock('@tauri-apps/plugin-opener', () => ({
+  revealItemInDir: vi.fn().mockResolvedValue(undefined),
+  openPath: vi.fn().mockResolvedValue(undefined),
+  openUrl: vi.fn().mockResolvedValue(undefined),
+}));
+
+// Mock Tauri path APIs (used to resolve display path)
+vi.mock('@tauri-apps/api/path', () => ({
+  appLogDir: vi.fn().mockResolvedValue('/mock/applogdir'),
+  join: vi.fn(async (...parts: string[]) => parts.join('/')),
+}));
+
 // Mock @aparajita/capacitor-biometric-auth
 vi.mock('@aparajita/capacitor-biometric-auth', () => ({
   BiometricAuth: {
