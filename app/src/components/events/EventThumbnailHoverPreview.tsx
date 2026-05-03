@@ -11,6 +11,7 @@ import { HoverPreview } from '../ui/hover-preview';
 import { useCurrentProfile } from '../../hooks/useCurrentProfile';
 import { useAuthStore } from '../../stores/auth';
 import { getEventZmsUrl, getZmsControlUrl } from '../../lib/url-builder';
+import { httpGet } from '../../lib/http';
 import { log, LogLevel } from '../../lib/logger';
 import { ZMS_COMMANDS } from '../../lib/zm-constants';
 import type { Event } from '../../api/types';
@@ -120,7 +121,8 @@ export function EventZmsHoverPlayer({ descriptor }: { descriptor: EventZmsHoverD
           connkey,
           url: controlUrl,
         });
-        fetch(controlUrl, { method: 'GET', mode: 'no-cors' }).catch((err) => {
+        // Fire-and-forget — connection may already be closed
+        httpGet(controlUrl).catch((err) => {
           log.zmsEventPlayer('Failed to send CMD_QUIT for hover preview', LogLevel.DEBUG, {
             eventId: descriptor.eventId,
             error: String(err),
