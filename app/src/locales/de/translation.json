@@ -455,7 +455,13 @@
     "component_filter_label": "Komponenten",
     "component_filter_all": "Alle",
     "component_filter_selected": "{{count}} Komponenten",
-    "component_unassigned": "Nicht zugewiesen"
+    "component_unassigned": "Nicht zugewiesen",
+    "open_location": "Öffnen",
+    "persisted_to": "Gespeichert in:",
+    "entries_count": "{{current}} von {{max}} Einträgen",
+    "clear_confirm_title": "Logs löschen?",
+    "clear_confirm_message": "Speicher und persistierte Datei werden geleert.",
+    "clear_confirm_action": "Löschen"
   },
   "monitor_detail": {
     "events": "Ereignisse",

@@ -455,7 +455,13 @@
     "component_filter_label": "Composants",
     "component_filter_all": "Tous",
     "component_filter_selected": "{{count}} composants",
-    "component_unassigned": "Non attribué"
+    "component_unassigned": "Non attribué",
+    "open_location": "Ouvrir",
+    "persisted_to": "Enregistré dans :",
+    "entries_count": "{{current}} sur {{max}} entrées",
+    "clear_confirm_title": "Effacer les logs ?",
+    "clear_confirm_message": "Vide le tampon et le fichier persistant.",
+    "clear_confirm_action": "Effacer"
   },
   "monitor_detail": {
     "events": "Événements",
