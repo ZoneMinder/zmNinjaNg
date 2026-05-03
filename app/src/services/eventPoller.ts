@@ -34,6 +34,13 @@ class EventPollerService {
    * Loads monitor names first, then begins the poll cycle.
    */
   async start(profileId: string): Promise<void> {
+    // Idempotent for the same profile: a duplicate start() call is a no-op
+    // rather than a stop/restart. A different profile *does* tear down and
+    // re-init.
+    if (this.timerId && this.profileId === profileId) {
+      log.notifications('Event poller already running — skipping duplicate start', LogLevel.DEBUG, { profileId });
+      return;
+    }
     if (this.timerId) {
       this.stop();
     }
