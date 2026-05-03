@@ -8,8 +8,9 @@ describe('Log Store', () => {
     vi.stubGlobal('crypto', { randomUUID: () => 'uuid-1' });
   });
 
-  it('adds log entries with generated ids', () => {
+  it('adds log entries with the provided id', () => {
     useLogStore.getState().addLog({
+      id: 'uuid-1',
       timestamp: '2024-01-01T00:00:00Z',
       level: 'INFO',
       message: 'Test log',
@@ -27,6 +28,7 @@ describe('Log Store', () => {
 
     for (let i = 0; i < testCount; i += 1) {
       store.addLog({
+        id: `id-${i}`,
         timestamp: `2024-01-01T00:00:${String(i).padStart(2, '0')}Z`,
         level: 'DEBUG',
         message: `Log ${i}`,

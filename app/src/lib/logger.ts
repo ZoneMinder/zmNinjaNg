@@ -16,6 +16,7 @@
 import { useLogStore } from '../stores/logs';
 import { sanitizeLogMessage, sanitizeObject, sanitizeLogArgs } from './log-sanitizer';
 import { LogLevel } from './log-level';
+import { getLogFile } from './log-file';
 
 interface LogContext {
   component?: string;
@@ -119,15 +120,18 @@ class Logger {
 
     console.log(...consoleArgs);
 
-    // Add to store (rawTimestamp for display-time formatting)
-    useLogStore.getState().addLog({
+    // Construct entry once, send to in-memory store and persistent file.
+    const entry = {
+      id: crypto.randomUUID(),
       timestamp,
       rawTimestamp: Date.now(),
       level,
       message: sanitizedMessage,
       context: sanitizedContext,
       args: sanitizedArgs.length > 0 ? sanitizedArgs : undefined,
-    });
+    };
+    useLogStore.getState().addLog(entry);
+    getLogFile().append(entry);
   }
 
   debug(message: string, context: LogContext = {}, ...args: unknown[]): void {
