@@ -27,6 +27,12 @@ interface UseMonitorStreamOptions {
   serverId?: string | null;
   streamOptions?: Partial<StreamOptions>;
   enabled?: boolean; // Enable/disable stream management (default: true)
+  /**
+   * Override the global Streaming Mode setting for this stream.
+   * When set, forces 'streaming' or 'snapshot' regardless of profile settings.
+   * Used by the single-monitor page, which always wants continuous streaming.
+   */
+  viewModeOverride?: 'streaming' | 'snapshot';
 }
 
 interface UseMonitorStreamReturn {
@@ -48,6 +54,7 @@ export function useMonitorStream({
   serverId,
   streamOptions = {},
   enabled = true,
+  viewModeOverride,
 }: UseMonitorStreamOptions): UseMonitorStreamReturn {
   const { currentProfile, settings } = useCurrentProfile();
   const bandwidth = useBandwidthSettings();
@@ -55,6 +62,8 @@ export function useMonitorStream({
   const { recordingUrl, portalPath } = useServerUrls(serverId);
   // portalUrl for stream lifecycle = portalPath without /index.php
   const resolvedPortalUrl = portalPath ? portalPath.replace(/\/index\.php$/, '') : currentProfile?.portalUrl;
+
+  const effectiveViewMode = viewModeOverride ?? settings.viewMode;
 
   const [cacheBuster, setCacheBuster] = useState(Date.now());
   const [displayedImageUrl, setDisplayedImageUrl] = useState<string>('');
@@ -65,11 +74,11 @@ export function useMonitorStream({
     monitorId,
     portalUrl: resolvedPortalUrl,
     accessToken,
-    viewMode: settings.viewMode,
+    viewMode: effectiveViewMode,
     mediaRef: imgRef,
     logFn: log.monitor,
     enabled,
-    minStreamingPort: settings.viewMode === 'streaming' ? currentProfile?.minStreamingPort : undefined,
+    minStreamingPort: effectiveViewMode === 'streaming' ? currentProfile?.minStreamingPort : undefined,
   });
 
   // Reset cacheBuster when connKey changes (new connection)
@@ -81,31 +90,31 @@ export function useMonitorStream({
 
   // Snapshot mode: periodic refresh
   useEffect(() => {
-    if (!enabled || settings.viewMode !== 'snapshot') return;
+    if (!enabled || effectiveViewMode !== 'snapshot') return;
 
     const interval = setInterval(() => {
       setCacheBuster(Date.now());
     }, bandwidth.snapshotRefreshInterval * 1000);
 
     return () => clearInterval(interval);
-  }, [enabled, settings.viewMode, bandwidth.snapshotRefreshInterval]);
+  }, [enabled, effectiveViewMode, bandwidth.snapshotRefreshInterval]);
 
   // Build stream URL - ONLY when we have a valid connKey to prevent zombie streams
   const streamUrl = currentProfile && connKey !== 0
     ? getStreamUrl(recordingUrl || currentProfile.cgiUrl, monitorId, {
-      mode: settings.viewMode === 'snapshot' ? 'single' : 'jpeg',
+      mode: effectiveViewMode === 'snapshot' ? 'single' : 'jpeg',
       scale: bandwidth.imageScale,
       maxfps:
-        settings.viewMode === 'streaming'
+        effectiveViewMode === 'streaming'
           ? settings.streamMaxFps
           : undefined,
       token: accessToken || undefined,
       connkey: connKey,
       // Only use cacheBuster in snapshot mode to force refresh; streaming mode uses only connkey
-      cacheBuster: settings.viewMode === 'snapshot' ? cacheBuster : undefined,
+      cacheBuster: effectiveViewMode === 'snapshot' ? cacheBuster : undefined,
       // Only use multi-port in streaming mode, not snapshot
       minStreamingPort:
-        settings.viewMode === 'streaming'
+        effectiveViewMode === 'streaming'
           ? currentProfile.minStreamingPort
           : undefined,
       ...streamOptions,
@@ -117,7 +126,7 @@ export function useMonitorStream({
     if (!enabled) return;
 
     // In streaming mode or if no URL, just use the streamUrl directly
-    if (settings.viewMode !== 'snapshot') {
+    if (effectiveViewMode !== 'snapshot') {
       setDisplayedImageUrl(streamUrl);
       return;
     }
@@ -142,7 +151,7 @@ export function useMonitorStream({
       setDisplayedImageUrl(streamUrl);
     };
     img.src = streamUrl;
-  }, [enabled, streamUrl, settings.viewMode]);
+  }, [enabled, streamUrl, effectiveViewMode]);
 
   const regenerateConnection = () => {
     log.monitor(`Manually regenerating connection for monitor ${monitorId}`, LogLevel.WARN);

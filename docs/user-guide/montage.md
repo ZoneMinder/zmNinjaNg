@@ -41,13 +41,16 @@ On touch devices, pinch to zoom in or out on the grid. Zoom is disabled in fulls
 
 ## Streaming
 
-Go2RTC streams in the montage are muted by default. The protocol label (MJPEG/MSE/WebRTC) visibility is controlled by the toolbar eye toggle.
+Each tile honors the same streaming rules as elsewhere in the app:
 
-Monitors that cannot be reached display a VideoOff placeholder instead of a broken feed.
+- Monitors with Go2RTC enabled stream live video (WebRTC, MSE, or HLS).
+- Monitors on MJPEG follow the global *Streaming Mode* setting — *Streaming* shows continuous MJPEG, *Snapshot* shows a periodic JPEG that refreshes on the configured interval.
+
+Go2RTC streams in the montage are muted by default. The protocol label (MJPEG/MSE/WebRTC) visibility is controlled by the toolbar eye toggle. Monitors that cannot be reached display a VideoOff placeholder instead of a broken feed.
 
 ## Performance
 
-The montage view loads snapshot images rather than full video streams to keep bandwidth usage manageable when viewing many cameras at once. The refresh interval follows your {doc}`bandwidth settings <settings>`.
+When you have many cameras open at once, switch *Streaming Mode* to *Snapshot* in {doc}`settings` so each tile refreshes on an interval rather than holding an open stream. This trades motion smoothness for lower bandwidth and CPU. Go2RTC tiles continue to stream regardless and are unaffected by the setting.
 
 :::{tip}
 If you have many cameras, use **Low bandwidth mode** in Settings to reduce data usage. You can also filter to show only the cameras you need, or use saved layouts to switch between different subsets.

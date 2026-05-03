@@ -45,12 +45,13 @@ Switch to **Low bandwidth mode** when on mobile data or a slow connection. You c
 
 ## Live Streaming
 
-Settings that control live camera feeds in the Monitor Detail view:
+Settings that control live camera feeds:
 
 | Setting | Description |
 |---------|-------------|
+| **Streaming Mode** | *Streaming* delivers continuous video. *Snapshot* fetches a periodic still image instead — lower bandwidth, lower frame rate. See [Streaming Mode](#streaming-mode) below for where this setting applies. |
 | **Streaming protocol** | WebRTC (lowest latency), MSE, or HLS — tried in order if go2rtc is configured |
-| **Snapshot interval** | How often to refresh snapshot images |
+| **Snapshot interval** | How often to refresh the still image when Streaming Mode is set to *Snapshot* (1–30 seconds) |
 | **Protocol Label** | Shows or hides the streaming protocol indicator (MJPEG/MSE/WebRTC) on video feeds across all pages |
 
 ### Streaming Protocols
@@ -58,6 +59,31 @@ Settings that control live camera feeds in the Monitor Detail view:
 When Go2RTC is enabled, zmNinjaNg tries WebRTC, MSE, and HLS in parallel. The first protocol to produce video wins and is used for the stream. If all Go2RTC protocols fail, the app falls back to MJPEG via ZoneMinder's ZMS. The protocol label (when enabled) shows which protocol is active on each feed.
 
 You can configure which protocols to try in the Go2RTC protocol settings.
+
+### Streaming Mode
+
+The Streaming Mode toggle picks how live MJPEG feeds are fetched:
+
+- **Streaming** — continuous MJPEG over a single open connection at the configured FPS. Smooth motion, higher bandwidth and CPU.
+- **Snapshot** — a single JPEG fetched every *Snapshot interval* seconds. Lower bandwidth and CPU, choppier motion.
+
+Streaming Mode interacts with the streaming protocol layer. When a monitor uses Go2RTC (WebRTC/MSE/HLS), it always delivers continuous video — the Streaming Mode setting is ignored for that monitor. The setting only changes behavior on the MJPEG path: either when Go2RTC is disabled globally, when it is disabled per-monitor, or when Go2RTC fails and the app falls back to MJPEG.
+
+#### Where Streaming Mode applies
+
+| View | Affected? | Behavior |
+|------|-----------|----------|
+| Monitors list (grid/list of tiles) | Yes | Each tile honors the global setting. WebRTC tiles always stream; MJPEG tiles follow Streaming Mode. |
+| Montage page | Yes | Same as Monitors list — per-tile behavior. |
+| Dashboard monitor widgets | Yes | Each widget honors the global setting. |
+| **Monitor Detail page** (single monitor view) | **No — always streams** | This page ignores Streaming Mode and always uses continuous video. The stream is closed (`CMD_QUIT` sent to ZoneMinder) when you leave the page. |
+| Hover-preview popovers (over a monitor card) | No — always streams | Hardcoded to streaming for the brief time the popover is open. |
+| Event playback (Event Detail, Timeline previews) | Not applicable | These play recorded video, not live feeds. |
+| Notification thumbnails | Not applicable | Static event images, not live streams. |
+
+#### Why Monitor Detail always streams
+
+When you tap a single monitor for full-screen viewing you have explicitly asked for one camera at full attention, so the bandwidth tradeoff that justifies Snapshot mode in dense grids does not apply. The page also tears the stream down on exit, so leaving snapshot mode running there would just add latency without saving bandwidth.
 
 ### Per-Monitor Streaming Override
 

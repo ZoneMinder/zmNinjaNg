@@ -198,4 +198,32 @@ describe('useMonitorStream', () => {
     expect(result.current.streamUrl).not.toContain('maxfps'); // No maxfps in snapshot
     expect(result.current.streamUrl).toContain('rand='); // cacheBuster in snapshot
   });
+
+  it('viewModeOverride forces streaming when settings say snapshot', async () => {
+    useSettingsStore.setState({
+      profileSettings: {
+        'profile-1': {
+          ...DEFAULT_SETTINGS,
+          viewMode: 'snapshot',
+          streamMaxFps: 5,
+        },
+      },
+    });
+
+    const regenerateConnKey = vi.fn(() => 12345);
+    useMonitorStore.setState({ regenerateConnKey });
+
+    const { result } = renderHook(() =>
+      useMonitorStream({ monitorId: '1', viewModeOverride: 'streaming' })
+    );
+
+    await waitFor(() => {
+      expect(result.current.streamUrl).toBeTruthy();
+    });
+
+    expect(result.current.streamUrl).toContain('mode=jpeg');
+    expect(result.current.streamUrl).toContain('maxfps=5');
+    expect(result.current.streamUrl).not.toContain('mode=single');
+    expect(result.current.streamUrl).not.toContain('rand=');
+  });
 });

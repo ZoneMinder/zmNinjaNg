@@ -1,8 +1,9 @@
 /**
  * Monitor Detail Page
  *
- * Displays a live stream (or high-refresh snapshot) for a single monitor.
- * Includes PTZ controls (if applicable) and quick actions.
+ * Displays a continuous live stream for a single monitor (always streaming
+ * mode — the global Snapshot setting does not apply here). Includes PTZ
+ * controls (if applicable) and quick actions.
  */
 
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
@@ -373,6 +374,7 @@ export default function MonitorDetail() {
               showControls={true}
               className="data-[testid=monitor-player]"
               onProtocolChange={setProtocol}
+              forceViewMode="streaming"
             />
             <ZoneOverlay
               zones={zones}

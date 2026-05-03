@@ -53,6 +53,12 @@ export interface VideoPlayerProps {
   onLoad?: () => void;
   /** Called when the effective streaming protocol changes (e.g., 'MSE', 'WebRTC', 'MJPEG') */
   onProtocolChange?: (protocol: string) => void;
+  /**
+   * Force a specific MJPEG view mode regardless of the global Streaming Mode
+   * setting. The single-monitor page uses 'streaming' so it never falls back
+   * to periodic snapshots.
+   */
+  forceViewMode?: 'streaming' | 'snapshot';
 }
 
 export function VideoPlayer({
@@ -65,6 +71,7 @@ export function VideoPlayer({
   muted = true,
   onLoad,
   onProtocolChange,
+  forceViewMode,
 }: VideoPlayerProps) {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -209,6 +216,7 @@ export function VideoPlayer({
       scale: rawSettings?.streamScale,
     },
     enabled: effectiveStreamingMethod === 'mjpeg',
+    viewModeOverride: forceViewMode,
   });
 
   // Track MJPEG image error state
