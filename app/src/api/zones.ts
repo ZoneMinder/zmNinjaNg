@@ -9,7 +9,6 @@ import { getApiClient } from './client';
 import type { ZonesResponse, Zone } from './types';
 import { ZonesResponseSchema } from './types';
 import { validateApiResponse } from '../lib/api-validator';
-import { log, LogLevel } from '../lib/logger';
 
 /**
  * Get all zones for a specific monitor.
@@ -18,10 +17,10 @@ import { log, LogLevel } from '../lib/logger';
  * @returns Promise resolving to array of Zone objects
  */
 export async function getZones(monitorId: string): Promise<Zone[]> {
-  log.api('Fetching zones for monitor', LogLevel.DEBUG, { monitorId });
-
   const client = getApiClient();
-  const response = await client.get<ZonesResponse>(`/zones.json?MonitorId=${monitorId}`);
+  const response = await client.get<ZonesResponse>(`/zones.json?MonitorId=${monitorId}`, {
+    intent: `Fetch zones for monitor ${monitorId}`,
+  });
 
   const validated = validateApiResponse(ZonesResponseSchema, response.data, {
     endpoint: `/zones.json?MonitorId=${monitorId}`,

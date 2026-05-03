@@ -39,7 +39,7 @@ describe('Groups API', () => {
 
     const response = await getGroups();
 
-    expect(mockGet).toHaveBeenCalledWith('/groups.json');
+    expect(mockGet).toHaveBeenCalledWith('/groups.json', expect.objectContaining({ intent: expect.any(String) }));
     expect(validateApiResponse).toHaveBeenCalled();
     expect(response.groups).toHaveLength(2);
     expect(response.groups[0].Group.Name).toBe('Inside');
@@ -51,7 +51,7 @@ describe('Groups API', () => {
 
     const response = await getGroups();
 
-    expect(mockGet).toHaveBeenCalledWith('/groups.json');
+    expect(mockGet).toHaveBeenCalledWith('/groups.json', expect.objectContaining({ intent: expect.any(String) }));
     expect(response.groups).toHaveLength(0);
   });
 

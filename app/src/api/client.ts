@@ -15,6 +15,12 @@ export interface ApiRequestConfig {
   signal?: AbortSignal;
   validateStatus?: (status: number) => boolean;
   onDownloadProgress?: HttpOptions['onDownloadProgress'];
+  /**
+   * Domain-level label rendered in the HTTP log headline, e.g.
+   * "Fetch monitors list". Replaces the redundant log.api intent
+   * line at the call site.
+   */
+  intent?: string;
 }
 
 export interface ApiClient {
@@ -140,6 +146,7 @@ export function createApiClient(baseURL: string, reLogin?: () => Promise<boolean
         signal: config.signal,
         onDownloadProgress: config.onDownloadProgress,
         correlationId,
+        intent: config.intent,
       });
 
       return response;

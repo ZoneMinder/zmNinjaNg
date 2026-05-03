@@ -274,10 +274,9 @@ export async function getConfigs(): Promise<import('./types').Config[]> {
 export async function fetchMinStreamingPort(): Promise<number | null> {
   try {
     const client = getApiClient();
-    log.api('Fetching MIN_STREAMING_PORT from server config', LogLevel.DEBUG);
-
     const response = await client.get<import('./types').MinStreamingPortResponse>(
-      '/configs/viewByName/ZM_MIN_STREAMING_PORT.json'
+      '/configs/viewByName/ZM_MIN_STREAMING_PORT.json',
+      { intent: 'Fetch MIN_STREAMING_PORT config' },
     );
 
     const { MinStreamingPortResponseSchema } = await import('./types');

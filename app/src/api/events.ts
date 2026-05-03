@@ -90,13 +90,10 @@ export async function getEvents(filters: EventFilters = {}): Promise<EventsRespo
     if (filters.sort) params.sort = filters.sort;
     if (filters.direction) params.direction = filters.direction;
 
-    log.api(
-      `Fetching events page ${currentPage}`,
-      LogLevel.DEBUG,
-      { currentCount: allEvents.length, desired: desiredLimit }
-    );
-
-    const response = await client.get<EventsResponse>(url, { params });
+    const response = await client.get<EventsResponse>(url, {
+      params,
+      intent: `Fetch events page ${currentPage}`,
+    });
     const validated = validateApiResponse(EventsResponseSchema, response.data, {
       endpoint: url,
       method: 'GET',

@@ -36,6 +36,13 @@ export interface HttpOptions {
    * stack traces. Rendered as `{api:N, http:M}` in the completion line.
    */
   correlationId?: number;
+  /**
+   * Caller-supplied business-level label for the request, e.g.
+   * "Fetch monitors list". Rendered in the HTTP completion headline so a
+   * single line carries both the wire fact and the domain intent.
+   * No leading verb requirement — keep it short.
+   */
+  intent?: string;
 }
 
 export interface HttpResponse<T = unknown> {
@@ -276,6 +283,7 @@ export async function httpRequest<T = unknown>(
     validateStatus,
     onDownloadProgress,
     correlationId,
+    intent,
   } = options;
 
   // Add token to params if provided
@@ -315,6 +323,7 @@ export async function httpRequest<T = unknown>(
   const startTime = performance.now();
   const corrTag = correlationPrefix(requestId, correlationId);
   const path = shortPath(fullUrl);
+  const intentTag = intent ? `${intent} · ` : '';
 
   // Prepare request body for logging (form-data → object so logger can sanitize)
   let requestBodyForLog: unknown = body;
@@ -372,7 +381,7 @@ export async function httpRequest<T = unknown>(
     // them by expanding the row, so they get the real shape.
     log.groupCollapsed(
       'HTTP',
-      `${corrTag} ${method} ${path} → ${response.status} (${duration}ms)`,
+      `${corrTag} ${intentTag}${method} ${path} → ${response.status} (${duration}ms)`,
       LogLevel.DEBUG,
       {
         platform,
@@ -400,7 +409,7 @@ export async function httpRequest<T = unknown>(
 
     log.groupCollapsed(
       'HTTP',
-      `${corrTag} ${method} ${path} ✗ ${status} (${duration}ms)`,
+      `${corrTag} ${intentTag}${method} ${path} ✗ ${status} (${duration}ms)`,
       LogLevel.ERROR,
       {
         platform,

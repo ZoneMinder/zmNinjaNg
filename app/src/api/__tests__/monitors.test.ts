@@ -53,7 +53,7 @@ describe('Monitors API', () => {
 
     const response = await getMonitors();
 
-    expect(mockGet).toHaveBeenCalledWith('/monitors.json');
+    expect(mockGet).toHaveBeenCalledWith('/monitors.json', expect.objectContaining({ intent: expect.any(String) }));
     expect(response.monitors).toHaveLength(1);
   });
 
@@ -62,7 +62,7 @@ describe('Monitors API', () => {
 
     const monitor = await getMonitor('1');
 
-    expect(mockGet).toHaveBeenCalledWith('/monitors/1.json');
+    expect(mockGet).toHaveBeenCalledWith('/monitors/1.json', expect.objectContaining({ intent: expect.any(String) }));
     expect(validateApiResponse).toHaveBeenCalled();
     expect(monitor.Monitor.Id).toBe('1');
   });
@@ -72,7 +72,7 @@ describe('Monitors API', () => {
 
     const control = await getControl('1');
 
-    expect(mockGet).toHaveBeenCalledWith('/controls/1.json');
+    expect(mockGet).toHaveBeenCalledWith('/controls/1.json', expect.objectContaining({ intent: expect.any(String) }));
     expect(control.control.Control.Id).toBe('1');
   });
 
@@ -126,7 +126,7 @@ describe('Monitors API', () => {
 
     const status = await getAlarmStatus('6');
 
-    expect(mockGet).toHaveBeenCalledWith('/monitors/alarm/id:6/command:status.json', undefined);
+    expect(mockGet).toHaveBeenCalledWith('/monitors/alarm/id:6/command:status.json', expect.objectContaining({ intent: expect.any(String) }));
     expect(status.status).toBe('on');
   });
 
@@ -140,7 +140,7 @@ describe('Monitors API', () => {
 
     const status = await getDaemonStatus('7', 'zmc');
 
-    expect(mockGet).toHaveBeenCalledWith('/monitors/daemonStatus/id:7/daemon:zmc.json', undefined);
+    expect(mockGet).toHaveBeenCalledWith('/monitors/daemonStatus/id:7/daemon:zmc.json', expect.objectContaining({ intent: expect.any(String) }));
     expect(status.status).toBe('ok');
     expect(status.statustext).toBe('running');
   });
@@ -178,7 +178,7 @@ describe('Monitors API', () => {
 
     expect(mockGet).toHaveBeenCalledWith(
       '/monitors/alarm/id:6/command:status.json',
-      { baseURL: 'https://pseudo.example.com/api' }
+      expect.objectContaining({ baseURL: 'https://pseudo.example.com/api', intent: expect.any(String) }),
     );
   });
 
@@ -191,7 +191,7 @@ describe('Monitors API', () => {
 
     expect(mockGet).toHaveBeenCalledWith(
       '/monitors/daemonStatus/id:7/daemon:zmc.json',
-      { baseURL: 'https://pseudo.example.com/api' }
+      expect.objectContaining({ baseURL: 'https://pseudo.example.com/api', intent: expect.any(String) }),
     );
   });
 
@@ -204,7 +204,7 @@ describe('Monitors API', () => {
 
     expect(mockGet).toHaveBeenCalledWith(
       '/monitors/daemonStatus/id:7/daemon:zmc.json',
-      undefined
+      expect.objectContaining({ intent: expect.any(String) }),
     );
   });
 
