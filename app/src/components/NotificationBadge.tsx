@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { Bell } from 'lucide-react';
 import { useProfileStore } from '../stores/profile';
 import { useNotificationStore } from '../stores/notifications';
+import { NOTIFICATION_UI } from '../lib/zmninja-ng-constants';
 
 // Module-level: persists across component mount/unmount cycles so
 // navigating between pages doesn't re-trigger the animation.
@@ -33,7 +34,7 @@ export function NotificationBadge() {
     if (unreadCount > prevCountRef.current) {
       setRingKey((k) => k + 1);
       setIsRinging(true);
-      const timeout = setTimeout(() => setIsRinging(false), 3500);
+      const timeout = setTimeout(() => setIsRinging(false), NOTIFICATION_UI.badgeRingDurationMs);
       prevCountRef.current = unreadCount;
       lastKnownUnreadCount = unreadCount;
       return () => clearTimeout(timeout);

@@ -11,6 +11,7 @@ import { Button } from './button';
 import { ZoomIn, ZoomOut, ArrowLeft, ArrowRight, ArrowUp, ArrowDown, RotateCcw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/utils';
+import { UI_INTERACTIONS } from '../../lib/zmninja-ng-constants';
 
 interface ZoomControlsProps {
   onZoomIn: () => void;
@@ -24,9 +25,6 @@ interface ZoomControlsProps {
   scale: number;
   className?: string;
 }
-
-const INITIAL_DELAY = 400;
-const REPEAT_INTERVAL = 100;
 
 /** Returns pointerDown/pointerUp/pointerLeave handlers that repeat `action` while held. */
 function useHoldRepeat(action: () => void) {
@@ -46,9 +44,9 @@ function useHoldRepeat(action: () => void) {
       action();
       const repeat = () => {
         action();
-        timer.current = setTimeout(repeat, REPEAT_INTERVAL);
+        timer.current = setTimeout(repeat, UI_INTERACTIONS.holdRepeatIntervalMs);
       };
-      timer.current = setTimeout(repeat, INITIAL_DELAY);
+      timer.current = setTimeout(repeat, UI_INTERACTIONS.holdInitialDelayMs);
     },
     [action],
   );

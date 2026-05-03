@@ -2,6 +2,7 @@
 import { createApiClient, setApiClient } from '../api/client';
 import type { HttpError } from './http';
 import { log, LogLevel } from './logger';
+import { DISCOVERY_TIMEOUTS } from './zmninja-ng-constants';
 
 /**
  * Options for the discoverUrls helper used by UI pages.
@@ -343,7 +344,7 @@ export async function discoverUrls(
         // fails while the dialog is showing, but succeeds after the user grants access.
         if (e instanceof DiscoveryError && (e.code === 'API_NOT_FOUND' || e.code === 'PORTAL_UNREACHABLE')) {
             log.discovery('First discovery attempt failed, retrying in case of iOS permission dialog', LogLevel.INFO);
-            await new Promise((resolve) => setTimeout(resolve, 3000));
+            await new Promise((resolve) => setTimeout(resolve, DISCOVERY_TIMEOUTS.iosPermissionRetryMs));
             if (signal?.aborted) {
                 throw new DiscoveryError('Discovery cancelled', 'CANCELLED');
             }

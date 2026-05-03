@@ -4,6 +4,7 @@ import { Button } from '../ui/button';
 import { cn } from '../../lib/utils';
 import { useTranslation } from 'react-i18next';
 import type { ZMControl } from '../../api/types';
+import { UI_INTERACTIONS } from '../../lib/zmninja-ng-constants';
 
 interface PTZControlsProps {
   onCommand: (command: string) => void;
@@ -129,11 +130,8 @@ export function PTZControls({ onCommand, className, disabled, control }: PTZCont
   // Hold-to-move UX for both continuous and Rel/Abs drivers. moveStop is sent
   // on release in both cases (continuous needs it; Rel/Abs ignores it but it
   // costs nothing and is a safety net if a step is in flight).
-  // 400ms keeps the race window between a queued step and the release-stop
-  // small while staying frequent enough to feel like continuous motion.
-  const REPEAT_MS = 400;
-  const moveRepeatMs = canMoveCon ? undefined : REPEAT_MS;
-  const zoomRepeatMs = canZoomCon ? undefined : REPEAT_MS;
+  const moveRepeatMs = canMoveCon ? undefined : UI_INTERACTIONS.ptzHoldRepeatMs;
+  const zoomRepeatMs = canZoomCon ? undefined : UI_INTERACTIONS.ptzHoldRepeatMs;
 
   if (!control) {
     return null;

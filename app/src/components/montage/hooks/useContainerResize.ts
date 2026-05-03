@@ -3,10 +3,12 @@
  *
  * Uses ResizeObserver to track container width changes.
  * First measurement fires immediately; subsequent changes are debounced
- * at 500ms so height recalculation only happens after resizing stops.
+ * (GRID_LAYOUT.resizeDebounceMs) so height recalculation only happens after
+ * resizing stops.
  */
 
 import { useCallback, useRef } from 'react';
+import { GRID_LAYOUT } from '../../../lib/zmninja-ng-constants';
 
 interface UseContainerResizeOptions {
   onWidthChange: (width: number) => void;
@@ -16,8 +18,6 @@ interface UseContainerResizeOptions {
 interface UseContainerResizeReturn {
   containerRef: (element: HTMLDivElement | null) => void;
 }
-
-const RESIZE_DEBOUNCE_MS = 500;
 
 export function useContainerResize({
   onWidthChange,
@@ -54,7 +54,7 @@ export function useContainerResize({
               if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
               debounceTimerRef.current = setTimeout(() => {
                 onWidthChange(width);
-              }, RESIZE_DEBOUNCE_MS);
+              }, GRID_LAYOUT.resizeDebounceMs);
             }
           }
         }

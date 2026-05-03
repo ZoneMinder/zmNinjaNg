@@ -12,6 +12,8 @@ import { hitTest } from './timeline-hit-test';
 import { canvasHeight, LAYOUT, getMonitorColor, type TimelineEvent } from './timeline-layout';
 import { TimelineScrubber, type ScrubberState } from './TimelineScrubber';
 import { useDateTimeFormat } from '../../hooks/useDateTimeFormat';
+import { useBandwidthSettings } from '../../hooks/useBandwidthSettings';
+import { TIMELINE } from '../../lib/zmninja-ng-constants';
 
 interface TimelineCanvasProps {
   monitors: MonitorRow[];
@@ -45,8 +47,6 @@ interface TimelineCanvasProps {
   /** When true, prop changes to startMs/endMs won't reset the viewport. */
   liveMode?: boolean;
 }
-
-const NOW_REFRESH_INTERVAL = 30_000;
 
 const TimelineCanvasInner = ({
   monitors,
@@ -182,11 +182,12 @@ const TimelineCanvasInner = ({
     return () => ro.disconnect();
   }, []);
 
-  // Current time refresh
+  // Current time refresh — interval comes from bandwidth settings
+  const bandwidth = useBandwidthSettings();
   useEffect(() => {
-    const id = setInterval(() => setNowTick((t) => t + 1), NOW_REFRESH_INTERVAL);
+    const id = setInterval(() => setNowTick((t) => t + 1), bandwidth.timelineNowRefreshInterval);
     return () => clearInterval(id);
-  }, []);
+  }, [bandwidth.timelineNowRefreshInterval]);
 
   const pulseRafRef = useRef<number | null>(null);
 
@@ -324,12 +325,11 @@ const TimelineCanvasInner = ({
       cancelAnimationFrame(pulseRafRef.current);
       pulseRafRef.current = null;
     }
-    const PULSE_DURATION = 5000;
-    const hasPulsingEvents = liveMode && events.some((e) => e.arrivedAt !== undefined && Date.now() - e.arrivedAt < PULSE_DURATION);
+    const hasPulsingEvents = liveMode && events.some((e) => e.arrivedAt !== undefined && Date.now() - e.arrivedAt < TIMELINE.pulseDurationMs);
     if (hasPulsingEvents) {
       const animate = () => {
         paintFrame();
-        if (events.some((e) => e.arrivedAt !== undefined && Date.now() - e.arrivedAt < PULSE_DURATION)) {
+        if (events.some((e) => e.arrivedAt !== undefined && Date.now() - e.arrivedAt < TIMELINE.pulseDurationMs)) {
           pulseRafRef.current = requestAnimationFrame(animate);
         } else {
           pulseRafRef.current = null;

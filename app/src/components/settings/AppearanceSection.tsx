@@ -27,6 +27,7 @@ import { SectionHeader, SettingsCard, SettingsRow, RowLabel } from './SettingsLa
 import { cn } from '../../lib/utils';
 import { validateFormatString } from '../../lib/format-date-time';
 import { Platform } from '../../lib/platform';
+import { STORAGE_KEYS } from '../../lib/zmninja-ng-constants';
 import type {
   ProfileSettings,
   DateFormatPreset,
@@ -237,8 +238,6 @@ interface HoverPreviewEditorProps {
   onChange: (next: HoverPreviewSettings) => void;
 }
 
-const HOVER_PREVIEW_OPEN_KEY = 'zmng-hover-preview-open';
-
 function HoverPreviewEditor({ value, onChange }: HoverPreviewEditorProps) {
   const { t } = useTranslation();
   const isNative = Platform.isNative;
@@ -250,13 +249,13 @@ function HoverPreviewEditor({ value, onChange }: HoverPreviewEditorProps) {
     : 'settings.appearance.hover_preview.desc';
   const [open, setOpen] = useState(() => {
     try {
-      return localStorage.getItem(HOVER_PREVIEW_OPEN_KEY) === 'true';
+      return localStorage.getItem(STORAGE_KEYS.hoverPreviewOpen) === 'true';
     } catch { return false; }
   });
 
   const handleOpenChange = (next: boolean) => {
     setOpen(next);
-    try { localStorage.setItem(HOVER_PREVIEW_OPEN_KEY, String(next)); } catch { /* ignore */ }
+    try { localStorage.setItem(STORAGE_KEYS.hoverPreviewOpen, String(next)); } catch { /* ignore */ }
   };
 
   const toggle = (key: keyof HoverPreviewSettings, checked: boolean) => {
@@ -318,20 +317,18 @@ interface ThumbnailFallbackChainEditorProps {
   onChange: (next: ThumbnailFallbackEntry[]) => void;
 }
 
-const THUMBNAIL_CHAIN_OPEN_KEY = 'zmng-thumbnail-chain-open';
-
 function ThumbnailFallbackChainEditor({ chain, onChange }: ThumbnailFallbackChainEditorProps) {
   const { t } = useTranslation();
   const safeChain = Array.isArray(chain) ? chain : [];
   const [open, setOpen] = useState(() => {
     try {
-      return localStorage.getItem(THUMBNAIL_CHAIN_OPEN_KEY) === 'true';
+      return localStorage.getItem(STORAGE_KEYS.thumbnailChainOpen) === 'true';
     } catch { return false; }
   });
 
   const handleOpenChange = (value: boolean) => {
     setOpen(value);
-    try { localStorage.setItem(THUMBNAIL_CHAIN_OPEN_KEY, String(value)); } catch { /* ignore */ }
+    try { localStorage.setItem(STORAGE_KEYS.thumbnailChainOpen, String(value)); } catch { /* ignore */ }
   };
 
   const getLabel = (type: ThumbnailFallbackType): string => {

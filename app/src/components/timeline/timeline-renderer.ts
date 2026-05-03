@@ -24,6 +24,8 @@ import {
   type FormatSettings,
 } from '../../lib/format-date-time';
 
+import { TIMELINE } from '../../lib/zmninja-ng-constants';
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -391,9 +393,6 @@ function drawRoundedRect(
   ctx.closePath();
 }
 
-/** Duration (ms) for the pulse halo on newly arrived live events. */
-const PULSE_DURATION = 5000;
-
 export function drawEvents(
   ctx: CanvasRenderingContext2D,
   events: TimelineEvent[],
@@ -453,11 +452,11 @@ export function drawEvents(
     ctx.fillStyle = isHovered ? color : withAlpha(color, 0.85);
     ctx.fill();
 
-    // Pulse halo for newly arrived live events (5s fade-out)
+    // Pulse halo for newly arrived live events (fade-out over TIMELINE.pulseDurationMs)
     if (nowMs !== undefined && event.arrivedAt !== undefined) {
       const elapsed = nowMs - event.arrivedAt;
-      if (elapsed >= 0 && elapsed < PULSE_DURATION) {
-        const progress = elapsed / PULSE_DURATION;
+      if (elapsed >= 0 && elapsed < TIMELINE.pulseDurationMs) {
+        const progress = elapsed / TIMELINE.pulseDurationMs;
         const pulse = Math.sin(progress * Math.PI * 4) * 0.5 + 0.5;
         const fade = 1 - progress;
         const intensity = pulse * fade;

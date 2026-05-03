@@ -18,6 +18,7 @@ import { useShallow } from 'zustand/react/shallow';
 import type { Monitor, MonitorStatus, Profile } from '../../api/types';
 import { useAuthStore } from '../../stores/auth';
 import { getMonitorRunState, monitorDotColor } from '../../lib/monitor-status';
+import { MONITOR_UI } from '../../lib/zmninja-ng-constants';
 import { useSettingsStore } from '../../stores/settings';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
@@ -77,7 +78,6 @@ function MontageMonitorComponent({
   const isRTC = monitor.Go2RTCEnabled === true && !!currentProfile?.go2rtcUrl;
 
   // Alarm pulse — subscribe to notification store for new events on this monitor
-  const ALARM_PULSE_MS = 6000;
   const [isAlarming, setIsAlarming] = useState(false);
   const [monitorEventCount, setMonitorEventCount] = useState(0);
   const alarmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -96,10 +96,10 @@ function MontageMonitorComponent({
       const latest = monitorEvents[0];
       if (!latest || latest.receivedAt === lastSeenRef.current) return;
       lastSeenRef.current = latest.receivedAt;
-      if (Date.now() - latest.receivedAt < ALARM_PULSE_MS) {
+      if (Date.now() - latest.receivedAt < MONITOR_UI.alarmPulseMs) {
         if (alarmTimerRef.current) clearTimeout(alarmTimerRef.current);
         setIsAlarming(true);
-        alarmTimerRef.current = setTimeout(() => setIsAlarming(false), ALARM_PULSE_MS);
+        alarmTimerRef.current = setTimeout(() => setIsAlarming(false), MONITOR_UI.alarmPulseMs);
       }
     };
 

@@ -8,9 +8,9 @@
  * `pointer-events: none` so the underlying trigger remains clickable.
  *
  * **Native mobile**: long-press to open, tap-anywhere to close.
- * - Pointer down + hold for `LONG_PRESS_MS` opens the preview.
- * - Movement beyond `MOVE_CANCEL_PX` before the timer fires cancels it
- *   so list scrolling still works.
+ * - Pointer down + hold for `UI_INTERACTIONS.longPressMs` opens the preview.
+ * - Movement beyond `UI_INTERACTIONS.moveCancelPx` before the timer fires
+ *   cancels it so list scrolling still works.
  * - While open, three things conspire to fully isolate the preview:
  *
  *   1. `#root` element gets `pointer-events: none`. Because the property
@@ -52,13 +52,7 @@
 import { useEffect, useRef, useState, type ReactNode, type PointerEvent as RPointerEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { Platform } from '../../lib/platform';
-
-const DEFAULT_HOVER_DELAY_MS = 400;
-const DEFAULT_LONG_PRESS_MS = 500;
-const DEFAULT_PREVIEW_WIDTH = 400;
-const EDGE_MARGIN = 12;
-const ANIMATION_MS = 200;
-const MOVE_CANCEL_PX = 8;
+import { UI_INTERACTIONS } from '../../lib/zmninja-ng-constants';
 
 /**
  * Module-level reference count of open hover previews. Multiple
@@ -117,8 +111,8 @@ export function HoverPreview({
   aspectRatio,
   renderPreview,
   children,
-  previewWidth = DEFAULT_PREVIEW_WIDTH,
-  hoverDelayMs = DEFAULT_HOVER_DELAY_MS,
+  previewWidth = UI_INTERACTIONS.previewWidthPx,
+  hoverDelayMs = UI_INTERACTIONS.hoverDelayMs,
   testId,
   className = 'w-full h-full',
 }: HoverPreviewProps) {
@@ -188,7 +182,7 @@ export function HoverPreview({
     timerRef.current = window.setTimeout(() => {
       timerRef.current = null;
       openFromAnchor();
-    }, DEFAULT_LONG_PRESS_MS);
+    }, UI_INTERACTIONS.longPressMs);
   };
 
   const handlePointerMove = (e: RPointerEvent<HTMLDivElement>) => {
@@ -197,7 +191,7 @@ export function HoverPreview({
     if (open) return;
     const dx = e.clientX - start.x;
     const dy = e.clientY - start.y;
-    if (dx * dx + dy * dy > MOVE_CANCEL_PX * MOVE_CANCEL_PX) {
+    if (dx * dx + dy * dy > UI_INTERACTIONS.moveCancelPx * UI_INTERACTIONS.moveCancelPx) {
       clearTimer();
       pressStartRef.current = null;
     }
@@ -243,8 +237,8 @@ export function HoverPreview({
     if (!start) return;
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-    const maxW = vw - EDGE_MARGIN * 2;
-    const maxH = vh - EDGE_MARGIN * 2;
+    const maxW = vw - UI_INTERACTIONS.previewEdgeMarginPx * 2;
+    const maxH = vh - UI_INTERACTIONS.previewEdgeMarginPx * 2;
     let w = Math.max(previewWidth, start.width * 2);
     w = Math.min(w, maxW);
     let h = w / aspectRatio;
@@ -258,8 +252,9 @@ export function HoverPreview({
     let left = cx < vw / 2 ? start.left : start.left + start.width - w;
     let top = cy < vh / 2 ? start.top : start.top + start.height - h;
 
-    left = Math.max(EDGE_MARGIN, Math.min(left, vw - EDGE_MARGIN - w));
-    top = Math.max(EDGE_MARGIN, Math.min(top, vh - EDGE_MARGIN - h));
+    const margin = UI_INTERACTIONS.previewEdgeMarginPx;
+    left = Math.max(margin, Math.min(left, vw - margin - w));
+    top = Math.max(margin, Math.min(top, vh - margin - h));
 
     let cancelled = false;
     const raf1 = requestAnimationFrame(() => {
@@ -371,7 +366,7 @@ export function HoverPreview({
               height: rect.height,
               pointerEvents: isNative ? 'auto' : 'none',
               zIndex: 9999,
-              transition: `left ${ANIMATION_MS}ms ease-out, top ${ANIMATION_MS}ms ease-out, width ${ANIMATION_MS}ms ease-out, height ${ANIMATION_MS}ms ease-out`,
+              transition: `left ${UI_INTERACTIONS.previewAnimationMs}ms ease-out, top ${UI_INTERACTIONS.previewAnimationMs}ms ease-out, width ${UI_INTERACTIONS.previewAnimationMs}ms ease-out, height ${UI_INTERACTIONS.previewAnimationMs}ms ease-out`,
             }}
             className="rounded-md overflow-hidden shadow-2xl ring-1 ring-border bg-card"
           >

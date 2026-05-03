@@ -11,11 +11,11 @@
  */
 
 import { log, LogLevel } from './logger';
+import { STORAGE_KEYS } from './zmninja-ng-constants';
 
 const ENCRYPTION_ALGORITHM = 'AES-GCM';
 const KEY_LENGTH = 256;
 const IV_LENGTH = 12;
-const KEY_SALT_STORAGE_KEY = 'zmng_crypto_salt_v1';
 const PBKDF2_SALT = 'zmng-v1';
 const PBKDF2_ITERATIONS = 100000;
 
@@ -27,14 +27,14 @@ function getPersistentSalt(): string {
   }
 
   try {
-    const existing = window.localStorage.getItem(KEY_SALT_STORAGE_KEY);
+    const existing = window.localStorage.getItem(STORAGE_KEYS.cryptoSalt);
     if (existing) {
       return existing;
     }
 
     const randomBytes = window.crypto.getRandomValues(new Uint8Array(16));
     const salt = btoa(String.fromCharCode(...randomBytes));
-    window.localStorage.setItem(KEY_SALT_STORAGE_KEY, salt);
+    window.localStorage.setItem(STORAGE_KEYS.cryptoSalt, salt);
     return salt;
   } catch {
     return 'zmng-fallback-salt';

@@ -77,6 +77,7 @@ export const GRID_LAYOUT = {
   // Grid calculation frequencies
   montageScaleFrequency: 300, // How often to recalculate montage scales (ms)
   packeryTimer: 500, // Delay for packery layout recalculation (ms)
+  resizeDebounceMs: 500, // Debounce window for ResizeObserver in montage container
 } as const;
 
 /**
@@ -106,6 +107,9 @@ export const TIMELINE = {
 
   // Maximum zoom level (1 week)
   zoomMax: 7 * 24 * 60 * 60 * 1000,
+
+  // Pulse halo duration (ms) for newly arrived live events
+  pulseDurationMs: 5000,
 } as const;
 
 /**
@@ -202,6 +206,89 @@ export const LOGGING = {
 } as const;
 
 /**
+ * Persistent Storage Keys
+ *
+ * Keys for localStorage / Capacitor Preferences entries owned by zmNinjaNg.
+ * Centralized to prevent collisions and make migrations searchable.
+ */
+export const STORAGE_KEYS = {
+  // UI section open/closed state
+  hoverPreviewOpen: 'zmng-hover-preview-open',
+  thumbnailChainOpen: 'zmng-thumbnail-chain-open',
+
+  // Web crypto fallback salt (versioned — bump suffix to invalidate)
+  cryptoSalt: 'zmng_crypto_salt_v1',
+} as const;
+
+/**
+ * UI Interaction Timings
+ *
+ * Pointer/touch timing knobs shared across hover previews, hold-to-repeat
+ * buttons (zoom, PTZ), and long-press detection.
+ */
+export const UI_INTERACTIONS = {
+  // Hold-to-repeat: delay before the first repeat fires (ms)
+  holdInitialDelayMs: 400,
+
+  // Hold-to-repeat: interval between repeats while held (ms)
+  holdRepeatIntervalMs: 100,
+
+  // PTZ hold-to-move repeat for non-continuous drivers (ms).
+  // Tuned to keep the race window between a queued step and the
+  // release-stop small while still feeling continuous.
+  ptzHoldRepeatMs: 400,
+
+  // Mouse hover delay before a preview opens (ms)
+  hoverDelayMs: 400,
+
+  // Touch long-press threshold for opening a preview (ms)
+  longPressMs: 500,
+
+  // Hover preview enter/exit animation duration (ms)
+  previewAnimationMs: 200,
+
+  // Default hover preview width (px)
+  previewWidthPx: 400,
+
+  // Hover preview minimum margin from viewport edges (px)
+  previewEdgeMarginPx: 12,
+
+  // Pointer movement threshold to cancel a long-press (px)
+  moveCancelPx: 8,
+} as const;
+
+/**
+ * Notification Badge UI
+ *
+ * Visual feedback timing for the notification bell.
+ */
+export const NOTIFICATION_UI = {
+  // Total ring animation duration after a new notification (ms).
+  // Includes CSS animation plus a settle window.
+  badgeRingDurationMs: 3500,
+} as const;
+
+/**
+ * Monitor UI Visual Effects
+ */
+export const MONITOR_UI = {
+  // Alarm pulse duration on a monitor tile after a new event (ms)
+  alarmPulseMs: 6000,
+} as const;
+
+/**
+ * Discovery Timeouts
+ *
+ * Network discovery retries and platform permission delays.
+ */
+export const DISCOVERY_TIMEOUTS = {
+  // Retry delay after first discovery failure to wait for the iOS local
+  // network permission dialog. The first request fails while the dialog
+  // is showing, but succeeds after the user grants access.
+  iosPermissionRetryMs: 3000,
+} as const;
+
+/**
  * Valid ZoneMinder Monitor Functions
  *
  * NOTE: These are duplicated from zm-constants for backward compatibility.
@@ -246,6 +333,8 @@ export interface BandwidthSettings {
   eventPollerInterval: number;
   /** WebSocket keepalive ping interval (ms) */
   wsKeepaliveInterval: number;
+  /** Timeline now-line refresh interval (ms) */
+  timelineNowRefreshInterval: number;
 }
 
 /**
@@ -269,6 +358,7 @@ export const BANDWIDTH_SETTINGS: Record<BandwidthMode, BandwidthSettings> = {
     zmsStatusInterval: 3000, // 3 sec
     eventPollerInterval: 30000, // 30 sec
     wsKeepaliveInterval: 60000, // 60 sec
+    timelineNowRefreshInterval: 30000, // 30 sec
   },
   low: {
     monitorStatusInterval: 40000, // 40 sec
@@ -284,6 +374,7 @@ export const BANDWIDTH_SETTINGS: Record<BandwidthMode, BandwidthSettings> = {
     zmsStatusInterval: 5000, // 5 sec
     eventPollerInterval: 60000, // 60 sec (2x slower)
     wsKeepaliveInterval: 120000, // 120 sec (2x slower)
+    timelineNowRefreshInterval: 60000, // 60 sec (2x slower)
   },
 } as const;
 
