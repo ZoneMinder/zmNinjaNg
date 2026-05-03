@@ -22,6 +22,8 @@ import { NotificationHandler } from './components/NotificationHandler';
 import { Button } from './components/ui/button';
 import { X } from 'lucide-react';
 import { log, LogLevel, logger } from './lib/logger';
+import { initializeLogFile, hydrateLogStoreFromFile, getLogFile } from './lib/log-file';
+import { Capacitor } from '@capacitor/core';
 import { PipProvider } from './contexts/PipContext';
 
 // Lazy load route components for code splitting
@@ -73,6 +75,48 @@ function AppRoutes() {
 
   // Enable automatic token refresh
   useTokenRefresh();
+
+  // Initialize persistent log file and hydrate store from prior-session entries.
+  // Registered first so the file is open before other effects emit logs.
+  // Documented limitation: log entries from the very first ~100ms of startup
+  // may end up in the file but be replaced out of the in-memory view by hydration;
+  // they reappear in the next session's Logs view.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      await initializeLogFile();
+      if (cancelled) return;
+      await hydrateLogStoreFromFile();
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Flush log buffer on app lifecycle events to minimize data loss.
+  useEffect(() => {
+    const flush = () => { void getLogFile().flush(); };
+    const onVisibility = () => { if (document.visibilityState === 'hidden') flush(); };
+    window.addEventListener('beforeunload', flush);
+    document.addEventListener('visibilitychange', onVisibility);
+
+    let pauseListener: { remove: () => void } | null = null;
+    if (Capacitor.isNativePlatform()) {
+      void (async () => {
+        try {
+          const { App: CapApp } = await import('@capacitor/app');
+          const handle = await CapApp.addListener('pause', flush);
+          pauseListener = handle;
+        } catch {
+          // @capacitor/app may not be present in some test envs
+        }
+      })();
+    }
+
+    return () => {
+      window.removeEventListener('beforeunload', flush);
+      document.removeEventListener('visibilitychange', onVisibility);
+      pauseListener?.remove();
+    };
+  }, []);
 
   // Always apply compact mode
   useEffect(() => {
