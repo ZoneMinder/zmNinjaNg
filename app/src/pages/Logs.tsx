@@ -584,7 +584,7 @@ export default function Logs() {
                             <p>{logSource === 'zmng' ? t('logs.no_logs_available') : t('logs.no_server_logs')}</p>
                         </div>
                     ) : (
-                        <div className="divide-y" data-testid="log-entries">
+                        <div className="divide-y" data-testid="logs-list">
                             {filteredLogs.map((log) => (
                                 <div key={log.id} className="p-2 sm:p-3 hover:bg-muted/50 transition-colors" data-testid="log-entry">
                                     <div className="flex items-start gap-2 sm:gap-3">

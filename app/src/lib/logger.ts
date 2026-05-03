@@ -293,3 +293,11 @@ export const log = {
   // Component-specific loggers (generated dynamically)
   ...generatedComponentLoggers,
 };
+
+// Dev-only: expose a small global so e2e tests can trigger sample log entries.
+if (import.meta.env.DEV && typeof window !== 'undefined') {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (window as any).__zmng_test_log = (component: string) => {
+    log.app(`test sample from ${component}`, LogLevel.INFO);
+  };
+}
