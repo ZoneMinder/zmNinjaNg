@@ -16,6 +16,11 @@ vi.mock('../../lib/logger', () => ({
     WARN: 'WARN',
     ERROR: 'ERROR',
   },
+  // log.dedupe runs the callback unconditionally in tests so we don't have
+  // to model the throttle window; the callback receives an empty suffix.
+  log: {
+    dedupe: (_key: string, _windowMs: number, emit: (suffix: string) => void) => emit(''),
+  },
 }));
 
 // Mock HTTP client

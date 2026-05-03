@@ -15,7 +15,7 @@ import { getZmsControlUrl } from '../lib/url-builder';
 import { ZMS_COMMANDS } from '../lib/zm-constants';
 import { httpGet } from '../lib/http';
 import { useMonitorStore } from '../stores/monitors';
-import { LogLevel } from '../lib/logger';
+import { log, LogLevel } from '../lib/logger';
 
 /** Signature of a component-scoped log helper (e.g. log.monitor, log.dashboard). */
 type ComponentLogger = (message: string, level?: LogLevel, details?: unknown) => void;
@@ -103,11 +103,16 @@ export function useStreamLifecycle({
         { token: accessToken || undefined, minStreamingPort, monitorId },
       );
 
-      logFn('Sending CMD_QUIT before regenerating connkey', LogLevel.DEBUG, {
-        monitorId,
-        monitorName,
-        oldConnkey: prevConnKeyRef.current,
-      });
+      // Connkey churn: a montage view can regenerate many keys within ms.
+      // Dedupe the per-monitor chatter into a single line per 3s window;
+      // on subsequent emits we surface the suppressed count.
+      log.dedupe('connkey-cmd-quit-pre-regen', 3000, (suffix) =>
+        logFn(`Sending CMD_QUIT before regenerating connkey${suffix}`, LogLevel.DEBUG, {
+          monitorId,
+          monitorName,
+          oldConnkey: prevConnKeyRef.current,
+        }),
+      );
 
       httpGet(controlUrl).catch(() => {
         // Silently ignore errors - connection may already be closed
@@ -117,7 +122,9 @@ export function useStreamLifecycle({
     isInitialMountRef.current = false;
 
     // Generate new connKey
-    logFn('Regenerating connkey', LogLevel.DEBUG, { monitorId, monitorName });
+    log.dedupe('connkey-regen', 3000, (suffix) =>
+      logFn(`Regenerating connkey${suffix}`, LogLevel.DEBUG, { monitorId, monitorName }),
+    );
     const newKey = regenerateConnKey(monitorId);
     setConnKey(newKey);
     prevConnKeyRef.current = newKey;
@@ -168,11 +175,13 @@ export function useStreamLifecycle({
           { token: params.token || undefined, minStreamingPort: params.minStreamingPort, monitorId: params.monitorId },
         );
 
-        logFn('Sending CMD_QUIT on unmount', LogLevel.DEBUG, {
-          monitorId: params.monitorId,
-          monitorName: params.monitorName,
-          connkey: params.connKey,
-        });
+        log.dedupe('connkey-cmd-quit-unmount', 3000, (suffix) =>
+          logFn(`Sending CMD_QUIT on unmount${suffix}`, LogLevel.DEBUG, {
+            monitorId: params.monitorId,
+            monitorName: params.monitorName,
+            connkey: params.connKey,
+          }),
+        );
 
         // Send CMD_QUIT asynchronously, ignore errors (connection may already be closed)
         httpGet(controlUrl).catch(() => {
