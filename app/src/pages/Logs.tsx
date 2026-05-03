@@ -83,7 +83,7 @@ export default function Logs() {
     const showOpenLocation = logFile.capabilities.reveal;  // Tauri only
     const showShareFile = logFile.capabilities.share;      // Capacitor only
     const { currentProfile, settings } = useCurrentProfile();
-    const { logLevel } = settings;
+    const { logLevel, componentLogLevels } = settings;
     const updateProfileSettings = useSettingsStore((state) => state.updateProfileSettings);
     const [selectedComponentsZmng, setSelectedComponentsZmng] = useState<string[]>([]);
     const [selectedComponentsServer, setSelectedComponentsServer] = useState<string[]>([]);
@@ -235,10 +235,17 @@ export default function Logs() {
         }));
     }, [zmLogs]);
 
-    // Filter logs based on selected level and components
+    // Filter logs based on selected level and components.
+    // Per-component overrides beat the global level, matching Logger.createComponentLogger:
+    // a component pinned to DEBUG must remain visible even when global is NONE.
     const currentLevel = logLevel;
     const filteredLogs = (logSource === 'zmng' ? logs : zmLogsAsDisplay).filter((log) => {
-        const passesLevel = logLevelValue(log.level) >= currentLevel;
+        const componentName = log.context?.component;
+        const effectiveLevel =
+            typeof componentName === 'string' && componentLogLevels?.[componentName] !== undefined
+                ? componentLogLevels[componentName]
+                : currentLevel;
+        const passesLevel = logLevelValue(log.level) >= effectiveLevel;
         if (!passesLevel) return false;
         if (selectedComponents.length === 0) return true;
         const componentValue = logSource === 'zmng'
