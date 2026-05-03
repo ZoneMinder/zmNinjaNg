@@ -24,7 +24,7 @@ import { wrapWithImageProxy } from '../lib/proxy-utils';
  * @returns Promise resolving to MonitorsResponse containing array of monitors
  */
 export async function getMonitors(): Promise<MonitorsResponse> {
-  log.api('Fetching monitors list', LogLevel.INFO);
+  log.api('Fetching monitors list', LogLevel.DEBUG);
 
   const client = getApiClient();
   const response = await client.get<MonitorsResponse>('/monitors.json');
@@ -50,7 +50,7 @@ export async function getMonitors(): Promise<MonitorsResponse> {
  * @returns Promise resolving to MonitorData
  */
 export async function getMonitor(monitorId: string): Promise<MonitorData> {
-  log.api('Fetching monitor details', LogLevel.INFO, { monitorId });
+  log.api('Fetching monitor details', LogLevel.DEBUG, { monitorId });
 
   const client = getApiClient();
   const response = await client.get<{ monitor: MonitorData }>(`/monitors/${monitorId}.json`);
@@ -68,7 +68,7 @@ export async function getMonitor(monitorId: string): Promise<MonitorData> {
  * @returns Promise resolving to ControlData
  */
 export async function getControl(controlId: string): Promise<ControlData> {
-  log.api('Fetching control capabilities', LogLevel.INFO, { controlId });
+  log.api('Fetching control capabilities', LogLevel.DEBUG, { controlId });
 
   const client = getApiClient();
   const response = await client.get(`/controls/${controlId}.json`);
@@ -234,7 +234,7 @@ export async function cancelAlarm(monitorId: string, apiBaseUrl?: string): Promi
  * @returns Promise resolving to object with status string
  */
 export async function getAlarmStatus(monitorId: string, apiBaseUrl?: string): Promise<AlarmStatusResponse> {
-  log.api('Fetching alarm status', LogLevel.INFO, { monitorId, apiBaseUrl });
+  log.api('Fetching alarm status', LogLevel.DEBUG, { monitorId, apiBaseUrl });
 
   const client = getApiClient();
   const config = apiBaseUrl ? { baseURL: apiBaseUrl } : undefined;
@@ -263,7 +263,7 @@ export async function getDaemonStatus(
   daemon: 'zmc' | 'zma',
   apiBaseUrl?: string
 ): Promise<DaemonStatusResponse> {
-  log.api('Fetching daemon status', LogLevel.INFO, { monitorId, daemon, apiBaseUrl });
+  log.api('Fetching daemon status', LogLevel.DEBUG, { monitorId, daemon, apiBaseUrl });
 
   const client = getApiClient();
   const config = apiBaseUrl ? { baseURL: apiBaseUrl } : undefined;

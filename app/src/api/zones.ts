@@ -18,7 +18,7 @@ import { log, LogLevel } from '../lib/logger';
  * @returns Promise resolving to array of Zone objects
  */
 export async function getZones(monitorId: string): Promise<Zone[]> {
-  log.api('Fetching zones for monitor', LogLevel.INFO, { monitorId });
+  log.api('Fetching zones for monitor', LogLevel.DEBUG, { monitorId });
 
   const client = getApiClient();
   const response = await client.get<ZonesResponse>(`/zones.json?MonitorId=${monitorId}`);

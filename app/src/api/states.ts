@@ -16,7 +16,7 @@ import { log, LogLevel } from '../lib/logger';
  * @returns Promise resolving to array of State objects
  */
 export async function getStates(): Promise<State[]> {
-  log.api('Fetching system states', LogLevel.INFO);
+  log.api('Fetching system states', LogLevel.DEBUG);
 
   const client = getApiClient();
   const response = await client.get('/states.json');

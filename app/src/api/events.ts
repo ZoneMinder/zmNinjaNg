@@ -92,7 +92,7 @@ export async function getEvents(filters: EventFilters = {}): Promise<EventsRespo
 
     log.api(
       `Fetching events page ${currentPage}`,
-      LogLevel.INFO,
+      LogLevel.DEBUG,
       { currentCount: allEvents.length, desired: desiredLimit }
     );
 
@@ -138,7 +138,7 @@ export async function getEvents(filters: EventFilters = {}): Promise<EventsRespo
 
   log.api(
     `Fetched events complete`,
-    LogLevel.INFO,
+    LogLevel.DEBUG,
     { total: allEvents.length, returning: finalEvents.length, requested: desiredLimit }
   );
 

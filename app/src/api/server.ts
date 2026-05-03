@@ -295,7 +295,7 @@ export async function fetchMinStreamingPort(): Promise<number | null> {
       return null;
     }
 
-    log.api('MIN_STREAMING_PORT fetched successfully', LogLevel.INFO, { port });
+    log.api('MIN_STREAMING_PORT fetched successfully', LogLevel.DEBUG, { port });
     return port;
   } catch (error: unknown) {
     const err = error as HttpError & { constructor: { name: string } };

@@ -20,7 +20,7 @@ import { log, LogLevel } from '../lib/logger';
  * @returns Promise resolving to GroupsResponse containing array of groups
  */
 export async function getGroups(): Promise<GroupsResponse> {
-  log.api('Fetching groups list', LogLevel.INFO);
+  log.api('Fetching groups list', LogLevel.DEBUG);
 
   const client = getApiClient();
   const response = await client.get<GroupsResponse>('/groups.json');
