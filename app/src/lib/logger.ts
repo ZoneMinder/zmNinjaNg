@@ -119,6 +119,76 @@ class Logger {
     return null;
   }
 
+  /**
+   * Component-scoped collapsed group log: emits a single click-to-expand
+   * row in the console and a single entry in the in-memory + file sinks.
+   *
+   * Use this for HTTP completions or any log where the headline is the
+   * 99% view and the full payload is something you want available but
+   * not pinned open. Falls back to a flat log if console.groupCollapsed
+   * is unavailable.
+   */
+  groupCollapsed(
+    componentName: string,
+    message: string,
+    level: LogLevel,
+    body: unknown,
+  ): void {
+    if (level < LogLevel.DEBUG || level > LogLevel.ERROR) return;
+    const effectiveLevel = this.componentLevels[componentName] ?? this.level;
+    if (level < effectiveLevel) return;
+
+    const timestamp = new Date().toLocaleString();
+    const levelNames: Record<number, string> = { 0: 'DEBUG', 1: 'INFO', 2: 'WARN', 3: 'ERROR' };
+    const levelName = levelNames[level] ?? 'DEBUG';
+    const prefix = `${timestamp} ${levelName} [${componentName}]`;
+
+    const sanitizedMessage = sanitizeLogMessage(message);
+    const sanitizedBody = sanitizeObject(body);
+
+    // Console: collapsed group with the full body inside. The user clicks
+    // to expand. Falls back to a normal emit if the runtime doesn't
+    // implement console groups (e.g. some test environments).
+    const canGroup =
+      typeof console.groupCollapsed === 'function' &&
+      typeof console.groupEnd === 'function';
+    const innerEmit =
+      level === LogLevel.ERROR ? console.error :
+      level === LogLevel.WARN ? console.warn :
+      level === LogLevel.DEBUG ? console.debug :
+      console.info;
+    if (canGroup) {
+      // Use the level-matched method for the group label too so DevTools
+      // colors the headline (Safari respects this; Chrome only honors
+      // groupCollapsed on console.log, which is fine).
+      const groupFn = console.groupCollapsed.bind(console);
+      groupFn(prefix, sanitizedMessage);
+      innerEmit(sanitizedBody);
+      console.groupEnd();
+    } else {
+      innerEmit(prefix, sanitizedMessage, sanitizedBody);
+    }
+
+    // Single entry to in-memory + file sinks. The Logs page renders args
+    // as expandable JSON, mirroring the console's collapse/expand UX.
+    const entry: LogEntry = {
+      id: crypto.randomUUID(),
+      timestamp,
+      rawTimestamp: Date.now(),
+      level: levelName,
+      message: sanitizedMessage,
+      context: { component: componentName },
+      args: sanitizedBody !== undefined ? [sanitizedBody] : undefined,
+    };
+    useLogStore.getState().addLog(entry);
+    try {
+      getLogFile().append(entry);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn('[logger] log-file append threw', err);
+    }
+  }
+
   private formatMessage(level: string, context: LogContext, message: string, ...args: unknown[]): void {
     const timestamp = new Date().toLocaleString();
     const contextStr = context.component ? `[${context.component}]` : '';
@@ -345,6 +415,8 @@ export const log = {
   error: (message: string, context?: LogContext, error?: Error | unknown, ...args: unknown[]) =>
     logger.error(message, context, error, ...args),
   dedupe: logDedupe,
+  groupCollapsed: (componentName: string, message: string, level: LogLevel, body: unknown) =>
+    logger.groupCollapsed(componentName, message, level, body),
 
   // Component-specific loggers (generated dynamically)
   ...generatedComponentLoggers,

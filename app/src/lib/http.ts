@@ -238,47 +238,14 @@ function shortPath(url: string): string {
 }
 
 /**
- * Flatten one level deep so console renders a single-line preview:
- * scalars stay, large strings truncate, arrays/nested objects collapse to a
- * "[N items]" / "{N keys}" summary. Sensitive values are still redacted by
- * the logger's sanitiser before this output reaches the console.
+ * Replace a binary response body with a short placeholder so the log
+ * payload doesn't include megabytes of base64.
  */
-function flattenForLog(value: unknown, depth = 1): unknown {
-  if (value === null || value === undefined) return value;
-  if (typeof value === 'string') {
-    return value.length > 80 ? `${value.slice(0, 80)}…` : value;
-  }
-  if (typeof value !== 'object') return value;
-  if (Array.isArray(value)) {
-    if (value.length === 0) return [];
-    if (depth <= 0) return `[${value.length} items]`;
-    // Show short arrays of scalars in full, otherwise summarize
-    const allScalar = value.every((v) => v === null || typeof v !== 'object');
-    if (allScalar && value.length <= 5) return value;
-    return `[${value.length} items]`;
-  }
-  const entries = Object.entries(value as Record<string, unknown>);
-  if (depth <= 0) return `{${entries.length} keys}`;
-  const out: Record<string, unknown> = {};
-  for (const [k, v] of entries) {
-    out[k] = flattenForLog(v, depth - 1);
-  }
-  return out;
-}
-
-/** Decide whether a body summary is worth showing at all. */
-function summarizeBody(data: unknown, responseType: string): unknown {
+function loggableResponseBody(data: unknown, responseType: string): unknown {
   if (responseType === 'blob' || responseType === 'arraybuffer' || responseType === 'base64') {
-    return undefined; // binary; not loggable
+    return `<binary: ${responseType}>`;
   }
-  if (data === null || data === undefined) return undefined;
-  if (typeof data === 'string') {
-    if (data.length === 0) return undefined;
-    return data.length > 200 ? `${data.slice(0, 200)}… (+${data.length - 200} chars)` : data;
-  }
-  if (Array.isArray(data) && data.length === 0) return undefined;
-  if (typeof data === 'object' && Object.keys(data as object).length === 0) return undefined;
-  return flattenForLog(data, 1);
+  return data;
 }
 
 function correlationPrefix(requestId: number, correlationId?: number): string {
@@ -399,23 +366,30 @@ export async function httpRequest<T = unknown>(
 
     const duration = Math.round(performance.now() - startTime);
 
-    // One-line completion log. Body is omitted when there's nothing useful
-    // to show (binary, empty, all-empty); otherwise it's flattened so the
-    // console renders an inline preview rather than a deep tree.
-    const ctx: Record<string, unknown> = { platform };
-    const isMutation = method !== 'GET' && method !== 'HEAD';
-    if (isMutation && requestBodyForLog !== undefined) {
-      ctx.req = flattenForLog(requestBodyForLog, 1);
-    }
-    const responseSummary = summarizeBody(response.data, responseType);
-    if (responseSummary !== undefined) {
-      ctx.res = responseSummary;
-    }
-
-    log.http(
-      `[HTTP] ${corrTag} ${method} ${path} → ${response.status} (${duration}ms)`,
+    // Headline + collapsed details. The headline carries everything you
+    // need at a glance; click to expand for the full sanitized request
+    // and response. Bodies are NOT flattened — the user opted in to see
+    // them by expanding the row, so they get the real shape.
+    log.groupCollapsed(
+      'HTTP',
+      `${corrTag} ${method} ${path} → ${response.status} (${duration}ms)`,
       LogLevel.DEBUG,
-      ctx,
+      {
+        platform,
+        request: {
+          method,
+          url: fullUrl,
+          params: Object.keys(finalParams).length > 0 ? finalParams : undefined,
+          headers: Object.keys(requestHeaders).length > 0 ? requestHeaders : undefined,
+          body: requestBodyForLog,
+        },
+        response: {
+          status: response.status,
+          statusText: response.statusText || undefined,
+          headers: Object.keys(response.headers).length > 0 ? response.headers : undefined,
+          body: loggableResponseBody(response.data, responseType),
+        },
+      },
     );
 
     return response;
@@ -424,19 +398,27 @@ export async function httpRequest<T = unknown>(
     const httpError = error as HttpError;
     const status = httpError.status ?? 'ERR';
 
-    const errCtx: Record<string, unknown> = {
-      platform,
-      url: fullUrl, // full URL retained on error path for triage
-      message: httpError.message || String(error),
-    };
-    if (httpError.data !== undefined) {
-      errCtx.errorData = flattenForLog(httpError.data, 2);
-    }
-
-    log.http(
-      `[HTTP] ${corrTag} ${method} ${path} ✗ ${status} (${duration}ms)`,
+    log.groupCollapsed(
+      'HTTP',
+      `${corrTag} ${method} ${path} ✗ ${status} (${duration}ms)`,
       LogLevel.ERROR,
-      errCtx,
+      {
+        platform,
+        request: {
+          method,
+          url: fullUrl,
+          params: Object.keys(finalParams).length > 0 ? finalParams : undefined,
+          headers: Object.keys(requestHeaders).length > 0 ? requestHeaders : undefined,
+          body: requestBodyForLog,
+        },
+        error: {
+          message: httpError.message || String(error),
+          status: httpError.status ?? undefined,
+          statusText: httpError.statusText ?? undefined,
+          headers: httpError.headers && Object.keys(httpError.headers).length > 0 ? httpError.headers : undefined,
+          data: httpError.data,
+        },
+      },
     );
     throw error;
   }
