@@ -15,16 +15,12 @@ export class CapacitorLogFileStore implements LogFileStore {
   private flushTimer: ReturnType<typeof setTimeout> | null = null;
   private entryCount = 0;
   private rotationInProgress = false;
-  /** In-memory snapshot of all entries (populated by initialize, extended by flush). */
-  private allEntries: LogEntry[] = [];
 
   async initialize(): Promise<void> {
     try {
       const existing = await this.readAll();
-      this.allEntries = existing;
       this.entryCount = existing.length;
     } catch {
-      this.allEntries = [];
       this.entryCount = 0;
     }
   }
@@ -51,7 +47,6 @@ export class CapacitorLogFileStore implements LogFileStore {
         data,
         encoding: Encoding.UTF8,
       });
-      this.allEntries.push(...toWrite);
       this.entryCount += toWrite.length;
       if (this.entryCount > LOG_FILE_MAX_ENTRIES && !this.rotationInProgress) {
         void this.rotate();
@@ -66,7 +61,8 @@ export class CapacitorLogFileStore implements LogFileStore {
   private async rotate(): Promise<void> {
     this.rotationInProgress = true;
     try {
-      const kept = this.allEntries.slice(-LOG_FILE_TRUNCATE_RETAIN);
+      const all = await this.readAll();
+      const kept = all.slice(-LOG_FILE_TRUNCATE_RETAIN);
       const data = kept.map((e) => JSON.stringify(e)).join('\n') + '\n';
       await Filesystem.writeFile({
         path: LOG_FILE_NAME,
@@ -74,7 +70,6 @@ export class CapacitorLogFileStore implements LogFileStore {
         data,
         encoding: Encoding.UTF8,
       });
-      this.allEntries = kept;
       this.entryCount = kept.length;
     } finally {
       this.rotationInProgress = false;
@@ -107,7 +102,6 @@ export class CapacitorLogFileStore implements LogFileStore {
 
   async truncate(): Promise<void> {
     this.buffer = [];
-    this.allEntries = [];
     if (this.flushTimer !== null) {
       clearTimeout(this.flushTimer);
       this.flushTimer = null;

@@ -84,9 +84,20 @@ describe('CapacitorLogFileStore', () => {
   });
 
   it('rotates when entry count exceeds cap', async () => {
-    // Seed file with MAX entries
-    const seeded = Array.from({ length: LOG_FILE_MAX_ENTRIES }, (_, i) => JSON.stringify(entry(String(i)))).join('\n');
-    (Filesystem.readFile as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: seeded });
+    // Stateful mock: the "file" lives in this string. readFile returns it,
+    // writeFile replaces it, appendFile concatenates to it.
+    let fileContent = Array.from(
+      { length: LOG_FILE_MAX_ENTRIES },
+      (_, i) => JSON.stringify(entry(String(i))),
+    ).join('\n') + '\n';
+    (Filesystem.readFile as ReturnType<typeof vi.fn>).mockImplementation(async () => ({ data: fileContent }));
+    (Filesystem.appendFile as ReturnType<typeof vi.fn>).mockImplementation(async ({ data }: { data: string }) => {
+      fileContent += data;
+    });
+    (Filesystem.writeFile as ReturnType<typeof vi.fn>).mockImplementation(async ({ data }: { data: string }) => {
+      fileContent = data;
+      return { uri: 'file:///mock/zmninja-ng.log' };
+    });
 
     const store = new CapacitorLogFileStore();
     await store.initialize(); // counts existing entries
@@ -95,13 +106,11 @@ describe('CapacitorLogFileStore', () => {
     store.append(entry('overflow'));
     await store.flush();
 
-    // Allow the async rotation pass to settle (it's started via void this.rotate() inside flush)
+    // Allow the async rotation pass (started via void this.rotate() inside flush) to settle
     await vi.runAllTimersAsync();
 
-    // Expect a rewrite — writeFile called with last LOG_FILE_TRUNCATE_RETAIN entries
-    const writeFileCall = (Filesystem.writeFile as ReturnType<typeof vi.fn>).mock.calls.find((c) =>
-      typeof c[0].data === 'string' && c[0].data.split('\n').filter(Boolean).length === LOG_FILE_TRUNCATE_RETAIN,
-    );
-    expect(writeFileCall).toBeDefined();
+    // After rotation, the file should contain exactly LOG_FILE_TRUNCATE_RETAIN entries
+    const lines = fileContent.split('\n').filter(Boolean);
+    expect(lines.length).toBe(LOG_FILE_TRUNCATE_RETAIN);
   });
 });
