@@ -1709,6 +1709,27 @@ Android, encrypted localStorage on web). Keys: ``kiosk_pin_hash`` and
 
 --------------
 
+log-file (``lib/log-file/``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Mirrors entries from ``useLogStore`` to a persistent file on disk.
+
+**Capabilities by platform:**
+
+- Capacitor (iOS / Android): NDJSON file at ``Directory.Data/zmninja-ng.log``. Share via system share sheet (file URI).
+- Tauri (desktop): NDJSON file at ``BaseDirectory::AppLog/zmninja-ng.log``. "Open Location" reveals it in Finder/Explorer.
+- Web: no-op fallback; Share reverts to today's blob download.
+
+**Format:** NDJSON, one ``LogEntry`` per line. ``Logger.formatMessage`` constructs the entry once and passes it to both ``useLogStore.addLog`` and ``LogFileStore.append``.
+
+**Cap:** 10,000 entries. On overflow, the file is rewritten with the last 5,000 entries.
+
+**Hydration:** On app start, ``hydrateLogStoreFromFile()`` reads the file and replaces ``useLogStore.logs`` so prior-session entries are visible in the Logs page.
+
+**Used by:** ``lib/logger.ts``, ``pages/Logs.tsx``.
+
+--------------
+
 Next Steps
 ----------
 

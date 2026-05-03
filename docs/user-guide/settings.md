@@ -113,6 +113,16 @@ Configure how zmNinjaNg handles event notifications. See {doc}`notifications` fo
 
 Redact sensitive values (URLs, credentials) from logs. Disable only when sharing logs for troubleshooting.
 
+### Persistent Logs
+
+Log entries that pass your filter settings are written to disk so they survive app restarts:
+
+- **iOS / Android:** in the app's data directory. Use the **Share** button on the Logs page to send the `.log` file via system share sheet.
+- **Desktop (Tauri):** at `~/Library/Logs/com.zoneminder.zmNinjaNG/zmninja-ng.log` (macOS) or the equivalent app-log directory on Windows/Linux. Use the **Open Location** button to reveal it in Finder/Explorer.
+- **Web (browser, dev only):** no persistence; the Share button downloads a one-shot text file.
+
+The file is capped at 10,000 entries; the oldest half is dropped automatically when the cap is hit. **Clear** zeros the file and the in-memory buffer.
+
 ### Kiosk PIN
 
 Manage the PIN used to lock and unlock kiosk mode. See {doc}`kiosk` for full details on kiosk mode.
