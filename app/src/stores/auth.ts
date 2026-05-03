@@ -100,6 +100,15 @@ const encryptedAuthStorage: PersistStorage<PersistedAuthState> = {
   },
 };
 
+/**
+ * Module-level dedup for login(). Multiple callers (profile bootstrap +
+ * api/client.ts proactive auth) can race a fresh-start login; without this
+ * guard we'd POST /login.json twice. The promise is shared across all
+ * entry points so any caller that arrives mid-flight attaches to the same
+ * pending login.
+ */
+let pendingLogin: Promise<void> | null = null;
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
@@ -118,20 +127,32 @@ export const useAuthStore = create<AuthState>()(
        * @param password - The password
        */
       login: async (username: string, password: string) => {
+        // If a login is already in flight, attach to it instead of starting a new one.
+        if (pendingLogin) {
+          log.auth('Login already in flight — attaching to pending request', LogLevel.DEBUG);
+          return pendingLogin;
+        }
         log.auth(`Login attempt for user: ${username}`);
+        pendingLogin = (async () => {
+          try {
+            const response = await apiLogin({ user: username, pass: password });
+            get().setTokens(response);
+            const state = get();
+            log.auth('Login successful', LogLevel.INFO, {
+              accessTokenExpires: state.accessTokenExpires ? new Date(state.accessTokenExpires).toLocaleString() : 'N/A',
+              refreshTokenExpires: state.refreshTokenExpires ? new Date(state.refreshTokenExpires).toLocaleString() : 'N/A',
+              zmVersion: response.version,
+              apiVersion: response.apiversion,
+            });
+          } catch (error) {
+            log.auth('Login failed', LogLevel.ERROR, error);
+            throw error;
+          }
+        })();
         try {
-          const response = await apiLogin({ user: username, pass: password });
-          get().setTokens(response);
-          const state = get();
-          log.auth('Login successful', LogLevel.INFO, {
-            accessTokenExpires: state.accessTokenExpires ? new Date(state.accessTokenExpires).toLocaleString() : 'N/A',
-            refreshTokenExpires: state.refreshTokenExpires ? new Date(state.refreshTokenExpires).toLocaleString() : 'N/A',
-            zmVersion: response.version,
-            apiVersion: response.apiversion,
-          });
-        } catch (error) {
-          log.auth('Login failed', LogLevel.ERROR, error);
-          throw error;
+          return await pendingLogin;
+        } finally {
+          pendingLogin = null;
         }
       },
 
@@ -140,7 +161,6 @@ export const useAuthStore = create<AuthState>()(
        * Removes tokens and resets authentication status.
        */
       logout: () => {
-        log.auth('Logging out, clearing all auth state');
         set({
           accessToken: null,
           refreshToken: null,
@@ -150,7 +170,7 @@ export const useAuthStore = create<AuthState>()(
           apiVersion: null,
           isAuthenticated: false,
         });
-        log.auth('Logout complete');
+        log.auth('Logged out, auth state cleared');
       },
 
       /**
