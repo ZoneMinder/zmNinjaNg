@@ -139,6 +139,7 @@ export function createApiClient(baseURL: string, reLogin?: () => Promise<boolean
         validateStatus: config.validateStatus,
         signal: config.signal,
         onDownloadProgress: config.onDownloadProgress,
+        correlationId,
       });
 
       return response;
