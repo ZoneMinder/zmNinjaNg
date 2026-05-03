@@ -31,7 +31,25 @@ import {
   Check,
   Lock,
   LockOpen,
+  HelpCircle,
 } from 'lucide-react';
+
+const HELP_DOCS_URL = 'https://zmninjang.readthedocs.io/en/latest/';
+
+async function openHelpDocs(): Promise<void> {
+  if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
+    try {
+      const { openUrl } = await import('@tauri-apps/plugin-opener');
+      await openUrl(HELP_DOCS_URL);
+      return;
+    } catch {
+      // Fall through to window.open
+    }
+  }
+  if (typeof window !== 'undefined') {
+    window.open(HELP_DOCS_URL, '_blank', 'noopener,noreferrer');
+  }
+}
 import { cn } from '../../lib/utils';
 import { useState, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -336,6 +354,25 @@ export function SidebarContent({ onMobileClose, isCollapsed }: SidebarContentPro
               </Link>
             );
           })}
+
+          <button
+            type="button"
+            onClick={() => {
+              void openHelpDocs();
+              onMobileClose?.();
+            }}
+            className={cn(
+              "flex items-center rounded-lg font-medium transition-all duration-200 group relative w-full text-left",
+              isMobileDrawer ? "gap-2 px-2 py-2 text-sm" : "gap-3 px-3 py-2.5 text-sm",
+              "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+              isCollapsed && "justify-center px-2"
+            )}
+            title={isCollapsed ? t('sidebar.help') : undefined}
+            data-testid="nav-item-help"
+          >
+            <HelpCircle className="h-4 w-4 transition-transform group-hover:scale-110 flex-shrink-0" />
+            {!isCollapsed && <span className="truncate">{t('sidebar.help')}</span>}
+          </button>
         </nav>
 
       <div className={cn("border-t bg-card/50 backdrop-blur-sm transition-all duration-300 mt-4", isCollapsed ? "p-2 space-y-3" : isMobileDrawer ? "px-2 py-2 space-y-1" : "px-3 py-2 space-y-1.5")}>
