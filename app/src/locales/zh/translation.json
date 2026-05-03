@@ -456,7 +456,7 @@
     "component_filter_all": "全部",
     "component_filter_selected": "{{count}} 个组件",
     "component_unassigned": "未分配",
-    "open_location": "打开位置",
+    "open_location": "打开",
     "persisted_to": "保存于：",
     "entries_count": "{{current}} / {{max}} 条",
     "clear_confirm_title": "清除日志？",
