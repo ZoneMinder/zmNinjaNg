@@ -1,5 +1,18 @@
 # Changelog
 
+## [zmNinjaNg-1.1.12](https://github.com/pliablepixels/zmNinjaNg/tree/zmNinjaNg-1.1.12) (2026-05-04)
+
+[Full Changelog](https://github.com/pliablepixels/zmNinjaNg/compare/zmNinjaNg-1.1.11...zmNinjaNg-1.1.12)
+
+**Implemented enhancements:**
+
+- feat\(logs\): reduce console noise and surface meaningful HTTP details [\#141](https://github.com/pliablepixels/zmNinjaNg/issues/141)
+- feat: persistent log file with share/open/clear [\#139](https://github.com/pliablepixels/zmNinjaNg/issues/139)
+
+**Fixed bugs:**
+
+- fix: single monitor view should always stream, never use snapshot mode [\#138](https://github.com/pliablepixels/zmNinjaNg/issues/138)
+
 ## [zmNinjaNg-1.1.11](https://github.com/pliablepixels/zmNinjaNg/tree/zmNinjaNg-1.1.11) (2026-05-02)
 
 [Full Changelog](https://github.com/pliablepixels/zmNinjaNg/compare/zmNinjaNg-1.1.10...zmNinjaNg-1.1.11)
