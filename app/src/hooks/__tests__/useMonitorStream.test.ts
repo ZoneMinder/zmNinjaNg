@@ -21,6 +21,7 @@ vi.mock('../../lib/http', () => ({
 vi.mock('../../lib/logger', () => ({
   log: {
     monitor: vi.fn(),
+    dedupe: (_key: string, _windowMs: number, emit: (suffix: string) => void) => emit(''),
   },
   LogLevel: {
     DEBUG: 0,

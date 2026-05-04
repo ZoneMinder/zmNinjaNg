@@ -31,7 +31,7 @@ describe('States API', () => {
 
     const states = await getStates();
 
-    expect(mockGet).toHaveBeenCalledWith('/states.json');
+    expect(mockGet).toHaveBeenCalledWith('/states.json', expect.objectContaining({ intent: expect.any(String) }));
     expect(states).toEqual([
       { Id: '1', Name: 'Active', Definition: 'Active mode', IsActive: '1' },
       { Id: '2', Name: 'Idle', Definition: 'Idle mode', IsActive: '0' },

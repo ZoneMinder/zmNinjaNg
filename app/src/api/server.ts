@@ -274,10 +274,9 @@ export async function getConfigs(): Promise<import('./types').Config[]> {
 export async function fetchMinStreamingPort(): Promise<number | null> {
   try {
     const client = getApiClient();
-    log.api('Fetching MIN_STREAMING_PORT from server config', LogLevel.DEBUG);
-
     const response = await client.get<import('./types').MinStreamingPortResponse>(
-      '/configs/viewByName/ZM_MIN_STREAMING_PORT.json'
+      '/configs/viewByName/ZM_MIN_STREAMING_PORT.json',
+      { intent: 'Fetch MIN_STREAMING_PORT config' },
     );
 
     const { MinStreamingPortResponseSchema } = await import('./types');
@@ -295,7 +294,7 @@ export async function fetchMinStreamingPort(): Promise<number | null> {
       return null;
     }
 
-    log.api('MIN_STREAMING_PORT fetched successfully', LogLevel.INFO, { port });
+    log.api('MIN_STREAMING_PORT fetched successfully', LogLevel.DEBUG, { port });
     return port;
   } catch (error: unknown) {
     const err = error as HttpError & { constructor: { name: string } };

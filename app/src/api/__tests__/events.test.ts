@@ -115,8 +115,8 @@ describe('Events API', () => {
 
     const response = await getEvents({ limit: 3 });
 
-    expect(mockGet).toHaveBeenCalledWith('/events/index.json', { params: { page: 1, limit: 100 } });
-    expect(mockGet).toHaveBeenCalledWith('/events/index.json', { params: { page: 2, limit: 100 } });
+    expect(mockGet).toHaveBeenCalledWith('/events/index.json', expect.objectContaining({ params: { page: 1, limit: 100 } }));
+    expect(mockGet).toHaveBeenCalledWith('/events/index.json', expect.objectContaining({ params: { page: 2, limit: 100 } }));
     expect(response.events).toHaveLength(3);
     expect(response.events.map((event) => event.Event.Id)).toEqual(['1', '2', '3']);
   });

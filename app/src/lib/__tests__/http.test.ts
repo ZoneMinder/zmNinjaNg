@@ -46,6 +46,7 @@ vi.mock('../logger', () => ({
     api: vi.fn(),
     error: vi.fn(),
     http: vi.fn(),
+    groupCollapsed: vi.fn(),
   },
   LogLevel: {
     DEBUG: 0,

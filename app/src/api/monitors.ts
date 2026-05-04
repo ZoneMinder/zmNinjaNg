@@ -24,10 +24,10 @@ import { wrapWithImageProxy } from '../lib/proxy-utils';
  * @returns Promise resolving to MonitorsResponse containing array of monitors
  */
 export async function getMonitors(): Promise<MonitorsResponse> {
-  log.api('Fetching monitors list', LogLevel.INFO);
-
   const client = getApiClient();
-  const response = await client.get<MonitorsResponse>('/monitors.json');
+  const response = await client.get<MonitorsResponse>('/monitors.json', {
+    intent: 'Fetch monitors list',
+  });
 
   // Validate response with Zod
   const validated = validateApiResponse(MonitorsResponseSchema, response.data, {
@@ -50,10 +50,10 @@ export async function getMonitors(): Promise<MonitorsResponse> {
  * @returns Promise resolving to MonitorData
  */
 export async function getMonitor(monitorId: string): Promise<MonitorData> {
-  log.api('Fetching monitor details', LogLevel.INFO, { monitorId });
-
   const client = getApiClient();
-  const response = await client.get<{ monitor: MonitorData }>(`/monitors/${monitorId}.json`);
+  const response = await client.get<{ monitor: MonitorData }>(`/monitors/${monitorId}.json`, {
+    intent: `Fetch monitor ${monitorId}`,
+  });
   // Validate and coerce types (e.g. Controllable number -> string)
   return validateApiResponse(MonitorDataSchema, response.data.monitor, {
     endpoint: `/monitors/${monitorId}.json`,
@@ -68,10 +68,10 @@ export async function getMonitor(monitorId: string): Promise<MonitorData> {
  * @returns Promise resolving to ControlData
  */
 export async function getControl(controlId: string): Promise<ControlData> {
-  log.api('Fetching control capabilities', LogLevel.INFO, { controlId });
-
   const client = getApiClient();
-  const response = await client.get(`/controls/${controlId}.json`);
+  const response = await client.get(`/controls/${controlId}.json`, {
+    intent: `Fetch control ${controlId} capabilities`,
+  });
   return validateApiResponse(ControlDataSchema, response.data, {
     endpoint: `/controls/${controlId}.json`,
     method: 'GET',
@@ -234,10 +234,8 @@ export async function cancelAlarm(monitorId: string, apiBaseUrl?: string): Promi
  * @returns Promise resolving to object with status string
  */
 export async function getAlarmStatus(monitorId: string, apiBaseUrl?: string): Promise<AlarmStatusResponse> {
-  log.api('Fetching alarm status', LogLevel.INFO, { monitorId, apiBaseUrl });
-
   const client = getApiClient();
-  const config = apiBaseUrl ? { baseURL: apiBaseUrl } : undefined;
+  const config = { intent: `Fetch alarm status for monitor ${monitorId}`, ...(apiBaseUrl ? { baseURL: apiBaseUrl } : {}) };
   const response = await client.get(`/monitors/alarm/id:${monitorId}/command:status.json`, config);
 
   // Validate response with Zod
@@ -263,10 +261,8 @@ export async function getDaemonStatus(
   daemon: 'zmc' | 'zma',
   apiBaseUrl?: string
 ): Promise<DaemonStatusResponse> {
-  log.api('Fetching daemon status', LogLevel.INFO, { monitorId, daemon, apiBaseUrl });
-
   const client = getApiClient();
-  const config = apiBaseUrl ? { baseURL: apiBaseUrl } : undefined;
+  const config = { intent: `Fetch ${daemon} daemon status for monitor ${monitorId}`, ...(apiBaseUrl ? { baseURL: apiBaseUrl } : {}) };
   const response = await client.get(`/monitors/daemonStatus/id:${monitorId}/daemon:${daemon}.json`, config);
 
   // Validate response with Zod

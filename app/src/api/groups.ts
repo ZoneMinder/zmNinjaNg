@@ -9,7 +9,6 @@ import { getApiClient } from './client';
 import type { GroupsResponse } from './types';
 import { GroupsResponseSchema } from './types';
 import { validateApiResponse } from '../lib/api-validator';
-import { log, LogLevel } from '../lib/logger';
 
 /**
  * Get all monitor groups.
@@ -20,10 +19,10 @@ import { log, LogLevel } from '../lib/logger';
  * @returns Promise resolving to GroupsResponse containing array of groups
  */
 export async function getGroups(): Promise<GroupsResponse> {
-  log.api('Fetching groups list', LogLevel.INFO);
-
   const client = getApiClient();
-  const response = await client.get<GroupsResponse>('/groups.json');
+  const response = await client.get<GroupsResponse>('/groups.json', {
+    intent: 'Fetch groups list',
+  });
 
   // Validate response with Zod
   return validateApiResponse(GroupsResponseSchema, response.data, {

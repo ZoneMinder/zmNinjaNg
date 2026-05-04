@@ -12,6 +12,7 @@ import { useProfileStore } from '../../stores/profile';
 import { useSettingsStore } from '../../stores/settings';
 import { Button } from '../ui/button';
 import { log, LogLevel } from '../../lib/logger';
+import { viewNameForPath } from '../../lib/navigation';
 import { useInsomnia } from '../../hooks/useInsomnia';
 import {
   Menu,
@@ -75,6 +76,12 @@ export default function AppLayout() {
   // Track route changes and save to settings
   useEffect(() => {
     if (!currentProfile?.id) return;
+
+    // Bold banner so view transitions are easy to spot in the console
+    const viewName = viewNameForPath(location.pathname);
+    if (viewName) {
+      log.banner(`Entering ${viewName} View`);
+    }
 
     // Exclude setup/profile routes and notification-opened pages from being saved as lastRoute
     const excludedRoutes = ['/profiles/new', '/setup', '/profiles'];

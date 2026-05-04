@@ -30,6 +30,19 @@ export interface HttpOptions {
   signal?: AbortSignal;
   validateStatus?: (status: number) => boolean;
   onDownloadProgress?: (progress: HttpProgress) => void;
+  /**
+   * Caller-supplied correlation ID (e.g., from api/client.ts) so the wire-level
+   * HTTP log can be tied back to the originating API request without inspecting
+   * stack traces. Rendered as `{api:N, http:M}` in the completion line.
+   */
+  correlationId?: number;
+  /**
+   * Caller-supplied business-level label for the request, e.g.
+   * "Fetch monitors list". Rendered in the HTTP completion headline so a
+   * single line carries both the wire fact and the domain intent.
+   * No leading verb requirement — keep it short.
+   */
+  intent?: string;
 }
 
 export interface HttpResponse<T = unknown> {
@@ -220,6 +233,33 @@ function withTimeoutSignal(timeoutMs?: number, signal?: AbortSignal): { signal?:
 }
 
 /**
+ * Extract the path + query for log lines so the host/proxy doesn't dominate.
+ */
+function shortPath(url: string): string {
+  try {
+    const u = new URL(url);
+    return `${u.pathname}${u.search ? '?…' : ''}`;
+  } catch {
+    return url;
+  }
+}
+
+/**
+ * Replace a binary response body with a short placeholder so the log
+ * payload doesn't include megabytes of base64.
+ */
+function loggableResponseBody(data: unknown, responseType: string): unknown {
+  if (responseType === 'blob' || responseType === 'arraybuffer' || responseType === 'base64') {
+    return `<binary: ${responseType}>`;
+  }
+  return data;
+}
+
+function correlationPrefix(requestId: number, correlationId?: number): string {
+  return correlationId !== undefined ? `{api:${correlationId}, http:${requestId}}` : `#${requestId}`;
+}
+
+/**
  * Make an HTTP request using the appropriate platform-specific method.
  *
  * @param url - The URL to request (full URL, not relative)
@@ -242,6 +282,8 @@ export async function httpRequest<T = unknown>(
     signal,
     validateStatus,
     onDownloadProgress,
+    correlationId,
+    intent,
   } = options;
 
   // Add token to params if provided
@@ -279,8 +321,11 @@ export async function httpRequest<T = unknown>(
   const requestId = ++requestIdCounter;
   const platform = Platform.isNative ? 'Native' : Platform.isTauri ? 'Tauri' : 'Web';
   const startTime = performance.now();
+  const corrTag = correlationPrefix(requestId, correlationId);
+  const path = shortPath(fullUrl);
+  const intentTag = intent ? `${intent} · ` : '';
 
-  // Prepare request body for logging
+  // Prepare request body for logging (form-data → object so logger can sanitize)
   let requestBodyForLog: unknown = body;
   if (body instanceof URLSearchParams) {
     const formData: Record<string, string> = {};
@@ -289,16 +334,6 @@ export async function httpRequest<T = unknown>(
     });
     requestBodyForLog = formData;
   }
-
-  log.http(`[HTTP] Request #${requestId} ${method} ${fullUrl}`, LogLevel.DEBUG, {
-    requestId,
-    platform,
-    method,
-    url: fullUrl,
-    params: Object.keys(finalParams).length > 0 ? finalParams : undefined,
-    headers: Object.keys(requestHeaders).length > 0 ? requestHeaders : undefined,
-    body: requestBodyForLog,
-  });
 
   try {
     let response: HttpResponse<T>;
@@ -340,48 +375,60 @@ export async function httpRequest<T = unknown>(
 
     const duration = Math.round(performance.now() - startTime);
 
-    // Prepare response data for logging (truncate large responses)
-    let responseDataForLog: unknown = response.data;
-    if (responseType === 'blob' || responseType === 'arraybuffer' || responseType === 'base64') {
-      responseDataForLog = `<Binary data: ${responseType}>`;
-    } else if (typeof response.data === 'string' && response.data.length > 1000) {
-      responseDataForLog = `${response.data.substring(0, 1000)}... (truncated, total: ${response.data.length} chars)`;
-    } else if (typeof response.data === 'object' && response.data !== null) {
-      const jsonString = JSON.stringify(response.data);
-      if (jsonString.length > 2000) {
-        responseDataForLog = `${jsonString.substring(0, 2000)}... (truncated, total: ${jsonString.length} chars)`;
-      }
-    }
-
-    log.http(`[HTTP] Response #${requestId} ${method} ${fullUrl}`, LogLevel.DEBUG, {
-      requestId,
-      platform,
-      method,
-      url: fullUrl,
-      status: response.status,
-      statusText: response.statusText || undefined,
-      duration: `${duration}ms`,
-      headers: Object.keys(response.headers).length > 0 ? response.headers : undefined,
-      data: responseDataForLog,
-    });
+    // Headline + collapsed details. The headline carries everything you
+    // need at a glance; click to expand for the full sanitized request
+    // and response. Bodies are NOT flattened — the user opted in to see
+    // them by expanding the row, so they get the real shape.
+    log.groupCollapsed(
+      'HTTP',
+      `${corrTag} ${intentTag}${method} ${path} → ${response.status} (${duration}ms)`,
+      LogLevel.DEBUG,
+      {
+        platform,
+        request: {
+          method,
+          url: fullUrl,
+          params: Object.keys(finalParams).length > 0 ? finalParams : undefined,
+          headers: Object.keys(requestHeaders).length > 0 ? requestHeaders : undefined,
+          body: requestBodyForLog,
+        },
+        response: {
+          status: response.status,
+          statusText: response.statusText || undefined,
+          headers: Object.keys(response.headers).length > 0 ? response.headers : undefined,
+          body: loggableResponseBody(response.data, responseType),
+        },
+      },
+    );
 
     return response;
   } catch (error) {
     const duration = Math.round(performance.now() - startTime);
     const httpError = error as HttpError;
+    const status = httpError.status ?? 'ERR';
 
-    log.http(`[HTTP] Failed #${requestId} ${method} ${fullUrl}`, LogLevel.ERROR, {
-      requestId,
-      platform,
-      method,
-      url: fullUrl,
-      duration: `${duration}ms`,
-      status: httpError.status || undefined,
-      statusText: httpError.statusText || undefined,
-      headers: httpError.headers && Object.keys(httpError.headers).length > 0 ? httpError.headers : undefined,
-      errorData: httpError.data || undefined,
-      error: httpError.message || error,
-    });
+    log.groupCollapsed(
+      'HTTP',
+      `${corrTag} ${intentTag}${method} ${path} ✗ ${status} (${duration}ms)`,
+      LogLevel.ERROR,
+      {
+        platform,
+        request: {
+          method,
+          url: fullUrl,
+          params: Object.keys(finalParams).length > 0 ? finalParams : undefined,
+          headers: Object.keys(requestHeaders).length > 0 ? requestHeaders : undefined,
+          body: requestBodyForLog,
+        },
+        error: {
+          message: httpError.message || String(error),
+          status: httpError.status ?? undefined,
+          statusText: httpError.statusText ?? undefined,
+          headers: httpError.headers && Object.keys(httpError.headers).length > 0 ? httpError.headers : undefined,
+          data: httpError.data,
+        },
+      },
+    );
     throw error;
   }
 }

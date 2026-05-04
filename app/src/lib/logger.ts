@@ -25,10 +25,16 @@ interface LogContext {
   [key: string]: unknown;
 }
 
+interface DedupeState {
+  lastEmit: number;
+  suppressed: number;
+}
+
 class Logger {
   private level: LogLevel;
   private isDev: boolean;
   private componentLevels: Record<string, LogLevel> = {};
+  private dedupeState = new Map<string, DedupeState>();
 
   constructor() {
     this.isDev = this.resolveIsDev();
@@ -93,6 +99,144 @@ class Logger {
     return level >= this.level;
   }
 
+  /**
+   * Dedupe gate: returns the suppressed count to inline into the message
+   * if the caller should emit now, otherwise null. First call always emits
+   * with suppressed=0; subsequent calls within `windowMs` are counted and
+   * suppressed; the next call after the window emits with the accumulated
+   * suppressed count so the user sees a single "(+N suppressed)" footnote.
+   */
+  dedupeGate(key: string, windowMs: number): { suppressed: number } | null {
+    const now = Date.now();
+    const state = this.dedupeState.get(key) ?? { lastEmit: 0, suppressed: 0 };
+    if (now - state.lastEmit >= windowMs) {
+      const suppressed = state.suppressed;
+      this.dedupeState.set(key, { lastEmit: now, suppressed: 0 });
+      return { suppressed };
+    }
+    state.suppressed += 1;
+    this.dedupeState.set(key, state);
+    return null;
+  }
+
+  /**
+   * Banner log: a visually distinct one-line marker for high-level events
+   * (entering a view, app boot, profile switch). The console output is
+   * bold + colored via %c styling and wrapped in ASCII bars so it stays
+   * recognizable in plain text logs and the file sink. Single LogEntry
+   * goes to in-memory + file with the un-styled banner text.
+   */
+  banner(message: string, level: LogLevel = LogLevel.INFO): void {
+    if (this.shouldLog(level) === false) return;
+
+    const timestamp = new Date().toLocaleString();
+    const levelNames: Record<number, string> = { 0: 'DEBUG', 1: 'INFO', 2: 'WARN', 3: 'ERROR' };
+    const levelName = levelNames[level] ?? 'INFO';
+    const sanitizedMessage = sanitizeLogMessage(message);
+    const bars = '═'.repeat(10);
+    const banner = `${bars}┤ ${sanitizedMessage} ├${bars}`;
+
+    const emit =
+      level === LogLevel.ERROR ? console.error :
+      level === LogLevel.WARN ? console.warn :
+      level === LogLevel.DEBUG ? console.debug :
+      console.info;
+
+    // %c styling renders bold + color in DevTools that support it.
+    // Plain consoles ignore the directive and print the raw banner —
+    // still readable thanks to the unicode box-drawing bars.
+    emit(
+      `%c${banner}`,
+      'font-weight: bold; font-size: 1.05em; color: #00bcd4;',
+    );
+
+    const entry: LogEntry = {
+      id: crypto.randomUUID(),
+      timestamp,
+      rawTimestamp: Date.now(),
+      level: levelName,
+      message: banner,
+      context: { component: 'View' },
+    };
+    useLogStore.getState().addLog(entry);
+    try {
+      getLogFile().append(entry);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn('[logger] log-file append threw', err);
+    }
+  }
+
+  /**
+   * Component-scoped collapsed group log: emits a single click-to-expand
+   * row in the console and a single entry in the in-memory + file sinks.
+   *
+   * Use this for HTTP completions or any log where the headline is the
+   * 99% view and the full payload is something you want available but
+   * not pinned open. Falls back to a flat log if console.groupCollapsed
+   * is unavailable.
+   */
+  groupCollapsed(
+    componentName: string,
+    message: string,
+    level: LogLevel,
+    body: unknown,
+  ): void {
+    if (level < LogLevel.DEBUG || level > LogLevel.ERROR) return;
+    const effectiveLevel = this.componentLevels[componentName] ?? this.level;
+    if (level < effectiveLevel) return;
+
+    const timestamp = new Date().toLocaleString();
+    const levelNames: Record<number, string> = { 0: 'DEBUG', 1: 'INFO', 2: 'WARN', 3: 'ERROR' };
+    const levelName = levelNames[level] ?? 'DEBUG';
+    const prefix = `${timestamp} ${levelName} [${componentName}]`;
+
+    const sanitizedMessage = sanitizeLogMessage(message);
+    const sanitizedBody = sanitizeObject(body);
+
+    // Console: collapsed group with the full body inside. The user clicks
+    // to expand. Falls back to a normal emit if the runtime doesn't
+    // implement console groups (e.g. some test environments).
+    const canGroup =
+      typeof console.groupCollapsed === 'function' &&
+      typeof console.groupEnd === 'function';
+    const innerEmit =
+      level === LogLevel.ERROR ? console.error :
+      level === LogLevel.WARN ? console.warn :
+      level === LogLevel.DEBUG ? console.debug :
+      console.info;
+    if (canGroup) {
+      // Use the level-matched method for the group label too so DevTools
+      // colors the headline (Safari respects this; Chrome only honors
+      // groupCollapsed on console.log, which is fine).
+      const groupFn = console.groupCollapsed.bind(console);
+      groupFn(prefix, sanitizedMessage);
+      innerEmit(sanitizedBody);
+      console.groupEnd();
+    } else {
+      innerEmit(prefix, sanitizedMessage, sanitizedBody);
+    }
+
+    // Single entry to in-memory + file sinks. The Logs page renders args
+    // as expandable JSON, mirroring the console's collapse/expand UX.
+    const entry: LogEntry = {
+      id: crypto.randomUUID(),
+      timestamp,
+      rawTimestamp: Date.now(),
+      level: levelName,
+      message: sanitizedMessage,
+      context: { component: componentName },
+      args: sanitizedBody !== undefined ? [sanitizedBody] : undefined,
+    };
+    useLogStore.getState().addLog(entry);
+    try {
+      getLogFile().append(entry);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn('[logger] log-file append threw', err);
+    }
+  }
+
   private formatMessage(level: string, context: LogContext, message: string, ...args: unknown[]): void {
     const timestamp = new Date().toLocaleString();
     const contextStr = context.component ? `[${context.component}]` : '';
@@ -119,7 +263,14 @@ class Logger {
       consoleArgs.push(...sanitizedArgs);
     }
 
-    console.log(...consoleArgs);
+    // Map our levels to the matching console method so DevTools
+    // severity filters and color cues work natively.
+    const emit =
+      level === 'ERROR' ? console.error :
+      level === 'WARN' ? console.warn :
+      level === 'DEBUG' ? console.debug :
+      console.info;
+    emit(...consoleArgs);
 
     // formatMessage runs only after the global/per-component level filter has
     // passed (every public log helper gates on shouldLog/effectiveLevel before
@@ -280,6 +431,28 @@ const generatedComponentLoggers = componentLoggers.reduce((acc, key) => {
   return acc;
 }, {} as ComponentLoggers);
 
+/**
+ * Dedupe wrapper for repetitive log lines (poller ticks, connkey churn).
+ * Within `windowMs` of the previous emit for the same `key`, the body is
+ * suppressed; the next emit after the window includes a "(+N suppressed)"
+ * suffix so the count is preserved in the visible record.
+ *
+ * Usage:
+ *   log.dedupe('connkey-regen', 5000, (suffix) =>
+ *     log.monitor(`Regenerating connkey${suffix}`, LogLevel.INFO, { monitorId }),
+ *   );
+ */
+function logDedupe(
+  key: string,
+  windowMs: number,
+  emit: (suffix: string) => void,
+): void {
+  const gate = logger.dedupeGate(key, windowMs);
+  if (!gate) return;
+  const suffix = gate.suppressed > 0 ? ` (+${gate.suppressed} suppressed)` : '';
+  emit(suffix);
+}
+
 export const log = {
   debug: (message: string, context?: LogContext, ...args: unknown[]) =>
     logger.debug(message, context, ...args),
@@ -289,6 +462,10 @@ export const log = {
     logger.warn(message, context, ...args),
   error: (message: string, context?: LogContext, error?: Error | unknown, ...args: unknown[]) =>
     logger.error(message, context, error, ...args),
+  dedupe: logDedupe,
+  groupCollapsed: (componentName: string, message: string, level: LogLevel, body: unknown) =>
+    logger.groupCollapsed(componentName, message, level, body),
+  banner: (message: string, level?: LogLevel) => logger.banner(message, level),
 
   // Component-specific loggers (generated dynamically)
   ...generatedComponentLoggers,
