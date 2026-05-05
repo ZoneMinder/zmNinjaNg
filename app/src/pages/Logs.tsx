@@ -310,11 +310,11 @@ export default function Logs() {
         if (showOpenLocation) {
             try {
                 await logFile.revealLocation();
-            } catch {
+            } catch (err) {
                 toast({
                     variant: 'destructive',
                     title: t('logs.share_failed'),
-                    description: t('logs.share_failed'),
+                    description: err instanceof Error ? err.message : String(err),
                 });
             }
             return;
@@ -369,11 +369,11 @@ export default function Logs() {
         clearLogs();
         try {
             await getLogFile().truncate();
-        } catch {
+        } catch (err) {
             toast({
                 variant: 'destructive',
                 title: t('common.error'),
-                description: t('common.error'),
+                description: err instanceof Error ? err.message : String(err),
             });
         }
         setConfirmClearOpen(false);

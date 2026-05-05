@@ -30,13 +30,11 @@ describe('TauriLogFileStore', () => {
     expect(store.capabilities).toEqual({ share: false, reveal: true, available: true });
   });
 
-  it('initialize creates AppLog directory', async () => {
+  it('initialize resolves the absolute log dir and mkdirs it recursively', async () => {
     const store = new TauriLogFileStore();
     await store.initialize();
-    expect(fs.mkdir).toHaveBeenCalledWith(
-      '',
-      expect.objectContaining({ baseDir: 'AppLog', recursive: true }),
-    );
+    expect(appLogDir).toHaveBeenCalled();
+    expect(fs.mkdir).toHaveBeenCalledWith('/mock/applogdir', { recursive: true });
   });
 
   it('append + flush writes NDJSON via writeTextFile with append flag', async () => {
@@ -84,6 +82,15 @@ describe('TauriLogFileStore', () => {
     const store = new TauriLogFileStore();
     await store.revealLocation();
     expect(opener.revealItemInDir).toHaveBeenCalledWith(`/mock/applogdir/${LOG_FILE_NAME}`);
+  });
+
+  it('revealLocation falls back to openPath on the parent dir when revealItemInDir rejects', async () => {
+    (opener.revealItemInDir as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      new Error('no FileManager1 service'),
+    );
+    const store = new TauriLogFileStore();
+    await store.revealLocation();
+    expect(opener.openPath).toHaveBeenCalledWith('/mock/applogdir');
   });
 
   it('rotates when entry count exceeds cap', async () => {

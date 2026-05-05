@@ -39,7 +39,7 @@
     },
     {
       "identifier": "fs:allow-mkdir",
-      "allow": [{ "path": "$APPLOG/**" }]
+      "allow": [{ "path": "$APPLOG" }, { "path": "$APPLOG/**" }]
     },
     "dialog:default",
     "opener:default"

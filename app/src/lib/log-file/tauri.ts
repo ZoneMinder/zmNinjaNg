@@ -17,11 +17,17 @@ export class TauriLogFileStore implements LogFileStore {
 
   async initialize(): Promise<void> {
     try {
-      // Ensure the log dir exists
-      const { mkdir, BaseDirectory } = await import('@tauri-apps/plugin-fs');
-      await mkdir('', { baseDir: BaseDirectory.AppLog, recursive: true });
-    } catch {
-      // mkdir on existing dir is OK; on real failure, subsequent writes will surface it
+      // Tauri v2's plugin-fs rejects an empty path, and the FS scope only
+      // permits paths inside $APPLOG. Resolve the absolute log dir and
+      // recursively create it instead — this also creates Linux's missing
+      // `<bundle-id>/logs/` subdir which the OS does not pre-create.
+      const { appLogDir } = await import('@tauri-apps/api/path');
+      const { mkdir } = await import('@tauri-apps/plugin-fs');
+      const dir = await appLogDir();
+      await mkdir(dir, { recursive: true });
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn('[log-file] mkdir failed', err);
     }
     try {
       const existing = await this.readAll();
@@ -132,9 +138,18 @@ export class TauriLogFileStore implements LogFileStore {
 
   async revealLocation(): Promise<void> {
     const path = await this.getDisplayPath();
-    if (path) {
-      const { revealItemInDir } = await import('@tauri-apps/plugin-opener');
+    if (!path) return;
+    const { revealItemInDir, openPath } = await import('@tauri-apps/plugin-opener');
+    try {
       await revealItemInDir(path);
+    } catch {
+      // Linux fallback: revealItemInDir uses D-Bus to talk to a registered
+      // file manager (org.freedesktop.FileManager1.ShowItems). Minimal
+      // desktops and AppImage runtimes often don't have one. Open the
+      // enclosing directory with xdg-open instead.
+      const { appLogDir } = await import('@tauri-apps/api/path');
+      const dir = await appLogDir();
+      await openPath(dir);
     }
   }
 }
