@@ -17,6 +17,9 @@ const config: CapacitorConfig = {
     backgroundColor: '#020817',
     allowsInlineMediaPlayback: true,
   },
+  android: {
+    adjustMarginsForEdgeToEdge: 'force',
+  },
   plugins: {
     SplashScreen: {
       launchShowDuration: 3000,
