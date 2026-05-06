@@ -6,6 +6,9 @@ import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.ViewGroup;
 import android.webkit.WebView;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
@@ -15,6 +18,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(SSLTrustPlugin.class);
         registerPlugin(PipPlugin.class);
         registerPlugin(TvDetectorPlugin.class);
+        registerPlugin(WindowThemePlugin.class);
         super.onCreate(savedInstanceState);
 
         if (isTVDevice()) {
@@ -24,6 +28,28 @@ public class MainActivity extends BridgeActivity {
                 "window.__ZMNINJA_IS_TV__ = true;", null
             );
             wrapWebViewWithCursor();
+        }
+
+        applyStatusBarVisibility(getResources().getConfiguration().orientation);
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        applyStatusBarVisibility(newConfig.orientation);
+    }
+
+    private void applyStatusBarVisibility(int orientation) {
+        WindowInsetsControllerCompat controller =
+            WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+        int bars = WindowInsetsCompat.Type.systemBars();
+        if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            controller.setSystemBarsBehavior(
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            );
+            controller.hide(bars);
+        } else {
+            controller.show(bars);
         }
     }
 

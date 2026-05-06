@@ -106,6 +106,9 @@ vi.mock('@capacitor/core', () => ({
     isNativePlatform: () => false,
     getPlatform: () => 'web',
   },
+  registerPlugin: () => new Proxy({}, {
+    get: () => vi.fn().mockResolvedValue(undefined),
+  }),
 }));
 
 // Mock Capacitor Haptics

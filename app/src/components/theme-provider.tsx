@@ -9,6 +9,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react"
 import { useProfileStore } from '../stores/profile';
 import { useSettingsStore, type ThemePreference } from '../stores/settings';
+import { syncNativeWindowBackground } from '../lib/native-window-theme';
 
 type Theme = ThemePreference
 
@@ -77,6 +78,8 @@ export function ThemeProvider({
         } else {
             root.classList.add(theme)
         }
+
+        syncNativeWindowBackground()
     }, [theme])
 
     const handleSetTheme = useCallback((newTheme: Theme) => {
