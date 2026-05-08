@@ -68,7 +68,7 @@ export function createApiClient(baseURL: string, reLogin?: () => Promise<boolean
     hasRetried = false
   ): Promise<HttpResponse<T>> => {
     const correlationId = ++correlationIdCounter;
-    const { accessToken, refreshToken, refreshTokenExpires, isAuthenticated } = useAuthStore.getState();
+    const { accessToken, isAuthenticated } = useAuthStore.getState();
     const headers = { ...(config.headers ?? {}) };
     const params: Record<string, string | number> = { ...(config.params ?? {}) };
 
@@ -119,14 +119,6 @@ export function createApiClient(baseURL: string, reLogin?: () => Promise<boolean
 
     if (accessToken && !skipAuth && !isLoginRequest) {
       params.token = accessToken;
-    }
-
-    if (isLoginRequest && !skipAuth) {
-      const nowMs = Date.now();
-      const isRefreshTokenValid = refreshToken && refreshTokenExpires && refreshTokenExpires > nowMs;
-      if (isRefreshTokenValid) {
-        params.token = refreshToken;
-      }
     }
 
     const resolvedBaseUrl = config.baseURL ?? baseURL;
