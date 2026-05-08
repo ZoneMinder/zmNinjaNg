@@ -387,7 +387,7 @@ export class ZMNotificationService {
     }
   }
 
-  private _handleMessage(event: MessageEvent): void {
+  private async _handleMessage(event: MessageEvent): Promise<void> {
     try {
       const message = JSON.parse(event.data) as ZMNotificationMessage;
 
@@ -442,7 +442,7 @@ export class ZMNotificationService {
               imageUrl: event.Picture,
             });
           } else if (this.config && event.EventId) {
-            const currentToken = useAuthStore.getState().accessToken;
+            const currentToken = await useAuthStore.getState().getFreshAccessToken();
             let imageUrl = `${this.config.portalUrl}/index.php?view=image&eid=${event.EventId}&fid=snapshot&width=600`;
             if (currentToken) {
               imageUrl += `&token=${currentToken}`;

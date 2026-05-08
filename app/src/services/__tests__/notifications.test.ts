@@ -71,7 +71,10 @@ vi.mock('../../lib/logger', () => ({
 
 vi.mock('../../stores/auth', () => ({
   useAuthStore: {
-    getState: () => ({ accessToken: 'test-token' }),
+    getState: () => ({
+      accessToken: 'test-token',
+      getFreshAccessToken: async () => 'test-token',
+    }),
     subscribe: vi.fn(() => vi.fn()),
   },
 }));
@@ -326,6 +329,9 @@ describe('ZMNotificationService', () => {
         ],
       });
 
+      // Flush microtasks: _handleMessage is async and awaits the auth store
+      await vi.advanceTimersByTimeAsync(0);
+
       expect(listener).toHaveBeenCalledTimes(1);
       expect(listener).toHaveBeenCalledWith(
         expect.objectContaining({ EventId: 42, MonitorName: 'Front Door' }),
@@ -344,6 +350,9 @@ describe('ZMNotificationService', () => {
         status: 'Success',
         events: [{ MonitorId: 1, MonitorName: 'Test', EventId: 1, Cause: 'Motion', Name: 'Test' }],
       });
+
+      // Flush microtasks: _handleMessage is async and awaits the auth store
+      await vi.advanceTimersByTimeAsync(0);
 
       expect(listener).not.toHaveBeenCalled();
     });

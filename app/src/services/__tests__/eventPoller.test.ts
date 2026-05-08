@@ -45,7 +45,10 @@ vi.mock('../../stores/profile', () => ({
 
 vi.mock('../../stores/auth', () => ({
   useAuthStore: {
-    getState: () => ({ accessToken: 'test-token' }),
+    getState: () => ({
+      accessToken: 'test-token',
+      getFreshAccessToken: async () => 'test-token',
+    }),
   },
 }));
 

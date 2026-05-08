@@ -148,7 +148,7 @@ class EventPollerService {
       const notificationStore = useNotificationStore.getState();
       const { profiles, currentProfileId } = useProfileStore.getState();
       const currentProfile = profiles.find(p => p.id === currentProfileId);
-      const accessToken = useAuthStore.getState().accessToken;
+      const accessToken = await useAuthStore.getState().getFreshAccessToken();
 
       for (const event of events) {
         const eventId = parseEventId(event.Event.Id);
