@@ -68,7 +68,7 @@ export function createApiClient(baseURL: string, reLogin?: () => Promise<boolean
     hasRetried = false
   ): Promise<HttpResponse<T>> => {
     const correlationId = ++correlationIdCounter;
-    const { accessToken, refreshToken, refreshTokenExpires, isAuthenticated } = useAuthStore.getState();
+    const { accessToken, accessTokenExpires, isAuthenticated } = useAuthStore.getState();
     const headers = { ...(config.headers ?? {}) };
     const params: Record<string, string | number> = { ...(config.params ?? {}) };
 
@@ -118,14 +118,19 @@ export function createApiClient(baseURL: string, reLogin?: () => Promise<boolean
     }
 
     if (accessToken && !skipAuth && !isLoginRequest) {
-      params.token = accessToken;
-    }
-
-    if (isLoginRequest && !skipAuth) {
-      const nowMs = Date.now();
-      const isRefreshTokenValid = refreshToken && refreshTokenExpires && refreshTokenExpires > nowMs;
-      if (isRefreshTokenValid) {
-        params.token = refreshToken;
+      const isAccessTokenExpired = accessTokenExpires !== null && accessTokenExpires <= Date.now();
+      if (isAccessTokenExpired) {
+        log.api(
+          `Access token expired by ${Date.now() - (accessTokenExpires ?? 0)}ms; refreshing before attach`,
+          LogLevel.DEBUG,
+          { correlationId, method, url },
+        );
+        const fresh = await useAuthStore.getState().getFreshAccessToken();
+        if (fresh) {
+          params.token = fresh;
+        }
+      } else {
+        params.token = accessToken;
       }
     }
 

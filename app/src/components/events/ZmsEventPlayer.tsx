@@ -28,6 +28,7 @@ import { getEventZmsUrl, getZmsControlUrl } from '../../lib/url-builder';
 import { useZoomPan } from '../../hooks/useZoomPan';
 import { ZoomControls } from '../ui/ZoomControls';
 import { useBandwidthSettings } from '../../hooks/useBandwidthSettings';
+import { useFreshAccessToken } from '../../hooks/useFreshAccessToken';
 
 // ZoneMinder stream command constants
 const ZM_CMD = {
@@ -75,6 +76,7 @@ export function ZmsEventPlayer({
 }: ZmsEventPlayerProps) {
   const { t } = useTranslation();
   const bandwidth = useBandwidthSettings();
+  const { isFresh: isAccessTokenFresh } = useFreshAccessToken();
   const [currentFrame, setCurrentFrame] = useState(1);
   const [isPlaying, setIsPlaying] = useState(true);
   const [playbackSpeed, setPlaybackSpeed] = useState(100); // 100 = 1x speed
@@ -112,6 +114,7 @@ export function ZmsEventPlayer({
 
   // Build ZMS stream URL
   const zmsUrl = useMemo(() => {
+    if (!isAccessTokenFresh) return '';
     return getEventZmsUrl(portalUrl, eventId, {
       token,
       apiUrl,
@@ -123,7 +126,7 @@ export function ZmsEventPlayer({
       minStreamingPort,
       monitorId,
     });
-  }, [portalUrl, apiUrl, eventId, playbackSpeed, connKey, token, minStreamingPort, monitorId]);
+  }, [portalUrl, apiUrl, eventId, playbackSpeed, connKey, token, minStreamingPort, monitorId, isAccessTokenFresh]);
 
   // Send control command to the stream
   const sendCommand = useCallback(async (cmd: number, offset?: number) => {
@@ -437,13 +440,13 @@ export function ZmsEventPlayer({
               onClick={jumpToAlarmFrame}
             >
               <img
-                src={getEventImageUrl(portalUrl, eventId, parseInt(alarmFrameId), {
+                src={isAccessTokenFresh ? getEventImageUrl(portalUrl, eventId, parseInt(alarmFrameId), {
                   token,
                   width: 120,
                   apiUrl,
                   minStreamingPort,
                   monitorId,
-                })}
+                }) : undefined}
                 alt={t('event_detail.first_alarm_frame')}
                 className="w-30 h-20 object-cover rounded border-2 border-destructive"
               />
@@ -459,13 +462,13 @@ export function ZmsEventPlayer({
                 onClick={jumpToMaxScoreFrame}
               >
                 <img
-                  src={getEventImageUrl(portalUrl, eventId, parseInt(maxScoreFrameId), {
+                  src={isAccessTokenFresh ? getEventImageUrl(portalUrl, eventId, parseInt(maxScoreFrameId), {
                     token,
                     width: 120,
                     apiUrl,
                     minStreamingPort,
                     monitorId,
-                  })}
+                  }) : undefined}
                   alt={t('event_detail.max_score_frame')}
                   className="w-30 h-20 object-cover rounded border-2 border-yellow-500"
                 />

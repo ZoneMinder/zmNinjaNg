@@ -17,7 +17,7 @@ import { getEventImageUrl } from '../../api/events';
 import { getPortalUrlForEvent } from '../../lib/server-resolver';
 import { resolveFallbackFids } from '../../lib/thumbnail-chain';
 import { useCurrentProfile } from '../../hooks/useCurrentProfile';
-import { useAuthStore } from '../../stores/auth';
+import { useFreshAccessToken } from '../../hooks/useFreshAccessToken';
 import type { MonitorsResponse } from '../../api/types';
 import { HoverPreview } from '../ui/hover-preview';
 import { EventZmsHoverPlayer } from '../events/EventThumbnailHoverPreview';
@@ -65,7 +65,7 @@ export const EventPreviewPopover = memo(function EventPreviewPopover({
 }: EventPreviewPopoverProps) {
   const { t } = useTranslation();
   const { currentProfile, settings } = useCurrentProfile();
-  const accessToken = useAuthStore((s) => s.accessToken);
+  const { token: accessToken, isFresh: isAccessTokenFresh } = useFreshAccessToken();
   const queryClient = useQueryClient();
 
   const profilePortalUrl = currentProfile?.portalUrl ?? '';
@@ -77,10 +77,12 @@ export const EventPreviewPopover = memo(function EventPreviewPopover({
     monitorId: event.monitorId,
   };
   const fids = resolveFallbackFids(settings.thumbnailFallbackChain);
-  const candidates = fids.map((fid) => ({
-    fid,
-    url: getEventImageUrl(portalUrl, event.id, fid, tokenOpts),
-  }));
+  const candidates = isAccessTokenFresh
+    ? fids.map((fid) => ({
+        fid,
+        url: getEventImageUrl(portalUrl, event.id, fid, tokenOpts),
+      }))
+    : [];
 
   const [resolvedSrc, setResolvedSrc] = useState<string | null>(null);
   const [resolvedFrame, setResolvedFrame] = useState<string | null>(null);
@@ -90,10 +92,11 @@ export const EventPreviewPopover = memo(function EventPreviewPopover({
   useEffect(() => {
     let cancelled = false;
     if (candidates.length === 0) {
-      setImgFailed(true);
+      if (isAccessTokenFresh) setImgFailed(true);
       return () => { cancelled = true; };
     }
 
+    setImgFailed(false);
     (async () => {
       for (const { fid, url } of candidates) {
         if (cancelled) return;
@@ -114,7 +117,7 @@ export const EventPreviewPopover = memo(function EventPreviewPopover({
     })();
 
     return () => { cancelled = true; };
-  }, [event.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [event.id, isAccessTokenFresh]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const frameLabels: Record<string, string> = {
     objdetect: 'AI Detect',

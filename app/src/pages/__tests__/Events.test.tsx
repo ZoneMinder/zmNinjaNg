@@ -26,8 +26,20 @@ vi.mock('../../stores/profile', () => ({
 }));
 
 vi.mock('../../stores/auth', () => ({
-  useAuthStore: (selector: (state: { accessToken: string }) => unknown) =>
-    selector({ accessToken: 'token-1' }),
+  useAuthStore: (
+    selector: (state: {
+      accessToken: string;
+      accessTokenExpires: number;
+      isAuthenticated: boolean;
+      getFreshAccessToken: () => Promise<string | null>;
+    }) => unknown,
+  ) =>
+    selector({
+      accessToken: 'token-1',
+      accessTokenExpires: Date.now() + 60 * 60 * 1000,
+      isAuthenticated: true,
+      getFreshAccessToken: vi.fn(async () => 'token-1'),
+    }),
 }));
 
 vi.mock('../../stores/settings', () => ({

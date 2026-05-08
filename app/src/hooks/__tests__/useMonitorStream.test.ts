@@ -83,6 +83,7 @@ describe('useMonitorStream', () => {
 
     useAuthStore.setState({
       accessToken: 'test-token',
+      accessTokenExpires: Date.now() + 60 * 60 * 1000,
       refreshToken: null,
       isAuthenticated: false,
     });

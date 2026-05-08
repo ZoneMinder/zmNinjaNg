@@ -26,7 +26,7 @@ import { log, LogLevel } from '../lib/logger';
 export function useTokenRefresh(): void {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const accessTokenExpires = useAuthStore((state) => state.accessTokenExpires);
-  const refreshAccessToken = useAuthStore((state) => state.refreshAccessToken);
+  const getFreshAccessToken = useAuthStore((state) => state.getFreshAccessToken);
   const isRefreshingRef = useRef(false);
 
   useEffect(() => {
@@ -46,7 +46,9 @@ export function useTokenRefresh(): void {
             } else {
               log.auth('Access token expiring soon, refreshing...');
             }
-            await refreshAccessToken();
+            // Route through getFreshAccessToken so concurrent component-driven
+            // refreshes share one network call via the auth-store dedup.
+            await getFreshAccessToken();
             log.auth('Access token refreshed successfully');
           } catch (error) {
             log.auth('Failed to refresh access token', LogLevel.ERROR, error);
@@ -76,5 +78,5 @@ export function useTokenRefresh(): void {
       clearInterval(interval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [isAuthenticated, accessTokenExpires, refreshAccessToken]);
+  }, [isAuthenticated, accessTokenExpires, getFreshAccessToken]);
 }

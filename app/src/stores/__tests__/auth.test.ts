@@ -93,6 +93,7 @@ describe('Auth Store', () => {
   it('refreshes access token successfully', async () => {
     useAuthStore.setState({
       refreshToken: 'refresh-xyz',
+      refreshTokenExpires: Date.now() + 24 * 60 * 60 * 1000,
     });
 
     vi.mocked(apiRefreshToken).mockResolvedValue({
@@ -109,6 +110,7 @@ describe('Auth Store', () => {
   it('logs out on refresh failure', async () => {
     useAuthStore.setState({
       refreshToken: 'refresh-xyz',
+      refreshTokenExpires: Date.now() + 24 * 60 * 60 * 1000,
       accessToken: 'old-access',
       isAuthenticated: true,
     });
@@ -144,5 +146,134 @@ describe('Auth Store', () => {
     expect(state.version).toBeNull();
     expect(state.apiVersion).toBeNull();
     expect(state.isAuthenticated).toBe(false);
+  });
+
+  describe('getFreshAccessToken', () => {
+    beforeEach(() => {
+      useAuthStore.setState({
+        accessToken: null,
+        refreshToken: null,
+        accessTokenExpires: null,
+        refreshTokenExpires: null,
+        isAuthenticated: false,
+      });
+    });
+
+    it('returns the current access token when it has more than the leeway remaining', async () => {
+      const future = Date.now() + 60 * 60 * 1000; // 1 hour ahead
+      useAuthStore.setState({
+        accessToken: 'fresh-token',
+        accessTokenExpires: future,
+        isAuthenticated: true,
+      });
+      const result = await useAuthStore.getState().getFreshAccessToken();
+      expect(result).toBe('fresh-token');
+    });
+
+    it('refreshes when the token has less than the leeway remaining', async () => {
+      const soon = Date.now() + 5 * 60 * 1000; // 5 min ahead, below the 30-min leeway
+      useAuthStore.setState({
+        accessToken: 'stale-token',
+        refreshToken: 'rt',
+        accessTokenExpires: soon,
+        refreshTokenExpires: Date.now() + 24 * 60 * 60 * 1000,
+        isAuthenticated: true,
+      });
+      vi.mocked(apiRefreshToken).mockResolvedValueOnce({
+        access_token: 'new-token',
+        access_token_expires: 7200,
+        refresh_token: 'new-rt',
+        refresh_token_expires: 86400,
+      });
+      const result = await useAuthStore.getState().getFreshAccessToken();
+      expect(result).toBe('new-token');
+      expect(apiRefreshToken).toHaveBeenCalledWith('rt');
+    });
+
+    it('falls through to reLoginCallback when refresh rejects', async () => {
+      useAuthStore.setState({
+        accessToken: 'stale',
+        refreshToken: 'rt',
+        accessTokenExpires: Date.now() + 60_000,
+        refreshTokenExpires: Date.now() + 24 * 60 * 60 * 1000,
+        isAuthenticated: true,
+      });
+      vi.mocked(apiRefreshToken).mockRejectedValueOnce(new Error('401'));
+      const reLogin = vi.fn().mockImplementation(async () => {
+        useAuthStore.setState({
+          accessToken: 'after-relogin',
+          accessTokenExpires: Date.now() + 2 * 60 * 60 * 1000,
+          isAuthenticated: true,
+        });
+        return true;
+      });
+      useAuthStore.getState().setReLoginCallback(reLogin);
+      const result = await useAuthStore.getState().getFreshAccessToken();
+      expect(result).toBe('after-relogin');
+      expect(reLogin).toHaveBeenCalled();
+    });
+
+    it('returns null when both refresh and reLogin fail', async () => {
+      useAuthStore.setState({
+        accessToken: 'stale',
+        refreshToken: 'rt',
+        accessTokenExpires: Date.now() + 60_000,
+        refreshTokenExpires: Date.now() + 24 * 60 * 60 * 1000,
+        isAuthenticated: true,
+      });
+      vi.mocked(apiRefreshToken).mockRejectedValueOnce(new Error('401'));
+      useAuthStore.getState().setReLoginCallback(async () => false);
+      const result = await useAuthStore.getState().getFreshAccessToken();
+      expect(result).toBeNull();
+    });
+
+    it('dedupes concurrent callers into one refresh', async () => {
+      useAuthStore.setState({
+        accessToken: 'stale',
+        refreshToken: 'rt',
+        accessTokenExpires: Date.now() + 60_000,
+        refreshTokenExpires: Date.now() + 24 * 60 * 60 * 1000,
+        isAuthenticated: true,
+      });
+      vi.mocked(apiRefreshToken).mockResolvedValue({
+        access_token: 'new',
+        access_token_expires: 7200,
+        refresh_token: 'new-rt',
+        refresh_token_expires: 86400,
+      });
+      const [a, b, c] = await Promise.all([
+        useAuthStore.getState().getFreshAccessToken(),
+        useAuthStore.getState().getFreshAccessToken(),
+        useAuthStore.getState().getFreshAccessToken(),
+      ]);
+      expect(a).toBe('new');
+      expect(b).toBe('new');
+      expect(c).toBe('new');
+      expect(apiRefreshToken).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('refreshAccessToken expiry pre-check', () => {
+    it('throws synchronously and does not call the network when refresh token is expired', async () => {
+      useAuthStore.setState({
+        refreshToken: 'expired-rt',
+        refreshTokenExpires: Date.now() - 60_000,
+      });
+      vi.mocked(apiRefreshToken).mockClear();
+      await expect(useAuthStore.getState().refreshAccessToken()).rejects.toThrow(
+        /Refresh token expired/,
+      );
+      expect(apiRefreshToken).not.toHaveBeenCalled();
+    });
+
+    it('throws when refresh token expiry is missing', async () => {
+      useAuthStore.setState({
+        refreshToken: 'rt-no-expiry',
+        refreshTokenExpires: null,
+      });
+      vi.mocked(apiRefreshToken).mockClear();
+      await expect(useAuthStore.getState().refreshAccessToken()).rejects.toThrow();
+      expect(apiRefreshToken).not.toHaveBeenCalled();
+    });
   });
 });

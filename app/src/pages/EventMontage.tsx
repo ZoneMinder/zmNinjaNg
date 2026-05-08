@@ -10,7 +10,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getEvents } from '../api/events';
 import { getMonitors } from '../api/monitors';
 import { useCurrentProfile } from '../hooks/useCurrentProfile';
-import { useAuthStore } from '../stores/auth';
+import { useFreshAccessToken } from '../hooks/useFreshAccessToken';
 import { useSettingsStore } from '../stores/settings';
 import { useEventPagination } from '../hooks/useEventPagination';
 import { useEventMontageGrid } from '../hooks/useEventMontageGrid';
@@ -28,7 +28,7 @@ import { log, LogLevel } from '../lib/logger';
 export default function EventMontage() {
   const { t } = useTranslation();
   const { currentProfile, settings } = useCurrentProfile();
-  const accessToken = useAuthStore((state) => state.accessToken);
+  const { token: accessToken, isFresh: isAccessTokenFresh } = useFreshAccessToken();
   const normalizedThumbnailFit =
     settings.eventsThumbnailFit === 'fill' ? 'contain' : settings.eventsThumbnailFit;
   const updateSettings = useSettingsStore((state) => state.updateProfileSettings);
@@ -292,7 +292,7 @@ export default function EventMontage() {
           gridCols={gridControls.gridCols}
           thumbnailFit={normalizedThumbnailFit}
           portalUrl={currentProfile?.portalUrl || ''}
-          accessToken={accessToken || undefined}
+          accessToken={isAccessTokenFresh ? accessToken ?? undefined : undefined}
           batchSize={batchSize}
           totalCount={eventsData?.pagination?.totalCount}
           isLoadingMore={isLoadingMore}

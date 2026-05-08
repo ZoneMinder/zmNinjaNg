@@ -10,11 +10,11 @@ import { renderHook, act } from '@testing-library/react';
 import { ZM_INTEGRATION } from '../../lib/zmninja-ng-constants';
 
 // Mock the auth store before importing the hook
-const mockRefreshAccessToken = vi.fn();
+const mockGetFreshAccessToken = vi.fn();
 let mockStoreState = {
   isAuthenticated: false,
   accessTokenExpires: null as number | null,
-  refreshAccessToken: mockRefreshAccessToken,
+  getFreshAccessToken: mockGetFreshAccessToken as unknown as () => Promise<string | null>,
 };
 
 vi.mock('../../stores/auth', () => ({
@@ -48,7 +48,7 @@ describe('useTokenRefresh', () => {
     mockStoreState = {
       isAuthenticated: false,
       accessTokenExpires: null,
-      refreshAccessToken: mockRefreshAccessToken,
+      getFreshAccessToken: mockGetFreshAccessToken as unknown as () => Promise<string | null>,
     };
   });
 
@@ -61,7 +61,7 @@ describe('useTokenRefresh', () => {
 
     renderHook(() => useTokenRefresh());
 
-    expect(mockRefreshAccessToken).not.toHaveBeenCalled();
+    expect(mockGetFreshAccessToken).not.toHaveBeenCalled();
   });
 
   it('does not refresh when token is far from expiry', () => {
@@ -70,52 +70,52 @@ describe('useTokenRefresh', () => {
 
     renderHook(() => useTokenRefresh());
 
-    expect(mockRefreshAccessToken).not.toHaveBeenCalled();
+    expect(mockGetFreshAccessToken).not.toHaveBeenCalled();
   });
 
   it('refreshes when token is within leeway window', async () => {
-    mockRefreshAccessToken.mockResolvedValue(undefined);
+    mockGetFreshAccessToken.mockResolvedValue(undefined);
     mockStoreState.isAuthenticated = true;
-    mockStoreState.accessTokenExpires = NOW + 3 * 60 * 1000; // 3 minutes away (within 5-min leeway)
+    mockStoreState.accessTokenExpires = NOW + 3 * 60 * 1000; // 3 minutes away (within 30-min leeway)
 
     renderHook(() => useTokenRefresh());
 
     await vi.waitFor(() => {
-      expect(mockRefreshAccessToken).toHaveBeenCalledTimes(1);
+      expect(mockGetFreshAccessToken).toHaveBeenCalledTimes(1);
     });
   });
 
   it('refreshes when token has already expired', async () => {
-    mockRefreshAccessToken.mockResolvedValue(undefined);
+    mockGetFreshAccessToken.mockResolvedValue(undefined);
     mockStoreState.isAuthenticated = true;
     mockStoreState.accessTokenExpires = NOW - 60 * 1000; // Expired 1 minute ago
 
     renderHook(() => useTokenRefresh());
 
     await vi.waitFor(() => {
-      expect(mockRefreshAccessToken).toHaveBeenCalledTimes(1);
+      expect(mockGetFreshAccessToken).toHaveBeenCalledTimes(1);
     });
   });
 
   it('refreshes when token expired long ago (e.g., after background sleep)', async () => {
-    mockRefreshAccessToken.mockResolvedValue(undefined);
+    mockGetFreshAccessToken.mockResolvedValue(undefined);
     mockStoreState.isAuthenticated = true;
     mockStoreState.accessTokenExpires = NOW - 30 * 60 * 1000; // Expired 30 minutes ago
 
     renderHook(() => useTokenRefresh());
 
     await vi.waitFor(() => {
-      expect(mockRefreshAccessToken).toHaveBeenCalledTimes(1);
+      expect(mockGetFreshAccessToken).toHaveBeenCalledTimes(1);
     });
   });
 
   it('checks token on interval', async () => {
-    mockRefreshAccessToken.mockResolvedValue(undefined);
+    mockGetFreshAccessToken.mockResolvedValue(undefined);
     mockStoreState.isAuthenticated = true;
     mockStoreState.accessTokenExpires = NOW + 2 * 60 * 60 * 1000; // 2 hours away
 
     renderHook(() => useTokenRefresh());
-    expect(mockRefreshAccessToken).not.toHaveBeenCalled();
+    expect(mockGetFreshAccessToken).not.toHaveBeenCalled();
 
     // Advance time so the token is now within the leeway window
     vi.setSystemTime(NOW + (2 * 60 * 60 * 1000) - (3 * 60 * 1000)); // 3 min before expiry
@@ -124,12 +124,12 @@ describe('useTokenRefresh', () => {
     });
 
     await vi.waitFor(() => {
-      expect(mockRefreshAccessToken).toHaveBeenCalledTimes(1);
+      expect(mockGetFreshAccessToken).toHaveBeenCalledTimes(1);
     });
   });
 
   it('refreshes on visibility change to visible when token is expired', async () => {
-    mockRefreshAccessToken.mockResolvedValue(undefined);
+    mockGetFreshAccessToken.mockResolvedValue(undefined);
     mockStoreState.isAuthenticated = true;
     mockStoreState.accessTokenExpires = NOW - 10 * 1000; // Expired 10 seconds ago
 
@@ -137,10 +137,10 @@ describe('useTokenRefresh', () => {
 
     // First call happens immediately on mount
     await vi.waitFor(() => {
-      expect(mockRefreshAccessToken).toHaveBeenCalledTimes(1);
+      expect(mockGetFreshAccessToken).toHaveBeenCalledTimes(1);
     });
 
-    mockRefreshAccessToken.mockClear();
+    mockGetFreshAccessToken.mockClear();
 
     // Simulate page becoming visible (the visibilitychange handler should call checkAndRefresh)
     Object.defineProperty(document, 'visibilityState', {
@@ -160,7 +160,7 @@ describe('useTokenRefresh', () => {
 
   it('prevents concurrent refresh attempts', async () => {
     let resolveRefresh!: () => void;
-    mockRefreshAccessToken.mockImplementation(
+    mockGetFreshAccessToken.mockImplementation(
       () => new Promise<void>((resolve) => { resolveRefresh = resolve; })
     );
     mockStoreState.isAuthenticated = true;
@@ -170,7 +170,7 @@ describe('useTokenRefresh', () => {
 
     // First refresh starts
     await vi.waitFor(() => {
-      expect(mockRefreshAccessToken).toHaveBeenCalledTimes(1);
+      expect(mockGetFreshAccessToken).toHaveBeenCalledTimes(1);
     });
 
     // Advance timer to trigger another check while first is still in progress
@@ -179,7 +179,7 @@ describe('useTokenRefresh', () => {
     });
 
     // Should still only have 1 call (second was skipped due to guard)
-    expect(mockRefreshAccessToken).toHaveBeenCalledTimes(1);
+    expect(mockGetFreshAccessToken).toHaveBeenCalledTimes(1);
 
     // Resolve the first refresh
     await act(async () => {
@@ -188,7 +188,7 @@ describe('useTokenRefresh', () => {
   });
 
   it('handles refresh failure without crashing', async () => {
-    mockRefreshAccessToken.mockRejectedValue(new Error('Network error'));
+    mockGetFreshAccessToken.mockRejectedValue(new Error('Network error'));
     mockStoreState.isAuthenticated = true;
     mockStoreState.accessTokenExpires = NOW - 10 * 1000; // Expired
 
@@ -196,7 +196,7 @@ describe('useTokenRefresh', () => {
     renderHook(() => useTokenRefresh());
 
     await vi.waitFor(() => {
-      expect(mockRefreshAccessToken).toHaveBeenCalledTimes(1);
+      expect(mockGetFreshAccessToken).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -225,6 +225,6 @@ describe('useTokenRefresh', () => {
 
     renderHook(() => useTokenRefresh());
 
-    expect(mockRefreshAccessToken).not.toHaveBeenCalled();
+    expect(mockGetFreshAccessToken).not.toHaveBeenCalled();
   });
 });

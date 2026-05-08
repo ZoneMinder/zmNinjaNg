@@ -117,6 +117,12 @@ async function initializeApiClient(
   });
 
   setApiClient(createApiClient(profile.apiUrl, reLogin));
+
+  // Wire the same credentials reLogin into the auth store so
+  // getFreshAccessToken can fall through to it when refresh fails.
+  const { useAuthStore } = await import('./auth');
+  useAuthStore.getState().setReLoginCallback(reLogin);
+
   logDuration('Bootstrap step: API client ready', apiClientStart, {
     apiUrl: profile.apiUrl,
   });

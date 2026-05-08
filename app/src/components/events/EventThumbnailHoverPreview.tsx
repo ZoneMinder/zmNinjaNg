@@ -9,7 +9,7 @@
 import { useEffect, useMemo, type ReactNode } from 'react';
 import { HoverPreview } from '../ui/hover-preview';
 import { useCurrentProfile } from '../../hooks/useCurrentProfile';
-import { useAuthStore } from '../../stores/auth';
+import { useFreshAccessToken } from '../../hooks/useFreshAccessToken';
 import { getEventZmsUrl, getZmsControlUrl } from '../../lib/url-builder';
 import { httpGet } from '../../lib/http';
 import { log, LogLevel } from '../../lib/logger';
@@ -66,7 +66,7 @@ export function EventThumbnailHoverPreview({
  */
 export function EventZmsHoverPlayer({ descriptor }: { descriptor: EventZmsHoverDescriptor }) {
   const { currentProfile } = useCurrentProfile();
-  const accessToken = useAuthStore((s) => s.accessToken);
+  const { token: accessToken, isFresh: isAccessTokenFresh } = useFreshAccessToken();
 
   const connkey = useMemo(
     () => Math.floor(Math.random() * 1_000_000_000).toString(),
@@ -81,7 +81,7 @@ export function EventZmsHoverPlayer({ descriptor }: { descriptor: EventZmsHoverD
     monitorId: descriptor.monitorId,
   };
 
-  const streamUrl = portalUrl
+  const streamUrl = portalUrl && isAccessTokenFresh
     ? getEventZmsUrl(portalUrl, descriptor.eventId, {
         ...tokenOpts,
         connkey,

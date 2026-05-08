@@ -11,7 +11,7 @@ import { getEvent, getEventVideoUrl, getEventImageUrl } from '../api/events';
 import { resolveFallbackFids } from '../lib/thumbnail-chain';
 import { getMonitor } from '../api/monitors';
 import { useCurrentProfile } from '../hooks/useCurrentProfile';
-import { useAuthStore } from '../stores/auth';
+import { useFreshAccessToken } from '../hooks/useFreshAccessToken';
 import { useEventTagMapping } from '../hooks/useEventTags';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
@@ -70,7 +70,7 @@ export default function EventDetail() {
   });
 
   const { currentProfile, settings } = useCurrentProfile();
-  const accessToken = useAuthStore((state) => state.accessToken);
+  const { token: accessToken, isFresh: isAccessTokenFresh } = useFreshAccessToken();
 
   // Resolve portal URL for the monitor's server (multi-server support)
   const { portalPath } = useServerUrls(monitorData?.Monitor?.ServerId);
@@ -199,13 +199,13 @@ export default function EventDetail() {
   const isHlsEvent = event.Event.DefaultVideo?.endsWith('.m3u8') === true;
   const videoMimeType = isHlsEvent ? 'application/x-mpegURL' : 'video/mp4';
 
-  const videoUrl = currentProfile && hasVideo
+  const videoUrl = currentProfile && hasVideo && isAccessTokenFresh
     ? getEventVideoUrl(resolvedPortalUrl, event.Event.Id, accessToken || undefined, currentProfile.apiUrl, isHlsEvent, currentProfile.minStreamingPort, event.Event.MonitorId)
     : '';
 
 
   const posterFid = resolveFallbackFids(settings.thumbnailFallbackChain)[0] ?? 'snapshot';
-  const posterUrl = currentProfile
+  const posterUrl = currentProfile && isAccessTokenFresh
     ? getEventImageUrl(resolvedPortalUrl, event.Event.Id, posterFid, {
       token: accessToken || undefined,
       apiUrl: currentProfile.apiUrl,
@@ -349,7 +349,7 @@ export default function EventDetail() {
                 <ZmsEventPlayer
                   portalUrl={resolvedPortalUrl}
                   eventId={event.Event.Id}
-                  token={accessToken || undefined}
+                  token={isAccessTokenFresh ? accessToken ?? undefined : undefined}
                   apiUrl={currentProfile.apiUrl}
                   totalFrames={parseInt(event.Event.Frames)}
                   alarmFrames={parseInt(event.Event.AlarmFrames)}
