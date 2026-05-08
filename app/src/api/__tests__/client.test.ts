@@ -63,8 +63,8 @@ describe('API Client', () => {
     });
 
     expect(httpRequestSpy).toHaveBeenCalled();
-    const callArgs = httpRequestSpy.mock.calls[0][1];
-    expect(callArgs.params?.token).toBeUndefined();
+    const callArgs = httpRequestSpy.mock.calls[0]?.[1];
+    expect(callArgs?.params?.token).toBeUndefined();
   });
 
   it('replaces an expired access token with a fresh one before attaching', async () => {
@@ -92,8 +92,8 @@ describe('API Client', () => {
     await client.get('/monitors.json');
 
     expect(getFreshAccessToken).toHaveBeenCalled();
-    const callArgs = httpRequestSpy.mock.calls[0][1];
-    expect(callArgs.params?.token).toBe('fresh-at');
+    const callArgs = httpRequestSpy.mock.calls[0]?.[1];
+    expect(callArgs?.params?.token).toBe('fresh-at');
   });
 
   it('attaches no token when refresh returns null for an expired access token', async () => {
@@ -120,7 +120,7 @@ describe('API Client', () => {
     await client.get('/monitors.json');
 
     expect(getFreshAccessToken).toHaveBeenCalled();
-    const callArgs = httpRequestSpy.mock.calls[0][1];
-    expect(callArgs.params?.token).toBeUndefined();
+    const callArgs = httpRequestSpy.mock.calls[0]?.[1];
+    expect(callArgs?.params?.token).toBeUndefined();
   });
 });
