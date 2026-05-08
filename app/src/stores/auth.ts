@@ -18,6 +18,7 @@ import { login as apiLogin, refreshToken as apiRefreshToken } from '../api/auth'
 import type { LoginResponse } from '../api/types';
 import { log, LogLevel } from '../lib/logger';
 import { encrypt, decrypt, isCryptoAvailable } from '../lib/crypto';
+import { ZM_INTEGRATION } from '../lib/zmninja-ng-constants';
 
 interface AuthState {
   accessToken: string | null;
@@ -33,6 +34,8 @@ interface AuthState {
   logout: () => void;
   refreshAccessToken: () => Promise<void>;
   setTokens: (response: LoginResponse) => void;
+  getFreshAccessToken: () => Promise<string | null>;
+  setReLoginCallback: (callback: (() => Promise<boolean>) | null) => void;
 }
 
 interface PersistedAuthState {
@@ -108,6 +111,20 @@ const encryptedAuthStorage: PersistStorage<PersistedAuthState> = {
  * pending login.
  */
 let pendingLogin: Promise<void> | null = null;
+
+/**
+ * Module-level dedup for getFreshAccessToken(). Concurrent callers (multiple
+ * monitor tiles, hover previews, services) share the same in-flight refresh
+ * so we only hit /host/login.json once per stale window.
+ */
+let pendingFreshToken: Promise<string | null> | null = null;
+
+/**
+ * Credentials-based re-login callback registered by the profile store at app
+ * init. Decoupled via a setter to avoid a circular import between auth and
+ * profile stores.
+ */
+let reLoginCallback: (() => Promise<boolean>) | null = null;
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -218,6 +235,60 @@ export const useAuthStore = create<AuthState>()(
           apiVersion: response.apiversion || currentState.apiVersion,
           isAuthenticated: true,
         });
+      },
+
+      setReLoginCallback: (callback) => {
+        reLoginCallback = callback;
+      },
+
+      getFreshAccessToken: async () => {
+        if (pendingFreshToken) {
+          return pendingFreshToken;
+        }
+
+        const state = get();
+        const now = Date.now();
+        const hasFresh =
+          !!state.accessToken &&
+          !!state.accessTokenExpires &&
+          state.accessTokenExpires - now > ZM_INTEGRATION.accessTokenLeewayMs;
+        if (hasFresh) {
+          return state.accessToken;
+        }
+
+        pendingFreshToken = (async (): Promise<string | null> => {
+          try {
+            await get().refreshAccessToken();
+            return get().accessToken;
+          } catch (refreshError) {
+            log.auth(
+              'Refresh failed in getFreshAccessToken; falling through to reLogin',
+              LogLevel.WARN,
+              { error: refreshError },
+            );
+            if (!reLoginCallback) {
+              return null;
+            }
+            try {
+              const ok = await reLoginCallback();
+              if (!ok) return null;
+              return get().accessToken;
+            } catch (reLoginError) {
+              log.auth(
+                'reLogin failed in getFreshAccessToken',
+                LogLevel.ERROR,
+                { error: reLoginError },
+              );
+              return null;
+            }
+          }
+        })();
+
+        try {
+          return await pendingFreshToken;
+        } finally {
+          pendingFreshToken = null;
+        }
       },
     }),
     {
