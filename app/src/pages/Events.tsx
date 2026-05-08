@@ -15,6 +15,7 @@ import type { EventData } from '../api/types';
 import { getMonitors } from '../api/monitors';
 import { useCurrentProfile } from '../hooks/useCurrentProfile';
 import { useAuthStore } from '../stores/auth';
+import { useFreshAccessToken } from '../hooks/useFreshAccessToken';
 import { useSettingsStore } from '../stores/settings';
 import { useEventFilters, ALL_TAGS_FILTER_ID } from '../hooks/useEventFilters';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
@@ -50,7 +51,7 @@ export default function Events() {
     ? 'contain'
     : settings.eventsThumbnailFit;
   const updateSettings = useSettingsStore((state) => state.updateProfileSettings);
-  const accessToken = useAuthStore((state) => state.accessToken);
+  const { token: accessToken, isFresh: isAccessTokenFresh } = useFreshAccessToken();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const { isFilterActive: isGroupFilterActive, filteredMonitorIds: groupMonitorIds } = useGroupFilter();
 
@@ -524,7 +525,7 @@ export default function Events() {
             gridCols={gridControls.gridCols}
             thumbnailFit={normalizedThumbnailFit}
             portalUrl={currentProfile?.portalUrl || ''}
-            accessToken={accessToken || undefined}
+            accessToken={isAccessTokenFresh ? accessToken ?? undefined : undefined}
             batchSize={batchSize}
             totalCount={eventsData?.pagination?.totalCount}
             isLoadingMore={isLoadingMore}
@@ -540,7 +541,7 @@ export default function Events() {
             monitors={displayMonitors}
             thumbnailFit={normalizedThumbnailFit}
             portalUrl={currentProfile?.portalUrl || ''}
-            accessToken={accessToken || undefined}
+            accessToken={isAccessTokenFresh ? accessToken ?? undefined : undefined}
             batchSize={batchSize}
             totalCount={eventsData?.pagination?.totalCount}
             isLoadingMore={isLoadingMore}
