@@ -66,4 +66,28 @@ describe('API Client', () => {
     const callArgs = httpRequestSpy.mock.calls[0][1];
     expect(callArgs.params?.token).toBeUndefined();
   });
+
+  it('does not attach an expired access token to outgoing requests', async () => {
+    useAuthStore.setState({
+      accessToken: 'expired-at',
+      accessTokenExpires: Date.now() - 60_000,
+      refreshToken: null,
+      refreshTokenExpires: null,
+      isAuthenticated: true,
+    });
+
+    const httpRequestSpy = vi.mocked(httpRequest);
+    httpRequestSpy.mockResolvedValueOnce({
+      data: {},
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+    } as never);
+
+    const client = createApiClient('https://zm.example.com/api');
+    await client.get('/monitors.json');
+
+    const callArgs = httpRequestSpy.mock.calls[0][1];
+    expect(callArgs.params?.token).not.toBe('expired-at');
+  });
 });
