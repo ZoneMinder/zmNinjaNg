@@ -14,7 +14,7 @@ import { EventThumbnail } from '../events/EventThumbnail';
 import { HoverPreview } from '../ui/hover-preview';
 import { EventZmsHoverPlayer } from '../events/EventThumbnailHoverPreview';
 import { useCurrentProfile } from '../../hooks/useCurrentProfile';
-import { useAuthStore } from '../../stores/auth';
+import { useFreshAccessToken } from '../../hooks/useFreshAccessToken';
 import type { MonitorsResponse } from '../../api/types';
 import { useDateTimeFormat } from '../../hooks/useDateTimeFormat';
 import { LAYOUT, type TimelineEvent } from './timeline-layout';
@@ -87,7 +87,7 @@ function ScrubberThumbnail({
   onTap: (eventId: string) => void;
 }) {
   const { currentProfile, settings } = useCurrentProfile();
-  const accessToken = useAuthStore((s) => s.accessToken);
+  const { token: accessToken, isFresh: isAccessTokenFresh } = useFreshAccessToken();
   const { fmtTimeShort } = useDateTimeFormat();
   const queryClient = useQueryClient();
 
@@ -95,7 +95,7 @@ function ScrubberThumbnail({
   const monitors = (queryClient.getQueryData<MonitorsResponse>(['monitors']))?.monitors ?? [];
   const portalUrl = getPortalUrlForEvent(event.monitorId, monitors, profilePortalUrl);
   const thumbnailUrls = buildThumbnailChain(portalUrl, event.id, settings.thumbnailFallbackChain, {
-    token: accessToken ?? undefined,
+    token: isAccessTokenFresh ? accessToken ?? undefined : undefined,
     minStreamingPort: currentProfile?.minStreamingPort,
     monitorId: event.monitorId,
   });

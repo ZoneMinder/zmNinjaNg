@@ -31,7 +31,7 @@ import { formatDistanceToNow, isToday, isYesterday, startOfWeek, startOfMonth } 
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { NotificationBadge } from '../components/NotificationBadge';
-import { useAuthStore } from '../stores/auth';
+import { useFreshAccessToken } from '../hooks/useFreshAccessToken';
 import { useDateTimeFormat } from '../hooks/useDateTimeFormat';
 
 export default function NotificationHistory() {
@@ -39,7 +39,7 @@ export default function NotificationHistory() {
   const { t } = useTranslation();
   const { currentProfile, settings } = useCurrentProfile();
   const { getEvents, getUnreadCount, markEventRead, markAllRead, clearEvents } = useNotificationStore();
-  const accessToken = useAuthStore((state) => state.accessToken);
+  const { token: accessToken, isFresh: isAccessTokenFresh } = useFreshAccessToken();
   const { fmtDateTimeShort } = useDateTimeFormat();
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
 
@@ -75,12 +75,12 @@ export default function NotificationHistory() {
         String(eventId),
         settings.thumbnailFallbackChain,
         {
-          token: accessToken ?? undefined,
+          token: isAccessTokenFresh ? accessToken ?? undefined : undefined,
           minStreamingPort: currentProfile.minStreamingPort,
         }
       );
     },
-    [currentProfile, accessToken, settings.thumbnailFallbackChain]
+    [currentProfile, accessToken, isAccessTokenFresh, settings.thumbnailFallbackChain]
   );
 
   type DateSection = 'today' | 'yesterday' | 'this_week' | 'this_month' | 'older';

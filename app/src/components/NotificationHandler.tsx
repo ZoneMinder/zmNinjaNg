@@ -15,7 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { useNotificationStore } from '../stores/notifications';
 import { useCurrentProfile } from '../hooks/useCurrentProfile';
 import { useProfileStore } from '../stores/profile';
-import { useAuthStore } from '../stores/auth';
+import { useFreshAccessToken } from '../hooks/useFreshAccessToken';
 import { toast } from 'sonner';
 import { Bell } from 'lucide-react';
 import { getEventCauseIcon } from '../lib/event-icons';
@@ -57,6 +57,7 @@ export function NotificationHandler() {
   } = useNotificationStore();
 
   const lastEventId = useRef<number | null>(null);
+  const { token: accessToken, isFresh: isAccessTokenFresh } = useFreshAccessToken();
 
   // Profile switch confirmation state
   const [pendingSwitch, setPendingSwitch] = useState<PendingProfileSwitch | null>(null);
@@ -162,7 +163,7 @@ export function NotificationHandler() {
             String(latestEvent.EventId),
             profileSettings.thumbnailFallbackChain,
             {
-              token: useAuthStore.getState().accessToken ?? undefined,
+              token: isAccessTokenFresh ? accessToken ?? undefined : undefined,
               minStreamingPort: currentProfile.minStreamingPort,
             }
           )
@@ -228,7 +229,7 @@ export function NotificationHandler() {
         monitor: latestEvent.MonitorName,
         eventId: latestEvent.EventId, });
     }
-  }, [events, settings?.showToasts, settings?.playSound, currentProfile?.id, t, navigate]);
+  }, [events, settings?.showToasts, settings?.playSound, currentProfile?.id, t, navigate, accessToken, isAccessTokenFresh]);
 
   // Render profile switch confirmation dialog when a cross-profile notification is tapped
   return (
