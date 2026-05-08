@@ -17,7 +17,7 @@ import { getStreamUrl } from '../api/monitors';
 import { useCurrentProfile } from './useCurrentProfile';
 import { useBandwidthSettings } from './useBandwidthSettings';
 import { useStreamLifecycle } from './useStreamLifecycle';
-import { useAuthStore } from '../stores/auth';
+import { useFreshAccessToken } from './useFreshAccessToken';
 import { useServerUrls } from './useServerUrls';
 import { log, LogLevel } from '../lib/logger';
 import type { StreamOptions } from '../api/types';
@@ -58,7 +58,7 @@ export function useMonitorStream({
 }: UseMonitorStreamOptions): UseMonitorStreamReturn {
   const { currentProfile, settings } = useCurrentProfile();
   const bandwidth = useBandwidthSettings();
-  const accessToken = useAuthStore((state) => state.accessToken);
+  const { token: accessToken, isFresh: isAccessTokenFresh } = useFreshAccessToken();
   const { recordingUrl, portalPath } = useServerUrls(serverId);
   // portalUrl for stream lifecycle = portalPath without /index.php
   const resolvedPortalUrl = portalPath ? portalPath.replace(/\/index\.php$/, '') : currentProfile?.portalUrl;
@@ -100,7 +100,7 @@ export function useMonitorStream({
   }, [enabled, effectiveViewMode, bandwidth.snapshotRefreshInterval]);
 
   // Build stream URL - ONLY when we have a valid connKey to prevent zombie streams
-  const streamUrl = currentProfile && connKey !== 0
+  const streamUrl = currentProfile && connKey !== 0 && isAccessTokenFresh
     ? getStreamUrl(recordingUrl || currentProfile.cgiUrl, monitorId, {
       mode: effectiveViewMode === 'snapshot' ? 'single' : 'jpeg',
       scale: bandwidth.imageScale,
