@@ -67,7 +67,7 @@ describe('API Client', () => {
     expect(callArgs.params?.token).toBeUndefined();
   });
 
-  it('does not attach an expired access token to outgoing requests', async () => {
+  it('replaces an expired access token with a fresh one before attaching', async () => {
     useAuthStore.setState({
       accessToken: 'expired-at',
       accessTokenExpires: Date.now() - 60_000,
@@ -75,6 +75,10 @@ describe('API Client', () => {
       refreshTokenExpires: null,
       isAuthenticated: true,
     });
+
+    // Mock getFreshAccessToken to deterministically return a fresh token
+    const getFreshAccessToken = vi.fn(async () => 'fresh-at');
+    useAuthStore.setState({ getFreshAccessToken } as never);
 
     const httpRequestSpy = vi.mocked(httpRequest);
     httpRequestSpy.mockResolvedValueOnce({
@@ -87,7 +91,36 @@ describe('API Client', () => {
     const client = createApiClient('https://zm.example.com/api');
     await client.get('/monitors.json');
 
+    expect(getFreshAccessToken).toHaveBeenCalled();
     const callArgs = httpRequestSpy.mock.calls[0][1];
-    expect(callArgs.params?.token).not.toBe('expired-at');
+    expect(callArgs.params?.token).toBe('fresh-at');
+  });
+
+  it('attaches no token when refresh returns null for an expired access token', async () => {
+    useAuthStore.setState({
+      accessToken: 'expired-at',
+      accessTokenExpires: Date.now() - 60_000,
+      refreshToken: null,
+      refreshTokenExpires: null,
+      isAuthenticated: true,
+    });
+
+    const getFreshAccessToken = vi.fn(async () => null);
+    useAuthStore.setState({ getFreshAccessToken } as never);
+
+    const httpRequestSpy = vi.mocked(httpRequest);
+    httpRequestSpy.mockResolvedValueOnce({
+      data: {},
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+    } as never);
+
+    const client = createApiClient('https://zm.example.com/api');
+    await client.get('/monitors.json');
+
+    expect(getFreshAccessToken).toHaveBeenCalled();
+    const callArgs = httpRequestSpy.mock.calls[0][1];
+    expect(callArgs.params?.token).toBeUndefined();
   });
 });
