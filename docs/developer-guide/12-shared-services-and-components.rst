@@ -1738,6 +1738,25 @@ Mirrors entries from ``useLogStore`` to a persistent file on disk.
 
 --------------
 
+Token freshness gate
+--------------------
+
+``useFreshAccessToken`` (``hooks/useFreshAccessToken.ts``) returns ``{ token, isFresh }``
+where ``isFresh`` is true only when the access token has more than
+``ZM_INTEGRATION.accessTokenLeewayMs`` (30 minutes) of validity remaining. While not
+fresh, the hook returns ``token: null`` and asks the auth store to refresh in the
+background. Any callsite that builds a token-bearing URL the browser or native
+runtime loads directly (ZMS streams, event images and videos, push-notification
+image backfills) gates URL construction on ``isFresh``. While not fresh, the
+callsite emits an empty URL and the existing ``VideoOff`` placeholder shows
+through.
+
+For non-React async paths, call ``useAuthStore.getState().getFreshAccessToken()``
+directly. The action dedupes concurrent callers, falls through from refresh to
+credentials re-login on failure, and resolves with ``null`` if both fail.
+
+--------------
+
 Next Steps
 ----------
 
