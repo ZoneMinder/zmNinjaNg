@@ -11,7 +11,7 @@ import { useRef, type ReactNode } from 'react';
 import { getStreamUrl } from '../../api/monitors';
 import { useCurrentProfile } from '../../hooks/useCurrentProfile';
 import { useStreamLifecycle } from '../../hooks/useStreamLifecycle';
-import { useAuthStore } from '../../stores/auth';
+import { useFreshAccessToken } from '../../hooks/useFreshAccessToken';
 import { parseMonitorRotation } from '../../lib/monitor-rotation';
 import { log } from '../../lib/logger';
 import type { Monitor } from '../../api/types';
@@ -57,7 +57,7 @@ export function MonitorHoverPreview({ monitor, children }: MonitorHoverPreviewPr
  */
 function MonitorLivePreview({ monitor }: { monitor: Monitor }) {
   const { currentProfile } = useCurrentProfile();
-  const accessToken = useAuthStore((state) => state.accessToken);
+  const { token: accessToken, isFresh: isAccessTokenFresh } = useFreshAccessToken();
   const imgRef = useRef<HTMLImageElement>(null);
 
   const { connKey } = useStreamLifecycle({
@@ -72,7 +72,7 @@ function MonitorLivePreview({ monitor }: { monitor: Monitor }) {
     minStreamingPort: currentProfile?.minStreamingPort,
   });
 
-  if (!currentProfile || connKey === 0) {
+  if (!currentProfile || connKey === 0 || !isAccessTokenFresh) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-muted/30">
         <VideoOff className="h-8 w-8 text-muted-foreground/40" />
