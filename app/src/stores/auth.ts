@@ -195,9 +195,14 @@ export const useAuthStore = create<AuthState>()(
        * If refresh fails, logs the user out.
        */
       refreshAccessToken: async () => {
-        const { refreshToken } = get();
+        const { refreshToken, refreshTokenExpires } = get();
         if (!refreshToken) {
           throw new Error('No refresh token available');
+        }
+        if (!refreshTokenExpires || refreshTokenExpires <= Date.now()) {
+          log.auth('Refresh token expired or missing expiry; skipping network call', LogLevel.WARN);
+          get().logout();
+          throw new Error('Refresh token expired');
         }
 
         try {

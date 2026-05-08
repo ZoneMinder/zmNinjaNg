@@ -93,6 +93,7 @@ describe('Auth Store', () => {
   it('refreshes access token successfully', async () => {
     useAuthStore.setState({
       refreshToken: 'refresh-xyz',
+      refreshTokenExpires: Date.now() + 24 * 60 * 60 * 1000,
     });
 
     vi.mocked(apiRefreshToken).mockResolvedValue({
@@ -109,6 +110,7 @@ describe('Auth Store', () => {
   it('logs out on refresh failure', async () => {
     useAuthStore.setState({
       refreshToken: 'refresh-xyz',
+      refreshTokenExpires: Date.now() + 24 * 60 * 60 * 1000,
       accessToken: 'old-access',
       isAuthenticated: true,
     });
@@ -248,6 +250,30 @@ describe('Auth Store', () => {
       expect(b).toBe('new');
       expect(c).toBe('new');
       expect(apiRefreshToken).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('refreshAccessToken expiry pre-check', () => {
+    it('throws synchronously and does not call the network when refresh token is expired', async () => {
+      useAuthStore.setState({
+        refreshToken: 'expired-rt',
+        refreshTokenExpires: Date.now() - 60_000,
+      });
+      vi.mocked(apiRefreshToken).mockClear();
+      await expect(useAuthStore.getState().refreshAccessToken()).rejects.toThrow(
+        /Refresh token expired/,
+      );
+      expect(apiRefreshToken).not.toHaveBeenCalled();
+    });
+
+    it('throws when refresh token expiry is missing', async () => {
+      useAuthStore.setState({
+        refreshToken: 'rt-no-expiry',
+        refreshTokenExpires: null,
+      });
+      vi.mocked(apiRefreshToken).mockClear();
+      await expect(useAuthStore.getState().refreshAccessToken()).rejects.toThrow();
+      expect(apiRefreshToken).not.toHaveBeenCalled();
     });
   });
 });
