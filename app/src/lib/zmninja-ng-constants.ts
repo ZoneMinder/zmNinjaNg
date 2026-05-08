@@ -44,7 +44,7 @@ export const ZM_INTEGRATION = {
   // Token management
   accessTokenLeewayMin: 5, // Minutes before token expiry to refresh
   refreshTokenLeewayMin: 10, // Minutes before refresh token expiry
-  accessTokenLeewayMs: 5 * 60 * 1000, // 5 minutes in milliseconds
+  accessTokenLeewayMs: 30 * 60 * 1000, // 30 minutes in milliseconds — gates URL construction; refresh fires when below this threshold
   tokenCheckInterval: 60 * 1000, // Check token status every minute
   loginInterval: 1800000, // 30 minutes - re-login interval
 } as const;
