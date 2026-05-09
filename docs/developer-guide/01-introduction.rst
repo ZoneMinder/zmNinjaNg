@@ -9,40 +9,13 @@ What is zmNinjaNg?
 -------------
 
 zmNinjaNg is a cross-platform mobile and desktop application for ZoneMinder,
-an open-source video surveillance system. It’s built using:
-
-- **React** (v18) with **react-router-dom v7**: UI rendering and routing
-- **Tailwind CSS + shadcn/ui**: Utility-first styling with composable
-  component primitives in ``app/src/components/ui/``
-- **Zustand**: State management (one store per concern, see chapter 3)
-- **TanStack Query**: Server-state caching for API data (see chapter 7)
-- **Capacitor** (v6/v7): Wraps the web app as a native iOS/Android app
-  with access to device features
-- **Tauri** (v2): Wraps the web app as a native desktop app (macOS,
-  Windows, Linux)
-- **TypeScript**: A typed superset of JavaScript that catches errors at
-  compile time
-- **Vite**: Dev server and build tool
-
-**The key insight**: zmNinjaNg is a web application that runs everywhere. The
-same React code is packaged as: - A native iOS app (via Capacitor) - A
-native Android app (via Capacitor) - A native desktop app (via Tauri) -
-A web app (runs in browser)
-
-This “write once, run anywhere” approach means you write React code, and
-it runs on all platforms.
+an open-source video surveillance system
 
 Who This Guide Is For
 ---------------------
 
-This guide assumes you: - Are an experienced programmer in at least one
-language - Understand basic programming concepts (variables, functions,
-classes, etc.) - May not be familiar with React, JavaScript ecosystem,
-or frontend development - Want to understand the architecture and
-patterns used in zmNinjaNg
-
-If you’re coming from backend development, Java, C++, Python, or similar
-languages, we’ll explain React concepts from first principles.
+This guide is written for developers who want to understand how the system works.
+It also explains React fundamentals - this was primarily to educate me as I did not have React experience and only limited Typescript experience
 
 What This Guide Covers
 ----------------------
