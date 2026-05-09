@@ -44,32 +44,35 @@ A store is created using the ``create`` function:
 
 .. code:: tsx
 
-   // src/stores/useProfileStore.ts
+   // src/stores/profile.ts
    import { create } from 'zustand';
 
    interface ProfileState {
      // State
-     currentProfile: Profile | null;
+     currentProfileId: string | null;
      profiles: Profile[];
 
      // Actions (functions that modify state)
-     setCurrentProfile: (profile: Profile | null) => void;
-     addProfile: (profile: Profile) => void;
+     setCurrentProfile: (id: string) => void;
+     addProfile: (profileData: Omit<Profile, 'id' | 'createdAt'>) => Promise<string>;
    }
 
    export const useProfileStore = create<ProfileState>((set) => ({
      // Initial state
-     currentProfile: null,
+     currentProfileId: null,
      profiles: [],
 
      // Actions
-     setCurrentProfile: (profile) =>
-       set({ currentProfile: profile }),
+     setCurrentProfile: (id) =>
+       set({ currentProfileId: id }),
 
-     addProfile: (profile) =>
+     addProfile: async (profileData) => {
+       const id = crypto.randomUUID();
        set((state) => ({
-         profiles: [...state.profiles, profile]
-       })),
+         profiles: [...state.profiles, { ...profileData, id, createdAt: Date.now() }],
+       }));
+       return id;
+     },
    }));
 
 The ``set`` Function
@@ -81,7 +84,7 @@ The ``set`` Function
 
 .. code:: tsx
 
-   set({ currentProfile: profile })  // Merges { currentProfile: profile } into state
+   set({ currentProfileId: id })  // Merges { currentProfileId: id } into state
 
 **Function form** (access current state):
 
@@ -114,24 +117,40 @@ Import the hook and call it to get state and actions:
 
 .. code:: tsx
 
-   import { useProfileStore } from '../stores/useProfileStore';
+   import { useProfileStore } from '../stores/profile';
 
    function ProfileSelector() {
      // Get everything
-     const { currentProfile, profiles, setCurrentProfile } = useProfileStore();
+     const { currentProfileId, profiles, setCurrentProfile } = useProfileStore();
 
      return (
        <View>
          {profiles.map(profile => (
            <Pressable
              key={profile.id}
-             onPress={() => setCurrentProfile(profile)}
+             onPress={() => setCurrentProfile(profile.id)}
            >
              <Text>{profile.name}</Text>
            </Pressable>
          ))}
        </View>
      );
+   }
+
+In application code, prefer the ``useCurrentProfile`` hook
+(``hooks/useCurrentProfile.ts``) when you need the active profile object —
+it derives ``currentProfile`` from ``currentProfileId`` + ``profiles`` using
+``useShallow`` and ``useMemo`` to avoid infinite re-renders, and also
+returns the merged profile settings:
+
+.. code:: tsx
+
+   import { useCurrentProfile } from '../hooks/useCurrentProfile';
+
+   function UserName() {
+     const { currentProfile, settings, hasProfile } = useCurrentProfile();
+     if (!hasProfile) return null;
+     return <Text>{currentProfile?.name}</Text>;
    }
 
 Selectors: Optimizing Re-renders
@@ -143,22 +162,22 @@ even if you don’t use it.
 
 .. code:: tsx
 
-   function UserName() {
-     const { currentProfile } = useProfileStore();
+   function CurrentProfileId() {
+     const { currentProfileId } = useProfileStore();
      // ⚠️ This re-renders when profiles array changes, even though we don't use it!
 
-     return <Text>{currentProfile?.name}</Text>;
+     return <Text>{currentProfileId}</Text>;
    }
 
 **Selectors** let you subscribe to specific parts of state:
 
 .. code:: tsx
 
-   function UserName() {
-     // Only re-renders when currentProfile changes
-     const currentProfile = useProfileStore((state) => state.currentProfile);
+   function CurrentProfileId() {
+     // Only re-renders when currentProfileId changes
+     const currentProfileId = useProfileStore((state) => state.currentProfileId);
 
-     return <Text>{currentProfile?.name}</Text>;
+     return <Text>{currentProfileId}</Text>;
    }
 
 **When to use selectors**:
@@ -178,7 +197,7 @@ Multiple Selectors
 .. code:: tsx
 
    function ProfileView() {
-     const currentProfile = useProfileStore((state) => state.currentProfile);
+     const currentProfileId = useProfileStore((state) => state.currentProfileId);
      const setCurrentProfile = useProfileStore((state) => state.setCurrentProfile);
      // Each selector is independent - component re-renders only when these specific values change
    }
@@ -300,7 +319,7 @@ When to Use useShallow
 
 - Primitives: ``(state) => state.count`` (numbers/strings/booleans are
   fine)
-- Single object properties: ``(state) => state.currentProfile`` (already
+- Single object properties: ``(state) => state.currentProfileId`` (already
   stable if unchanged)
 - Actions/functions: ``(state) => state.addItem`` (functions don’t need
   shallow comparison)
@@ -382,26 +401,27 @@ Actions should encapsulate business logic:
 .. code:: tsx
 
    export const useProfileStore = create<ProfileState>((set, get) => ({
-     currentProfile: null,
+     currentProfileId: null,
      profiles: [],
 
      // Simple action
-     setCurrentProfile: (profile) =>
-       set({ currentProfile: profile }),
+     setCurrentProfile: (id) =>
+       set({ currentProfileId: id }),
 
-     // Complex action with logic
+     // Action with logic
      deleteProfile: (profileId) => {
-       const { profiles, currentProfile, setCurrentProfile } = get();
+       const { profiles, currentProfileId } = get();
 
        // Remove profile
        const newProfiles = profiles.filter(p => p.id !== profileId);
 
-       // If we deleted the current profile, select another
-       if (currentProfile?.id === profileId) {
-         setCurrentProfile(newProfiles[0] || null);
-       }
+       // If we deleted the current profile, select another (or null)
+       const newCurrentId =
+         currentProfileId === profileId
+           ? newProfiles[0]?.id ?? null
+           : currentProfileId;
 
-       set({ profiles: newProfiles });
+       set({ profiles: newProfiles, currentProfileId: newCurrentId });
      },
    }));
 
@@ -421,13 +441,15 @@ current state:
 Persistence
 -----------
 
-Zustand can persist state to storage automatically:
+Zustand can persist state to storage automatically. zmNinjaNg runs on web,
+Tauri, and Capacitor — all of which expose ``localStorage`` — so the
+``persist`` middleware uses the default browser storage, no custom
+``createJSONStorage`` needed:
 
 .. code:: tsx
 
    import { create } from 'zustand';
-   import { persist, createJSONStorage } from 'zustand/middleware';
-   import AsyncStorage from '@react-native-async-storage/async-storage';
+   import { persist } from 'zustand/middleware';
 
    export const useProfileStore = create<ProfileState>()(
      persist(
@@ -435,28 +457,33 @@ Zustand can persist state to storage automatically:
          // State and actions here
        }),
        {
-         name: 'profile-storage',  // Storage key
-         storage: createJSONStorage(() => AsyncStorage),
+         name: 'zmng-profiles',  // localStorage key
        }
      )
    );
 
 **How it works**: 1. When state changes, Zustand saves it to
-AsyncStorage 2. On app launch, Zustand loads state from AsyncStorage 3.
-Everything is automatic
+``localStorage``. 2. On app launch, Zustand loads state from
+``localStorage``. 3. Everything is automatic.
+
+**Sensitive data** (passwords, tokens) is **not** stored via the
+``persist`` middleware. Profile passwords go through ``lib/secureStorage.ts``,
+which wraps ``@aparajita/capacitor-secure-storage`` (native Keychain /
+Keystore on iOS / Android, encrypted localStorage on web). The persisted
+profile keeps a flag like ``'stored-securely'`` instead of the real value.
 
 **Caveats**:
 
-- Can slow down updates if state is large
-- Versioning is manual (detect and handle format changes yourself)
+- ``localStorage`` is synchronous and limited (~5 MB) — keep persisted state small.
+- Versioning is manual (detect and handle format changes yourself).
 
 Advanced Persistence: Hydration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Persistence is **asynchronous** (especially with ``AsyncStorage`` on
-mobile). When the app launches, the store starts with its initial state
-(empty) and then “hydrates” with data from storage a few milliseconds
-later.
+Hydration runs once at startup and may invoke async work (e.g.
+re-initializing the API client and re-authenticating). When the app
+launches, the store starts with its initial state (empty) and then
+“hydrates” with data from storage a few milliseconds later.
 
 This can cause UI flashes or errors if the app tries to use state before
 it’s loaded. To handle this, we use the ``onRehydrateStorage`` callback.
@@ -472,13 +499,12 @@ it’s loaded. To handle this, we use the ``onRehydrateStorage`` callback.
          isInitialized: false,
        }),
        {
-         name: 'profile-storage',
-         storage: createJSONStorage(() => AsyncStorage),
-         
+         name: 'zmng-profiles',
+
          // Callback when hydration starts
          onRehydrateStorage: () => {
            console.log('Hydration starting...');
-           
+
            // Returns a function that runs when hydration finishes
            return (state, error) => {
              if (error) {
@@ -521,15 +547,15 @@ Unlike React state, Zustand works outside components:
    import { useProfileStore } from '../stores/profile';
 
    // In a regular function (not a component)
-   // Access primitives directly - do NOT use currentProfile() getter
+   // Access primitives directly and look up the profile by id
    export function getCurrentProfile(): Profile | null {
      const { profiles, currentProfileId } = useProfileStore.getState();
      return profiles.find(p => p.id === currentProfileId) ?? null;
    }
 
-   // Update from outside React
-   export function resetProfile(): void {
-     useProfileStore.getState().setCurrentProfileId(null);
+   // Switch profile from outside React
+   export async function switchToProfile(id: string): Promise<void> {
+     await useProfileStore.getState().switchProfile(id);
    }
 
 This is useful for:
@@ -572,8 +598,8 @@ Example: The Infinite Loop
 .. code:: tsx
 
    function DashboardLayout() {
-     const currentProfile = useProfileStore((state) => state.currentProfile);
-     const updateSettings = useProfileStore((state) => state.updateSettings);
+     const { currentProfile } = useCurrentProfile();
+     const updateSettings = useSettingsStore((state) => state.updateSettings);
 
      // ⚠️ INFINITE LOOP!
      const handleResize = useCallback((width: number) => {
@@ -596,8 +622,8 @@ them dependencies:
 .. code:: tsx
 
    function DashboardLayout() {
-     const currentProfile = useProfileStore((state) => state.currentProfile);
-     const updateSettings = useProfileStore((state) => state.updateSettings);
+     const { currentProfile } = useCurrentProfile();
+     const updateSettings = useSettingsStore((state) => state.updateSettings);
 
      // Store in refs
      const currentProfileRef = useRef(currentProfile);
@@ -629,17 +655,20 @@ We use multiple stores for different domains:
 ::
 
    src/stores/
-   ├── useProfileStore.ts       # User profiles management
-   ├── useAuthStore.ts          # Authentication tokens and state
-   ├── useSettingsStore.ts      # Application and profile settings
-   ├── useDashboardStore.ts     # Dashboard configuration
-   ├── useMonitorStore.ts       # Monitor data cache
-   ├── useNotificationStore.ts  # Push notifications
-   ├── useLogStore.ts           # Application logs (ephemeral)
-   ├── useQueryCacheStore.ts    # API response cache
-   ├── backgroundTasks.ts       # Background download/upload tasks
-   ├── eventFavorites.ts        # Per-profile favorited events
-   └── kioskStore.ts            # Kiosk mode lock state (ephemeral)
+   ├── profile.ts                  # User profiles management (exports useProfileStore)
+   ├── profile-bootstrap.ts        # Bootstrap helpers used by profile.ts
+   ├── profile-initialization.ts   # Rehydration helpers used by profile.ts
+   ├── auth.ts                     # Authentication tokens and state (useAuthStore)
+   ├── settings.ts                 # Application and profile settings (useSettingsStore)
+   ├── dashboard.ts                # Dashboard configuration (useDashboardStore)
+   ├── monitors.ts                 # Monitor data cache (useMonitorsStore)
+   ├── notifications.ts            # Push notifications (useNotificationsStore)
+   ├── notifications-trash.ts      # Trashed notifications
+   ├── logs.ts                     # Application logs (ephemeral)
+   ├── query-cache.ts              # React Query cache helpers
+   ├── backgroundTasks.ts          # Background download/upload tasks
+   ├── eventFavorites.ts           # Per-profile favorited events
+   └── kioskStore.ts               # Kiosk mode lock state (ephemeral)
 
 **Why multiple stores?**
 
@@ -810,7 +839,7 @@ Each store follows this pattern:
      clearSelection: () => void;
    }
 
-   // 2. Create store with persistence
+   // 2. Create store with persistence (uses default localStorage)
    export const useMyStore = create<MyState>()(
      persist(
        (set, get) => ({
@@ -829,8 +858,7 @@ Each store follows this pattern:
            set({ selectedId: null }),
        }),
        {
-         name: 'my-storage',
-         storage: createJSONStorage(() => AsyncStorage),
+         name: 'zmng-my-storage',
        }
      )
    );
@@ -842,31 +870,34 @@ Stores can be tested independently:
 
 .. code:: tsx
 
-   import { useProfileStore } from '../useProfileStore';
+   import { useProfileStore } from '../profile';
 
    describe('ProfileStore', () => {
      beforeEach(() => {
        // Reset store before each test
        useProfileStore.setState({
-         currentProfile: null,
+         currentProfileId: null,
          profiles: [],
        });
      });
 
      it('sets current profile', () => {
-       const profile = { id: '1', name: 'Test' };
+       useProfileStore.setState({
+         profiles: [{ id: '1', name: 'Test' } as any],
+       });
 
-       useProfileStore.getState().setCurrentProfile(profile);
+       useProfileStore.getState().setCurrentProfile('1');
 
-       expect(useProfileStore.getState().currentProfile).toBe(profile);
+       expect(useProfileStore.getState().currentProfileId).toBe('1');
      });
 
-     it('adds profile to list', () => {
-       const profile = { id: '1', name: 'Test' };
+     it('adds profile to list', async () => {
+       const id = await useProfileStore.getState().addProfile({
+         name: 'Test',
+       } as any);
 
-       useProfileStore.getState().addProfile(profile);
-
-       expect(useProfileStore.getState().profiles).toContain(profile);
+       const profiles = useProfileStore.getState().profiles;
+       expect(profiles.find((p) => p.id === id)?.name).toBe('Test');
      });
    });
 

@@ -176,29 +176,33 @@ ZoneMinder uses session-based authentication with tokens:
 
 .. code:: tsx
 
-   export async function login(
-     portalUrl: string,
-     username: string,
-     password: string
-   ): Promise<AuthTokens> {
-     const response = await fetch(`${portalUrl}/api/host/login.json`, {
-       method: 'POST',
-       headers: { 'Content-Type': 'application/json' },
-       body: JSON.stringify({
-         user: username,
-         pass: password,
-       }),
-     });
+   import { getApiClient } from './client';
+   import { LoginResponseSchema, type LoginCredentials, type LoginResponse } from './types';
 
-     const data = await response.json();
+   export async function login(credentials: LoginCredentials): Promise<LoginResponse> {
+     const client = getApiClient();
 
-     return {
-       accessToken: data.access_token,
-       refreshToken: data.refresh_token,
-       accessTokenExpires: Date.now() + data.access_token_expires * 1000,
-       refreshTokenExpires: Date.now() + data.refresh_token_expires * 1000,
-     };
+     // ZoneMinder expects form-encoded data for login
+     const formData = new URLSearchParams();
+     formData.append('user', credentials.user);
+     formData.append('pass', credentials.pass);
+
+     const response = await client.post<LoginResponse>(
+       '/host/login.json',
+       formData.toString(),
+       { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+     );
+
+     // Validate response shape with Zod
+     return LoginResponseSchema.parse(response.data);
    }
+
+The returned ``LoginResponse`` carries ``access_token``,
+``access_token_expires`` (seconds), ``refresh_token``, and
+``refresh_token_expires``. The auth store converts the *_expires* fields to
+absolute ms-epoch deadlines before persisting. All HTTP goes through
+``getApiClient()`` from ``api/client.ts`` (CapacitorHttp on native, Axios on
+web), never raw ``fetch()``.
 
 Tokens are stored encrypted in ``SecureStorage``:
 
@@ -570,7 +574,7 @@ Sometimes one query depends on another’s result:
 .. code:: tsx
 
    function MonitorStream({ monitorId }: { monitorId: string }) {
-     const currentProfile = useProfileStore((state) => state.currentProfile);
+     const { currentProfile } = useCurrentProfile();
 
      // First query: Get monitor data
      const { data: monitor } = useQuery({
@@ -620,7 +624,7 @@ Global / App-Level Timers
 |             |                               |                   | is expiring   |
 |             |                               |                   | soon and      |
 |             |                               |                   | refreshes it  |
-|             |                               |                   | 5 minutes     |
+|             |                               |                   | up to 30 min  |
 |             |                               |                   | before expiry |
 +-------------+-------------------------------+-------------------+---------------+
 | WebSocket   | ``services/notifications.ts`` | **60 seconds**    | Sends version |
@@ -650,7 +654,7 @@ Global / App-Level Timers
        const checkAndRefresh = async () => {
          if (accessTokenExpires) {
            const timeUntilExpiry = accessTokenExpires - Date.now();
-           // Refresh 5 minutes before expiry
+           // Refresh once we're within accessTokenLeewayMs (30 min) of expiry
            if (timeUntilExpiry < ZM_INTEGRATION.accessTokenLeewayMs && timeUntilExpiry > 0) {
              await refreshAccessToken();
            }
@@ -818,16 +822,14 @@ Static defaults are defined in ``lib/zmninja-ng-constants.ts``:
 .. code:: tsx
 
    export const ZM_INTEGRATION = {
-     // Polling and status intervals
-     eventCheckTime: 30000,           // 30 sec - default event checking
-     streamQueryStatusTime: 10000,    // 10 sec - stream status polling
-     alarmStatusTime: 10000,          // 10 sec - alarm status polling
-     streamReconnectDelay: 5000,      // 5 sec - delay before stream reconnect
+     // API timeouts
+     httpTimeout: 10000,              // 10 sec - standard API calls
+     streamMaxFps: 10,                // Max FPS for live monitor streams
 
      // Token management
-     tokenCheckInterval: 60 * 1000,   // 60 sec - check token expiry
-     accessTokenLeewayMs: 5 * 60 * 1000,  // 5 min - refresh before expiry
-     loginInterval: 1800000,          // 30 min - re-login interval
+     tokenCheckInterval: 60 * 1000,        // 60 sec - poll cadence for expiry check
+     accessTokenLeewayMs: 30 * 60 * 1000,  // 30 min - refresh once within this window of expiry
+     loginInterval: 1800000,               // 30 min - re-login interval
    } as const;
 
 Bandwidth Mode Settings
@@ -1175,7 +1177,7 @@ For paginated data like event lists:
 .. code:: tsx
 
    function EventTimeline() {
-     const currentProfile = useProfileStore((state) => state.currentProfile);
+     const { currentProfile } = useCurrentProfile();
 
      const {
        data,
@@ -1904,7 +1906,7 @@ Let’s trace a complete data flow: viewing monitors
 
    // src/pages/Monitors.tsx
    export default function Monitors() {
-     const currentProfile = useProfileStore((state) => state.currentProfile);
+     const { currentProfile } = useCurrentProfile();
 
      const { data, isLoading, error } = useQuery({
        queryKey: ['monitors', currentProfile?.id],
@@ -2028,12 +2030,14 @@ data), React Query returns cached result instantly.
      const [streamUrl, setStreamUrl] = useState('');
 
      useEffect(() => {
-       const profile = useProfileStore.getState().currentProfile;
+       const { profiles, currentProfileId } = useProfileStore.getState();
+       const profile = profiles.find((p) => p.id === currentProfileId);
+       if (!profile) return;
 
-       generateConnKey(profile).then(connkey => {
-         const url = `${profile.portalUrl}/cgi-bin/nph-zms?mode=jpeg&monitor=${monitorId}&connkey=${connkey}`;
-         setStreamUrl(url);
-       });
+       // URL building is centralized in lib/url-builder.ts
+       import('../lib/url-builder').then(({ getMonitorStreamUrl }) =>
+         getMonitorStreamUrl(profile, monitorId).then(setStreamUrl)
+       );
      }, [monitorId]);
 
      return { streamUrl };

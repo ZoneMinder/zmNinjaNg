@@ -54,14 +54,18 @@ helpers.
 - ``api``, ``app``, ``auth``, ``crypto``, ``dashboard``, ``discovery``,
   ``download``
 - ``errorBoundary``, ``eventCard``, ``eventDetail``, ``eventMontage``
-- ``http``, ``imageError``, ``monitor``, ``monitorCard``,
+- ``http``, ``imageError``, ``kiosk``, ``monitor``, ``monitorCard``,
   ``monitorDetail``, ``montageMonitor``
 - ``navigation``, ``notificationHandler``, ``notifications``,
   ``notificationSettings``
 - ``profile``, ``profileForm``, ``profileService``, ``profileSwitcher``
 - ``push``, ``queryCache``, ``secureImage``, ``secureStorage``,
-  ``server``, ``time``
+  ``server``, ``sslTrust``, ``time``, ``timeline``
 - ``videoMarkers``, ``videoPlayer``, ``zmsEventPlayer``
+
+The list is the source of truth in ``app/src/lib/logger.ts``
+(``componentLoggers`` array). Adding a new logger means appending to
+that array and to the matching ``Logger`` class field.
 
 **Used By:** Entire application (all components, stores, API functions)
 
@@ -541,7 +545,7 @@ Date/time formatting and timezone conversion for ZoneMinder API.
 
 .. code:: typescript
 
-   import { formatForServer, formatLocalDateTime, formatDuration } from '../lib/time';
+   import { formatForServer, formatLocalDateTime } from '../lib/time';
 
    // For API requests (server timezone)
    const serverTime = formatForServer(new Date());
@@ -551,9 +555,11 @@ Date/time formatting and timezone conversion for ZoneMinder API.
    const localTime = formatLocalDateTime(new Date());
    // → '2024-01-10T15:30:45'
 
-   // Duration formatting
-   const duration = formatDuration(125); // seconds
-   // → '2:05'
+For user-facing date/time display, use ``useDateTimeFormat()`` (React) or
+``formatAppDate``/``formatAppTime``/``formatAppDateTime`` from
+``lib/format-date-time.ts`` outside React. These honor the per-profile
+``dateFormat`` / ``timeFormat`` settings. Never call ``date-fns`` ``format()``
+with hard-coded patterns for user-visible output.
 
 **Used By:** API functions, Events page, filters, dashboard widgets
 
@@ -577,13 +583,17 @@ Encryption/decryption for secure password storage (web platform).
 
    import { encrypt, decrypt } from '../lib/crypto';
 
-   // Encrypt password
-   const encrypted = await encrypt('my-password', 'encryption-key');
-   // → Base64 string
+   // Encrypt — key is internal (derived once per app install and cached)
+   const encrypted = await encrypt('my-password');
+   // → Base64 string (IV + ciphertext)
 
-   // Decrypt password
-   const password = await decrypt(encrypted, 'encryption-key');
+   // Decrypt
+   const password = await decrypt(encrypted);
    // → 'my-password'
+
+The encryption key is generated and persisted internally (no key parameter is
+required at the call site). A ``decryptLegacy()`` helper exists for migrating
+data encrypted with an older key derivation; new code should use ``decrypt()``.
 
 **Used By:** ProfileService, secure storage (web fallback)
 
@@ -1110,14 +1120,25 @@ Visual indicator for pull-to-refresh gesture.
 
 .. code:: tsx
 
-   const { isRefreshing, onRefresh } = usePullToRefresh(refetch);
+   import { usePullToRefresh } from '../hooks/usePullToRefresh';
 
-   <>
-     <PullToRefreshIndicator isActive={isRefreshing} />
-     <IonContent onIonRefresh={onRefresh}>
-       {/* Content */}
-     </IonContent>
-   </>
+   const { containerRef, bind, isRefreshing, isPulling, pullDistance } =
+     usePullToRefresh({ onRefresh: () => refetch() });
+
+   <div ref={containerRef} {...bind()} className="overflow-y-auto h-full">
+     <PullToRefreshIndicator
+       isPulling={isPulling}
+       isRefreshing={isRefreshing}
+       pullDistance={pullDistance}
+     />
+     {/* Content */}
+   </div>
+
+The hook takes a destructured options object (``onRefresh``, optional
+``threshold``, optional ``enabled``) and gesture detection is wired through
+``@use-gesture/react``'s ``useDrag``. Spread the returned ``bind()`` props
+onto the scroll container and attach ``containerRef`` so the hook can read
+``scrollTop`` to gate activation.
 
 **Used By:** Events page, Monitors page, Montage page
 

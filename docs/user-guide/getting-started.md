@@ -19,7 +19,7 @@ zmNinjaNg runs on Android, iOS, Windows, macOS, Linux, and the web from a single
 
 - ZoneMinder 1.36 or newer
 - API access enabled (`OPT_USE_API = 1`)
-- A valid SSL certificate (or plain HTTP). Self-signed certificates are supported on mobile (iOS/Android) - enable the toggle in Settings > Connection. On desktop, add your CA to the system trust store. Using [Let's Encrypt](https://letsencrypt.org/) or similar is recommended
+- A valid SSL certificate (or plain HTTP). For self-signed certificates, enable **Allow self-signed certificates** in Settings > Advanced. On desktop, you may also need to add your CA to the system trust store. Using [Let's Encrypt](https://letsencrypt.org/) or similar is recommended
 
 ### Client
 
@@ -47,7 +47,7 @@ See {doc}`installation` for detailed instructions per platform, and {doc}`profil
 | Montage (multi-camera) view | Supported |
 | Customizable dashboard | Supported |
 | Event timeline and heatmap | Supported |
-| Push notifications (mobile) | Supported on iOS and Android (requires custom build with Firebase credentials) |
+| Push notifications (mobile) | Supported on iOS and Android. Works out of the box with App Store / Google Play builds; custom builds need their own Firebase credentials |
 | In-app notifications | Supported (foreground toast notifications on all platforms) |
 | Multiple server profiles | Supported |
 | Monitor groups and filters | Supported |

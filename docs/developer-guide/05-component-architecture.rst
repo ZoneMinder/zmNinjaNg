@@ -58,7 +58,10 @@ Key Directories Explained
 - ``services/``: Bridges between the web app and native platform
   features.
 
-  - ``notifications.ts``: Push notification handling.
+  - ``notifications.ts``: Event Server WebSocket notification handling.
+  - ``pushNotifications.ts``: FCM push notification handling on iOS/Android.
+  - ``eventPoller.ts``: Direct-mode event polling on desktop/web.
+  - ``profile.ts``: Profile-related service helpers.
 
 - ``stores/``: Global state management (see Chapter 3).
 
@@ -71,54 +74,29 @@ Components are organized by domain in ``src/components/``:
 
    src/components/
    ├── dashboard/          # Dashboard-specific components
-   │   ├── DashboardWidget.tsx
-   │   ├── DashboardLayout.tsx
-   │   ├── DashboardConfig.tsx
-   │   ├── WidgetEditDialog.tsx
-   │   └── widgets/
-   │       ├── MonitorWidget.tsx
-   │       ├── EventsWidget.tsx
-   │       ├── HeatmapWidget.tsx
-   │       └── TimelineWidget.tsx
-   ├── kiosk/            # Kiosk mode components
-   │   ├── KioskOverlay.tsx
-   │   └── PinPad.tsx
-   ├── layout/            # App shell layout components
-   │   ├── AppLayout.tsx         # Thin shell composing SidebarContent and LanguageSwitcher
-   │   ├── SidebarContent.tsx    # Navigation links, drag-reorder, user controls
-   │   └── LanguageSwitcher.tsx  # Self-contained language dropdown
-   ├── monitors/          # Monitor-related components
-   │   ├── MonitorCard.tsx
-   │   ├── MontageMonitor.tsx
-   │   └── PTZControls.tsx
-   ├── events/           # Event-related components
-   │   ├── EventCard.tsx
-   │   ├── EventListView.tsx
-   │   ├── EventMontageView.tsx
-   │   ├── ZmsEventPlayer.tsx
-   │   ├── EventHeatmap.tsx
-   │   └── TagChip.tsx         # Event tag display
-   ├── filters/          # Filter components
-   │   ├── MonitorFilterPopover.tsx
-   │   └── GroupFilterSelect.tsx  # Monitor group filtering
-   ├── settings/          # Settings page section components
-   │   ├── SettingsLayout.tsx    # Shared layout primitives (SectionHeader, SettingsCard, SettingsRow, RowLabel)
-   │   ├── AppearanceSection.tsx
-   │   ├── LiveStreamingSection.tsx
-   │   ├── PlaybackSection.tsx
-   │   └── AdvancedSection.tsx
-   ├── notifications/     # Notification settings sub-components
-   │   ├── NotificationModeSection.tsx
-   │   ├── ServerConfigSection.tsx
-   │   └── MonitorFilterSection.tsx
-   ├── QRScanner.tsx     # QR code scanning for profile import
-   └── ui/              # Reusable UI primitives
-       ├── button.tsx
-       ├── card.tsx
-       ├── dialog.tsx
-       ├── badge.tsx
-       ├── video-player.tsx
-       └── ...
+   ├── events/             # Event-related components
+   ├── filters/            # Filter components
+   ├── kiosk/              # Kiosk mode components
+   ├── layout/             # App shell layout components
+   ├── monitor-detail/     # Monitor detail page sub-components
+   ├── monitors/           # Monitor-related components (MonitorCard, MonitorHoverPreview, MontageMonitor, PTZControls)
+   ├── montage/            # Montage grid components and hooks
+   ├── notifications/      # Notification settings sub-components
+   ├── settings/           # Settings page section components
+   ├── timeline/           # Event timeline components
+   ├── tv/                 # TV-mode components
+   ├── ui/                 # Reusable UI primitives (shadcn/ui + Tailwind)
+   ├── video/              # VideoPlayer (smart streaming) and overlays
+   ├── BackgroundTaskDrawer.tsx
+   ├── CertTrustDialog.tsx
+   ├── ErrorBoundary.tsx
+   ├── mode-toggle.tsx
+   ├── NotificationBadge.tsx
+   ├── NotificationHandler.tsx
+   ├── profile-switcher.tsx
+   ├── QRScanner.tsx       # QR code scanning for profile import
+   ├── RouteErrorBoundary.tsx
+   └── theme-provider.tsx
 
 Monitor Components
 ------------------
@@ -745,8 +723,8 @@ VideoPlayer (Event Playback)
 
 **Location**: ``src/components/ui/video-player.tsx``
 
-Wrapper around HTML5 video for event playback with Ionic integration.
-Separate from the live streaming VideoPlayer above.
+Wrapper around Video.js for event playback (HLS streams, markers,
+PiP integration). Separate from the live streaming VideoPlayer above.
 
 **Features:**
 
@@ -754,6 +732,8 @@ Separate from the live streaming VideoPlayer above.
 - Play/pause callbacks
 - Error handling
 - Fullscreen support
+- Timeline markers for alarm frames (``videojs-markers``)
+- PiP persistence via ``PipContext`` when an ``eventId`` prop is provided
 
 PipContext
 ~~~~~~~~~~
@@ -1052,21 +1032,24 @@ view:
 
    function MonitorDetailPage() {
      const { id } = useParams();
+     const { currentProfile, settings } = useCurrentProfile();
 
      return (
-       <IonPage>
-         <IonHeader>
-           <Toolbar />
-         </IonHeader>
-         <IonContent>
-           <VideoPlayer src={streamUrl} />  {/* UI component */}
-           <MonitorInfo monitor={monitor} />  {/* Monitor component */}
+       <div className="flex flex-col h-full bg-background">
+         <div className="flex items-center justify-between p-3 border-b">
+           <Button variant="ghost" size="icon" onClick={goBack}>
+             <ArrowLeft className="h-4 w-4" />
+           </Button>
+           <h1>{monitor.Name}</h1>
+         </div>
+         <div className="flex-1 p-3">
+           <VideoPlayer monitor={monitor} profile={currentProfile} />
            {monitor.Controllable === '1' && (
-             <PTZControls monitor={monitor} />  {/* Monitor component */}
+             <PTZControls onCommand={handlePTZCommand} />
            )}
-           <EventTimeline monitorId={id} />  {/* Event component */}
-         </IonContent>
-       </IonPage>
+           <EventTimeline monitorId={id} />
+         </div>
+       </div>
      );
    }
 

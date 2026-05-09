@@ -50,7 +50,7 @@ Settings that control live camera feeds:
 | Setting | Description |
 |---------|-------------|
 | **Streaming Mode** | *Streaming* delivers continuous video. *Snapshot* fetches a periodic still image instead — lower bandwidth, lower frame rate. See [Streaming Mode](#streaming-mode) below for where this setting applies. |
-| **Streaming protocol** | WebRTC (lowest latency), MSE, or HLS — tried in order if go2rtc is configured |
+| **Streaming Protocols** | WebRTC, MSE, and HLS — tried in parallel when Go2RTC is configured. The first protocol to produce video wins. |
 | **Snapshot interval** | How often to refresh the still image when Streaming Mode is set to *Snapshot* (1–30 seconds) |
 | **Protocol Label** | Shows or hides the streaming protocol indicator (MJPEG/MSE/WebRTC) on video feeds across all pages |
 
@@ -91,11 +91,13 @@ The global Go2RTC setting acts as the default for all monitors. To override it f
 
 ## Playback
 
-Settings that affect event video playback:
+Settings that affect event video playback and dashboard refresh:
 
 | Setting | Description |
 |---------|-------------|
-| **Dashboard refresh interval** | How often the dashboard widgets reload data (5–300 seconds) |
+| **Event autoplay** | Start video playback automatically when opening the Event Detail page |
+| **Events per page** | How many events to load per page on the Events screen (10–1000, presets at 100/300/500) |
+| **Dashboard refresh interval** | How often the dashboard widgets reload data (5–300 seconds, presets at 10/30/60) |
 
 ## Notification Settings
 
@@ -103,15 +105,13 @@ Configure how zmNinjaNg handles event notifications. See {doc}`notifications` fo
 
 ## Advanced
 
-### Connection
+The Advanced section is a single flat section containing the following controls (no subsection headings in the UI):
 
 | Setting | Description |
 |---------|-------------|
-| **Allow self-signed certificates** | Enable when your ZoneMinder server uses a self-signed HTTPS certificate (iOS/Android only) |
-
-### Log Redaction
-
-Redact sensitive values (URLs, credentials) from logs. Disable only when sharing logs for troubleshooting.
+| **Allow self-signed certificates** | Shown only when the Portal URL uses HTTPS. Enable when your ZoneMinder server uses a self-signed certificate. On native platforms (iOS/Android/desktop) the app pins the certificate fingerprint on first connection; toggling this off and back on lets you re-pin. |
+| **Disable log redaction** | Stop redacting URLs and credentials from logs. Enable only temporarily when sharing logs for troubleshooting. |
+| **Component Logs** (collapsible) | Sets the global log level (the floor for everything) and per-component overrides. Includes a Reset button to clear all per-component overrides. |
 
 For information about persistent log files, file locations, and the Share / Open / Clear buttons, see {doc}`logs`.
 
@@ -147,6 +147,3 @@ For single-server setups, the Server screen shows:
 - API version
 - Daemon status
 
-## Resetting Settings
-
-Settings can be reset to defaults from the Settings screen. This affects only the current profile's settings, not your connection details or other profiles.

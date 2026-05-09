@@ -174,12 +174,12 @@ parameters.
    // API timeouts and performance settings
    ZM_INTEGRATION.httpTimeout           // 10 seconds
    ZM_INTEGRATION.streamMaxFps          // 10 FPS for live streams
-   ZM_INTEGRATION.streamReconnectDelay  // 5 seconds before reconnect
+   ZM_INTEGRATION.accessTokenLeewayMs   // 30 minutes — refresh token before expiry
 
    // Grid layout configuration
    GRID_LAYOUT.cols                     // 12 columns
    GRID_LAYOUT.rowHeight               // 100px per row
-   GRID_LAYOUT.montageRowHeight        // 10px for compact montage
+   GRID_LAYOUT.montageRowHeight        // 1px (per-pixel precision for compact montage)
 
    // Timeline zoom limits
    TIMELINE.zoomMin  // 1 minute

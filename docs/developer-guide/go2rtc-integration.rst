@@ -75,7 +75,7 @@ based on:
 
    function determineStreamingMethod() {
      const userPreference = settings.streamingMethod; // 'auto' | 'webrtc' | 'mjpeg'
-     const go2rtcAvailable = profile.go2rtcAvailable; // Server has Go2RTC
+     const go2rtcAvailable = !!profile.go2rtcUrl;       // Server published a Go2RTC URL
      const monitorSupportsGo2RTC = monitor.Go2RTCEnabled; // Monitor configured for Go2RTC
 
      // User forces MJPEG?
@@ -102,6 +102,11 @@ based on:
 
      return 'mjpeg'; // Default fallback
    }
+
+The ``Profile`` type stores the discovered Go2RTC endpoint as
+``go2rtcUrl?: string`` (set during server discovery from
+``ZM_GO2RTC_PATH``). There is no separate ``go2rtcAvailable`` boolean —
+truthiness of ``go2rtcUrl`` is the availability check.
 
 Settings
 ~~~~~~~~

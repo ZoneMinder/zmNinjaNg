@@ -259,42 +259,45 @@ Zustand Pitfalls
 
 .. code:: tsx
 
-   const currentProfile = useProfileStore((state) => state.currentProfile);
+   const { currentProfile } = useCurrentProfile();
 
    useEffect(() => {
      console.log('Profile changed');
-   }, [currentProfile]);  // ❌ Runs every render (new reference)
+   }, [currentProfile]);  // ❌ Runs every render (new derived reference)
 
 **Why it’s wrong:**
 
-- Zustand returns new references even if values unchanged
+- Derived values like ``currentProfile`` (looked up from
+  ``profiles.find(p => p.id === currentProfileId)``) can be new references
+  even when the underlying ID is unchanged
 - Effect runs on every render
-- Can cause infinite loops if effect updates state
+- Can cause infinite loops if the effect updates state
 
-**Solution:**
+**Solution — depend on the primitive ID:**
 
 .. code:: tsx
 
-   const currentProfile = useProfileStore((state) => state.currentProfile);
-   const currentProfileRef = useRef(currentProfile);
+   const profileId = useProfileStore((state) => state.currentProfileId);
 
+   useEffect(() => {
+     console.log('Profile ID changed', profileId);
+   }, [profileId]);  // ✅ Primitive — stable when unchanged
+
+When you need both id-stable effect deps and the full profile object inside
+the effect, capture the latest profile in a ref:
+
+.. code:: tsx
+
+   const { currentProfile } = useCurrentProfile();
+   const currentProfileRef = useRef(currentProfile);
    useEffect(() => {
      currentProfileRef.current = currentProfile;
    }, [currentProfile]);
 
+   const profileId = useProfileStore((s) => s.currentProfileId);
    useEffect(() => {
      console.log('Profile changed', currentProfileRef.current);
-   }, []);  // ✅ Runs once, ref has latest value
-
-Or use a selector with shallow comparison:
-
-.. code:: tsx
-
-   const profileId = useProfileStore((state) => state.currentProfile?.id);
-
-   useEffect(() => {
-     console.log('Profile ID changed', profileId);
-   }, [profileId]);  // ✅ ID is a primitive, stable when unchanged
+   }, [profileId]);  // ✅ Fires only when the id actually changes
 
 8. Forgetting to Initialize Store State
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

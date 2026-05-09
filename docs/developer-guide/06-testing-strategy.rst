@@ -111,9 +111,9 @@ Tests live next to the code they test in ``__tests__/`` subdirectories:
    │   └── __tests__/
    │       └── crypto.test.ts
    └── stores/
-       ├── useProfileStore.ts
+       ├── profile.ts
        └── __tests__/
-           └── useProfileStore.test.ts
+           └── profile.test.ts
 
 Running Unit Tests
 ~~~~~~~~~~~~~~~~~~
@@ -200,11 +200,12 @@ Mocking Dependencies
 
 .. code:: tsx
 
-   vi.mock('../../../stores/useProfileStore');
+   vi.mock('../../../stores/profile');
 
    it('displays current profile name', () => {
      useProfileStore.mockReturnValue({
-       currentProfile: { id: '1', name: 'My Profile' },
+       currentProfileId: '1',
+       profiles: [{ id: '1', name: 'My Profile' }],
      });
      render(<ProfileSelector />);
      expect(screen.getByText('My Profile')).toBeInTheDocument();
@@ -406,15 +407,15 @@ Device E2E tests are run via shell scripts in ``scripts/``:
 
    * - Command
      - Description
-   * - ``bash scripts/test-android.sh``
+   * - ``npm run test:e2e:android``
      - Android emulator (Playwright via CDP)
-   * - ``bash scripts/test-ios.sh phone``
+   * - ``npm run test:e2e:ios-phone``
      - iPhone simulator (WebDriverIO + Appium)
-   * - ``bash scripts/test-ios.sh tablet``
+   * - ``npm run test:e2e:ios-tablet``
      - iPad simulator (WebDriverIO + Appium)
-   * - ``bash scripts/test-tauri.sh``
+   * - ``npm run test:e2e:tauri``
      - Tauri desktop (WebDriverIO + tauri-driver)
-   * - ``bash scripts/test-all-platforms.sh``
+   * - ``npm run test:e2e:all-platforms``
      - All platforms sequentially
 
 Running Device Tests Step by Step
@@ -427,13 +428,13 @@ Running Device Tests Step by Step
    # 1. Build and sync the app
    cd app && npm run android:sync
 
-   # 2. The test script handles building, booting the emulator,
+   # 2. The npm script handles building, booting the emulator,
    #    installing the APK, forwarding the CDP port, and running
    #    Playwright against the Android WebView.
-   bash scripts/test-android.sh
+   npm run test:e2e:android
 
    # Run a single feature:
-   bash scripts/test-android.sh tests/features/dashboard.feature
+   npm run test:e2e:android -- tests/features/dashboard.feature
 
 **iOS simulator (iPhone or iPad):**
 
@@ -442,25 +443,25 @@ Running Device Tests Step by Step
    # 1. Build and sync the app
    cd app && npm run ios:sync
 
-   # 2. The test script builds the app via xcodebuild, boots the
+   # 2. The npm script builds the app via xcodebuild, boots the
    #    simulator, starts Appium, launches the app, switches to
    #    the WebView context, and runs WebDriverIO tests.
-   bash scripts/test-ios.sh phone     # iPhone 15
-   bash scripts/test-ios.sh tablet    # iPad Air
+   npm run test:e2e:ios-phone     # iPhone 15
+   npm run test:e2e:ios-tablet    # iPad Air
 
 **Tauri desktop:**
 
 .. code:: bash
 
-   # The test script starts tauri-driver and runs WebDriverIO
+   # The npm script starts tauri-driver and runs WebDriverIO
    # against the Tauri app's WKWebView.
-   bash scripts/test-tauri.sh
+   npm run test:e2e:tauri
 
 **All platforms sequentially:**
 
 .. code:: bash
 
-   bash scripts/test-all-platforms.sh
+   npm run test:e2e:all-platforms
 
 This runs: web → Android → iOS phone → iOS tablet → Tauri, in order.
 

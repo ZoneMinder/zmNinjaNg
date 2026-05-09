@@ -33,7 +33,7 @@ Before You Start
 
       # Run tests to ensure setup is correct
       npm test
-      npm run typecheck
+      npx tsc --noEmit
       npm run build
 
 3. **Understand the codebase**
@@ -118,7 +118,7 @@ Follow the patterns in this guide and AGENTS.md:
    npm test
 
    # Type checking
-   npm run typecheck
+   npx tsc --noEmit
 
    # Build
    npm run build
@@ -253,7 +253,7 @@ Follow the patterns in this guide and AGENTS.md:
 
    Tests verified:
    - npm test ✓
-   - npm run typecheck ✓
+   - npx tsc --noEmit ✓
    - npm run build ✓
    - npm run test:e2e -- monitors.feature ✓
 

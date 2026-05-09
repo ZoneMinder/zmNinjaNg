@@ -142,7 +142,8 @@ Once logged in and on the Dashboard, several background processes keep
 the app alive.
 
 1. **Token Refresh**: Background timer checks token expiry every 60
-   seconds and refreshes 5 minutes before expiry
+   seconds and refreshes once within 30 minutes of expiry
+   (``ZM_INTEGRATION.accessTokenLeewayMs``)
 2. **Event Polling**: Dashboard widgets and event views poll for new
    events at configurable intervals (30-60 seconds)
 3. **Monitor Status**: Alarm status polling (5 seconds on Monitor Detail

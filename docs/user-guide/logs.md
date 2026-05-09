@@ -34,8 +34,8 @@ A status line below the action row shows the current entry count (e.g. *4,237 of
 
 The on-disk file mirrors the in-memory Logs view, so anything filtered out by your level / component settings is not persisted either. To configure:
 
-- Global level: **Settings → Advanced → Log Redaction** area (sets the floor for everything).
-- Per-component overrides: at the top of the **Logs** page itself.
+- Global level and per-component overrides: **Settings → Advanced → Component Logs** (collapsible section). The global level sets the floor; per-component selectors override it for individual loggers.
+- The Logs page itself only filters which entries are *displayed*. The component multi-select at the top of the page narrows the visible entries; it does not change the level being recorded.
 
 Lowering the level (e.g. to DEBUG for a specific component) writes more to disk; raising it writes less.
 

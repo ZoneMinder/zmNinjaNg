@@ -11,15 +11,18 @@ What is zmNinjaNg?
 zmNinjaNg is a cross-platform mobile and desktop application for ZoneMinder,
 an open-source video surveillance system. It’s built using:
 
-- **React**: A JavaScript library for building user interfaces
-- **Ionic Framework**: Provides mobile-optimized UI components and
-  navigation patterns
-- **Capacitor**: Wraps the web app as a native iOS/Android app with
-  access to device features
-- **Tauri**: Wraps the web app as a native desktop app (macOS, Windows,
-  Linux)
+- **React** (v18) with **react-router-dom v7**: UI rendering and routing
+- **Tailwind CSS + shadcn/ui**: Utility-first styling with composable
+  component primitives in ``app/src/components/ui/``
+- **Zustand**: State management (one store per concern, see chapter 3)
+- **TanStack Query**: Server-state caching for API data (see chapter 7)
+- **Capacitor** (v6/v7): Wraps the web app as a native iOS/Android app
+  with access to device features
+- **Tauri** (v2): Wraps the web app as a native desktop app (macOS,
+  Windows, Linux)
 - **TypeScript**: A typed superset of JavaScript that catches errors at
   compile time
+- **Vite**: Dev server and build tool
 
 **The key insight**: zmNinjaNg is a web application that runs everywhere. The
 same React code is packaged as: - A native iOS app (via Capacitor) - A

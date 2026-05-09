@@ -8,7 +8,7 @@ ZoneMinder 1.36 or newer with API access enabled (`OPT_USE_API = 1`).
 
 ### Does zmNinjaNg work with self-signed certificates?
 
-Yes. On mobile (iOS/Android), enable **Allow self-signed certificates** in Settings > Connection or when adding a new profile. On desktop, add your certificate authority to the system trust store. Using [Let's Encrypt](https://letsencrypt.org/) (free) or another trusted CA is still recommended. You can also use plain HTTP if your server is on a local network.
+Yes. Enable **Allow self-signed certificates** in Settings > Advanced (the toggle is shown only when the Portal URL uses HTTPS), or toggle it when adding a new profile. On native platforms (iOS/Android/desktop) the certificate fingerprint is pinned on first connection. Using [Let's Encrypt](https://letsencrypt.org/) (free) or another trusted CA is still recommended. You can also use plain HTTP if your server is on a local network.
 
 ### Is zmNinjaNg free?
 
@@ -29,7 +29,7 @@ zmNinjaNg is a ground-up rewrite of zmNinja using modern web technologies (React
 - Check that your ZoneMinder server is accessible from your device
 - Verify the Portal URL format (typically `https://your-server/zm`)
 - Ensure the ZoneMinder API is enabled
-- If using HTTPS with a self-signed certificate, make sure the self-signed certificate toggle is enabled in Settings > Connection
+- If using HTTPS with a self-signed certificate, make sure the self-signed certificate toggle is enabled in Settings > Advanced
 
 ### The app connects but shows no monitors
 
@@ -47,12 +47,14 @@ zmNinjaNg is a ground-up rewrite of zmNinja using modern web technologies (React
 
 ### Why don't push notifications work?
 
-Push notifications on mobile (iOS/Android) require:
-1. Building the app yourself with Firebase credentials
-2. One of the following backends:
+Push notifications on mobile (iOS/Android) work out of the box with the App Store and Google Play builds — no Firebase setup is required on your end. You still need to:
+
+1. Pick a backend in **Notification Settings**:
    - **ES mode**: The Event Notification Server with FCM support
    - **Direct mode**: ZoneMinder with the Notifications REST API (no Event Server needed)
-3. Enabling notifications in zmNinjaNg settings and selecting the appropriate mode
+2. Enable notifications in zmNinjaNg settings and select the appropriate mode
+
+If you build the app from source, you must provide your own Firebase credentials (`google-services.json` for Android, `GoogleService-Info.plist` for iOS) — see {doc}`../building/ANDROID` and {doc}`../building/IOS`.
 
 See {doc}`notifications` for the full setup guide.
 

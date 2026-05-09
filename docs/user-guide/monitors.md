@@ -18,13 +18,7 @@ On desktop, hovering a monitor card for a moment opens a larger (400px wide) liv
 
 ## Filtering Monitors
 
-Use the filter controls at the top of the screen to narrow down which monitors are shown:
-
-- **Groups**: Filter by ZoneMinder monitor groups
-- **Status**: Show only monitors in a specific state
-- **Search**: Type to filter by monitor name
-
-Filters persist across navigation within the same session.
+Use the **Groups** selector at the top of the screen to filter by ZoneMinder monitor group. The selection persists across navigation within the same session.
 
 ## Monitor Detail
 
@@ -77,7 +71,7 @@ Technical details about the monitor configuration (resolution, source type, func
 
 Monitor snapshots refresh automatically. The interval depends on your bandwidth setting:
 
-- **Normal mode**: Every 10 seconds
-- **Low bandwidth mode**: Every 30 seconds
+- **Normal mode**: Status every 20 seconds, snapshot image every 3 seconds
+- **Low bandwidth mode**: Status every 40 seconds, snapshot image every 10 seconds
 
 See {doc}`settings` to configure bandwidth mode.

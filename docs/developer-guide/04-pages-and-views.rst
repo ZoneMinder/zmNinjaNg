@@ -7,7 +7,7 @@ logic that connects them.
 Routing and Navigation
 ----------------------
 
-zmNinjaNg uses **React Router** (``react-router-dom``) for client-side
+zmNinjaNg uses **React Router v7** (``react-router-dom``) for client-side
 routing. The router integration is handled in ``src/App.tsx``.
 
 Route Structure
@@ -47,7 +47,8 @@ for that page but can still use the navigation sidebar to go elsewhere.
 Programmatic Navigation
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-To navigate imperatively from code, use the ``useNavigate`` hook:
+To navigate imperatively from code, use the ``useNavigate`` hook from
+React Router v7:
 
 .. code:: tsx
 
@@ -57,16 +58,24 @@ To navigate imperatively from code, use the ``useNavigate`` hook:
      const navigate = useNavigate();
 
      const handleSave = () => {
-       // Navigate to monitor details
-       navigate(`/monitors/${monitorId}`);
+       navigate(`/monitors/${monitorId}`);            // forward
+     };
+
+     const handleCancel = () => {
+       navigate(-1);                                  // back
+     };
+
+     const handleReplace = () => {
+       navigate('/dashboard', { replace: true });     // replace history entry
      };
    }
 
 Page Structure
 --------------
 
-All pages in zmNinjaNg follow the Ionic page pattern and are located in
-``src/pages/``:
+Pages are plain React components built with Tailwind CSS and shadcn/ui
+primitives from ``src/components/ui/`` (``Button``, ``Card``, ``Input``,
+``Select``, etc.). They live in ``src/pages/``:
 
 ::
 
@@ -81,8 +90,13 @@ All pages in zmNinjaNg follow the Ionic page pattern and are located in
    ├── Profiles.tsx       # Profile selection screen
    └── Settings.tsx       # App settings
 
-Each page uses the ``IonPage`` component and handles its own data
-fetching and state management.
+Each page is a top-level ``<div>`` (or fragment) with Tailwind layout
+classes, renders shadcn/ui primitives for chrome, and handles its own
+data fetching and state management. The outer chrome (sidebar, header)
+is supplied by ``AppLayout`` (``src/components/layout/AppLayout.tsx``)
+through the layout route in ``src/App.tsx``; pages do not render their
+own page shell. User-facing notifications go through ``toast`` from
+``sonner``.
 
 Dashboard Page
 --------------
@@ -98,7 +112,7 @@ Architecture
 .. code:: tsx
 
    export default function Dashboard() {
-     const currentProfile = useProfileStore((state) => state.currentProfile);
+     const { currentProfile } = useCurrentProfile();
      const widgets = useDashboardStore((state) => state.widgets);
      const layout = useDashboardStore((state) => state.layout);
 
@@ -107,18 +121,14 @@ Architecture
      }
 
      return (
-       <IonPage>
-         <IonHeader>
-           <DashboardHeader />
-         </IonHeader>
-         <IonContent>
-           <DashboardLayout
-             widgets={widgets}
-             layout={layout}
-             onLayoutChange={saveLayout}
-           />
-         </IonContent>
-       </IonPage>
+       <div className="p-4 md:p-6 space-y-4">
+         <DashboardHeader />
+         <DashboardLayout
+           widgets={widgets}
+           layout={layout}
+           onLayoutChange={saveLayout}
+         />
+       </div>
      );
    }
 
@@ -139,8 +149,8 @@ settings
 .. code:: tsx
 
    function DashboardLayout() {
-     const currentProfile = useProfileStore((state) => state.currentProfile);
-     const updateSettings = useProfileStore((state) => state.updateSettings);
+     const { currentProfile } = useCurrentProfile();
+     const updateSettings = useSettingsStore((state) => state.updateProfileSettings);
      const gridCols = useDashboardStore((state) => state.gridCols);
 
      // Calculate max columns based on container width
@@ -198,8 +208,8 @@ We need to decouple the Zustand values from the callback dependencies:
 .. code:: tsx
 
    function DashboardLayout() {
-     const currentProfile = useProfileStore((state) => state.currentProfile);
-     const updateSettings = useProfileStore((state) => state.updateSettings);
+     const { currentProfile } = useCurrentProfile();
+     const updateSettings = useSettingsStore((state) => state.updateProfileSettings);
      const gridCols = useDashboardStore((state) => state.gridCols);
 
      // Store Zustand values in refs - doesn't trigger re-renders
@@ -430,49 +440,50 @@ Architecture
 .. code:: tsx
 
    export default function Monitors() {
-     const currentProfile = useProfileStore((state) => state.currentProfile);
-     const viewMode = useMonitorStore((state) => state.viewMode);  // 'list' | 'grid'
+     const { t } = useTranslation();
+     const { currentProfile, settings } = useCurrentProfile();
+     const bandwidth = useBandwidthSettings();
+     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+     const updateSettings = useSettingsStore((state) => state.updateProfileSettings);
 
-     const { data, isLoading, error } = useQuery({
+     const { data, isLoading, error, refetch } = useQuery({
        queryKey: ['monitors', currentProfile?.id],
-       queryFn: () => fetchMonitors(currentProfile!.id),
-       enabled: !!currentProfile,
-       refetchInterval: 30000,  // Refetch every 30s
+       queryFn: getMonitors,
+       enabled: !!currentProfile && isAuthenticated,
+       refetchInterval: bandwidth.monitorStatusInterval,
      });
 
-     if (!currentProfile) {
-       return <ProfileRequired />;
-     }
+     if (!currentProfile) return <ProfileRequired />;
+     if (isLoading) return <MonitorListSkeleton />;
+     if (error) return <ErrorDisplay error={error} />;
 
      return (
-       <IonPage>
-         <IonHeader>
-           <IonToolbar>
-             <IonTitle>{t('monitors.title')}</IonTitle>
-             <IonButtons slot="end">
-               <ViewModeToggle mode={viewMode} onChange={setViewMode} />
-             </IonButtons>
-           </IonToolbar>
-         </IonHeader>
-         <IonContent>
-           {isLoading && <MonitorListSkeleton />}
-           {error && <ErrorDisplay error={error} />}
-           {data && (
-             viewMode === 'grid' ?
-               <MonitorGrid monitors={data.monitors} /> :
-               <MonitorList monitors={data.monitors} />
-           )}
-         </IonContent>
-       </IonPage>
+       <div className="p-3 sm:p-4 md:p-6 space-y-4">
+         <div className="flex items-center justify-between">
+           <h1 className="text-base sm:text-lg font-bold tracking-tight">
+             {t('monitors.title')}
+           </h1>
+           <div className="flex items-center gap-2">
+             <Button variant="outline" size="icon" onClick={() => refetch()}>
+               <RefreshCw className="h-4 w-4" />
+             </Button>
+           </div>
+         </div>
+         {settings.monitorsViewMode === 'grid' ? (
+           <MonitorGrid monitors={data!.monitors} />
+         ) : (
+           <MonitorList monitors={data!.monitors} />
+         )}
+       </div>
      );
    }
 
 **Key Points:**
 
 - Uses React Query for data fetching
-- Automatic refetch every 30 seconds
+- Refetch interval comes from ``useBandwidthSettings()`` — never hardcoded
 - Handles loading/error states
-- Switches between list/grid view modes
+- Switches between list/grid view modes via profile-scoped settings
 - All state managed via Zustand stores
 
 MonitorDetail Page
@@ -491,56 +502,47 @@ Architecture
 
    export default function MonitorDetail() {
      const { id } = useParams<{ id: string }>();
-     const currentProfile = useProfileStore((state) => state.currentProfile);
+     const navigate = useNavigate();
+     const { currentProfile } = useCurrentProfile();
 
      const { data: monitor } = useQuery({
        queryKey: ['monitor', id],
-       queryFn: () => fetchMonitor(id),
-       enabled: !!currentProfile,
-     });
-
-     const { data: streamUrl } = useQuery({
-       queryKey: ['stream', id],
-       queryFn: () => generateStreamUrl(currentProfile!.id, id),
-       enabled: !!monitor,
+       queryFn: () => getMonitor(id!),
+       enabled: !!id && !!currentProfile,
      });
 
      return (
-       <IonPage>
-         <IonHeader>
-           <IonToolbar>
-             <IonButtons slot="start">
-               <IonBackButton />
-             </IonButtons>
-             <IonTitle>{monitor?.Monitor.Name}</IonTitle>
-           </IonToolbar>
-         </IonHeader>
-         <IonContent>
-           {streamUrl ? (
-             <VideoPlayer src={streamUrl} autoPlay />
-           ) : (
-             <StreamSkeleton />
-           )}
-           <MonitorControls monitorId={id} />
-         </IonContent>
-       </IonPage>
+       <div className="flex flex-col h-full">
+         <div className="flex items-center gap-2 p-3 border-b">
+           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+             <ArrowLeft className="h-4 w-4" />
+           </Button>
+           <h1 className="text-base font-semibold truncate">
+             {monitor?.Monitor.Name}
+           </h1>
+         </div>
+         <div className="flex-1 min-h-0">
+           <VideoPlayer monitor={monitor?.Monitor} />
+           <MonitorControls monitorId={id!} />
+         </div>
+       </div>
      );
    }
 
 **Stream URL Generation:**
 
-The app generates authenticated stream URLs with connection keys:
+Stream URLs are built by helpers in ``src/lib/url-builder.ts``
+(``getMonitorStreamUrl``, ``getMonitorControlUrl``, ``getEventZmsUrl``,
+``getGo2RTCStreamUrl``, etc.). These helpers handle ``connkey``
+generation, token attachment, and protocol selection — pages and
+components should never hand-build ZM stream URLs.
 
-.. code:: tsx
+Event thumbnails go through ``src/lib/thumbnail-chain.ts`` which
+chooses among ``zms``, cached, or API sources based on availability.
 
-   async function generateStreamUrl(profileId: string, monitorId: string) {
-     const profile = getProfile(profileId);
-     const connkey = await generateConnKey(profile);
-
-     return `${profile.portalUrl}/cgi-bin/nph-zms?mode=jpeg&monitor=${monitorId}&connkey=${connkey}`;
-   }
-
-Connection keys are cached and regenerated when they expire.
+All non-stream HTTP traffic uses ``httpGet`` / ``httpPost`` /
+``httpPut`` / ``httpDelete`` from ``src/lib/http.ts`` — never raw
+``fetch()`` or ``axios``.
 
 Events Page
 -----------
@@ -557,33 +559,32 @@ Architecture
 .. code:: tsx
 
    export default function Events() {
-     const currentProfile = useProfileStore((state) => state.currentProfile);
+     const { t } = useTranslation();
+     const { currentProfile } = useCurrentProfile();
      const [filters, setFilters] = useState({ monitorId: null, date: null });
 
      const { data, isLoading, fetchNextPage, hasNextPage } = useInfiniteQuery({
        queryKey: ['events', currentProfile?.id, filters],
        queryFn: ({ pageParam = 0 }) =>
-         fetchEvents(currentProfile!.id, { ...filters, page: pageParam }),
+         getEvents({ ...filters, page: pageParam }),
        getNextPageParam: (lastPage) => lastPage.nextPage,
        enabled: !!currentProfile,
      });
 
      return (
-       <IonPage>
-         <IonHeader>
-           <IonToolbar>
-             <IonTitle>{t('events.title')}</IonTitle>
-           </IonToolbar>
-           <EventFilters filters={filters} onChange={setFilters} />
-         </IonHeader>
-         <IonContent>
-           <EventTimeline
-             events={data?.pages.flatMap(p => p.events)}
-             onLoadMore={fetchNextPage}
-             hasMore={hasNextPage}
-           />
-         </IonContent>
-       </IonPage>
+       <div className="p-3 sm:p-4 md:p-6 space-y-4">
+         <div className="flex items-center justify-between">
+           <h1 className="text-base sm:text-lg font-bold tracking-tight">
+             {t('events.title')}
+           </h1>
+         </div>
+         <EventFilters filters={filters} onChange={setFilters} />
+         <EventTimeline
+           events={data?.pages.flatMap((p) => p.events)}
+           onLoadMore={fetchNextPage}
+           hasMore={hasNextPage}
+         />
+       </div>
      );
    }
 
@@ -608,7 +609,8 @@ Architecture
 
    export default function ProfileForm() {
      const { id } = useParams<{ id?: string }>();  // Optional - create vs edit
-     const history = useHistory();
+     const navigate = useNavigate();
+     const { t } = useTranslation();
      const addProfile = useProfileStore((state) => state.addProfile);
      const updateProfile = useProfileStore((state) => state.updateProfile);
 
@@ -644,41 +646,43 @@ Architecture
          addProfile(newProfile);
        }
 
-       history.goBack();
+       navigate(-1);
      };
 
      return (
-       <IonPage>
-         <IonHeader>
-           <IonToolbar>
-             <IonButtons slot="start">
-               <IonBackButton />
-             </IonButtons>
-             <IonTitle>
-               {id ? t('profile.edit') : t('profile.create')}
-             </IonTitle>
-           </IonToolbar>
-         </IonHeader>
-         <IonContent>
-           <IonList>
-             <IonItem>
-               <IonLabel position="stacked">{t('profile.name')}</IonLabel>
-               <IonInput
-                 value={formData.name}
-                 onIonChange={e => setFormData({ ...formData, name: e.detail.value! })}
-               />
-             </IonItem>
-             {/* More form fields... */}
-           </IonList>
+       <div className="p-4 md:p-6 max-w-xl mx-auto space-y-4">
+         <div className="flex items-center gap-2">
+           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+             <ArrowLeft className="h-4 w-4" />
+           </Button>
+           <h1 className="text-lg font-bold tracking-tight">
+             {id ? t('profile.edit') : t('profile.create')}
+           </h1>
+         </div>
 
-           <IonButton onClick={handleTestConnection}>
+         <Card>
+           <CardContent className="space-y-4 pt-6">
+             <div className="space-y-2">
+               <Label htmlFor="profile-name">{t('profile.name')}</Label>
+               <Input
+                 id="profile-name"
+                 value={formData.name}
+                 onChange={(e) =>
+                   setFormData({ ...formData, name: e.target.value })
+                 }
+               />
+             </div>
+             {/* More form fields... */}
+           </CardContent>
+         </Card>
+
+         <div className="flex gap-2">
+           <Button variant="outline" onClick={handleTestConnection}>
              {t('profile.test_connection')}
-           </IonButton>
-           <IonButton onClick={handleSave}>
-             {t('common.save')}
-           </IonButton>
-         </IonContent>
-       </IonPage>
+           </Button>
+           <Button onClick={handleSave}>{t('common.save')}</Button>
+         </div>
+       </div>
      );
    }
 
@@ -765,15 +769,27 @@ Common Page Patterns
 1. Profile Requirement Check
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Most pages require a selected profile:
+Most pages require a selected profile. Read the active profile via the
+``useCurrentProfile()`` hook (``src/hooks/useCurrentProfile.ts``) — it
+returns ``{ currentProfile, settings, hasProfile }``. The Zustand store
+itself only holds ``currentProfileId: string | null`` plus the profile
+list, so don't try to select a ``currentProfile`` field on the store
+directly.
 
 .. code:: tsx
 
-   const currentProfile = useProfileStore((state) => state.currentProfile);
+   const { currentProfile } = useCurrentProfile();
 
    if (!currentProfile) {
      return <ProfileRequired />;
    }
+
+If you only need the id (e.g., for a query key), select it from the
+store directly:
+
+.. code:: tsx
+
+   const currentProfileId = useProfileStore((state) => state.currentProfileId);
 
 2. Data Fetching with React Query
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -802,16 +818,16 @@ Most pages require a selected profile:
 
 .. code:: tsx
 
-   const history = useHistory();
+   const navigate = useNavigate();
 
    // Push new route (can go back)
-   history.push('/monitor/123');
+   navigate('/monitor/123');
 
    // Replace route (can't go back)
-   history.replace('/dashboard');
+   navigate('/dashboard', { replace: true });
 
    // Go back
-   history.goBack();
+   navigate(-1);
 
 Key Takeaways
 -------------
@@ -819,14 +835,18 @@ Key Takeaways
 1. **Infinite loops from ResizeObserver**: Use refs for Zustand values
    in callbacks
 2. **React Query for data**: Server state with automatic caching and
-   refetching
-3. **Profile requirement**: Most pages need a selected profile
-4. **Ionic components**: IonPage, IonHeader, IonContent for page
-   structure
+   refetching; intervals come from ``useBandwidthSettings()``
+3. **Profile requirement**: Most pages need a selected profile — read it
+   via ``useCurrentProfile()``
+4. **Page shell**: Plain ``<div>`` with Tailwind classes plus shadcn/ui
+   primitives (``Button``, ``Card``, ``Input``, ``Select``); outer
+   chrome comes from ``AppLayout``
 5. **Error boundaries**: Wrap pages to catch component errors
 6. **Loading states**: Always show skeleton/spinner while fetching
 7. **Internationalization**: All user-facing text uses ``t()`` function
-8. **Navigation**: Use React Router’s ``useHistory`` hook
+8. **Navigation**: Use React Router v7's ``useNavigate`` hook
+9. **HTTP**: Use ``httpGet`` / ``httpPost`` from ``lib/http.ts``; build
+   stream URLs with ``lib/url-builder.ts`` helpers
 
 Next Steps
 ----------
