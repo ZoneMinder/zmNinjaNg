@@ -68,7 +68,7 @@ I am happy to accept PRs, but I don't want [AI slop](https://en.wikipedia.org/wi
 ## Quick Start
 
 ### Binaries
-- Download from [here] (https://pliablepixels.github.io/zmNinjaNg/)
+- Download from [here](https://pliablepixels.github.io/zmNinjaNg/)
 - I use Github workflows and runners to automatically build release binaries [here](https://github.com/pliablepixels/zmNinjaNg/tree/main/.github/workflows). Binaries are built for specific platforms. If the binary doesn't work for your linux distro, look at those files
 
 ## Build from Source
