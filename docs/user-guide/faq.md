@@ -114,6 +114,16 @@ For full details, see the [Tauri debugging guide](https://v2.tauri.app/develop/d
 
 For logs that survive across app restarts (and are easier to attach to a bug report), see {doc}`logs` — the in-app Logs page persists everything to a shareable file.
 
+## Linux Desktop Issues
+
+### Blank/white window on some linux distros
+  The app loads (you'll see logs reaching `React app initialized` / `Splash screen hidden`)
+  but the window paints blank. This is a webkit2gtk DMABUF rendering issue on newer
+  kernels/GPU drivers. Try, in order:
+  1. `WEBKIT_DISABLE_DMABUF_RENDERER=1 ./zmninja-ng`
+  2. `WEBKIT_DISABLE_COMPOSITING_MODE=1 ./zmninja-ng`
+  3. On Wayland: `GDK_BACKEND=x11 ./zmninja-ng`
+
 ## Data & Privacy
 
 ### Does zmNinjaNg send data to third parties?
