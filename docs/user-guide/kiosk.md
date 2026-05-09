@@ -1,6 +1,6 @@
 # Kiosk Mode
 
-Kiosk mode locks the app so the current view stays live but all navigation and interaction are blocked. Useful for unattended displays — a wall-mounted tablet, a dedicated monitor showing a camera grid, etc.
+Kiosk mode locks the app so the current view stays live but all navigation and interaction are blocked. Useful for unattended displays, a wall-mounted tablet, a dedicated monitor showing a camera grid, etc.
 
 ## Activating Kiosk Mode
 
@@ -9,7 +9,7 @@ There are two places to activate kiosk mode:
 - **Sidebar**: a lock icon in the bottom section of the sidebar, next to the insomnia toggle
 - **Fullscreen montage toolbar**: a lock icon in the thin top bar that appears in fullscreen montage mode
 
-### First Use — PIN Setup
+### First Use, PIN Setup
 
 The first time you tap the lock icon, the app prompts you to set a 4-digit PIN:
 

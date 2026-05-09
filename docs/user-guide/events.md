@@ -82,5 +82,5 @@ You can download event recordings:
 On mobile, downloads go to the device's Documents or Downloads folder. A progress indicator shows status.
 
 :::{note}
-Downloads run in the background — you can continue using the app.
+Downloads run in the background, you can continue using the app.
 :::

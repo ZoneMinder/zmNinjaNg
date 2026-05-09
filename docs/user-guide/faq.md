@@ -47,14 +47,14 @@ zmNinjaNg is a rewrite of zmNinja using React, TypeScript, and Capacitor. Same c
 
 ### Why don't push notifications work?
 
-Push notifications on mobile (iOS/Android) work out of the box with the App Store and Google Play builds — no Firebase setup is required on your end. You still need to:
+Push notifications on mobile (iOS/Android) work out of the box with the App Store and Google Play builds, no Firebase setup is required on your end. You still need to:
 
 1. Pick a backend in **Notification Settings**:
    - **ES mode**: The Event Notification Server with FCM support
    - **Direct mode**: ZoneMinder with the Notifications REST API (no Event Server needed)
 2. Enable notifications in zmNinjaNg settings and select the appropriate mode
 
-If you build the app from source, you must provide your own Firebase credentials (`google-services.json` for Android, `GoogleService-Info.plist` for iOS) — see {doc}`../building/ANDROID` and {doc}`../building/IOS`.
+If you build the app from source, you must provide your own Firebase credentials (`google-services.json` for Android, `GoogleService-Info.plist` for iOS), see {doc}`../building/ANDROID` and {doc}`../building/IOS`.
 
 See {doc}`notifications` for the full setup guide.
 
@@ -117,7 +117,7 @@ The inspector is only available in debug builds by default. If you installed a r
 
 For full details, see the [Tauri debugging guide](https://v2.tauri.app/develop/debug/#webview-console).
 
-For logs that survive across app restarts (and are easier to attach to a bug report), see {doc}`logs` — the in-app Logs page persists everything to a shareable file.
+For logs that survive across app restarts (and are easier to attach to a bug report), see {doc}`logs`: the in-app Logs page persists everything to a shareable file.
 
 ## Linux Desktop Issues
 

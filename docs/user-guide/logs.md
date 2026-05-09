@@ -11,13 +11,13 @@ The file is named `zmninja-ng.log` and lives in the per-app log directory chosen
 | **macOS** (Tauri) | `~/Library/Logs/com.zoneminder.zmNinjaNG/zmninja-ng.log` |
 | **Windows** (Tauri) | `%LOCALAPPDATA%\com.zoneminder.zmNinjaNG\logs\zmninja-ng.log` |
 | **Linux** (Tauri) | `~/.local/share/com.zoneminder.zmNinjaNG/logs/zmninja-ng.log` |
-| **iOS** | App sandbox (`Application Support` directory). Not directly accessible via Files app — use **Share** to extract it. |
-| **Android** | App-private data directory (`/data/data/com.zoneminder.zmNinjaNG/`). Not browsable without root — use **Share**. |
+| **iOS** | App sandbox (`Application Support` directory). Not directly accessible via Files app, use **Share** to extract it. |
+| **Android** | App-private data directory (`/data/data/com.zoneminder.zmNinjaNG/`). Not browsable without root, use **Share**. |
 | **Web** (browser dev only) | No persistence. |
 
 ## Buttons on the Logs page
 
-- **Share** (iOS / Android): sends the `.log` file via the system share sheet. Pick AirDrop, email, Slack, etc. — the recipient gets a real file attachment.
+- **Share** (iOS / Android): sends the `.log` file via the system share sheet. Pick AirDrop, email, Slack, etc., the recipient gets a real file attachment.
 - **Open** (Desktop): reveals `zmninja-ng.log` in Finder, Explorer, or your file manager.
 - **Share** (Web, dev only): falls back to a one-shot text download.
 - **Clear**: prompts for confirmation, then zeros the file and clears the in-memory buffer.
@@ -41,7 +41,7 @@ Lowering the level (e.g. to DEBUG for a specific component) writes more to disk;
 
 ## Live console output
 
-The Logs page mirrors what the in-app console shows. If you want to watch raw console output as it streams (including stack traces and source-mapped errors that don't make it into the structured logger), open the developer console — see [How do I open the developer console on the desktop app?](faq.md#how-do-i-open-the-developer-console-on-the-desktop-app) in the FAQ.
+The Logs page mirrors what the in-app console shows. If you want to watch raw console output as it streams (including stack traces and source-mapped errors that don't make it into the structured logger), open the developer console, see [How do I open the developer console on the desktop app?](faq.md#how-do-i-open-the-developer-console-on-the-desktop-app) in the FAQ.
 
 ## Sharing logs for support
 

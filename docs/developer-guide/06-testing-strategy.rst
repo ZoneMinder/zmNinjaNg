@@ -3,9 +3,9 @@ Testing Strategy
 
 Three tiers:
 
-1. **Unit tests** — logic and components, in isolation
-2. **Web E2E** — user journeys in a browser against a real ZoneMinder server
-3. **Device E2E** — the same journeys on Android emulator, iOS simulator, and Tauri desktop
+1. **Unit tests**: logic and components, in isolation
+2. **Web E2E**: user journeys in a browser against a real ZoneMinder server
+3. **Device E2E**: the same journeys on Android emulator, iOS simulator, and Tauri desktop
 
 Every test verifies what a human would verify: can I do the task, does
 it look right, does the data make sense.
@@ -70,9 +70,9 @@ platform:
 
 Two implementations exist:
 
-- ``PlaywrightActions`` (``tests/actions/playwright-actions.ts``) — for
+- ``PlaywrightActions`` (``tests/actions/playwright-actions.ts``), for
   web and Android
-- ``WebDriverIOActions`` — for iOS and Tauri
+- ``WebDriverIOActions``: for iOS and Tauri
 
 Unit Tests
 ----------
@@ -361,7 +361,7 @@ Step definitions go in per-screen files under ``tests/steps/``. Use
      expect(await cards.count()).toBeGreaterThanOrEqual(count);
    });
 
-Use dynamic selectors (``.first()``, ``.nth(n)``, "at least N") — never
+Use dynamic selectors (``.first()``, ``.nth(n)``, "at least N"), never
 hardcode monitor names or IDs.
 
 Running Tests
@@ -650,17 +650,17 @@ Test-Driven Development (TDD)
 
 1. **Write failing test** (feature file or unit test)
 2. **Implement the feature/fix**
-3. **Run tests** — verify they pass
-4. **Refactor** if needed — tests ensure behavior stays correct
+3. **Run tests**: verify they pass
+4. **Refactor** if needed, tests ensure behavior stays correct
 
 Pre-Commit Checklist
 ~~~~~~~~~~~~~~~~~~~~~
 
 All changes:
 
-- Run ``npm test`` — all pass
-- Run ``npx tsc --noEmit`` — no errors
-- Run ``npm run build`` — succeeds
+- Run ``npm test``: all pass
+- Run ``npx tsc --noEmit``: no errors
+- Run ``npm run build``: succeeds
 
 UI changes (additional):
 

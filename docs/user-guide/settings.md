@@ -18,7 +18,7 @@ Event thumbnails can come from different frame types in ZoneMinder: `alarm` (fir
 
 The **Thumbnail display** setting lets you pick the order in which the app tries each frame type. Each row has a drag position (up/down arrows), an enable toggle, and the frame type label. The last row is a custom slot where you can type any frame ID your setup uses (for example `1` for the first frame). Disabled rows and empty custom rows are skipped.
 
-When a thumbnail loads successfully, the winning frame type is cached for the session so the app doesn't re-try earlier entries for the same event. If every entry fails, a placeholder image is shown. At no point does the app flash a broken-image icon — the thumbnail area stays blank until a frame succeeds or the chain is exhausted.
+When a thumbnail loads successfully, the winning frame type is cached for the session so the app doesn't re-try earlier entries for the same event. If every entry fails, a placeholder image is shown. At no point does the app flash a broken-image icon, the thumbnail area stays blank until a frame succeeds or the chain is exhausted.
 
 The setting applies to every thumbnail surface in the app: events list, event montage, event detail hero, timeline scrubber, timeline preview popover, and notification history.
 
@@ -49,8 +49,8 @@ Settings that control live camera feeds:
 
 | Setting | Description |
 |---------|-------------|
-| **Streaming Mode** | *Streaming* delivers continuous video. *Snapshot* fetches a periodic still image instead — lower bandwidth, lower frame rate. See [Streaming Mode](#streaming-mode) below for where this setting applies. |
-| **Streaming Protocols** | WebRTC, MSE, and HLS — tried in parallel when Go2RTC is configured. The first protocol to produce video wins. |
+| **Streaming Mode** | *Streaming* delivers continuous video. *Snapshot* fetches a periodic still image instead, lower bandwidth, lower frame rate. See [Streaming Mode](#streaming-mode) below for where this setting applies. |
+| **Streaming Protocols** | WebRTC, MSE, and HLS, tried in parallel when Go2RTC is configured. The first protocol to produce video wins. |
 | **Snapshot interval** | How often to refresh the still image when Streaming Mode is set to *Snapshot* (1–30 seconds) |
 | **Protocol Label** | Shows or hides the streaming protocol indicator (MJPEG/MSE/WebRTC) on video feeds across all pages |
 
@@ -64,20 +64,20 @@ You can configure which protocols to try in the Go2RTC protocol settings.
 
 The Streaming Mode toggle picks how live MJPEG feeds are fetched:
 
-- **Streaming** — continuous MJPEG over a single open connection at the configured FPS. Smooth motion, higher bandwidth and CPU.
-- **Snapshot** — a single JPEG fetched every *Snapshot interval* seconds. Lower bandwidth and CPU, choppier motion.
+- **Streaming**: continuous MJPEG over a single open connection at the configured FPS. Smooth motion, higher bandwidth and CPU.
+- **Snapshot**: a single JPEG fetched every *Snapshot interval* seconds. Lower bandwidth and CPU, choppier motion.
 
-Streaming Mode interacts with the streaming protocol layer. When a monitor uses Go2RTC (WebRTC/MSE/HLS), it always delivers continuous video — the Streaming Mode setting is ignored for that monitor. The setting only changes behavior on the MJPEG path: either when Go2RTC is disabled globally, when it is disabled per-monitor, or when Go2RTC fails and the app falls back to MJPEG.
+Streaming Mode interacts with the streaming protocol layer. When a monitor uses Go2RTC (WebRTC/MSE/HLS), it always delivers continuous video, the Streaming Mode setting is ignored for that monitor. The setting only changes behavior on the MJPEG path: either when Go2RTC is disabled globally, when it is disabled per-monitor, or when Go2RTC fails and the app falls back to MJPEG.
 
 #### Where Streaming Mode applies
 
 | View | Affected? | Behavior |
 |------|-----------|----------|
 | Monitors list (grid/list of tiles) | Yes | Each tile honors the global setting. WebRTC tiles always stream; MJPEG tiles follow Streaming Mode. |
-| Montage page | Yes | Same as Monitors list — per-tile behavior. |
+| Montage page | Yes | Same as Monitors list, per-tile behavior. |
 | Dashboard monitor widgets | Yes | Each widget honors the global setting. |
-| **Monitor Detail page** (single monitor view) | **No — always streams** | This page ignores Streaming Mode and always uses continuous video. The stream is closed (`CMD_QUIT` sent to ZoneMinder) when you leave the page. |
-| Hover-preview popovers (over a monitor card) | No — always streams | Hardcoded to streaming for the brief time the popover is open. |
+| **Monitor Detail page** (single monitor view) | **No, always streams** | This page ignores Streaming Mode and always uses continuous video. The stream is closed (`CMD_QUIT` sent to ZoneMinder) when you leave the page. |
+| Hover-preview popovers (over a monitor card) | No, always streams | Hardcoded to streaming for the brief time the popover is open. |
 | Event playback (Event Detail, Timeline previews) | Not applicable | These play recorded video, not live feeds. |
 | Notification thumbnails | Not applicable | Static event images, not live streams. |
 

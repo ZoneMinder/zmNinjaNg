@@ -12,7 +12,7 @@ Events are drawn as colored bars on a horizontal time axis. Each monitor gets it
 
 ## Heatmap
 
-The heatmap shows event density over time as a colored grid. Darker colors indicate more events during that period — useful for spotting busy hours, quiet periods, and recurring activity.
+The heatmap shows event density over time as a colored grid. Darker colors indicate more events during that period, useful for spotting busy hours, quiet periods, and recurring activity.
 
 ## Live Mode
 

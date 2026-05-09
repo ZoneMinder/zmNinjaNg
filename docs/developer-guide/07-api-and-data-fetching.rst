@@ -311,16 +311,16 @@ or after a stream reconnects, the same URL would yield a stale frame.
 
 Browsers cap concurrent connections per origin (typically 6). With
 ``minStreamingPort`` set (e.g. 30000) in the profile, each monitor
-loads from a different port — monitor 1 from 30001, monitor 2 from
+loads from a different port, monitor 1 from 30001, monitor 2 from
 30002, and so on. Different ports are treated as different origins, so
 the per-origin limit doesn't apply.
 
 3. Streaming vs snapshot
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-- **Streaming** (``mode=jpeg``) — long-lived MJPEG connection. Low
+- **Streaming** (``mode=jpeg``), long-lived MJPEG connection. Low
   latency, high bandwidth, holds an HTTP slot.
-- **Snapshot** (``mode=single``) — single JPEG fetched every
+- **Snapshot** (``mode=single``), single JPEG fetched every
   ``snapshotRefreshInterval`` seconds. Lower resource use, lower
   frame rate.
 
@@ -336,7 +336,7 @@ Server state is managed via ``@tanstack/react-query``. See the
 behaviour. zmNinjaNg-specific notes follow.
 
 zmNinjaNg runs with ``staleTime: 0``, so React Query's "cache" is
-effectively last-response storage rather than a hit/miss cache —
+effectively last-response storage rather than a hit/miss cache,
 ``refetchInterval`` always hits the server, but stored data prevents
 loading spinners between polls and deduplicates concurrent subscribers.
 
@@ -498,9 +498,9 @@ Timers and Polling
 App-level timers
 ^^^^^^^^^^^^^^^^
 
-- **Token refresh** (``hooks/useTokenRefresh.ts``) — every 60 s; if the
+- **Token refresh** (``hooks/useTokenRefresh.ts``), every 60 s; if the
   access token expires within 30 min, refresh it.
-- **WebSocket keepalive** (``services/notifications.ts``) — every 60 s;
+- **WebSocket keepalive** (``services/notifications.ts``), every 60 s;
   sends a version-request ping. On disconnect, reconnects with
   exponential backoff.
 
@@ -536,7 +536,7 @@ App-level timers
 Screen-specific timers
 ^^^^^^^^^^^^^^^^^^^^^^
 
-**Monitors** (``pages/Monitors.tsx``) — event counts refresh every 60 s:
+**Monitors** (``pages/Monitors.tsx``), event counts refresh every 60 s:
 
 .. code:: tsx
 
@@ -546,7 +546,7 @@ Screen-specific timers
      refetchInterval: 60000,
    });
 
-**Monitor Detail** (``pages/MonitorDetail.tsx``) — alarm status polls
+**Monitor Detail** (``pages/MonitorDetail.tsx``), alarm status polls
 every 5 s; monitor cycling on a user-configured interval.
 
 .. code:: tsx
@@ -570,7 +570,7 @@ every 5 s; monitor cycling on a user-configured interval.
      return () => window.clearInterval(intervalId);
    }, [settings.monitorDetailCycleSeconds]);
 
-**Montage** (``pages/Montage.tsx`` + ``MontageMonitor.tsx``) — snapshot
+**Montage** (``pages/Montage.tsx`` + ``MontageMonitor.tsx``), snapshot
 mode reloads each image at ``snapshotRefreshInterval`` seconds; no
 timer in streaming mode.
 
@@ -587,7 +587,7 @@ timer in streaming mode.
      return () => clearInterval(interval);
    }, [settings.viewMode, settings.snapshotRefreshInterval]);
 
-**Server** (``pages/Server.tsx``) — daemon-status check every 30 s:
+**Server** (``pages/Server.tsx``), daemon-status check every 30 s:
 
 .. code:: tsx
 
@@ -600,10 +600,10 @@ timer in streaming mode.
 Dashboard widget timers
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-- **EventsWidget** — events refetch every 30 s (default, configurable
+- **EventsWidget**: events refetch every 30 s (default, configurable
   via prop).
-- **TimelineWidget** / **HeatmapWidget** — events refetch every 60 s.
-- **MonitorWidget** — snapshot reload at ``snapshotRefreshInterval``
+- **TimelineWidget** / **HeatmapWidget**: events refetch every 60 s.
+- **MonitorWidget**: snapshot reload at ``snapshotRefreshInterval``
   in snapshot mode; no timer in streaming mode.
 
 Configuration Constants
@@ -764,7 +764,7 @@ Do NOT use bandwidth settings for:
 Timer rules
 ^^^^^^^^^^^
 
-- Prefer ``refetchInterval`` to manual ``setInterval`` — React Query
+- Prefer ``refetchInterval`` to manual ``setInterval``: React Query
   handles cleanup.
 - For data polling, set ``refetchIntervalInBackground: false`` so the
   poll stops when the app is backgrounded.
@@ -1166,7 +1166,7 @@ Type               Description           Use Case
      responseType: 'base64',
    });
 
-**Mobile downloads:** never convert to Blob on mobile — use
+**Mobile downloads:** never convert to Blob on mobile, use
 ``responseType: 'base64'`` and write directly to the filesystem.
 Large files OOM the WebView otherwise.
 
@@ -1284,7 +1284,7 @@ multi-server routing (see ``lib/server-resolver.ts``).
    const storages = await getStorages();
    // Returns Storage[] with ServerId, DiskTotalSpace, DiskUsedSpace
 
-   // Health checks — optional apiBaseUrl routes to a specific server
+   // Health checks, optional apiBaseUrl routes to a specific server
    const daemonOk = await getDaemonCheck();                     // default server
    const daemonOk2 = await getDaemonCheck('https://server2/zm'); // specific server
    const load = await getLoad(apiBaseUrl);
@@ -1312,15 +1312,15 @@ accept an optional ``apiBaseUrl`` for multi-server routing.
      controlMonitor,
    } from '../api/monitors';
 
-   // Daemon status — routes to the server hosting this monitor
+   // Daemon status, routes to the server hosting this monitor
    const status = await getDaemonStatus(monitorId, 'zmc', apiBaseUrl);
 
-   // Alarm operations — same routing
+   // Alarm operations, same routing
    const alarm = await getAlarmStatus(monitorId, apiBaseUrl);
    await triggerAlarm(monitorId, apiBaseUrl);
    await cancelAlarm(monitorId, apiBaseUrl);
 
-   // Control monitor — multi-port support
+   // Control monitor, multi-port support
    await controlMonitor(portalUrl, monitorId, command, token, minStreamingPort);
 
 ``controlMonitor`` accepts ``minStreamingPort`` to calculate the
@@ -1342,7 +1342,7 @@ Event URL helpers now support HLS detection and multi-port routing.
      getEventZmsUrl,
    } from '../api/events';
 
-   // Video URL — hls flag detects HLS vs MP4 from DefaultVideo field
+   // Video URL, hls flag detects HLS vs MP4 from DefaultVideo field
    const videoUrl = getEventVideoUrl(event, { hls: true });
 
    // Image and ZMS URLs accept minStreamingPort and monitorId for multi-port
@@ -1550,7 +1550,7 @@ notifications in ES mode.
 - Jitter of ±25% prevents thundering herd when multiple clients reconnect
 - Reconnection continues indefinitely until the user explicitly disconnects
 - An ``intentionalDisconnect`` flag distinguishes user-initiated disconnect from
-  network failures — only the former stops reconnection
+  network failures, only the former stops reconnection
 - ``reconnectAttempts`` counter resets after successful authentication (not on
   socket open), preventing auth failures from resetting the backoff
 
@@ -1781,7 +1781,7 @@ The ZMS daemon accepts various control commands via HTTP requests:
      // ... more commands
    } as const;
 
-``cmdQuit`` (17) is the one that matters for cleanup — always send it
+``cmdQuit`` (17) is the one that matters for cleanup, always send it
 when unmounting to prevent zombie streams.
 
 See :doc:`08-common-pitfalls` (pitfall #3) for the zombie-stream

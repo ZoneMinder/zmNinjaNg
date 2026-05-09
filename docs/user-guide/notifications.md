@@ -22,7 +22,7 @@ Uses ZoneMinder's built-in Notifications REST API (no Event Server required). Ch
 
 ## Push Notifications (Mobile)
 
-Both modes support native push notifications on iOS and Android via Firebase Cloud Messaging (FCM). Push works with the App Store and Google Play builds — no Firebase setup required on your end.
+Both modes support native push notifications on iOS and Android via Firebase Cloud Messaging (FCM). Push works with the App Store and Google Play builds, no Firebase setup required on your end.
 
 ### Requirements
 

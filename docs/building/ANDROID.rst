@@ -241,10 +241,10 @@ CI/CD
 The GitHub Actions workflow (``build-android.yml``) handles signed
 release builds automatically. It uses these repository secrets:
 
-- ``ANDROID_KEYSTORE_BASE64`` — base64-encoded keystore file
-- ``ANDROID_KEYSTORE_PASSWORD`` — keystore password
-- ``ANDROID_KEY_ALIAS`` — key alias
-- ``ANDROID_KEY_PASSWORD`` — key password
+- ``ANDROID_KEYSTORE_BASE64``: base64-encoded keystore file
+- ``ANDROID_KEYSTORE_PASSWORD``: keystore password
+- ``ANDROID_KEY_ALIAS``: key alias
+- ``ANDROID_KEY_PASSWORD``: key password
 
 To generate the base64 keystore value:
 

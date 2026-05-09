@@ -67,7 +67,7 @@ Function form receives current state:
 
    set((state) => ({ profiles: [...state.profiles, newProfile] }))
 
-Always return new objects/arrays — don't mutate:
+Always return new objects/arrays, don't mutate:
 
 .. code:: tsx
 
@@ -108,7 +108,7 @@ Selectors
 ~~~~~~~~~
 
 Calling ``useProfileStore()`` without a selector subscribes to the
-whole store — the component re-renders on any change. A selector
+whole store, the component re-renders on any change. A selector
 narrows the subscription:
 
 .. code:: tsx
@@ -140,7 +140,7 @@ A selector that returns a new array or object on each call will look
 
 .. code:: tsx
 
-   // Bad — new array reference every selector run
+   // Bad, new array reference every selector run
    const favoriteIds = useEventFavoritesStore((state) =>
      state.profileFavorites[profileId] || []
    );
@@ -163,7 +163,7 @@ Use ``useShallow`` when the selector returns:
 - An object literal (e.g. ``{ a: state.a, b: state.b }``).
 - A computed/derived collection.
 
-Skip it for primitives and for selecting a single store function — both
+Skip it for primitives and for selecting a single store function, both
 are already reference-stable.
 
 Actions
@@ -193,8 +193,8 @@ Persistence
 -----------
 
 The ``persist`` middleware writes to ``localStorage`` automatically.
-zmNinjaNg runs on web, Tauri, and Capacitor — all expose
-``localStorage`` — so no custom storage adapter is needed:
+zmNinjaNg runs on web, Tauri, and Capacitor, all expose
+``localStorage``: so no custom storage adapter is needed:
 
 .. code:: tsx
 
@@ -216,7 +216,7 @@ profile keeps a sentinel like ``'stored-securely'`` instead.
 
 Caveats:
 
-- ``localStorage`` is synchronous and ~5 MB — keep persisted state small.
+- ``localStorage`` is synchronous and ~5 MB, keep persisted state small.
 - Versioning is manual; detect format changes yourself.
 
 Hydration
@@ -338,10 +338,9 @@ Stores in zmNinjaNg
    ├── auth.ts                     # Auth tokens and state (useAuthStore)
    ├── settings.ts                 # App + profile settings (useSettingsStore)
    ├── dashboard.ts                # Dashboard config (useDashboardStore)
-   ├── monitors.ts                 # Monitor data cache (useMonitorsStore)
-   ├── notifications.ts            # Push notifications (useNotificationsStore)
-   ├── notifications-trash.ts      # Trashed notifications
-   ├── logs.ts                     # App logs (ephemeral)
+   ├── monitors.ts                 # Monitor data cache (useMonitorStore)
+   ├── notifications.ts            # Push notifications (useNotificationStore)
+   ├── logs.ts                     # App logs (useLogStore)
    ├── query-cache.ts              # React Query cache helpers
    ├── backgroundTasks.ts          # Background download/upload tasks
    ├── eventFavorites.ts           # Per-profile favorited events
@@ -353,46 +352,46 @@ need.
 Kiosk Store (``stores/kioskStore.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Manages kiosk (lock) mode. Ephemeral — not persisted, so the app
+Manages kiosk (lock) mode. Ephemeral, not persisted, so the app
 always starts unlocked.
 
 State:
 
-- ``isLocked`` — kiosk mode active flag.
-- ``previousInsomniaState`` — insomnia setting captured at lock time so
+- ``isLocked``: kiosk mode active flag.
+- ``previousInsomniaState``: insomnia setting captured at lock time so
   it can be restored on unlock.
-- ``pinAttempts`` — consecutive failed PIN attempts in the current
+- ``pinAttempts``: consecutive failed PIN attempts in the current
   cooldown window.
-- ``cooldownUntil`` — Unix ms timestamp until which PIN entry is
+- ``cooldownUntil``: Unix ms timestamp until which PIN entry is
   blocked; ``null`` when not in cooldown.
-- ``unlockRequested`` — flag set by external UI (e.g. sidebar) to ask
+- ``unlockRequested``: flag set by external UI (e.g. sidebar) to ask
   KioskOverlay to start the unlock flow.
 
 Actions:
 
-- ``lock(currentInsomniaState)`` — activate and capture insomnia state.
-- ``unlock()`` — deactivate and reset attempt counters.
-- ``requestUnlock()`` — set ``unlockRequested`` to ``true``.
-- ``clearUnlockRequest()`` — reset ``unlockRequested``.
-- ``recordFailedAttempt()`` — increment ``pinAttempts``; after 5
+- ``lock(currentInsomniaState)``: activate and capture insomnia state.
+- ``unlock()``: deactivate and reset attempt counters.
+- ``requestUnlock()``: set ``unlockRequested`` to ``true``.
+- ``clearUnlockRequest()``: reset ``unlockRequested``.
+- ``recordFailedAttempt()``: increment ``pinAttempts``; after 5
   failures, set a 30-second ``cooldownUntil``. If a previous cooldown
   has already expired, the counter resets to 0 first.
-- ``isCoolingDown()`` — ``true`` if ``Date.now() < cooldownUntil``.
+- ``isCoolingDown()``: ``true`` if ``Date.now() < cooldownUntil``.
 
 PIN storage is in ``lib/kioskPin.ts``, not in this store.
 
 Background Tasks Store (``stores/backgroundTasks.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Tracks long-running operations (downloads, uploads). Ephemeral — only
+Tracks long-running operations (downloads, uploads). Ephemeral, only
 the current session.
 
 State:
 
-- ``tasks`` — array of ``BackgroundTask`` (id, type, status,
+- ``tasks``: array of ``BackgroundTask`` (id, type, status,
   progress 0–100, metadata, optional error, timestamps, optional
   ``cancelFn``).
-- ``drawerState`` — ``'hidden' | 'badge' | 'collapsed' | 'expanded'``.
+- ``drawerState``: ``'hidden' | 'badge' | 'collapsed' | 'expanded'``.
 
 Task types: ``'download' | 'upload' | 'sync' | 'export'``. Statuses:
 ``'pending' | 'in_progress' | 'completed' | 'failed' | 'cancelled'``.
@@ -422,7 +421,7 @@ Per-profile favorited events. Persisted.
 
 State:
 
-- ``profileFavorites: Record<profileId, string[]>`` — event IDs by
+- ``profileFavorites: Record<profileId, string[]>``: event IDs by
   profile.
 
 Actions: ``isFavorited(profileId, eventId)``,
@@ -437,12 +436,12 @@ Actions: ``isFavorited(profileId, eventId)``,
    import { useEventFavoritesStore } from '../stores/eventFavorites';
    import { useShallow } from 'zustand/react/shallow';
 
-   // Read array — wrap in useShallow
+   // Read array, wrap in useShallow
    const favorites = useEventFavoritesStore(
      useShallow((state) => state.getFavorites(profileId))
    );
 
-   // Read action — no useShallow needed
+   // Read action, no useShallow needed
    const toggleFavorite = useEventFavoritesStore((state) => state.toggleFavorite);
    toggleFavorite(profileId, eventId);
 

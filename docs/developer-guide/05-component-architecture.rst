@@ -50,7 +50,7 @@ Key Directories Explained
   - ``logger.ts``: Structured logging system. Each filtered entry is passed to
     the platform ``LogFileStore`` (see :doc:`12-shared-services-and-components`)
     for on-disk persistence. The same sanitized ``LogEntry`` reaches the
-    in-memory store, the file, and the browser console — there is no separate
+    in-memory store, the file, and the browser console, there is no separate
     filter path.
   - ``utils.ts``: String formatting, date helpers.
   - ``http.ts``: Fetch wrapper with error handling.
@@ -429,7 +429,7 @@ Thin wrapper around the ``HoverPreview`` primitive
 
 The hover preview consumes a separate ``largeThumbnailUrls`` chain that
 ``EventListView`` builds with ``buildThumbnailChain`` with no ``width``
-or ``height`` set — the server returns the original image, and the view
+or ``height`` set, the server returns the original image, and the view
 scales it down to the preview size.
 
 HoverPreview (primitive)
@@ -440,7 +440,7 @@ HoverPreview (primitive)
 Desktop-only hover primitive. Renders ``children`` as the trigger and
 opens a 400px-wide portal next to the anchor after a 400 ms hover delay
 (both configurable). ``renderPreview`` is only invoked while the
-preview is open, so contents mount on hover and unmount on leave —
+preview is open, so contents mount on hover and unmount on leave,
 this is how ``MonitorHoverPreview`` spins up and tears down a fresh
 stream connection. The portal uses ``pointer-events: none`` so the
 trigger stays clickable, flips to the left when there is no room on
@@ -457,7 +457,7 @@ inner ``MonitorLivePreview`` that calls ``useStreamLifecycle`` with
 an ``<img>`` pointed at ``getStreamUrl(..., { mode: 'jpeg', connkey })``.
 When the hover ends the inner component unmounts, and
 ``useStreamLifecycle``'s cleanup effect sends ``CMD_QUIT`` for that
-connkey — so the extra preview stream is torn down on the ZM server
+connkey, so the extra preview stream is torn down on the ZM server
 instead of lingering as a zombie.
 
 Used from ``MonitorCard`` (both compact and list layouts) and the
@@ -660,11 +660,11 @@ monitor capabilities and user settings.
 
 **Props:**
 
-- ``monitor`` — monitor data object
-- ``profile`` — active profile
-- ``showControls`` — enables native video controls (used on MonitorDetail)
-- ``onProtocolChange`` — callback when streaming protocol changes
-- ``externalMediaRef`` — external ref for the video/img element
+- ``monitor``: monitor data object
+- ``profile``: active profile
+- ``showControls``: enables native video controls (used on MonitorDetail)
+- ``onProtocolChange``: callback when streaming protocol changes
+- ``externalMediaRef``: external ref for the video/img element
 
 **Streaming selection:** VideoPlayer checks the user's streaming method
 preference, whether Go2RTC is available, and per-monitor overrides
@@ -730,12 +730,12 @@ video that survives route changes.
 
 **API:**
 
-- ``adoptForPip(player, videoEl, eventId)`` — moves the video element
+- ``adoptForPip(player, videoEl, eventId)``: moves the video element
   to a root portal so it persists outside the component tree.
-- ``reclaimFromPip()`` — reclaims the element for inline resume in the
+- ``reclaimFromPip()``: reclaims the element for inline resume in the
   original component.
-- ``closePip()`` — ends PiP and cleans up resources.
-- ``activePipEventId`` — tracks which event is currently in PiP.
+- ``closePip()``: ends PiP and cleans up resources.
+- ``activePipEventId``: tracks which event is currently in PiP.
 
 **Integration:**
 
@@ -836,7 +836,7 @@ KioskOverlay
 
 Full-screen transparent overlay rendered on top of the entire app when
 ``kioskStore.isLocked`` is ``true``. The underlying view continues to
-update (streams, event counts, etc.) — only interaction is blocked.
+update (streams, event counts, etc.), only interaction is blocked.
 
 **Behaviour:**
 
@@ -858,7 +858,7 @@ update (streams, event counts, etc.) — only interaction is blocked.
 
 **Props:**
 
-- ``onUnlock`` — callback called after the store is unlocked
+- ``onUnlock``: callback called after the store is unlocked
 
 **Key test IDs:** ``kiosk-overlay``, ``kiosk-unlock-button``,
 ``kiosk-pin-pad``
@@ -875,9 +875,9 @@ PinPad
 
 **Modes** (``PinPadMode``):
 
-- ``'set'`` — prompts the user to choose a PIN (first-time setup)
-- ``'confirm'`` — prompts the user to re-enter the PIN to verify it
-- ``'unlock'`` — prompts for the PIN to unlock the session
+- ``'set'``: prompts the user to choose a PIN (first-time setup)
+- ``'confirm'``: prompts the user to re-enter the PIN to verify it
+- ``'unlock'``: prompts for the PIN to unlock the session
 
 Auto-submits on the 4th digit (100 ms delay to allow the filled dot to
 render). PIN state resets when ``mode`` or ``error`` props change.
@@ -890,11 +890,11 @@ blocker. Keyboard input is disabled during cooldown.
 
 **Props:**
 
-- ``mode`` — one of ``'set'``, ``'confirm'``, ``'unlock'``
-- ``onSubmit(pin)`` — called with the 4-digit PIN string
-- ``onCancel`` — called when the user taps Cancel
-- ``error`` — optional error string shown below the PIN dots
-- ``cooldownSeconds`` — when > 0, shows a countdown and disables digit
+- ``mode``: one of ``'set'``, ``'confirm'``, ``'unlock'``
+- ``onSubmit(pin)``: called with the 4-digit PIN string
+- ``onCancel``: called when the user taps Cancel
+- ``error``: optional error string shown below the PIN dots
+- ``cooldownSeconds``: when > 0, shows a countdown and disables digit
   buttons
 
 **Key test IDs:** ``kiosk-pin-pad``, ``kiosk-pin-input``,
@@ -925,15 +925,15 @@ call site needs to duplicate it.
 
 **Returns:**
 
-- ``isLocked`` — current lock state from the kiosk store
-- ``showSetPin`` — whether the PIN setup pad should be shown
-- ``setPinMode`` — current ``PinPadMode`` (``'set'`` or ``'confirm'``)
-- ``pinError`` — error string for the PIN pad (or ``null``)
-- ``handleLockToggle`` — call to initiate locking
-- ``handleChangePin`` — opens the set/confirm flow to replace the existing
+- ``isLocked``: current lock state from the kiosk store
+- ``showSetPin``: whether the PIN setup pad should be shown
+- ``setPinMode``: current ``PinPadMode`` (``'set'`` or ``'confirm'``)
+- ``pinError``: error string for the PIN pad (or ``null``)
+- ``handleLockToggle``: call to initiate locking
+- ``handleChangePin``: opens the set/confirm flow to replace the existing
   PIN (without activating kiosk mode afterwards)
-- ``handleSetPinSubmit(pin)`` — pass digits from the PIN pad
-- ``handleSetPinCancel`` — dismiss the PIN setup pad
+- ``handleSetPinSubmit(pin)``: pass digits from the PIN pad
+- ``handleSetPinCancel``: dismiss the PIN setup pad
 
 **Usage:**
 
@@ -963,15 +963,15 @@ React hook) that support multiple backends:
   (``isTauri()``).
 - **Capacitor (iOS/Android)**: uses ``@aparajita/capacitor-biometric-auth``
   (Touch ID, Face ID).
-- **Web**: not supported — falls back gracefully (returns ``false`` /
+- **Web**: not supported, falls back gracefully (returns ``false`` /
   ``{ success: false }``).
 
 Falls back gracefully when biometrics are unavailable on any platform.
 
-- ``checkBiometricAvailability(): Promise<boolean>`` — returns ``true``
+- ``checkBiometricAvailability(): Promise<boolean>``: returns ``true``
   if the device has enrolled biometrics and the plugin is available.
 - ``authenticateWithBiometrics(reason): Promise<{ success, error? }>``
-  — prompts the system biometric UI. Returns ``{ success: true }`` on
+ , prompts the system biometric UI. Returns ``{ success: true }`` on
   success or ``{ success: false, error }`` on failure/cancellation.
 
 Both functions catch all errors and return a safe value so callers never
@@ -987,8 +987,8 @@ Clear buttons (``data-testid="settings-kiosk-change-pin"`` and
 
 - **Set**: opens PinPad in ``'set'`` then ``'confirm'`` mode (same flow as
   first-time setup during lock activation).
-- **Change**: verifies identity first — biometrics if available, otherwise
-  the current PIN — then runs the set/confirm flow to store the new PIN.
+- **Change**: verifies identity first, biometrics if available, otherwise
+  the current PIN, then runs the set/confirm flow to store the new PIN.
 - **Clear**: verifies identity (biometrics or current PIN), then calls
   ``clearPin()`` from ``lib/kioskPin.ts``.
 
@@ -1111,7 +1111,7 @@ maintain filter context when navigating between events.
 
 **Returns:**
 
-- ``goToPrevEvent`` / ``goToNextEvent`` — callbacks that navigate to
+- ``goToPrevEvent`` / ``goToNextEvent``: callbacks that navigate to
   the previous or next event.
 - Loading states for each direction.
 
@@ -1205,13 +1205,13 @@ Hybrid storage:
 
 - **Web**: ``localStorage``
 - **Native (iOS/Android)**: ``SecureStorage`` via
-  ``@aparajita/capacitor-secure-storage`` — backed by Keychain (iOS) and
+  ``@aparajita/capacitor-secure-storage``: backed by Keychain (iOS) and
   Keystore (Android), so auth tokens are not plaintext on disk.
 
 Connection Settings
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Self-signed certificate support (TOFU — Trust On First Use certificate
+Self-signed certificate support (TOFU, Trust On First Use certificate
 pinning) is implemented in the **Settings page** (Advanced section) and
 in ``components/CertTrustDialog.tsx``.
 

@@ -26,21 +26,21 @@ The detail view for a single monitor includes:
 
 ### Live View
 
-A continuous live stream from the camera. The Monitor Detail page always streams — the global *Streaming Mode* setting (Streaming/Snapshot) does not apply here. The connection is closed (`CMD_QUIT` sent to ZoneMinder) when you leave the page.
+A continuous live stream from the camera. The Monitor Detail page always streams, the global *Streaming Mode* setting (Streaming/Snapshot) does not apply here. The connection is closed (`CMD_QUIT` sent to ZoneMinder) when you leave the page.
 
 The actual transport depends on your server:
 
-- **Go2RTC streaming** — used when Go2RTC is configured on your server and enabled for the monitor. The app tries WebRTC, MSE, and HLS in parallel and uses whichever produces video first.
+- **Go2RTC streaming**: used when Go2RTC is configured on your server and enabled for the monitor. The app tries WebRTC, MSE, and HLS in parallel and uses whichever produces video first.
   - WebRTC (lowest latency)
   - MSE (Media Source Extensions)
   - HLS (HTTP Live Streaming)
-- **MJPEG streaming** — used when Go2RTC is disabled, unsupported, or fails. Continuous Motion JPEG via ZoneMinder's ZMS.
+- **MJPEG streaming**: used when Go2RTC is disabled, unsupported, or fails. Continuous Motion JPEG via ZoneMinder's ZMS.
 
 If Go2RTC connects but no video frames appear within 8 seconds, the app automatically falls back to MJPEG. Monitors that fail Go2RTC are cached for 5 minutes before the app retries Go2RTC on them.
 
 The protocol label (enabled in {doc}`settings`) shows which streaming protocol is active on each feed. The Monitor Detail page also shows native video controls (play, pause, volume) for Go2RTC streams.
 
-For tile views (Monitors list, Montage, Dashboard widgets), the *Streaming Mode* setting does apply — see {doc}`settings` for details.
+For tile views (Monitors list, Montage, Dashboard widgets), the *Streaming Mode* setting does apply, see {doc}`settings` for details.
 
 #### Per-Monitor Override
 

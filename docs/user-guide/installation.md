@@ -90,7 +90,7 @@ See {doc}`../building/index` for detailed platform-specific instructions.
 
 ### Binaries
 
-Download the new version from the releases page and install it over the existing installation. Profiles and settings are preserved — they are stored in the browser/app local storage, not in the application files.
+Download the new version from the releases page and install it over the existing installation. Profiles and settings are preserved, they are stored in the browser/app local storage, not in the application files.
 
 ### Web Deployment
 

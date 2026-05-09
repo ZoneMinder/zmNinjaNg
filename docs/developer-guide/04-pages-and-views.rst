@@ -181,12 +181,12 @@ any width 1–12.
 
 Layout logic lives in hooks under ``src/components/montage/``:
 
-- **useMontageGrid** — layout state, column math, aspect-ratio-aware
+- **useMontageGrid**: layout state, column math, aspect-ratio-aware
   height, saved-layout persistence, migration from older formats.
-- **useContainerResize** — ``ResizeObserver`` wrapper with debounced
+- **useContainerResize**: ``ResizeObserver`` wrapper with debounced
   width tracking (first measurement immediate; subsequent changes
   debounced 500 ms).
-- **useFullscreenMode** — Fullscreen API toggle.
+- **useFullscreenMode**: Fullscreen API toggle.
 
 .. code:: tsx
 
@@ -353,7 +353,7 @@ List/grid view of all monitors for the current profile.
 
 Notes:
 
-- Refetch interval comes from ``useBandwidthSettings()`` — never hardcoded.
+- Refetch interval comes from ``useBandwidthSettings()``: never hardcoded.
 - View mode is profile-scoped via ``settings.monitorsViewMode``.
 
 MonitorDetail
@@ -397,14 +397,14 @@ Full-screen view of a single monitor with live stream.
 Stream URLs are built by helpers in ``src/lib/url-builder.ts``
 (``getMonitorStreamUrl``, ``getMonitorControlUrl``, ``getEventZmsUrl``,
 ``getGo2RTCStreamUrl``, etc.). These handle ``connkey`` generation,
-token attachment, and protocol selection — never hand-build a ZM
+token attachment, and protocol selection, never hand-build a ZM
 stream URL in a page or component.
 
 Event thumbnails go through ``src/lib/thumbnail-chain.ts``, which
 chooses among ``zms``, cached, or API sources.
 
 Non-stream HTTP traffic uses ``httpGet`` / ``httpPost`` /
-``httpPut`` / ``httpDelete`` from ``src/lib/http.ts`` — never raw
+``httpPut`` / ``httpDelete`` from ``src/lib/http.ts``: never raw
 ``fetch()`` or ``axios``.
 
 Events
@@ -506,7 +506,7 @@ both flows; the URL ``id`` param distinguishes them.
      );
    }
 
-Connection testing happens before save — credentials and server
+Connection testing happens before save, credentials and server
 reachability are verified inline.
 
 Secondary Views
@@ -523,9 +523,9 @@ and export or share to file.
 Notifications
 ~~~~~~~~~~~~~
 
-- **History** (``src/pages/NotificationHistory.tsx``) — past
+- **History** (``src/pages/NotificationHistory.tsx``), past
   notifications with read status, event thumbnails, tap-to-navigate.
-- **Settings** (``src/pages/NotificationSettings.tsx``) —
+- **Settings** (``src/pages/NotificationSettings.tsx``),
   configuration:
 
   - Connection status badge (connected / disconnected for ES mode,
@@ -549,9 +549,14 @@ daemon status, ZM Run State (Start/Stop/Restart).
 Timeline (``src/pages/Timeline.tsx``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Events visualization using ``vis-timeline/standalone``. Groups by
-monitor, color-coded by monitor ID, with zoom/pan and quick-range
-buttons (1h, 8h, 24h).
+Events visualized on a hand-rolled HTML5 ``<canvas>`` timeline
+(``src/components/timeline/TimelineCanvas.tsx``). Rows group by
+monitor, color-coded by monitor ID, with zoom/pan, quick-range buttons
+(1h, 8h, 24h), and an interactive scrubber. The renderer
+(``timeline-renderer.ts``), viewport
+(``useTimelineViewport.ts``), gestures (``useTimelineGestures.ts``),
+and hit-testing (``timeline-hit-test.ts``) are split into focused
+modules so each can be tested in isolation.
 
 Common Page Patterns
 --------------------
@@ -562,7 +567,7 @@ Profile requirement
 Most pages require a selected profile. Read it via ``useCurrentProfile()``
 (``src/hooks/useCurrentProfile.ts``); it returns
 ``{ currentProfile, settings, hasProfile }``. The Zustand store only
-holds ``currentProfileId: string | null`` plus the profile list — there
+holds ``currentProfileId: string | null`` plus the profile list, there
 is no ``currentProfile`` field on the store.
 
 .. code:: tsx

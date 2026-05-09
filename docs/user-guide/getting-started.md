@@ -57,7 +57,7 @@ See {doc}`installation` for detailed instructions per platform, and {doc}`profil
 
 ## What's Different from zmNinja?
 
-zmNinjaNg is not a port of zmNinja — it's a new application built from scratch. Differences:
+zmNinjaNg is not a port of zmNinja, it's a new application built from scratch. Differences:
 
 - UI built with Tailwind CSS and shadcn/ui
 - 3–4x faster load times, virtualized lists for long scrolls

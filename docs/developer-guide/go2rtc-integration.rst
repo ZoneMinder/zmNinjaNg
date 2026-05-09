@@ -101,7 +101,7 @@ based on:
 
 The ``Profile`` type stores the discovered Go2RTC endpoint as
 ``go2rtcUrl?: string`` (set during server discovery from
-``ZM_GO2RTC_PATH``). There is no separate ``go2rtcAvailable`` boolean —
+``ZM_GO2RTC_PATH``). There is no separate ``go2rtcAvailable`` boolean,
 truthiness of ``go2rtcUrl`` is the availability check.
 
 Settings
@@ -266,7 +266,7 @@ The full fallback sequence:
 1. Go2RTC connects via WebSocket signaling
 2. Negotiates WebRTC, MSE, or HLS (in that order)
 3. **8-second video frame timeout**: after reaching "connected" state,
-   checks ``videoWidth``/``videoHeight`` — falls back to MJPEG if no
+   checks ``videoWidth``/``videoHeight``: falls back to MJPEG if no
    frames arrived
 4. MJPEG fallback as last resort
 
@@ -284,9 +284,9 @@ Controls
 Native video controls are enabled only on MonitorDetail (via the
 ``showControls`` prop on ``VideoPlayer``):
 
-- ``controlsList='nodownload noplaybackrate'`` — hides download and
+- ``controlsList='nodownload noplaybackrate'``: hides download and
   playback rate options
-- ``disablePictureInPicture=true`` — disabled because iOS shows an empty
+- ``disablePictureInPicture=true``: disabled because iOS shows an empty
   window for streaming sources
 - Click on the video element calls ``stopPropagation()`` to prevent
   navigation to monitor detail (relevant in montage)
@@ -333,8 +333,6 @@ Located in:
 
 - ``/app/src/hooks/__tests__/useGo2RTCStream.test.ts`` - Hook lifecycle
   tests (15 tests)
-- ``/app/src/components/video/__tests__/VideoPlayer.test.tsx`` -
-  Component tests
 - ``/app/src/lib/__tests__/url-builder.test.ts`` - URL builder tests
 - ``/app/src/lib/__tests__/discovery.test.ts`` - Discovery tests
 
@@ -460,9 +458,9 @@ Check ``chrome://webrtc-internals`` 4. Firewall blocking STUN/TURN?
 Issue: Fallback to MJPEG always happens
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**Check:** 1. ``profile.go2rtcUrl`` — did discovery populate it? 2.
-``monitor.Go2RTCEnabled`` — is the monitor flagged? 3. User preference —
-is ``streamingMethod`` set to ``mjpeg``? 4. Check logs —
+**Check:** 1. ``profile.go2rtcUrl``: did discovery populate it? 2.
+``monitor.Go2RTCEnabled``: is the monitor flagged? 3. User preference,
+is ``streamingMethod`` set to ``mjpeg``? 4. Check logs,
 ``log.videoPlayer()`` shows the decision path.
 
 Issue: Snapshot download produces black image

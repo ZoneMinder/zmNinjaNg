@@ -133,14 +133,14 @@ profile-scoped (``allowSelfSignedCerts`` + ``trustedCertFingerprint`` in
 4. If the user accepts, the fingerprint is stored in
    ``ProfileSettings.trustedCertFingerprint``
 5. All subsequent connections validate the server cert against the stored
-   fingerprint — mismatches are rejected
+   fingerprint, mismatches are rejected
 
 **Platform Implementations:**
 
 - **Mobile (iOS/Android)**: Uses a custom Capacitor plugin (``SSLTrust``)
   registered in ``src/plugins/ssl-trust/``. On Android,
   ``onReceivedSslError`` extracts the cert via ``SslCertificate.saveState()``,
-  computes SHA-256, and calls ``proceed()`` only on fingerprint match — never
+  computes SHA-256, and calls ``proceed()`` only on fingerprint match, never
   without validation. The WebView handler is only installed when a fingerprint
   is set (via ``setTrustedFingerprint()``). HTTP requests use a
   ``TrustManager`` that validates fingerprints. On iOS, both ``URLProtocol``
@@ -153,11 +153,11 @@ profile-scoped (``allowSelfSignedCerts`` + ``trustedCertFingerprint`` in
 
 **Plugin Methods:**
 
-- ``enable()`` / ``disable()`` — activate/deactivate the TrustManager
+- ``enable()`` / ``disable()``: activate/deactivate the TrustManager
   (HTTP requests). Does not install the WebView handler.
-- ``setTrustedFingerprint({ fingerprint })`` — pass the pinned fingerprint.
+- ``setTrustedFingerprint({ fingerprint })``: pass the pinned fingerprint.
   Installs the WebView SSL handler only when fingerprint is non-null.
-- ``getServerCertFingerprint({ url })`` — fetches the server's leaf
+- ``getServerCertFingerprint({ url })``: fetches the server's leaf
   certificate and returns its SHA-256 fingerprint, subject, issuer, and
   expiry.
 
@@ -185,12 +185,12 @@ in ``AppLayout``.
 
 **Key Files:**
 
-- ``lib/ssl-trust.ts`` — JS interface
-- ``lib/cert-trust-event.ts`` — event bridge for bootstrap-to-UI TOFU dialog
-- ``plugins/ssl-trust/`` — Capacitor plugin definitions
-- ``components/CertTrustDialog.tsx`` — trust dialog component
-- ``android/.../SSLTrustPlugin.java`` — Android native implementation
-- ``ios/.../SSLTrustPlugin.swift`` — iOS native implementation
+- ``lib/ssl-trust.ts``: JS interface
+- ``lib/cert-trust-event.ts``: event bridge for bootstrap-to-UI TOFU dialog
+- ``plugins/ssl-trust/``: Capacitor plugin definitions
+- ``components/CertTrustDialog.tsx``: trust dialog component
+- ``android/.../SSLTrustPlugin.java``: Android native implementation
+- ``ios/.../SSLTrustPlugin.swift``: iOS native implementation
 
 **Used By:** ``stores/profile-bootstrap.ts``, ``pages/ProfileForm.tsx``,
 ``components/settings/ConnectionSettings.tsx``,
@@ -473,8 +473,8 @@ formula.
      monitorId: '4',
    });
 
-**Used By:** API functions, hooks (useMonitorStream, useEventPlayer),
-components
+**Used By:** API functions (``api/events.ts``, ``api/monitors.ts``),
+hooks (``useStreamLifecycle``), and stream/playback components.
 
 --------------
 
@@ -572,7 +572,7 @@ Encryption/decryption for secure password storage (web platform).
 
    import { encrypt, decrypt } from '../lib/crypto';
 
-   // Encrypt — key is internal (derived once per app install and cached)
+   // Encrypt, key is internal (derived once per app install and cached)
    const encrypted = await encrypt('my-password');
    // → Base64 string (IV + ciphertext)
 
@@ -732,20 +732,20 @@ interface and the ``BANDWIDTH_SETTINGS`` constant map.
 
 **Available Properties:**
 
-- ``monitorStatusInterval`` — Monitor status updates
-- ``alarmStatusInterval`` — Alarm state checking
-- ``consoleEventsInterval`` — Event count refreshing
-- ``eventsWidgetInterval`` — Dashboard events widget
-- ``timelineHeatmapInterval`` — Timeline/heatmap data
-- ``daemonCheckInterval`` — Server daemon health
-- ``snapshotRefreshInterval`` — Snapshot image refresh
-- ``zmsStatusInterval`` — ZMS playback status polling interval
+- ``monitorStatusInterval``: Monitor status updates
+- ``alarmStatusInterval``: Alarm state checking
+- ``consoleEventsInterval``: Event count refreshing
+- ``eventsWidgetInterval``: Dashboard events widget
+- ``timelineHeatmapInterval``: Timeline/heatmap data
+- ``daemonCheckInterval``: Server daemon health
+- ``snapshotRefreshInterval``: Snapshot image refresh
+- ``zmsStatusInterval``: ZMS playback status polling interval
   (normal: 3000 ms, low: 5000 ms). Used by ``ZmsEventPlayer`` to poll
   the ZMS stream status (``ZM_CMD.QUERY``) for tracking playback
   position.
-- ``imageScale`` — Image scaling percentage
-- ``imageQuality`` — Image quality percentage
-- ``streamMaxFps`` — Maximum stream FPS
+- ``imageScale``: Image scaling percentage
+- ``imageQuality``: Image quality percentage
+- ``streamMaxFps``: Maximum stream FPS
 
 **Adding a new property:** Add the field to ``BandwidthSettings`` in
 ``lib/zmninja-ng-constants.ts`` with values for both ``normal`` and
@@ -1245,7 +1245,7 @@ useEventFilters (``hooks/useEventFilters.ts``)
 
 Manages event filter state with auto-save persistence. Filter
 selections are saved to the settings store immediately via wrapped
-setters — no "Apply" button needed for persistence.
+setters, no "Apply" button needed for persistence.
 
 **Key concepts:**
 
@@ -1256,7 +1256,7 @@ setters — no "Apply" button needed for persistence.
 - Restore effect reads from settings on mount/profile change using
   raw ``_set*`` functions (bypasses save wrappers to avoid loops)
 - ``ALL_TAGS_FILTER_ID`` sentinel (``'__all_tags__'``) means
-  "show events with any tag" — mutually exclusive with individual
+  "show events with any tag", mutually exclusive with individual
   tag selections
 - ``onlyDetectedObjects`` flag adds ``notesRegexp: 'detected:'``
   to the API filter (server-side Notes REGEXP filter)
@@ -1428,9 +1428,9 @@ This table shows which components/pages use which shared services:
 |                                             | (monitors, events),    |
 |                                             | download, http         |
 +---------------------------------------------+------------------------+
-| **url-builder**                             | API functions, hooks   |
-|                                             | (useMonitorStream,     |
-|                                             | useEventPlayer)        |
+| **url-builder**                             | API functions          |
+|                                             | (events, monitors),    |
+|                                             | useStreamLifecycle     |
 +---------------------------------------------+------------------------+
 | **time**                                    | API functions, Events  |
 |                                             | page, Timeline,        |
@@ -1587,9 +1587,9 @@ listens and forwards them to the router.
 
 **NavigationState properties:**
 
-- ``from`` — explicit back-button destination (read by EventDetail/MonitorDetail
+- ``from``: explicit back-button destination (read by EventDetail/MonitorDetail
   via ``location.state?.from``)
-- ``fromNotification`` — when ``true``, AppLayout skips saving the route as
+- ``fromNotification``: when ``true``, AppLayout skips saving the route as
   ``lastRoute`` so the app does not reopen to a transient event playback screen
 
 **Used By:** pushNotifications.ts, NotificationHandler.tsx
@@ -1602,7 +1602,7 @@ Notification Services (services/)
 The notification system spans three services that handle different delivery
 mechanisms:
 
-``services/notifications.ts`` — WebSocket connection to ZoneMinder Event
+``services/notifications.ts``: WebSocket connection to ZoneMinder Event
 Server (ES mode). Handles real-time alarm events via ``zmeventnotification.pl``.
 
 - Singleton via ``getNotificationService()``
@@ -1615,7 +1615,7 @@ Server (ES mode). Handles real-time alarm events via ``zmeventnotification.pl``.
 - 60-second keepalive ping
 - ``reconnectAttempts`` resets only after successful authentication
 
-``services/pushNotifications.ts`` — FCM push notification handling for
+``services/pushNotifications.ts``: FCM push notification handling for
 iOS and Android.
 
 - Singleton via ``getPushService()``
@@ -1625,18 +1625,18 @@ iOS and Android.
   (but ignored if WebSocket is already connected, to avoid duplicates)
 - Handles notification tap to navigate to event detail
 
-``services/eventPoller.ts`` — Polls ZM events API for new events in
+``services/eventPoller.ts``: Polls ZM events API for new events in
 Direct notification mode on desktop/web.
 
 - Singleton via ``getEventPoller()``
 - Started by ``NotificationHandler`` when ``notificationMode === 'direct'``
-  and ``Platform.isDesktopOrWeb`` (not used on mobile — FCM handles delivery)
+  and ``Platform.isDesktopOrWeb`` (not used on mobile, FCM handles delivery)
 - Uses recursive ``setTimeout`` so interval changes take effect on next tick
 - Configurable polling interval per-profile (default 30s)
 - Optional ``Notes REGEXP:detected:`` filter for object-detection-only events
 - Maintains a seen-event set (capped at 500) to avoid duplicate notifications
 
-``components/NotificationHandler.tsx`` — Headless component that
+``components/NotificationHandler.tsx``: Headless component that
 orchestrates the notification lifecycle:
 
 - Auto-connects WebSocket (ES mode) or starts poller (Direct mode on desktop)
@@ -1656,7 +1656,7 @@ Kiosk PIN Utility (``lib/kioskPin.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Handles hashing, storage, and verification of the kiosk mode PIN.
-The PIN is never stored in plain text — it is hashed with SHA-256 and
+The PIN is never stored in plain text, it is hashed with SHA-256 and
 a random 128-bit salt before being written to secure storage.
 
 **Storage:** Uses ``secureStorage.ts`` (Keychain on iOS, Keystore on
@@ -1665,15 +1665,15 @@ Android, encrypted localStorage on web). Keys: ``kiosk_pin_hash`` and
 
 **Functions:**
 
-- ``hashPin(pin, salt): Promise<string>`` — returns hex-encoded SHA-256
+- ``hashPin(pin, salt): Promise<string>``: returns hex-encoded SHA-256
   of ``salt + pin``. Exported for testing; not normally called directly.
-- ``storePin(pin): Promise<void>`` — generates a random salt, hashes the
+- ``storePin(pin): Promise<void>``: generates a random salt, hashes the
   PIN, and stores both hash and salt in secure storage.
-- ``verifyPin(pin): Promise<boolean>`` — retrieves the stored hash and
+- ``verifyPin(pin): Promise<boolean>``: retrieves the stored hash and
   salt, hashes the candidate PIN, and compares.
-- ``hasPinStored(): Promise<boolean>`` — returns ``true`` if a PIN hash
+- ``hasPinStored(): Promise<boolean>``: returns ``true`` if a PIN hash
   is present in secure storage.
-- ``clearPin(): Promise<void>`` — removes the hash and salt from secure
+- ``clearPin(): Promise<void>``: removes the hash and salt from secure
   storage (used when the user disables kiosk mode via settings).
 
 **Usage:**
@@ -1706,7 +1706,7 @@ Mirrors entries from ``useLogStore`` to a persistent file on disk.
 
 **Capabilities and file locations by platform:**
 
-- Capacitor (iOS / Android): NDJSON file at ``Directory.Data/zmninja-ng.log`` (sandboxed app data). Resolved at runtime to a ``file://`` URI on iOS and ``content://`` URI on Android. Share via the system share sheet — recipient receives the file as an attachment.
+- Capacitor (iOS / Android): NDJSON file at ``Directory.Data/zmninja-ng.log`` (sandboxed app data). Resolved at runtime to a ``file://`` URI on iOS and ``content://`` URI on Android. Share via the system share sheet, recipient receives the file as an attachment.
 - Tauri (desktop): NDJSON file at ``BaseDirectory::AppLog/zmninja-ng.log``. Concrete paths:
 
   - macOS: ``~/Library/Logs/com.zoneminder.zmNinjaNG/zmninja-ng.log``

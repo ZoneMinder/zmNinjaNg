@@ -44,7 +44,7 @@ On touch devices, pinch to zoom in or out on the grid. Zoom is disabled in fulls
 Each tile honors the same streaming rules as elsewhere in the app:
 
 - Monitors with Go2RTC enabled stream live video (WebRTC, MSE, or HLS).
-- Monitors on MJPEG follow the global *Streaming Mode* setting — *Streaming* shows continuous MJPEG, *Snapshot* shows a periodic JPEG that refreshes on the configured interval.
+- Monitors on MJPEG follow the global *Streaming Mode* setting, *Streaming* shows continuous MJPEG, *Snapshot* shows a periodic JPEG that refreshes on the configured interval.
 
 Go2RTC streams in the montage are muted by default. The protocol label (MJPEG/MSE/WebRTC) visibility is controlled by the toolbar eye toggle. Monitors that cannot be reached display a VideoOff placeholder instead of a broken feed.
 

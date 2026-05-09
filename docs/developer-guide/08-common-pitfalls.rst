@@ -267,7 +267,7 @@ Zustand Pitfalls
 - Effect runs on every render
 - Can cause infinite loops if the effect updates state
 
-**Solution — depend on the primitive ID:**
+**Solution, depend on the primitive ID:**
 
 .. code:: tsx
 
@@ -275,7 +275,7 @@ Zustand Pitfalls
 
    useEffect(() => {
      console.log('Profile ID changed', profileId);
-   }, [profileId]);  // ✅ Primitive — stable when unchanged
+   }, [profileId]);  // ✅ Primitive, stable when unchanged
 
 When you need both id-stable effect deps and the full profile object inside
 the effect, capture the latest profile in a ref:
@@ -899,7 +899,7 @@ Cross-Platform Pitfalls
 **Rule:** add ``pointer-events-none`` to any ``opacity-0`` element
 that sits over interactive content. Restore with
 ``group-hover:pointer-events-auto`` if it should accept input on
-hover. Verify on a real iOS device — invisible is not the same as
+hover. Verify on a real iOS device, invisible is not the same as
 non-interactive.
 
 Platform-Specific Pitfalls

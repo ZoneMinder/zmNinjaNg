@@ -20,18 +20,6 @@ Used for the **Dashboard** drag-and-drop interface.
 - **Why**: It is the most mature and stable React library for grid-based
   dashboards with drag-and-drop resizing support.
 
-vis-timeline & vis-data
-~~~~~~~~~~~~~~~~~~~~~~~
-
-Used for the **Timeline View** (``src/pages/Timeline.tsx``).
-
-- **Usage**: Visualizes thousands of events on a zoomable, scrollable
-  timeline.
-- **Why**: DOM-based React timeline libraries struggle with thousands of
-  event markers. ``vis-timeline`` uses Canvas plus targeted DOM diffing
-  and stays interactive with large datasets.
-- **Styling**: Custom CSS in ``src/styles/timeline.css``.
-
 video.js
 ~~~~~~~~
 
@@ -96,7 +84,7 @@ Server state management (data fetching).
 - **Key Config**: ``staleTime`` and ``refetchInterval`` are tuned for
   near-real-time monitoring.
 - **Why**: Replaces manual ``useEffect`` fetching with built-in caching,
-  deduplication, and background refetch — useful for a polling app.
+  deduplication, and background refetch, all useful for a polling app.
 
 Mobile and Platform
 -------------------
@@ -135,7 +123,7 @@ Constants Organization
 zm-constants.ts
 ~~~~~~~~~~~~~~~
 
-**ZoneMinder Protocol Constants** — Official protocol values defined by
+**ZoneMinder Protocol Constants**. Official protocol values defined by
 the ZoneMinder streaming daemon.
 
 .. code:: tsx
@@ -157,7 +145,7 @@ monitor control APIs.
 zmninja-ng-constants.ts
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-**Application Configuration** — zmNinjaNg-specific settings and tuning
+**Application Configuration**. zmNinjaNg-specific settings and tuning
 parameters.
 
 .. code:: tsx
@@ -167,7 +155,7 @@ parameters.
    // API timeouts and performance settings
    ZM_INTEGRATION.httpTimeout           // 10 seconds
    ZM_INTEGRATION.streamMaxFps          // 10 FPS for live streams
-   ZM_INTEGRATION.accessTokenLeewayMs   // 30 minutes — refresh token before expiry
+   ZM_INTEGRATION.accessTokenLeewayMs   // 30 minutes; refresh token before expiry
 
    // Grid layout configuration
    GRID_LAYOUT.cols                     // 12 columns

@@ -78,4 +78,4 @@ To enable automated builds on your fork:
 2. Under **Workflow permissions**, select **Read and write permissions**
 3. Click **Save**
 
-Pushing a version tag triggers builds for Android, Linux (amd64 and arm64), macOS, and Windows. iOS is not built in CI — use the steps in :doc:`IOS` to build and submit it locally from a Mac with Xcode.
+Pushing a version tag triggers builds for Android, Linux (amd64 and arm64), macOS, and Windows. iOS is not built in CI, use the steps in :doc:`IOS` to build and submit it locally from a Mac with Xcode.
