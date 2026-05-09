@@ -197,24 +197,18 @@ preview, status, and actions.
      );
    });
 
-**Why it’s memoized:**
+Wrapped in ``React.memo()`` so the card only re-renders when its own
+props change.
 
-The component is wrapped in ``React.memo()`` to prevent unnecessary
-re-renders when the monitor list updates but this specific monitor’s
-data hasn’t changed.
-
-**The useMonitorStream Hook:**
-
-Encapsulates stream URL generation and connection key management:
+**useMonitorStream:**
 
 - Generates authenticated stream URL with connection key
-- Watches for failures and regenerates keys
-- Returns ref for the ``<img>`` element for snapshot downloads
-- **See** `Chapter 7: Streaming
-  Mechanics <07-api-and-data-fetching>`__ for
-  details on cache busting (``_t``), multi-port streaming, and snapshot
-  preloading.
-- Uses ``src/lib/url-builder.ts`` for centralized URL construction.
+- Regenerates the key on stream failure
+- Returns a ref to the ``<img>`` element for snapshot downloads
+- Builds URLs via ``src/lib/url-builder.ts``
+
+See :doc:`07-api-and-data-fetching` for cache busting (``_t``),
+multi-port streaming, and snapshot preloading.
 
 MontageMonitor
 ~~~~~~~~~~~~~~
@@ -368,15 +362,9 @@ dashboard widgets.
      );
    }
 
-**Key Point: Preventing Drag on Buttons**
-
-Notice the ``e.stopPropagation()`` and
-``onMouseDown={(e) => e.stopPropagation()}`` on the buttons. This
-prevents ``react-grid-layout`` from initiating a drag when you click the
-buttons.
-
-Without this, clicking “Delete” would start dragging the widget instead
-of deleting it.
+``e.stopPropagation()`` (and the same handler on ``onMouseDown``)
+prevents ``react-grid-layout`` from starting a drag when the edit/delete
+buttons are clicked.
 
 Widget Types
 ~~~~~~~~~~~~
@@ -449,16 +437,14 @@ HoverPreview (primitive)
 
 **Location**: ``src/components/ui/hover-preview.tsx``
 
-Generic desktop-only hover primitive. Renders ``children`` as the
-trigger and opens a 400px-wide portal next to the anchor after a 400 ms
-hover delay (both configurable). The ``renderPreview`` render prop is
-only invoked while the preview is open, so components mounted inside
-are created on hover and torn down on leave — this is what lets
-``MonitorHoverPreview`` spin up a fresh stream connection and kill it
-cleanly. The portal uses ``pointer-events: none`` so the underlying
-trigger stays clickable, flips to the left side of the anchor when
-there is no room on the right, and closes on mouse leave or window
-scroll / wheel events.
+Desktop-only hover primitive. Renders ``children`` as the trigger and
+opens a 400px-wide portal next to the anchor after a 400 ms hover delay
+(both configurable). ``renderPreview`` is only invoked while the
+preview is open, so contents mount on hover and unmount on leave —
+this is how ``MonitorHoverPreview`` spins up and tears down a fresh
+stream connection. The portal uses ``pointer-events: none`` so the
+trigger stays clickable, flips to the left when there is no room on
+the right, and closes on mouse leave or window scroll/wheel.
 
 MonitorHoverPreview
 ~~~~~~~~~~~~~~~~~~~
@@ -661,9 +647,8 @@ requiring auth).
      return <img src={blobUrl || ''} alt={alt} {...props} />;
    }
 
-This fetches the image with credentials, converts to a blob, and creates
-a local URL. Necessary for servers that require authentication on all
-requests.
+Fetches the image with credentials, converts to a blob, and creates a
+local URL. Used for servers that require auth on every request.
 
 VideoPlayer (Smart Streaming Component)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1207,42 +1192,21 @@ Components access global state directly:
    const isEditing = useDashboardStore((state) => state.isEditing);
    const removeWidget = useDashboardStore((state) => state.removeWidget);
 
-Key Takeaways
--------------
-
-1. **Components organized by domain**: dashboard/, monitors/, events/,
-   ui/
-2. **Memoize list items**: Prevent unnecessary re-renders
-3. **Data attributes for testing**: All interactive elements have
-   ``data-testid``
-4. **Custom hooks extract logic**: ``useMonitorStream``,
-   ``usePTZControl``, etc.
-5. **Refs for DOM access**: Screenshots, video playback, scroll position
-6. **Stop propagation**: Nested clickable areas need
-   ``e.stopPropagation()``
-7. **Composition over inheritance**: Build complex UIs from simple
-   components
-8. **Stream URL management**: useMonitorStream hook handles
-   authentication and regeneration
-
 Platform Integrations (``src/services/``)
 -----------------------------------------
 
-The ``src/services/`` directory allows the React application to interact
-with native device features provided by Capacitor. This layer acts as a
-bridge, ensuring the UI code remains platform-agnostic.
+The ``src/services/`` directory bridges the React app to native device
+features provided by Capacitor. UI code stays platform-agnostic.
 
 Storage Service (``lib/secureStorage.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We use a hybrid storage approach: - **Web**: Standard ``localStorage``.
-- **Native (iOS/Android)**: Encrypted ``SecureStorage`` (via
-``@aparajita/capacitor-secure-storage``).
+Hybrid storage:
 
-**Why?** Storing authentication tokens in plaintext ``localStorage`` on
-a shared device (or even a phone) is a security risk. SecureStorage uses
-the device’s hardware-backed keystore (Keychain on iOS, Keystore on
-Android).
+- **Web**: ``localStorage``
+- **Native (iOS/Android)**: ``SecureStorage`` via
+  ``@aparajita/capacitor-secure-storage`` — backed by Keychain (iOS) and
+  Keystore (Android), so auth tokens are not plaintext on disk.
 
 Connection Settings
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

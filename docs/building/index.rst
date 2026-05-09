@@ -30,7 +30,7 @@ any static host.
 Desktop Build (Tauri)
 ---------------------
 
-Produces a native desktop app that is lighter than Electron-based alternatives.
+Produces a native desktop app via Tauri.
 
 .. code-block:: bash
 

@@ -4,7 +4,7 @@ Profiles store connection details for your ZoneMinder servers. You can create mu
 
 ## Adding a Profile
 
-1. Open zmNinjaNg - if no profile exists, you'll be taken to the Profiles screen automatically
+1. Open zmNinjaNg — if no profile exists, you'll land on the Profiles screen
 2. Tap **Add Profile**
 3. Fill in the connection details:
 

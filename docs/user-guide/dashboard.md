@@ -1,6 +1,6 @@
 # Dashboard
 
-The Dashboard is the main screen you see after logging in. It displays customizable widgets showing an overview of your ZoneMinder system.
+The Dashboard is the main screen after login. It shows configurable widgets giving an overview of your ZoneMinder system.
 
 ## Widgets
 
@@ -8,7 +8,7 @@ The dashboard supports several widget types:
 
 | Widget | Description |
 |--------|-------------|
-| **Monitor** | Live camera feeds — single or multiple monitors in a seamless grid. Each feed honors the global *Streaming Mode* setting (continuous video or periodic snapshot — see {doc}`settings`); Go2RTC monitors always stream regardless. On desktop, hovering a feed opens a larger live preview that tears down its stream on mouse leave. |
+| **Monitor** | Live camera feeds — single or multiple monitors in a grid. Each feed honors the global *Streaming Mode* setting (continuous video or periodic snapshot — see {doc}`settings`); Go2RTC monitors always stream regardless. On desktop, hovering a feed opens a larger live preview that tears down its stream on mouse leave. |
 | **Recent Events** | Latest events, filterable by one or more selected monitors |
 | **Timeline** | Event counts over time as a bar chart |
 | **Heatmap** | Event activity heatmap showing busy hours and days |

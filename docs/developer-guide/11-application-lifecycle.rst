@@ -1,15 +1,12 @@
 Application Lifecycle
 =====================
 
-This chapter bridges the gap between individual concepts by explaining
-*how* the application runs from start to finish. It is the “Runtime Map”
-of zmNinjaNg.
+How the app runs from launch to shutdown — a runtime map of zmNinjaNg.
 
 1. The Entry Point (``index.html`` → ``main.tsx``)
 --------------------------------------------------
 
-Everything starts at ``app/index.html``. It acts as the container for
-the React app.
+Everything starts at ``app/index.html``, the container for the React app.
 
 1. **Load**: Browser/Electron/Webview loads ``index.html``.
 2. **Script**: It loads ``src/main.tsx`` (the TypeScript entry point).
@@ -218,22 +215,6 @@ We use ``react-router-dom`` for navigation.
   2. ``EventList`` component **mounts** (useEffect runs, API calls
      start).
 
-**Critical Nuance**: Because components unmount, **local state is
-lost**. If you scroll down the event list, click an event, and go back,
-you lose your scroll position *unless* you save it in a global Store
-(Zustand).
+Because components unmount, local state is lost. Scroll position, for
+example, must be persisted to a Zustand store to survive navigation.
 
-Summary: The flow of a generic session
---------------------------------------
-
-1.  **Launch**: App opens (``main.tsx``).
-2.  **Hydrate**: Spinner shows while loading Storage.
-3.  **Route**: Storage says “User was on Monitors page”.
-4.  **Auth**: App silently refreshes the old token.
-5.  **Render**: ``MonitorList`` mounts.
-6.  **Fetch**: Component calls ``useQuery`` to get monitors.
-7.  **Stream**: ``MonitorCard`` calls ``useMonitorStream`` to get a
-    video URL.
-8.  **Interaction**: User clicks a monitor.
-9.  **Navigate**: App switches URL to ``/monitors/1``.
-10. **Cleanup**: List unmounts, Detail view mounts.

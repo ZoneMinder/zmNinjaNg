@@ -6,7 +6,7 @@
 :align: center
 ```
 
-**zmNinjaNg** is a modern, cross-platform client for [ZoneMinder](https://zoneminder.com/), the open-source video surveillance system. It is a ground-up rewrite of [zmNinja](https://zmninja.zoneminder.com/) using React, TypeScript, and Capacitor.
+**zmNinjaNg** is a cross-platform client for [ZoneMinder](https://zoneminder.com/), the open-source video surveillance system. It is a rewrite of [zmNinja](https://zmninja.zoneminder.com/) using React, TypeScript, and Capacitor.
 
 zmNinjaNg runs on **Android**, **iOS**, **Windows**, **macOS**, **Linux**, and the **web** from a single codebase.
 

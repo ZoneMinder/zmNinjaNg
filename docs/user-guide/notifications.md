@@ -22,7 +22,7 @@ Uses ZoneMinder's built-in Notifications REST API (no Event Server required). Ch
 
 ## Push Notifications (Mobile)
 
-Both modes support native push notifications on iOS and Android via Firebase Cloud Messaging (FCM). Push works out of the box with the App Store and Google Play builds — no Firebase setup required on your end.
+Both modes support native push notifications on iOS and Android via Firebase Cloud Messaging (FCM). Push works with the App Store and Google Play builds — no Firebase setup required on your end.
 
 ### Requirements
 
@@ -45,7 +45,7 @@ For custom-built mobile apps, add your own Firebase project first: create a Fire
 You can configure notifications per monitor:
 
 - Enable or disable notifications for individual cameras
-- Useful for ignoring high-traffic cameras that would generate too many alerts
+- Useful for silencing cameras that would otherwise generate too many alerts
 
 ### Direct Mode Options
 

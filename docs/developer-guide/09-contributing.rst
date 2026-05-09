@@ -1,5 +1,5 @@
 Contributing to zmNinjaNg
-====================
+=========================
 
 This chapter covers the workflow for contributing code to the zmNinjaNg
 project.
@@ -110,7 +110,7 @@ Follow the patterns in this guide and AGENTS.md:
 4. Run Tests
 ~~~~~~~~~~~~
 
-**CRITICAL**: All tests must pass before committing.
+All tests must pass before committing.
 
 .. code:: bash
 
@@ -627,7 +627,8 @@ under the same license as the project.
 Recognition
 -----------
 
-Contributors will be recognized in: - CONTRIBUTORS.md file - Release
-notes for features/fixes - Git commit history
+Contributors are listed in:
 
-Thank you for contributing to zmNinjaNg!
+- ``CONTRIBUTORS.md``
+- Release notes for features and fixes
+- Git commit history

@@ -1,8 +1,6 @@
 Common Pitfalls
 ===============
 
-This chapter catalogs common mistakes and how to avoid them.
-
 React Pitfalls
 --------------
 
@@ -144,12 +142,8 @@ React Pitfalls
 
    return <img src={streamUrl} />;  // ✅ Only renders when connKey is valid
 
-**Key principles for stream lifecycle:**
-
-- Never render a stream without a valid connection key
-- Always send ``CMD_QUIT`` to terminate streams on unmount
-- Use refs to access latest values in cleanup effects
-- Check ``connKey !== 0`` before building stream URLs
+**Rules:** never render a stream without a valid connKey; always send
+``CMD_QUIT`` on unmount; use refs to read latest values inside cleanup.
 
 4. Mutating State Directly
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -685,43 +679,6 @@ Performance Pitfalls
      );
    }
 
-**Real zmNinjaNg example (TimelineWidget):**
-
-.. code:: tsx
-
-   // Before: Caused infinite loops
-   export function TimelineWidget() {
-     const now = new Date();  // ❌ New reference every render
-     
-     return (
-       <Tooltip
-         contentStyle={{ backgroundColor: 'var(--background)' }}  // ❌
-         labelFormatter={(value) => format(value, 'PPp')}  // ❌
-       />
-     );
-   }
-
-   // After: Stable references
-   export const TimelineWidget = memo(function TimelineWidget() {
-     const nowRef = useRef(new Date());  // ✅
-     
-     const tooltipContentStyle = useMemo(() => ({
-       backgroundColor: 'var(--background)',
-       border: '1px solid var(--border)',
-     }), []);  // ✅
-     
-     const tooltipLabelFormatter = useCallback((value: number) => {
-       return format(new Date(value), 'PPp');
-     }, []);  // ✅
-     
-     return (
-       <Tooltip
-         contentStyle={tooltipContentStyle}
-         labelFormatter={tooltipLabelFormatter}
-       />
-     );
-   });  // ✅ Wrapped in memo
-
 18. Store-to-Component Sync Circular Dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -803,44 +760,10 @@ Use a ref to track when you’re syncing from store vs. user interaction:
      return <GridLayout layout={layout} onLayoutChange={handleLayoutChange} />;
    }
 
-**Key principles:**
-
-1. **Use a ref** to track sync state (refs don’t cause re-renders)
-2. **Set flag before** updating local state from store
-3. **Use** ``requestAnimationFrame`` to reset flag after React processes
-   the update
-4. **Check flag** before writing back to store
-
-**Why** ``requestAnimationFrame`` **?**
-
-- ``queueMicrotask`` can fire before React finishes processing
-- ``setTimeout(..., 0)`` is unpredictable
-- ``requestAnimationFrame`` fires after the current frame’s DOM updates,
-  ensuring React has processed the state change
-
-**Real zmNinjaNg example (DashboardLayout.tsx):**
-
-.. code:: tsx
-
-   // Track when we're syncing from store to prevent feedback loop
-   const isSyncingFromStoreRef = useRef(false);
-
-   useEffect(() => {
-     isSyncingFromStoreRef.current = true;
-     setLayout((prev) => (areLayoutsEqual(prev, layouts) ? prev : layouts));
-     requestAnimationFrame(() => {
-       isSyncingFromStoreRef.current = false;
-     });
-   }, [layouts, areLayoutsEqual]);
-
-   const handleLayoutChange = useCallback((nextLayout: Layout[]) => {
-     setLayout((prev) => (areLayoutsEqual(prev, nextLayout) ? prev : nextLayout));
-     
-     // Don't update store if we're just syncing from store
-     if (!isEditing || isSyncingFromStoreRef.current) return;
-     
-     updateLayouts(profileIdRef.current, { lg: nextLayout });
-   }, [areLayoutsEqual, isEditing, updateLayouts]);
+**Why** ``requestAnimationFrame``? ``queueMicrotask`` can fire before
+React finishes processing; ``setTimeout(..., 0)`` is unpredictable;
+``requestAnimationFrame`` fires after the current frame's DOM updates,
+so React has already processed the state change.
 
 Internationalization Pitfalls
 -----------------------------
@@ -954,17 +877,11 @@ Cross-Platform Pitfalls
 
 **Why it’s wrong:**
 
-- Invisible overlays with ``opacity-0`` are still touchable on iOS
-- iOS treats them as interactive elements even when not visible
-- Users must tap outside the overlay area to interact with elements
-  beneath
-- Desktop works fine because mouse hover makes overlay visible first
-- Mobile users experience confusing touch offset issues
-
-**What happens:** 1. User tries to tap the image or button beneath
-overlay 2. Touch event is captured by the invisible overlay 3. Nothing
-happens because overlay is invisible 4. User must tap outside the
-overlay boundary to succeed
+- ``opacity-0`` elements still receive touch on iOS
+- The invisible overlay swallows taps; nothing reacts; users have to
+  tap outside the overlay
+- Desktop hides the bug because hover makes the overlay visible before
+  the click
 
 **Solution:**
 
@@ -979,29 +896,11 @@ overlay boundary to succeed
      </div>
    </div>
 
-**Key principles:**
-
-- Always add ``pointer-events-none`` to invisible overlay elements
-- Use ``group-hover:pointer-events-auto`` to restore interactivity on
-  hover (desktop)
-- Test touch interactions on actual iOS devices, not just desktop
-- Invisible doesn’t mean non-interactive
-- iOS can still capture touch events
-
-**When this matters:**
-
-- Hover overlays on cards, images, tiles
-- Tooltip containers
-- Hidden menus that appear on hover
-- Any element with ``opacity-0`` that overlays interactive content
-
-**Testing:**
-
-- Test on actual iOS device (Safari or native app)
-- Try tapping all interactive elements in mobile portrait mode
-- Verify no “dead zones” where taps are ignored
-
---------------
+**Rule:** add ``pointer-events-none`` to any ``opacity-0`` element
+that sits over interactive content. Restore with
+``group-hover:pointer-events-auto`` if it should accept input on
+hover. Verify on a real iOS device — invisible is not the same as
+non-interactive.
 
 Platform-Specific Pitfalls
 --------------------------
@@ -1042,8 +941,7 @@ Platform-Specific Pitfalls
      ]
    }
 
-**Key principle:** Always use ``*:*`` in Tauri HTTP scope patterns to
-allow any port.
+Use ``*:*`` in Tauri HTTP scope patterns to allow any port.
 
 25. ZMS Streaming URLs Hang Forever When Downloading Snapshots
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1092,13 +990,6 @@ removing streaming params:
    const snapshotUrl = convertToSnapshotUrl(streamUrl);
    // Result: https://server/zm/cgi-bin/zms?monitor=1&mode=single&scale=100&token=...
    await downloadFile(snapshotUrl, 'snapshot.jpg');  // ✅ Completes quickly
-
-**Key principles:**
-
-- Always normalize ZMS/nph-zms URLs before downloading
-- Set ``mode=single`` to get a single JPEG frame
-- Remove ``maxfps``, ``connkey``, and other streaming parameters
-- Handle both ``/zms`` and ``/nph-zms`` path patterns
 
 Security Pitfalls
 -----------------

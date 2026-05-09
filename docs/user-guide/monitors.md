@@ -1,6 +1,6 @@
 # Monitors
 
-The Monitors screen shows all cameras configured on your ZoneMinder server. Each monitor is displayed as a card with a live snapshot and status information.
+The Monitors screen lists all cameras configured on your ZoneMinder server. Each monitor is shown as a card with a live snapshot and status.
 
 ## Monitor Cards
 
@@ -22,11 +22,11 @@ Use the **Groups** selector at the top of the screen to filter by ZoneMinder mon
 
 ## Monitor Detail
 
-The detail view for a single monitor provides:
+The detail view for a single monitor includes:
 
 ### Live View
 
-A continuous live stream from the camera. The Monitor Detail page always uses streaming — the global *Streaming Mode* setting (Streaming/Snapshot) does not apply here, since you have opened a single camera at full attention. The connection is closed (`CMD_QUIT` sent to ZoneMinder) when you leave the page.
+A continuous live stream from the camera. The Monitor Detail page always streams — the global *Streaming Mode* setting (Streaming/Snapshot) does not apply here. The connection is closed (`CMD_QUIT` sent to ZoneMinder) when you leave the page.
 
 The actual transport depends on your server:
 

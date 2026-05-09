@@ -1,10 +1,10 @@
 # Timeline & Heatmap
 
-The Timeline view provides a visual representation of events over time, helping you spot patterns and quickly navigate to specific time periods.
+The Timeline view shows events over time and lets you jump to specific time periods.
 
 ## Timeline
 
-The timeline displays events as colored bars along a horizontal time axis. Each monitor gets its own row, so you can see when events occurred across all cameras.
+Events are drawn as colored bars on a horizontal time axis. Each monitor gets its own row.
 
 - **Zoom** in and out to view different time spans (hours, days, weeks)
 - **Pan** left and right to move through time
@@ -12,11 +12,7 @@ The timeline displays events as colored bars along a horizontal time axis. Each 
 
 ## Heatmap
 
-The heatmap shows event density over time as a colored grid. Darker colors indicate more events during that time period. This helps you identify:
-
-- **Busy hours** - Times when the most events occur
-- **Quiet periods** - Times with little to no activity
-- **Patterns** - Recurring activity at specific times or days
+The heatmap shows event density over time as a colored grid. Darker colors indicate more events during that period — useful for spotting busy hours, quiet periods, and recurring activity.
 
 ## Live Mode
 

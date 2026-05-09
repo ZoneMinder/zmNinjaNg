@@ -13,7 +13,7 @@ Events are displayed as cards showing:
 - **Frames** - Number of frames in the event
 - **Tags** - Any tags applied to the event in ZoneMinder
 
-The list supports infinite scrolling - older events load automatically as you scroll down.
+Older events load automatically as you scroll.
 
 On desktop, hovering over a thumbnail for a moment shows a 400px-wide preview anchored next to the row. The preview loads a higher-resolution image from the server. The underlying card remains clickable while the preview is visible, so you can still click to open the event.
 
@@ -69,7 +69,7 @@ Details about the event:
 
 ## Event Montage
 
-View events from multiple cameras at the same time. This is useful for reviewing an incident across multiple camera angles simultaneously.
+View events from multiple cameras at the same time, useful for reviewing an incident across several camera angles.
 
 ## Downloads
 
@@ -79,8 +79,8 @@ You can download event recordings:
 2. Tap the download button
 3. The video file is saved to your device
 
-On mobile, downloads go to the device's Documents or Downloads folder. A progress indicator shows download status.
+On mobile, downloads go to the device's Documents or Downloads folder. A progress indicator shows status.
 
 :::{note}
-Large event downloads may take time on mobile networks. The download runs in the background - you can continue using the app.
+Downloads run in the background — you can continue using the app.
 :::

@@ -5,17 +5,13 @@ Overview
 --------
 
 zmNinjaNg integrates `Go2RTC <https://github.com/AlexxIT/go2rtc>`__ for
-low-latency WebRTC video streaming as a modern alternative to
-traditional MJPEG (ZMS) streaming. This integration provides:
+WebRTC video streaming as an alternative to MJPEG (ZMS).
 
-- **Lower Latency**: Sub-second latency vs 3-10 seconds for MJPEG
-- **Better Bandwidth**: H.264/H.265 hardware-accelerated compression
-- **Automatic Fallback**: WebRTC → MSE → HLS → MJPEG (complete
-  resilience)
-- **Backward Compatible**: MJPEG remains default; WebRTC is opt-in
-  enhancement
-- **Profile-Scoped Settings**: Per-profile configuration following
-  existing patterns
+- **Latency**: sub-second vs 3-10 seconds for MJPEG
+- **Bandwidth**: H.264/H.265 compression
+- **Fallback ladder**: WebRTC → MSE → HLS → MJPEG
+- **Opt-in**: MJPEG remains the default; WebRTC is enabled per profile
+- **Settings**: profile-scoped
 
 Architecture
 ------------
@@ -121,18 +117,16 @@ Profile-scoped settings in ``ProfileSettings``:
      // ... other settings
    }
 
-**Recommendations:**
+**Modes:**
 
-- **auto**: Best for most users - uses WebRTC when available, falls back
-  to MJPEG
-- **webrtc**: For users who want WebRTC only (falls back to MJPEG if
-  unavailable)
-- **mjpeg**: For compatibility or if WebRTC causes issues
+- **auto**: WebRTC when available, MJPEG otherwise. Default.
+- **webrtc**: Use WebRTC; falls back to MJPEG if unavailable.
+- **mjpeg**: Force MJPEG.
 
 Fallback Ladder
 ---------------
 
-The ``useGo2RTCStream`` hook implements a complete fallback ladder:
+The ``useGo2RTCStream`` hook implements the fallback ladder:
 
 ::
 
@@ -182,9 +176,9 @@ VideoRTC Library (Vendored)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The ``VideoRTC`` custom HTML element handles WebRTC signaling and media
-playback. It’s vendored from the official `AlexxIT/go2rtc
-repository <https://github.com/AlexxIT/go2rtc>`__ for reliability and to
-avoid runtime dependencies.
+playback. Vendored from `AlexxIT/go2rtc
+<https://github.com/AlexxIT/go2rtc>`__ to avoid an extra runtime
+dependency.
 
 **Key callbacks:**
 
@@ -241,11 +235,10 @@ Extended ``lib/discovery.ts`` to probe for Go2RTC at port 1984:
      const go2rtcUrl = `http://${host}:1984`;
      const response = await fetch(`${go2rtcUrl}/api/config`, { signal: abortSignal });
      if (response.ok) {
-       result.go2rtcAvailable = true;
        result.go2rtcUrl = go2rtcUrl;
      }
    } catch {
-     result.go2rtcAvailable = false;
+     // leave go2rtcUrl unset
    }
 
 StreamChannel
@@ -326,8 +319,8 @@ Added to ``Profile`` type:
 
    interface Profile {
      // ... existing fields
-     go2rtcAvailable?: boolean;    // Server has Go2RTC
-     go2rtcUrl?: string;           // Go2RTC server URL (e.g., 'http://localhost:1984')
+     go2rtcUrl?: string;           // Go2RTC server URL, e.g. 'http://localhost:1984'.
+                                   // Truthiness doubles as the availability check.
    }
 
 Testing Strategy
@@ -395,9 +388,9 @@ Edge Cases Handled
 1. Go2RTC Unavailable
 ~~~~~~~~~~~~~~~~~~~~~
 
-**Scenario:** Server doesn’t have Go2RTC installed/running **Handling:**
-Discovery returns ``go2rtcAvailable: false``, VideoPlayer automatically
-uses MJPEG
+**Scenario:** Server doesn't have Go2RTC installed/running.
+**Handling:** Discovery leaves ``profile.go2rtcUrl`` unset; VideoPlayer
+falls back to MJPEG.
 
 2. Monitor Not Configured for Go2RTC
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -467,10 +460,10 @@ Check ``chrome://webrtc-internals`` 4. Firewall blocking STUN/TURN?
 Issue: Fallback to MJPEG always happens
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**Check:** 1. ``profile.go2rtcAvailable`` - Is discovery working? 2.
-``monitor.Go2RTCEnabled`` - Is monitor flagged correctly? 3. User
-preference - Is ``streamingMethod`` set to ‘mjpeg’? 4. Check logs -
-``log.videoPlayer()`` shows decision-making
+**Check:** 1. ``profile.go2rtcUrl`` — did discovery populate it? 2.
+``monitor.Go2RTCEnabled`` — is the monitor flagged? 3. User preference —
+is ``streamingMethod`` set to ``mjpeg``? 4. Check logs —
+``log.videoPlayer()`` shows the decision path.
 
 Issue: Snapshot download produces black image
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -551,7 +544,7 @@ Example ``/etc/go2rtc.yaml``:
        - stun:8555  # Or public STUN server
 
 zmNinjaNg Profile Settings
-~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Users can configure streaming method in Settings → Profiles:
 

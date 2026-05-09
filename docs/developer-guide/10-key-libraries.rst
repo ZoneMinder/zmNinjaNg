@@ -1,8 +1,8 @@
 Key Libraries
 =============
 
-This chapter documents the critical third-party libraries that power
-zmNinjaNg and how they are used.
+This chapter documents the third-party libraries used in zmNinjaNg and
+how they are used.
 
 UI and Visualization
 --------------------
@@ -27,9 +27,9 @@ Used for the **Timeline View** (``src/pages/Timeline.tsx``).
 
 - **Usage**: Visualizes thousands of events on a zoomable, scrollable
   timeline.
-- **Why**: **Performance**. DOM-based timeline libraries (like most React
-  ones) choke on thousands of event markers. ``vis-timeline`` uses HTML5
-  Canvas/efficient DOM diffing to handle large datasets smoothly.
+- **Why**: DOM-based React timeline libraries struggle with thousands of
+  event markers. ``vis-timeline`` uses Canvas plus targeted DOM diffing
+  and stays interactive with large datasets.
 - **Styling**: Custom CSS in ``src/styles/timeline.css``.
 
 video.js
@@ -37,14 +37,11 @@ video.js
 
 Used for the **Video Player** (``src/components/ui/video-player.tsx``).
 
-- **Usage**: Robust handling of video playback, including HLS and native
-  formatted streams.
-- **Plugins**: ``videojs-markers`` is used for indicating event points on
-  the seek bar.
-- **Why**: ZoneMinder streams can be quirky (MJPEG, various MP4
-  profiles). Native ``<video>`` tags are often insufficient. video.js
-  provides a unified API and plugin ecosystem to handle these
-  inconsistencies.
+- **Usage**: Video playback for HLS and MP4 event streams.
+- **Plugins**: ``videojs-markers`` for event points on the seek bar.
+- **Why**: ZoneMinder streams vary in format (MJPEG, multiple MP4
+  profiles). The native ``<video>`` element handles these inconsistently
+  across browsers; video.js provides a unified API and plugin surface.
 
 lucide-react
 ~~~~~~~~~~~~
@@ -61,9 +58,8 @@ Headless UI primitives for accessible components.
 
 - **Usage**: Popovers, Dialogs, dropdowns, switches, etc.
 - **Styling**: Styled with Tailwind CSS via ``shadcn/ui`` pattern.
-- **Why**: Allows complete styling freedom (unlike Material UI) while
-  ensuring full accessibility (keyboard nav, screen readers) which is
-  hard to build from scratch.
+- **Why**: Unstyled primitives leave visual design entirely to Tailwind
+  while keeping keyboard navigation and screen-reader support correct.
 
 Data and Logic
 --------------
@@ -76,8 +72,8 @@ Date manipulation and formatting.
 - **Usage**: Parsing dates, calculating relative times (“5 mins ago”),
   and timezone conversions.
 - **Standard**: All date formatting should use ``date-fns``.
-- **Why**: Lightweight and immutable compared to Moment.js. Essential
-  for handling ZoneMinder’s timezone-aware timestamps correctly.
+- **Why**: Lightweight and immutable compared to Moment.js. Used for
+  ZoneMinder's timezone-aware timestamps.
 
 react-hook-form & zod
 ~~~~~~~~~~~~~~~~~~~~~
@@ -87,9 +83,8 @@ Form handling and validation.
 - **Usage**: Profile creation, settings forms.
 - **Pattern**: Zod schemas define the data shape and validation rules;
   react-hook-form handles the state.
-- **Why**: Decouples validation logic from UI. Zod schemas can be
-  inferred as TypeScript types, ensuring type safety from form input to
-  API call.
+- **Why**: Zod schemas double as TypeScript types, giving the same shape
+  for form input and API payloads.
 
 @tanstack/react-query
 ~~~~~~~~~~~~~~~~~~~~~
@@ -99,10 +94,9 @@ Server state management (data fetching).
 - **Usage**: Caching API responses, handling loading/error states,
   infinite scrolling (Events).
 - **Key Config**: ``staleTime`` and ``refetchInterval`` are tuned for
-  real-time monitoring.
-- **Why**: Eliminates manual ``useEffect`` fetching and global state
-  boilerplate for server data. Handles intricate caching, deduplication,
-  and background updates (critical for a monitoring app) out of the box.
+  near-real-time monitoring.
+- **Why**: Replaces manual ``useEffect`` fetching with built-in caching,
+  deduplication, and background refetch — useful for a polling app.
 
 Mobile and Platform
 -------------------
@@ -120,9 +114,8 @@ Native device feature access for iOS and Android.
 - **Network**: Detects network status changes on native platforms
   (WiFi/cellular transitions). Used by ``NotificationHandler`` to
   trigger immediate WebSocket reconnect when connectivity is restored.
-- **Why**: Allows building ios/android apps using the same web codebase.
-  We only drop down to native code (plugins) when we need hardware
-  access that the web API doesn’t provide.
+- **Why**: Build iOS/Android apps from the same web codebase. Drop into
+  native plugins only for hardware access the web API doesn't provide.
 
 Internationalization
 --------------------
@@ -162,9 +155,9 @@ the ZoneMinder streaming daemon.
 monitor control APIs.
 
 zmninja-ng-constants.ts
-~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
 
-**Application Configuration** - zmNinjaNg-specific settings and tuning
+**Application Configuration** — zmNinjaNg-specific settings and tuning
 parameters.
 
 .. code:: tsx
@@ -194,9 +187,3 @@ UI layout.
 - **zmninja-ng-constants**: Can be tuned for performance, UX, or
   platform differences
 
-Next Steps
-----------
-
-Continue to `Chapter 11: Application
-Lifecycle <11-application-lifecycle>` to understand how the app
-runs from start to finish.

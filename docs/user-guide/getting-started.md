@@ -11,7 +11,7 @@ zmNinjaNg is a client application for [ZoneMinder](https://zoneminder.com/), an 
 - Manage multiple ZoneMinder servers via profiles
 - Customize your dashboard with widgets
 
-zmNinjaNg runs on Android, iOS, Windows, macOS, Linux, and the web from a single codebase. It is a ground-up rewrite of [zmNinja](https://zmninja.zoneminder.com/) using modern web technologies.
+zmNinjaNg runs on Android, iOS, Windows, macOS, Linux, and the web from a single codebase. It is a rewrite of [zmNinja](https://zmninja.zoneminder.com/) using React, TypeScript, Capacitor, and Tauri.
 
 ## Requirements
 
@@ -19,7 +19,7 @@ zmNinjaNg runs on Android, iOS, Windows, macOS, Linux, and the web from a single
 
 - ZoneMinder 1.36 or newer
 - API access enabled (`OPT_USE_API = 1`)
-- A valid SSL certificate (or plain HTTP). For self-signed certificates, enable **Allow self-signed certificates** in Settings > Advanced. On desktop, you may also need to add your CA to the system trust store. Using [Let's Encrypt](https://letsencrypt.org/) or similar is recommended
+- A valid SSL certificate (or plain HTTP). For self-signed certificates, enable **Allow self-signed certificates** in Settings > Advanced. On desktop, you may also need to add your CA to the system trust store. [Let's Encrypt](https://letsencrypt.org/) is one option.
 
 ### Client
 
@@ -57,15 +57,15 @@ See {doc}`installation` for detailed instructions per platform, and {doc}`profil
 
 ## What's Different from zmNinja?
 
-zmNinjaNg is not a port of zmNinja - it's a new application built from scratch. Key differences:
+zmNinjaNg is not a port of zmNinja — it's a new application built from scratch. Differences:
 
-- **Modern UI** - Clean, responsive interface built with Tailwind CSS and shadcn/ui
-- **Faster** - 3-4x faster load times, smoother scrolling with virtualized lists
-- **Smaller** - 60-75% smaller app/download size
-- **Encrypted credentials** - Passwords are encrypted at rest using AES-256-GCM (hardware-backed on Android via Android Keystore)
-- **No analytics** - No Firebase analytics or third-party tracking
-- **Desktop support** - Native desktop apps via Tauri (lighter than Electron)
-- **Customizable dashboard** - Drag-and-drop widgets
-- **Notification history** - View past notifications
+- UI built with Tailwind CSS and shadcn/ui
+- 3–4x faster load times, virtualized lists for long scrolls
+- 60–75% smaller download size
+- Passwords encrypted at rest with AES-256-GCM (hardware-backed on Android via Android Keystore)
+- No analytics or third-party tracking
+- Desktop apps via Tauri instead of Electron
+- Drag-and-drop dashboard widgets
+- Notification history
 
 See the full [comparison](https://github.com/pliablepixels/zmNinjaNg/blob/main/notes/COMPARISON.md) for details.

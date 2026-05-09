@@ -1,20 +1,14 @@
 Testing Strategy
 ================
 
-This chapter covers zmNinjaNg's testing approach: unit tests, web E2E
-tests, and cross-platform device tests.
+Three tiers:
 
-Testing Philosophy
-------------------
+1. **Unit tests** — logic and components, in isolation
+2. **Web E2E** — user journeys in a browser against a real ZoneMinder server
+3. **Device E2E** — the same journeys on Android emulator, iOS simulator, and Tauri desktop
 
-zmNinjaNg uses a three-tier testing strategy:
-
-1. **Unit Tests**: Fast, isolated tests for logic and components
-2. **Web E2E Tests**: Full user journey tests in a browser against a real ZoneMinder server
-3. **Device E2E Tests**: The same user journeys driven on Android emulator, iOS simulator, and Tauri desktop
-
-Every test must verify what a real human would verify. Ask: "Can I
-accomplish this task? Does this look right? Does the data make sense?"
+Every test verifies what a human would verify: can I do the task, does
+it look right, does the data make sense.
 
 Cross-Platform Architecture
 ---------------------------
@@ -49,18 +43,16 @@ Tests run on 5 platform profiles using two drivers:
      - WebDriverIO + tauri-driver
      - WebDriver protocol
 
-**Why two drivers?** Playwright can only connect to Chromium-based
-WebViews via Chrome DevTools Protocol (CDP). iOS and Tauri use
-WKWebView (WebKit), which requires WebDriverIO + Appium or
-tauri-driver.
+Playwright connects to Chromium WebViews via CDP. iOS and Tauri use
+WKWebView (WebKit), which requires WebDriverIO + Appium or tauri-driver.
 
 TestActions Abstraction
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Step definitions never call Playwright or WebDriverIO APIs directly.
+Step definitions don't call Playwright or WebDriverIO APIs directly.
 They use a shared ``TestActions`` interface
-(``tests/actions/types.ts``) so the same Gherkin steps work across all
-platforms:
+(``tests/actions/types.ts``) so the same Gherkin steps run on every
+platform:
 
 .. code:: typescript
 
@@ -226,16 +218,15 @@ Mocking Dependencies
      expect(screen.getByText('Monitor 1')).toBeInTheDocument();
    });
 
-Unit Testing Best Practices
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Unit Testing Rules
+~~~~~~~~~~~~~~~~~~
 
-1. **Test behavior, not implementation** — "user clicks delete,
-   monitor is removed" not "handleDelete calls removeMonitor"
-2. **Use data-testid for queries** —
-   ``screen.getByTestId('monitor-card')``
-3. **Mock external dependencies** — stores, React Query, custom hooks
-4. **Reset state between tests** — ``beforeEach()`` to reset stores
-5. **Test edge cases** — empty lists, null values, boundary conditions
+- Test behaviour, not implementation: "clicking delete removes the
+  monitor", not "handleDelete calls removeMonitor".
+- Query with ``data-testid``.
+- Mock external dependencies (stores, React Query, custom hooks).
+- Reset shared state in ``beforeEach``.
+- Cover edge cases: empty lists, null values, boundaries.
 
 E2E Tests
 ---------
@@ -345,8 +336,7 @@ Writing Gherkin Feature Files
        Then monitor cards should not overflow the screen width
        And the page should match the visual baseline
 
-Write scenarios that test user goals, not element presence. Ask: "Would
-a human QA tester consider this tested?"
+Scenarios test user goals, not element presence.
 
 Step Definitions
 ~~~~~~~~~~~~~~~~
@@ -680,8 +670,8 @@ UI changes (additional):
 - Visual baselines updated if layout changed
 - All language files updated (en, de, es, fr, zh)
 
-Device E2E tests are manual-invoke-only — too slow for the automated
-dev workflow. Run them when you want to verify cross-platform behavior.
+Device E2E tests are manual-invoke-only. Run them when you want to
+verify cross-platform behaviour.
 
 Debugging Tests
 ---------------

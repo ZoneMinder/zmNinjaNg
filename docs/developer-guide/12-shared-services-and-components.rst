@@ -1,24 +1,13 @@
 Shared Services and Reusable Components
 =======================================
 
-This chapter documents all shared utilities, services, and reusable
-components in zmNinjaNg, including who uses them and how.
-
-Table of Contents
------------------
-
-- `Shared Services (lib/) <#shared-services-lib>`__
-- `Reusable UI Components <#reusable-ui-components>`__
-- `Reusable Domain Components <#reusable-domain-components>`__
-- `Usage Matrix <#usage-matrix>`__
-
---------------
+Shared utilities, services, and reusable components in zmNinjaNg, with
+their consumers.
 
 Shared Services (lib/)
 ----------------------
 
-The ``lib/`` directory contains platform-agnostic utilities that could
-theoretically be extracted into separate npm packages.
+The ``lib/`` directory contains platform-agnostic utilities.
 
 Logger (``lib/logger.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -328,8 +317,8 @@ support.
 - **Mobile**: CapacitorHttp → Filesystem → Media library
 - **Desktop**: Tauri fetch → User-selected path
 
-**Critical Note:** Mobile implementation uses base64 directly (NOT Blob
-conversion) to avoid Out-Of-Memory errors on large video files.
+**Note:** Mobile uses base64 directly (not Blob conversion) to avoid
+out-of-memory errors on large video files.
 
 **Used By:** MonitorCard, EventDetail, EventCard, VideoPlayer
 
@@ -1337,7 +1326,7 @@ Monitor selection filter with “All Monitors” toggle.
 EventsFilterPopover (``events/EventsFilterPopover.tsx``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Comprehensive event filtering UI (extracted from Events page).
+Event filtering UI (extracted from Events page).
 
 **Features:**
 
@@ -1565,27 +1554,6 @@ subdirectory.
 
 --------------
 
-Key Takeaways
--------------
-
-1. **Logger is universal** - Use component-specific helpers (e.g.,
-   ``log.api()``, ``log.download()``)
-2. **HTTP abstraction is required** - Never use raw ``fetch()``, always
-   use ``httpGet/httpPost/etc``
-3. **Platform detection matters** - Different implementations for
-   Web/Mobile/Desktop
-4. **Proxy in development** - Use ``proxy-utils`` for external URLs in
-   dev mode
-5. **Shared components reduce duplication** - Extract common UI patterns
-6. **Document consumers** - When adding shared code, document who uses
-   it
-7. **DRY principles** - If code appears in 2+ places, extract to shared
-   utility
-8. **Test shared code** - Shared utilities have higher reuse, deserve
-   more testing
-
---------------
-
 Navigation Service (``lib/navigation.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1776,10 +1744,3 @@ For non-React async paths, call ``useAuthStore.getState().getFreshAccessToken()`
 directly. The action dedupes concurrent callers, falls through from refresh to
 credentials re-login on failure, and resolves with ``null`` if both fail.
 
---------------
-
-Next Steps
-----------
-
-Continue to `Chapter 6: Testing Strategy <06-testing-strategy>`
-to learn how to test shared services and components.

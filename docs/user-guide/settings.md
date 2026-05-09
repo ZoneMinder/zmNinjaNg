@@ -24,7 +24,7 @@ The setting applies to every thumbnail surface in the app: events list, event mo
 
 ## Bandwidth Settings
 
-Control how frequently the app fetches data from your server. Useful for mobile data or slow connections.
+Control how often the app fetches data. Useful on mobile data or slow connections.
 
 | Mode | Description |
 |------|-------------|
@@ -83,7 +83,7 @@ Streaming Mode interacts with the streaming protocol layer. When a monitor uses 
 
 #### Why Monitor Detail always streams
 
-When you tap a single monitor for full-screen viewing you have explicitly asked for one camera at full attention, so the bandwidth tradeoff that justifies Snapshot mode in dense grids does not apply. The page also tears the stream down on exit, so leaving snapshot mode running there would just add latency without saving bandwidth.
+You opened one camera deliberately, so the bandwidth tradeoff that justifies Snapshot mode in dense grids does not apply. The page also tears the stream down on exit, so honoring snapshot mode here would just add latency without saving bandwidth.
 
 ### Per-Monitor Streaming Override
 
@@ -127,7 +127,7 @@ Manage the PIN used to lock and unlock kiosk mode. See {doc}`kiosk` for full det
 
 ## Multi-Server
 
-zmNinjaNg automatically detects multi-server ZoneMinder setups via the `/servers.json` API endpoint. Single-server setups are unaffected — no behavior change occurs.
+zmNinjaNg detects multi-server ZoneMinder setups via the `/servers.json` API endpoint. Single-server setups are unaffected.
 
 In a multi-server setup:
 

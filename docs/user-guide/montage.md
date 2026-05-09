@@ -1,6 +1,6 @@
 # Montage
 
-The Montage view displays multiple camera feeds simultaneously in a drag-and-drop grid layout.
+The Montage view shows multiple camera feeds at once in a drag-and-drop grid.
 
 ## Toolbar
 
@@ -58,4 +58,4 @@ If you have many cameras, use **Low bandwidth mode** in Settings to reduce data 
 
 ## Screen Size Warning
 
-On very small screens, the montage view may show a warning if the screen is too narrow to display cameras usefully. Rotating to landscape mode or using a larger device provides a better experience.
+On very small screens, the montage view may show a warning if the screen is too narrow to display cameras usefully. Rotate to landscape, or use a larger device.

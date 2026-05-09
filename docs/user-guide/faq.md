@@ -20,7 +20,7 @@ The source code is free, under Apache License 2.0. I also make the binaries (exc
 
 ### How is zmNinjaNg different from zmNinja?
 
-zmNinjaNg is a ground-up rewrite of zmNinja using modern web technologies (React, TypeScript, Capacitor). It has the same core features but with a modern UI, better performance, and encrypted credential storage. See {doc}`Getting Started <getting-started>` for the full comparison.
+zmNinjaNg is a rewrite of zmNinja using React, TypeScript, and Capacitor. Same core features, with a new UI, faster load times, and encrypted credential storage. See {doc}`Getting Started <getting-started>` for the full comparison.
 
 ## Connection Issues
 
@@ -74,8 +74,8 @@ Try switching to **Low bandwidth mode** in Settings. This reduces refresh rates 
 
 ### Montage view is laggy with many cameras
 
-The montage view loads snapshot images for each camera. With many cameras, this can be data-intensive. Try:
-- Using Low bandwidth mode
+The montage view loads a snapshot for each camera, which adds up. Try:
+- Low bandwidth mode
 - Filtering to show fewer cameras
 - Using monitor groups to view cameras in smaller batches
 
@@ -97,7 +97,7 @@ The pre-built binaries are built for specific distributions. Check the [GitHub A
 
 ### How do I open the developer console on the desktop app?
 
-The Tauri desktop app includes a built-in WebView inspector for debugging, similar to Chrome or Firefox DevTools.
+The Tauri desktop app includes a WebView inspector, similar to Chrome or Firefox DevTools.
 
 **To open it:**
 
@@ -106,11 +106,14 @@ The Tauri desktop app includes a built-in WebView inspector for debugging, simil
   - **Linux / Windows**: `Ctrl + Shift + I`
   - **macOS**: `Cmd + Option + I`
 
-The inspector is platform-specific: it renders the **webkit2gtk WebInspector** on Linux, **Safari's inspector** on macOS, and the **Microsoft Edge DevTools** on Windows.
+The inspector is platform-specific: **webkit2gtk WebInspector** on Linux, **Safari's inspector** on macOS, **Microsoft Edge DevTools** on Windows.
 
-> **Note:** The inspector is only available in debug builds by default. If you installed a release build, you'll need to either:
-> - Build with `tauri build --debug` to create a debug build with the inspector enabled
-> - Or enable the `devtools` Cargo feature in `src-tauri/Cargo.toml` to include the inspector in production builds (note: this prevents App Store submission on macOS)
+:::{note}
+The inspector is only available in debug builds by default. If you installed a release build, either:
+
+- Build with `tauri build --debug` to create a debug build with the inspector enabled
+- Or enable the `devtools` Cargo feature in `src-tauri/Cargo.toml` to include the inspector in production builds (this prevents App Store submission on macOS)
+:::
 
 For full details, see the [Tauri debugging guide](https://v2.tauri.app/develop/debug/#webview-console).
 
@@ -119,12 +122,12 @@ For logs that survive across app restarts (and are easier to attach to a bug rep
 ## Linux Desktop Issues
 
 ### Blank/white window on some linux distros
-  The app loads (you'll see logs reaching `React app initialized` / `Splash screen hidden`)
-  but the window paints blank. This is a webkit2gtk DMABUF rendering issue on newer
-  kernels/GPU drivers. Try, in order:
-  1. `WEBKIT_DISABLE_DMABUF_RENDERER=1 ./zmninja-ng`
-  2. `WEBKIT_DISABLE_COMPOSITING_MODE=1 ./zmninja-ng`
-  3. On Wayland: `GDK_BACKEND=x11 ./zmninja-ng`
+
+The app loads (logs reach `React app initialized` / `Splash screen hidden`) but the window paints blank. This is a webkit2gtk DMABUF rendering issue on newer kernels/GPU drivers. Try, in order:
+
+1. `WEBKIT_DISABLE_DMABUF_RENDERER=1 ./zmninja-ng`
+2. `WEBKIT_DISABLE_COMPOSITING_MODE=1 ./zmninja-ng`
+3. On Wayland: `GDK_BACKEND=x11 ./zmninja-ng`
 
 ## Data & Privacy
 
