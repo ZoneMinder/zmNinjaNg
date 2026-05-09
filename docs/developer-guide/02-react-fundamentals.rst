@@ -21,8 +21,9 @@ updates the DOM to match.
      );
    }
 
-When ``count`` changes, React re-renders this function and patches the
-DOM. You don't write update code — you re-describe the UI.
+When ``count`` changes, React re-renders the function and patches the
+DOM. You don't write code to update the DOM — you re-describe the UI
+and React figures out the diff.
 
 Components: The Building Blocks
 -------------------------------

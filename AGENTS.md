@@ -4,32 +4,37 @@
 
 These are non-negotiable. Every rule applies to all communication: responses, commits, docs, code comments.
 
-1. **No superlatives** — never use "comprehensive", "critical", "major", "robust", "powerful", "extensively", "thoroughly", "excellent", "amazing", "significant", etc. Plain, factual language only.
-2. **Issues first** — create a GitHub issue before implementing features or fixing bugs. Commit directly to main only for docs-only changes, refactors without behavior change, test additions for existing code, or dependency updates.
-3. **Test first, verify before commit** — write tests first, run `npm test` + `tsc --noEmit` + `npm run build` + relevant e2e tests before every commit. Build passing is not proof code works. **Always run `npm run build` (not just `tsc --noEmit`) as the final check** — `tsc -b` used by the build catches stricter errors (unused variables, type narrowing) that `tsc --noEmit` misses. Never commit if the build fails.
-4. **Update docs** — update `docs/developer-guide/` in the same session when adding new APIs, components, utilities, or hooks and/or `docs/user-gudie` for changed/updated or new functionality
-5. **i18n all languages** — never hardcode user-facing strings. Update ALL translation files: en, de, es, fr, zh.
-6. **Cross-platform** — test on iOS, Android, Desktop, phone portrait + landscape. Device e2e tests (`ios-phone`, `android`, etc.) are manual-invoke-only — only `npm run test:e2e` (web) runs in the automated workflow.
-7. **Profile-scoped settings** — read/write via `getProfileSettings`/`updateProfileSettings`. Never use global singletons.
-8. **Bandwidth settings** — all polling/refresh features must use `useBandwidthSettings()` (or `getBandwidthSettings()` outside React). Never hardcode polling intervals.
-9. **Logging** — use `log.*` component helpers with explicit LogLevel, never `console.*`. See `lib/logger.ts` for available helpers.
-10. **HTTP** — use `lib/http.ts` abstractions (`httpGet`, `httpPost`, etc.), never raw `fetch()` or `axios`.
-11. **Text overflow** — use `truncate` + `min-w-0` in flex containers; add `title` for tooltips. Multi-line: `line-clamp-N`.
-12. **Small files** — DRY, ~400 LOC max, extract complex logic to separate modules.
-13. **`data-testid`** — add `data-testid="kebab-case-name"` to all interactive elements. Required for e2e tests.
-14. **Capacitor plugins** — dynamic imports only with platform checks. Never static imports. Match `@capacitor/core` major version. Add mock to `tests/setup.ts`.
-15. **Mobile downloads** — use CapacitorHttp base64 directly. Never convert to Blob on mobile (OOM risk).
-16. **Tauri packages** — JS `@tauri-apps/*` and Rust `tauri-plugin-*` versions must match. Update `package.json` and `Cargo.toml` together.
-17. **No plan files in git** — delete `.md` plan files once the feature is complete.
-18. **Complete features fully** — don't leave features half-implemented.
-19. **User approval before merge** — never merge to main without user approval.
-20. **One logical change per commit** — use conventional format: `feat:`, `fix:`, `docs:`, `test:`, `chore:`, `refactor:`. Reference issues with `refs #<id>` or `fixes #<id>`.
-21. **Don't batch unrelated changes** — split into separate commits.
-22. **Analyze test failures** — read error output and fix systematically. Don't retry blindly.
-23. **Concise i18n labels** — button, tab, and action labels must be short across all languages. Prefer single-word synonyms (ES: "Ajustes" not "Configuración", DE: "Speichern" not "Änderungen speichern", FR: "Enregistrer" not "Enregistrer les modifications"). Test translations fit on a 320px-wide phone screen. Add `min-w-0` + `truncate` to flex containers with translated button text as a safety net.
-24. **Date/time formatting** — all user-facing date/time display must use `useDateTimeFormat()` hook (or `formatAppDate`/`formatAppTime`/`formatAppDateTime` from `lib/format-date-time.ts` outside React). Never hardcode date-fns `format()` with literal patterns for user-visible output. This includes canvas rendering, tooltips, labels, and scrubber overlays.
-25. **Self-updating rules** — when the user gives guidance that establishes a general pattern (e.g., "all X should use Y"), check whether it belongs as a persistent rule in this file. If so, add it here so future sessions follow it automatically.
-26. **Centralized constants** — every named constant (timeouts, thresholds, storage keys, animation durations, magic numbers with semantic meaning) lives in `lib/zmninja-ng-constants.ts` (app-level) or `lib/zm-constants.ts` (ZoneMinder protocol-level). Import from there; do not redeclare per file. CSS pixel values inline in JSX/styles are fine; ad-hoc numbers used once with no semantic name are fine.
+1. **Plain, factual writing**. Applies everywhere: responses, commits, code comments, docs, PR bodies, issue descriptions.
+   - **Banned superlatives and marketing speak**: comprehensive, critical, major, robust, powerful, extensively, thoroughly, excellent, amazing, significant, seamless, intuitive, user-friendly, modern, cutting-edge, state-of-the-art, best-in-class, ground-up rewrite, world-class, blazingly fast.
+   - **Banned AI slop and storytelling**: "Let's...", "As you can see", "It's important to note", "Imagine you have...", "In the real world", "Key Takeaways" or "Summary" sections that restate what was already said, multi-paragraph "why we did it this way" essays.
+   - **Banned hand-wavy claims**: "designed to scale", "built for the modern web", "production-ready". State the specific fact (e.g. "handles 50k events/min on a Pi 4") or cut the claim.
+   - **No em-dashes** (—). Use a period, comma, colon, or rephrase. Example: replace "Token refresh runs every 60s — checks expiry and refreshes if within leeway" with "Token refresh runs every 60s. It checks expiry and refreshes if within leeway."
+   - First-person honesty is fine ("this was primarily to educate me as I did not have React experience"). Don't sand it off.
+2. **Issues first**: create a GitHub issue before implementing features or fixing bugs. Commit directly to main only for docs-only changes, refactors without behavior change, test additions for existing code, or dependency updates.
+3. **Test first, verify before commit**: write tests first, run `npm test` + `tsc --noEmit` + `npm run build` + relevant e2e tests before every commit. Build passing is not proof code works. **Always run `npm run build` (not just `tsc --noEmit`) as the final check**: `tsc -b` used by the build catches stricter errors (unused variables, type narrowing) that `tsc --noEmit` misses. Never commit if the build fails.
+4. **Update docs**: update `docs/developer-guide/` in the same session when adding new APIs, components, utilities, or hooks and/or `docs/user-gudie` for changed/updated or new functionality
+5. **i18n all languages**: never hardcode user-facing strings. Update ALL translation files: en, de, es, fr, zh.
+6. **Cross-platform**: test on iOS, Android, Desktop, phone portrait + landscape. Device e2e tests (`ios-phone`, `android`, etc.) are manual-invoke-only. Only `npm run test:e2e` (web) runs in the automated workflow.
+7. **Profile-scoped settings**: read/write via `getProfileSettings`/`updateProfileSettings`. Never use global singletons.
+8. **Bandwidth settings**: all polling/refresh features must use `useBandwidthSettings()` (or `getBandwidthSettings()` outside React). Never hardcode polling intervals.
+9. **Logging**: use `log.*` component helpers with explicit LogLevel, never `console.*`. See `lib/logger.ts` for available helpers.
+10. **HTTP**: use `lib/http.ts` abstractions (`httpGet`, `httpPost`, etc.), never raw `fetch()` or `axios`.
+11. **Text overflow**: use `truncate` + `min-w-0` in flex containers; add `title` for tooltips. Multi-line: `line-clamp-N`.
+12. **Small files**: DRY, ~400 LOC max, extract complex logic to separate modules.
+13. **`data-testid`**: add `data-testid="kebab-case-name"` to all interactive elements. Required for e2e tests.
+14. **Capacitor plugins**: dynamic imports only with platform checks. Never static imports. Match `@capacitor/core` major version. Add mock to `tests/setup.ts`.
+15. **Mobile downloads**: use CapacitorHttp base64 directly. Never convert to Blob on mobile (OOM risk).
+16. **Tauri packages**: JS `@tauri-apps/*` and Rust `tauri-plugin-*` versions must match. Update `package.json` and `Cargo.toml` together.
+17. **No plan files in git**: delete `.md` plan files once the feature is complete.
+18. **Complete features fully**: don't leave features half-implemented.
+19. **User approval before merge**: never merge to main without user approval.
+20. **One logical change per commit**: use conventional format: `feat:`, `fix:`, `docs:`, `test:`, `chore:`, `refactor:`. Reference issues with `refs #<id>` or `fixes #<id>`.
+21. **Don't batch unrelated changes**: split into separate commits.
+22. **Analyze test failures**: read error output and fix systematically. Don't retry blindly.
+23. **Concise i18n labels**: button, tab, and action labels must be short across all languages. Prefer single-word synonyms (ES: "Ajustes" not "Configuración", DE: "Speichern" not "Änderungen speichern", FR: "Enregistrer" not "Enregistrer les modifications"). Test translations fit on a 320px-wide phone screen. Add `min-w-0` + `truncate` to flex containers with translated button text as a safety net.
+24. **Date/time formatting**: all user-facing date/time display must use `useDateTimeFormat()` hook (or `formatAppDate`/`formatAppTime`/`formatAppDateTime` from `lib/format-date-time.ts` outside React). Never hardcode date-fns `format()` with literal patterns for user-visible output. This includes canvas rendering, tooltips, labels, and scrubber overlays.
+25. **Self-updating rules**: when the user gives guidance that establishes a general pattern (e.g., "all X should use Y"), check whether it belongs as a persistent rule in this file. If so, add it here so future sessions follow it automatically.
+26. **Centralized constants**: every named constant (timeouts, thresholds, storage keys, animation durations, magic numbers with semantic meaning) lives in `lib/zmninja-ng-constants.ts` (app-level) or `lib/zm-constants.ts` (ZoneMinder protocol-level). Import from there; do not redeclare per file. CSS pixel values inline in JSX/styles are fine; ad-hoc numbers used once with no semantic name are fine.
 
 ---
 
@@ -38,10 +43,10 @@ These are non-negotiable. Every rule applies to all communication: responses, co
 All `npm` commands must be run from the `app/` directory.
 
 Structure:
-- `./` — workspace root (AGENTS.md, docs/, scripts/)
-- `app/` — main application (run npm commands here)
-- `app/src/` — source code
-- `app/tests/` — e2e test features and helpers
+- `./`: workspace root (AGENTS.md, docs/, scripts/)
+- `app/`: main application (run npm commands here)
+- `app/src/`: source code
+- `app/tests/`: e2e test features and helpers
 
 ---
 
@@ -50,18 +55,18 @@ Structure:
 ### Philosophy: Be a Human Tester
 Every test must verify what a real human would verify: "Can I accomplish this task? Does this look right? Does the data make sense?"
 
-- Verify outcomes (data changed, navigation happened, file downloaded) — not just element presence
+- Verify outcomes (data changed, navigation happened, file downloaded), not just element presence
 - Fill forms and verify data persists after refresh or navigation
 - Test error states, edge cases, and device-specific layout behavior
 - Add `@visual` screenshots to catch layout regressions
-- Never write "check heading is visible" as a test — that's not testing anything
+- Never write "check heading is visible" as a test. That's not testing anything
 - Never mock the thing you're testing
 
 ### Test-First Workflow
 1. Understand the bug/feature requirement
 2. Write a failing test that reproduces the issue
 3. Implement the fix/feature
-4. Run tests — verify they pass
+4. Run tests, verify they pass
 5. Run full test suite to check for regressions
 6. Commit
 
@@ -93,10 +98,10 @@ Tests run on 5 platform profiles using two drivers. Playwright drives Chromium-b
 | `desktop-tauri` | Tauri macOS app | WebDriverIO + tauri-driver | WebDriver protocol |
 
 ### Platform Tags
-- `@all` — every platform | `@android` — Android only | `@ios` — iPhone + iPad
-- `@ios-phone` / `@ios-tablet` — specific iOS form factor
-- `@tauri` — Tauri desktop | `@web` — browser only
-- `@visual` — comparison screenshots | `@native` — requires Appium
+- `@all`: every platform | `@android`: Android only | `@ios`: iPhone + iPad
+- `@ios-phone` / `@ios-tablet`: specific iOS form factor
+- `@tauri`: Tauri desktop | `@web`: browser only
+- `@visual`: comparison screenshots | `@native`: requires Appium
 
 ### Test Commands
 ```bash
@@ -120,7 +125,7 @@ npm run test:e2e:all-platforms          # All platforms sequentially
 npm run test:e2e:visual-update          # Regenerate all baselines
 npm run test:e2e:android -- --update-snapshots  # Platform-specific
 
-# Native-only (Appium) — PiP, biometrics, push, downloads
+# Native-only (Appium): PiP, biometrics, push, downloads
 npm run test:native
 
 # Setup verification
@@ -194,9 +199,9 @@ For flows requiring native OS interaction (PiP, biometric auth, push, native fil
 
 For every code change, execute in order:
 
-1. `npm test` — must pass
-2. `npx tsc --noEmit` — must pass
-3. `npm run build` — must succeed
+1. `npm test`: must pass
+2. `npx tsc --noEmit`: must pass
+3. `npm run build`: must succeed
 4. `npm run test:e2e -- <feature>.feature` (if UI/navigation changed)
 5. Commit only after all pass
 
@@ -225,7 +230,7 @@ const { t } = useTranslation();
 <Text>{t('setup.title')}</Text>
 toast.error(t('montage.screen_too_small'));
 ```
-Location: `app/src/locales/{lang}/translation.json` — update all 5 languages.
+Location: `app/src/locales/{lang}/translation.json`: update all 5 languages.
 
 ### Logging
 ```typescript
@@ -273,7 +278,7 @@ if (Capacitor.isNativePlatform()) {
     await Haptics.impact({ style: ImpactStyle.Light });
   } catch { /* not available */ }
 }
-// Bad — static import breaks on web
+// Bad: static import breaks on web
 import { Haptics } from '@capacitor/haptics';
 ```
 
@@ -288,7 +293,7 @@ const taskId = taskStore.addTask({
 taskStore.updateProgress(taskId, percentage, bytesProcessed);
 taskStore.completeTask(taskId);
 ```
-On mobile, use CapacitorHttp base64 directly — never convert to Blob (OOM risk).
+On mobile, use CapacitorHttp base64 directly. Never convert to Blob (OOM risk).
 
 ### Bandwidth Settings
 Use `useBandwidthSettings()` in React components or `getBandwidthSettings(mode)` in services. See `BandwidthSettings` interface in `lib/zmninja-ng-constants.ts` for available properties.
@@ -307,7 +312,7 @@ const { data } = useQuery({
 To add a new polling property: add to the `BandwidthSettings` interface and both `normal`/`low` objects in `BANDWIDTH_SETTINGS` (low mode should be ~2x slower).
 
 ### Settings & Data Management
-Settings must be profile-scoped via `getProfileSettings`/`updateProfileSettings`. Detect version/structure changes in stored data — if incompatible, prompt user to reset (don't crash).
+Settings must be profile-scoped via `getProfileSettings`/`updateProfileSettings`. Detect version/structure changes in stored data. If incompatible, prompt user to reset (don't crash).
 
 ### Adding Dependencies
 1. Check compatibility: `npm info <package> peerDependencies`
@@ -320,6 +325,8 @@ Settings must be profile-scoped via `getProfileSettings`/`updateProfileSettings`
 
 ## Documentation
 
+### Where things go
+
 Update `docs/developer-guide/` when adding:
 - API modules (`api/*.ts`) → `07-api-and-data-fetching.rst`
 - Components (`components/*.tsx`) → `05-component-architecture.rst`
@@ -327,6 +334,32 @@ Update `docs/developer-guide/` when adding:
 - Hooks (`hooks/*.ts`) → `05-component-architecture.rst` or relevant chapter
 
 Document purpose, usage examples, key functions/props, integration patterns, and platform-specific gotchas.
+
+### Style
+
+The tone target is `docs/developer-guide/01-introduction.rst`. Match it.
+
+In addition to rule 1 above:
+
+- **No top-of-file Table of Contents.** Sphinx generates one from headings.
+- **No "Next Steps" / "Continue to chapter X" sections.** The TOC handles forward navigation.
+- **No "Key Takeaways" or "Summary" recaps.** If a fact is worth restating, put it in the body. Don't restate the chapter at the end of the chapter.
+- **Don't reword passages already concise and factual.** Three similar lines beats a forced rewrite. Edit only what's wrong, padded, or unclear.
+- **Code examples must come from the actual codebase.** Verify with `grep` before writing or editing: function names get renamed, constants change values, files move. The doc must match `app/src/` as it stands today.
+- **Cite specific values, not ranges.** Read the constant from `lib/zmninja-ng-constants.ts` and write that. "Refreshes within 30 minutes of expiry" beats "refreshes shortly before expiry".
+- **Cross-references**: `:doc:\`relative-path\`` in RST, `{doc}\`relative-path\`` in Markdown. Verify the target file exists.
+- **Honest first-person framing is welcome** when it's accurate ("I built this to learn React"). Don't replace it with corporate voice.
+- **Trim around code, not the code itself.** When tightening, cut the prose paragraphs around an example before touching the example.
+- **Match the canonical file shape**: title with section underline (RST) or `# Title` (Markdown), one-paragraph framing (or none), then sections. No preamble blocks announcing what the chapter will cover.
+
+When adding a new chapter or rewriting an existing one, run a banned-words grep before committing:
+
+```bash
+grep -niE "\b(comprehensive|robust|powerful|extensively|thoroughly|excellent|amazing|seamless|cutting.edge|state.of.the.art|user.friendly|ground.up rewrite)\b" <file>
+grep -n "—" <file>   # em-dashes
+```
+
+Both should return zero hits.
 
 ---
 
