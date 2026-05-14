@@ -330,16 +330,33 @@ export function VideoPlayer({
     };
   }, [playerRef]);
 
-  // Re-show controls on orientation change. Video.js auto-hides via
-  // .vjs-user-inactive after 2s, and on iOS WKWebView the touch/mouse
-  // events that normally re-activate don't always fire on rotate, so the
-  // bar stays hidden after the user rotates the device. refs #147.
+  // iOS WKWebView pauses the HTML5 <video> element during the orientation
+  // reflow, and Video.js's .vjs-user-inactive auto-hide can latch because
+  // touch/mouse events don't re-fire on rotate. Capture play state before
+  // rotation, then re-show controls and resume playback once the reflow
+  // settles. refs #147.
   useEffect(() => {
+    let wasPlayingBeforeRotate = false;
     const handleOrientationChange = () => {
       const player = playerRef.current;
-      if (player && !player.isDisposed()) {
-        player.userActive(true);
-      }
+      if (!player || player.isDisposed()) return;
+      wasPlayingBeforeRotate = !player.paused();
+      player.userActive(true);
+      // Wait for the WebKit reflow to settle before resuming. 350ms covers
+      // the iOS orientation animation (~300ms) plus a small buffer.
+      setTimeout(() => {
+        const p = playerRef.current;
+        if (!p || p.isDisposed()) return;
+        p.userActive(true);
+        if (wasPlayingBeforeRotate && p.paused()) {
+          const result = p.play();
+          if (result && typeof result.catch === 'function') {
+            result.catch(() => {
+              // Autoplay-after-rotate can be blocked; ignore silently.
+            });
+          }
+        }
+      }, 350);
     };
     window.addEventListener('orientationchange', handleOrientationChange);
     return () => {
