@@ -43,13 +43,11 @@ A modern web and mobile application for ZoneMinder, providing a clean, intuitive
 </p>
 </details>
 
+### Support
+I (Pliablepixels) don't plan to support zmNinjaNg with any urgency. Please don't ping me and expect quick answers. ZoneMinder however does plan to offer limited support, just like it did with zmNinja. 
 
-### Agentic AI, you and me
-
-Agentic AI and me: I built the very first version of zmNinja over several months and built in more features over multiple years. I built the first version of zmNinjaNg over 2.5 days with almost as many features as the last version of zmNinja. Thanks to Claude.
-
-Agentic AI and you: I (Pliablepixels) don't plan to support zmNinjaNg with any urgency. Please don't ping me and expect quick answers. ZoneMinder however does plan to offer limited support, just like it did with zmNinja. 
-
+### Agentic AI
+zmNinjaNg, esNg and pyzmNg heavily use Agentic UI (Claude) for development. Thanks to these tools, I was able to redo things and get it to a point where the new codebase is better in many ways than the old one. I don't plan to change this anytime soon (and if I did, I won't have time to extend this anymore). In short, in my view, this is the new way of development for me atleast. I've spent a lot of time working with Claude to build this system - just because I used AI doesn't really mean I don't know what is going on. I do and I still spend time reading/understanding the code as changes are made. 
 
 #### Pull Requests
 
