@@ -1,6 +1,23 @@
 /* Video.js marker styles */
 @import './styles/video-markers.css';
 
+/* Video.js CSS-fullscreen safe-area handling.
+   preferFullWindow: true makes Video.js fill the WebView via CSS, and with
+   iOS Capacitor (contentInset: 'never' + viewport-fit=cover) the WebView
+   extends under the notch and home indicator. Video.js does not inset its
+   own control bar, so without these overrides the progress bar / fullscreen
+   exit button land in the home-indicator strip and the player edge sits
+   under the landscape notch. refs #147. */
+.vjs-fullscreen {
+  padding-top: env(safe-area-inset-top);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  background-color: #000;
+}
+.vjs-fullscreen .vjs-control-bar {
+  margin-bottom: env(safe-area-inset-bottom);
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

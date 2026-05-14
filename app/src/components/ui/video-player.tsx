@@ -330,6 +330,23 @@ export function VideoPlayer({
     };
   }, [playerRef]);
 
+  // Re-show controls on orientation change. Video.js auto-hides via
+  // .vjs-user-inactive after 2s, and on iOS WKWebView the touch/mouse
+  // events that normally re-activate don't always fire on rotate, so the
+  // bar stays hidden after the user rotates the device. refs #147.
+  useEffect(() => {
+    const handleOrientationChange = () => {
+      const player = playerRef.current;
+      if (player && !player.isDisposed()) {
+        player.userActive(true);
+      }
+    };
+    window.addEventListener('orientationchange', handleOrientationChange);
+    return () => {
+      window.removeEventListener('orientationchange', handleOrientationChange);
+    };
+  }, []);
+
   if (error) {
     return (
       <div className={cn("flex items-center justify-center bg-black/10 text-destructive p-4 rounded-md", className)}>
