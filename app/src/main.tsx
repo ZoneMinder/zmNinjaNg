@@ -4,7 +4,6 @@ import './index.css'
 import './i18n'
 import App from './App.tsx'
 import { Platform } from './lib/platform'
-import { installRotationDiagnostic } from './lib/rotation-diagnostic'
 import { installSafeAreaBootstrap } from './lib/safe-area-bootstrap'
 
 // Tag the root on native so CSS can disable long-press text selection
@@ -18,10 +17,6 @@ if (Platform.isNative) {
 // orientation change. Workaround for env(safe-area-inset-*) being stale in iOS
 // WKWebView with contentInset='never'. refs #147.
 void installSafeAreaBootstrap();
-
-// Temporary iOS rotation diagnostic — refs #147. Logs viewport / env() / WKWebView
-// frame on every rotation. Remove this once the rotation gap is diagnosed.
-installRotationDiagnostic();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
