@@ -53,5 +53,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 class ViewController: CAPBridgeViewController {
     override func capacitorDidLoad() {
         bridge?.registerPluginInstance(SSLTrustPlugin())
+        bridge?.registerPluginInstance(SafeAreaPlugin())
+    }
+
+    override func viewSafeAreaInsetsDidChange() {
+        super.viewSafeAreaInsetsDidChange()
+        // Push the new insets out to JS so it can update CSS variables.
+        // env(safe-area-inset-*) is unreliable across rotations on iOS
+        // WKWebView with contentInset='never'; see SafeAreaPlugin.swift.
+        SafeAreaPlugin.shared?.emitInsetsChanged()
     }
 }

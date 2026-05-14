@@ -171,6 +171,14 @@ vi.mock('../src/plugins/ssl-trust', () => ({
   },
 }));
 
+// Mock SafeArea plugin
+vi.mock('../src/plugins/safe-area', () => ({
+  SafeArea: {
+    getInsets: vi.fn().mockResolvedValue({ top: 0, right: 0, bottom: 0, left: 0 }),
+    addListener: vi.fn().mockResolvedValue({ remove: vi.fn() }),
+  },
+}));
+
 // Mock @capawesome/capacitor-badge for app icon badge
 vi.mock('@capawesome/capacitor-badge', () => ({
   Badge: {

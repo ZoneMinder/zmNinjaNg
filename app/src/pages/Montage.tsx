@@ -390,7 +390,7 @@ export default function Montage() {
         className={cn(
           'flex-1 overflow-auto bg-muted/10',
           isFullscreen
-            ? 'pt-[calc(2rem+env(safe-area-inset-top))] overscroll-contain'
+            ? 'pt-[calc(2rem+var(--sai-top,env(safe-area-inset-top)))] overscroll-contain'
             : 'touch-pan-y'
         )}
       >
@@ -404,7 +404,7 @@ export default function Montage() {
           <div
             className={cn(
               'w-full',
-              isFullscreen && 'pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]'
+              isFullscreen && 'pl-[var(--sai-left,env(safe-area-inset-left))] pr-[var(--sai-right,env(safe-area-inset-right))]'
             )}
             data-testid="montage-grid"
           >

@@ -9,13 +9,13 @@
    exit button land in the home-indicator strip and the player edge sits
    under the landscape notch. refs #147. */
 .vjs-fullscreen {
-  padding-top: env(safe-area-inset-top);
-  padding-left: env(safe-area-inset-left);
-  padding-right: env(safe-area-inset-right);
+  padding-top: var(--sai-top, env(safe-area-inset-top));
+  padding-left: var(--sai-left, env(safe-area-inset-left));
+  padding-right: var(--sai-right, env(safe-area-inset-right));
   background-color: #000;
 }
 .vjs-fullscreen .vjs-control-bar {
-  margin-bottom: env(safe-area-inset-bottom);
+  margin-bottom: var(--sai-bottom, env(safe-area-inset-bottom));
 }
 
 @tailwind base;

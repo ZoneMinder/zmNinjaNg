@@ -35,7 +35,7 @@ export function FullscreenControls({
   return (
     <>
     <div
-      className="fixed top-0 left-0 right-0 z-50 bg-black/50 backdrop-blur-sm pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pt-[env(safe-area-inset-top)]"
+      className="fixed top-0 left-0 right-0 z-50 bg-black/50 backdrop-blur-sm pl-[var(--sai-left,env(safe-area-inset-left))] pr-[var(--sai-right,env(safe-area-inset-right))] pt-[var(--sai-top,env(safe-area-inset-top))]"
       data-testid="montage-fullscreen-toolbar"
     >
       <div className="h-8 flex items-center justify-between px-3">

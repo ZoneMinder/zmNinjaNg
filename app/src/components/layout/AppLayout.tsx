@@ -167,10 +167,10 @@ export default function AppLayout() {
   }
 
   return (
-    <div className="flex h-[100dvh] bg-background overflow-hidden pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
+    <div className="flex h-[100dvh] bg-background overflow-hidden pl-[var(--sai-left,env(safe-area-inset-left))] pr-[var(--sai-right,env(safe-area-inset-right))]">
       {/* Desktop Sidebar */}
       <aside
-        className="hidden md:flex flex-col border-r bg-card/50 backdrop-blur-xl z-20 transition-all duration-300 relative group pt-[env(safe-area-inset-top)]"
+        className="hidden md:flex flex-col border-r bg-card/50 backdrop-blur-xl z-20 transition-all duration-300 relative group pt-[var(--sai-top,env(safe-area-inset-top))]"
         style={{ width: `${sidebarWidth}px` }}
         data-tv-region="sidebar"
       >
@@ -196,7 +196,7 @@ export default function AppLayout() {
 
       {/* Mobile Header */}
       {!isLocked && (
-      <div className="md:hidden fixed top-0 left-0 right-0 h-[calc(3rem+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] border-b bg-background z-30 flex items-center px-3 justify-between">
+      <div className="md:hidden fixed top-0 left-0 right-0 h-[calc(3rem+var(--sai-top,env(safe-area-inset-top)))] pt-[var(--sai-top,env(safe-area-inset-top))] border-b bg-background z-30 flex items-center px-3 justify-between">
         <div className="flex items-center gap-2">
           <img src="/logo.png" alt={t('app.logo_alt')} className="h-8 w-8 rounded-lg" />
           <span className="font-bold">{t('app.name')}</span>
@@ -226,7 +226,7 @@ export default function AppLayout() {
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-64 sm:w-72 flex flex-col pt-[env(safe-area-inset-top)]">
+          <SheetContent side="left" className="p-0 w-64 sm:w-72 flex flex-col pt-[var(--sai-top,env(safe-area-inset-top))]">
             <SheetTitle className="sr-only">{t('app.navigation_menu')}</SheetTitle>
             <SheetDescription className="sr-only">{t('app.navigation_menu_desc')}</SheetDescription>
             <div className="flex-1 overflow-y-auto">
@@ -239,7 +239,7 @@ export default function AppLayout() {
       )}
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto overflow-x-hidden relative w-full pt-[calc(3rem+env(safe-area-inset-top))] md:pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]" data-tv-region="main">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden relative w-full pt-[calc(3rem+var(--sai-top,env(safe-area-inset-top)))] md:pt-[var(--sai-top,env(safe-area-inset-top))] pb-[var(--sai-bottom,env(safe-area-inset-bottom))]" data-tv-region="main">
         {/* Background gradient blob for visual interest */}
         <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-primary/5 to-transparent -z-10 pointer-events-none" />
 

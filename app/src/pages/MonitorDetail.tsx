@@ -325,7 +325,7 @@ export default function MonitorDetail() {
       {/* Fullscreen exit bar */}
       {isFullscreen && (
         <div
-          className="fixed top-0 left-0 right-0 z-50 bg-black/50 backdrop-blur-sm pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pt-[env(safe-area-inset-top)]"
+          className="fixed top-0 left-0 right-0 z-50 bg-black/50 backdrop-blur-sm pl-[var(--sai-left,env(safe-area-inset-left))] pr-[var(--sai-right,env(safe-area-inset-right))] pt-[var(--sai-top,env(safe-area-inset-top))]"
           data-testid="monitor-detail-fullscreen-toolbar"
         >
           <div className="h-8 flex items-center justify-between px-3">
@@ -351,7 +351,7 @@ export default function MonitorDetail() {
       <div className={cn(
         'flex-1 flex flex-col items-center justify-center',
         isFullscreen
-          ? 'pt-[calc(2rem+env(safe-area-inset-top))] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]'
+          ? 'pt-[calc(2rem+var(--sai-top,env(safe-area-inset-top)))] pb-[var(--sai-bottom,env(safe-area-inset-bottom))] pl-[var(--sai-left,env(safe-area-inset-left))] pr-[var(--sai-right,env(safe-area-inset-right))]'
           : 'p-2 sm:p-3 md:p-4 bg-muted/10'
       )}>
         <Card
@@ -402,7 +402,7 @@ export default function MonitorDetail() {
             scale={zoomPan.scale}
             className={cn(
               'bottom-2 left-2',
-              isFullscreen && 'bottom-[calc(0.5rem+env(safe-area-inset-bottom))]'
+              isFullscreen && 'bottom-[calc(0.5rem+var(--sai-bottom,env(safe-area-inset-bottom)))]'
             )}
           />
         </Card>
