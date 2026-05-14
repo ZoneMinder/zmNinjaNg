@@ -56,11 +56,15 @@ class ViewController: CAPBridgeViewController {
         bridge?.registerPluginInstance(SafeAreaPlugin())
     }
 
-    override func viewSafeAreaInsetsDidChange() {
-        super.viewSafeAreaInsetsDidChange()
-        // Push the new insets out to JS so it can update CSS variables.
-        // env(safe-area-inset-*) is unreliable across rotations on iOS
-        // WKWebView with contentInset='never'; see SafeAreaPlugin.swift.
-        SafeAreaPlugin.shared?.emitInsetsChanged()
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+        // Emit safe-area insets to JS only after the rotation animation
+        // finishes. viewSafeAreaInsetsDidChange fires multiple times during
+        // the transition with stale intermediate values; the completion
+        // block fires once, at the final settled orientation. See
+        // SafeAreaPlugin.swift.
+        coordinator.animate(alongsideTransition: nil) { _ in
+            SafeAreaPlugin.shared?.emitInsetsChanged()
+        }
     }
 }

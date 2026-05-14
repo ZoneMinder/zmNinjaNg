@@ -15,14 +15,16 @@
  */
 
 import { Capacitor } from '@capacitor/core';
+import { log, LogLevel } from './logger';
 import type { SafeAreaInsets } from '../plugins/safe-area';
 
-function applyInsets(insets: SafeAreaInsets): void {
+function applyInsets(insets: SafeAreaInsets, source: string): void {
   const root = document.documentElement;
   root.style.setProperty('--sai-top', `${insets.top}px`);
   root.style.setProperty('--sai-right', `${insets.right}px`);
   root.style.setProperty('--sai-bottom', `${insets.bottom}px`);
   root.style.setProperty('--sai-left', `${insets.left}px`);
+  log.app(`[SafeArea] applied (${source})`, LogLevel.INFO, insets);
 }
 
 export async function installSafeAreaBootstrap(): Promise<void> {
@@ -37,10 +39,12 @@ export async function installSafeAreaBootstrap(): Promise<void> {
   // on load(), so this is belt-and-suspenders for the first paint.
   try {
     const insets = await SafeArea.getInsets();
-    applyInsets(insets);
-  } catch {
-    // Native plugin not registered (e.g. older app build) — fall back to env().
+    applyInsets(insets, 'initial-getInsets');
+  } catch (error) {
+    log.app('[SafeArea] initial getInsets failed', LogLevel.WARN, error);
   }
 
-  await SafeArea.addListener('safeAreaInsetsChanged', applyInsets);
+  await SafeArea.addListener('safeAreaInsetsChanged', (insets) =>
+    applyInsets(insets, 'event'),
+  );
 }
