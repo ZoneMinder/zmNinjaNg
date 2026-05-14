@@ -167,7 +167,7 @@ export default function AppLayout() {
   }
 
   return (
-    <div className="flex h-full bg-background overflow-hidden pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
+    <div className="flex h-[100dvh] bg-background overflow-hidden pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
       {/* Desktop Sidebar */}
       <aside
         className="hidden md:flex flex-col border-r bg-card/50 backdrop-blur-xl z-20 transition-all duration-300 relative group pt-[env(safe-area-inset-top)]"
