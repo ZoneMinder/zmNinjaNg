@@ -162,8 +162,13 @@ function AppRoutes() {
     }
   }, [isInitialized]);
 
-  // SAFETY: Timeout fallback to prevent indefinite hanging.
-  // If initialization doesn't complete in time, force it to complete.
+  // Third defensive layer for the Android splash-hang bug (commit 31d97c7).
+  // Zustand persist rehydration can fail to fire onRehydrateStorage on Android,
+  // leaving isInitialized=false. The native splash uses launchAutoHide=false so
+  // it waits forever. services/profile-initialization.ts has two earlier
+  // failsafes (per-step + overall); this one runs from inside React in case
+  // those module-level timers were skipped. Do not remove without restoring
+  // equivalent coverage.
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (!isInitialized) {
