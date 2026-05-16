@@ -1310,9 +1310,3 @@ Direct mode:
 ``addEvent`` in the store replaces any existing event with the same
 ``EventId``, preventing duplicate entries when the same event arrives
 from multiple sources (e.g., WebSocket and FCM).
-
-Next Steps
-----------
-
-Continue to `Chapter 6: Testing Strategy <06-testing-strategy>`
-to learn how to test these components.

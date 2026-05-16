@@ -781,10 +781,3 @@ iOS build fails
    xcode-select --install
    sudo xcodebuild -license accept
    xcodebuild -showsdks | grep iphonesimulator
-
-Next Steps
-----------
-
-Continue to `Chapter 7: API and Data
-Fetching <07-api-and-data-fetching>` to learn how the app
-interacts with ZoneMinder's API.

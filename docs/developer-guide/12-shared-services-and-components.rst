@@ -653,6 +653,68 @@ platform-specific features
 
 --------------
 
+Safe-Area Bootstrap (``lib/safe-area-bootstrap.ts``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Mirrors iOS ``UIView.safeAreaInsets`` into ``--sai-top``/``--sai-right``/
+``--sai-bottom``/``--sai-left`` CSS custom properties on
+``document.documentElement``. Works around a bug in iOS WKWebView
+(Capacitor 7, ``contentInset='never'``, ``viewport-fit=cover``) where
+``env(safe-area-inset-*)`` reports stale values after rotation. On
+Dynamic Island devices ``env(top)`` stays ``0`` in portrait, and
+``env(left)``/``env(right)`` keep landscape-derived values regardless of
+orientation. The native ``SafeArea`` Capacitor plugin reads UIKit's
+source of truth and emits ``safeAreaInsetsChanged`` events that this
+module applies to the CSS variables.
+
+**Public API:**
+
+.. code:: typescript
+
+   export async function installSafeAreaBootstrap(): Promise<void>
+
+**Wiring:** Called once at app startup, before React mounts:
+
+.. code:: typescript
+
+   // app/src/main.tsx
+   import { installSafeAreaBootstrap } from './lib/safe-area-bootstrap'
+
+   void installSafeAreaBootstrap();
+
+   createRoot(document.getElementById('root')!).render(
+     <StrictMode><App /></StrictMode>,
+   )
+
+**Platform behavior:**
+
+- **iOS (Capacitor)**: Imports ``plugins/safe-area``, calls
+  ``SafeArea.getInsets()`` once at startup (initial paint), then
+  subscribes to ``safeAreaInsetsChanged`` to update the four
+  ``--sai-*`` variables on every UIKit-reported change.
+- **Android (Capacitor)**: Early-returns. The Android WebView's
+  ``env(safe-area-inset-*)`` resolves correctly, so the CSS fallback
+  is used.
+- **Web and Tauri**: Early-returns. Same reasoning.
+
+**CSS usage:** Reference the variables with the native ``env()`` as the
+fallback so non-iOS platforms get the browser value:
+
+.. code:: css
+
+   padding-top: var(--sai-top, env(safe-area-inset-top));
+
+**Plugin shape:** The Capacitor plugin is defined in
+``plugins/safe-area/`` with ``getInsets()`` and the
+``safeAreaInsetsChanged`` event. Its TypeScript surface is in
+``plugins/safe-area/definitions.ts`` (the ``SafeAreaInsets`` and
+``SafeAreaPlugin`` types). The web stub never invokes the listener.
+
+**Used By:** ``main.tsx`` (single callsite), CSS rules in ``index.css``
+and component styles that consume ``var(--sai-*)``.
+
+--------------
+
 API Validator (``lib/api-validator.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

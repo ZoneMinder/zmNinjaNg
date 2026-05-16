@@ -1,4 +1,4 @@
-# zmNinjaNg - Modern ZoneMinder Client
+# zmNinjaNg - ZoneMinder Client
 
 [![Build Android](https://github.com/pliablepixels/zmNinjaNg/actions/workflows/build-android.yml/badge.svg)](https://github.com/pliablepixels/zmNinjaNg/actions/workflows/build-android.yml)
 [![Build macOS](https://github.com/pliablepixels/zmNinjaNg/actions/workflows/build-macos.yml/badge.svg)](https://github.com/pliablepixels/zmNinjaNg/actions/workflows/build-macos.yml)
@@ -12,7 +12,7 @@
 
 **[Documentation](https://zmninjang.readthedocs.io/en/latest/)**
 
-A modern web and mobile application for ZoneMinder, providing a clean, intuitive interface for viewing live camera feeds, reviewing events, and managing multiple server profiles. It is a ground-up rewrite of the original [zmNinja](https://zmninja.zoneminder.com/) application, using modern web technologies and a more intuitive user interface. 
+A web and mobile application for ZoneMinder for viewing live camera feeds, reviewing events, and managing multiple server profiles. It is a rewrite of the original [zmNinja](https://zmninja.zoneminder.com/) application, built on React, TypeScript, Capacitor, and Tauri. 
 
 ### Demo
 
@@ -51,7 +51,7 @@ zmNinjaNg, esNg and pyzmNg heavily use Agentic UI (Claude) for development. Than
 
 #### Pull Requests
 
-I am happy to accept PRs, but I don't want [AI slop](https://en.wikipedia.org/wiki/AI_slop). Funny I am saying this, given this repo is largely AI agent(s) generated. The difference is I understand the code and know how to prompt it with directions that make the tools generate better quality code. Remember these tools are amazing but love to write a lot of code doing custom things when simpler/better means are available. They also make mistakes. So here are the rules:
+I am happy to accept PRs, but I don't want [AI slop](https://en.wikipedia.org/wiki/AI_slop). Funny I am saying this, given this repo is largely AI agent(s) generated. The difference is I understand the code and know how to prompt it with directions that make the tools generate better quality code. Remember these tools are capable but love to write a lot of code doing custom things when simpler/better means are available. They also make mistakes. So here are the rules:
 
 - If you have not read and understood the code you generated, please don't PR it to my repo. Please continue to extend it yourself
 - See my agent rules for [CLAUDE](AGENTS.md) here - please make sure to use it in your agent
@@ -142,7 +142,7 @@ npm run test:all                                      # Unit + web E2E
 
 ### Device E2E Tests
 
-Tests run on real devices — Android emulator, iOS simulator (phone + tablet), and Tauri desktop. Each platform uses shell scripts that handle building, booting, and running tests.
+Tests run on real devices: Android emulator, iOS simulator (phone + tablet), and Tauri desktop. Each platform uses shell scripts that handle building, booting, and running tests.
 
 ```bash
 bash scripts/test-android.sh          # Android emulator (Playwright via CDP)

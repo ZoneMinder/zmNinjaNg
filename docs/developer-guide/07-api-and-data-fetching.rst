@@ -254,6 +254,97 @@ once:
 
 ``hasRetried`` ensures each request attempts auth only once.
 
+Access Token Freshness Gate
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The background refresher in ``hooks/useTokenRefresh.ts`` keeps the
+stored access token current on a 60-second cadence. That is enough for
+calls routed through ``createApiClient``, which can intercept a 401
+and retry. It is not enough for URLs that the browser or native runtime
+loads directly: ZMS stream frames, event MP4s, event thumbnails, and
+push-notification image backfills. Once a stale token is baked into a
+``<img>`` or ``<video>`` ``src``, the request fires with no interceptor
+in front of it. A 401 there shows up as a broken image, not a retry.
+
+Three things keep stale tokens in play between refresh ticks:
+
+- The interval is paused when the tab is hidden or the device sleeps,
+  so a token can be well past its leeway by the time the app wakes.
+- React Query reads from cache before re-fetching, so a component can
+  render with a token value that was correct one second ago and stale
+  now.
+- The auth store rehydrates from ``localStorage`` at startup with
+  whatever ``accessTokenExpires`` was persisted last session.
+
+``hooks/useFreshAccessToken.ts`` gates URL construction on this. The
+hook reads ``accessToken`` and ``accessTokenExpires`` from the auth
+store and returns ``{ token, isFresh }``. A token is fresh only when
+it has more than ``ZM_INTEGRATION.accessTokenLeewayMs`` (30 minutes)
+of validity left. When it is not fresh, the hook returns
+``{ token: null, isFresh: false }`` and triggers
+``authStore.getFreshAccessToken()`` from an effect. Subscribers
+re-render once the new token lands.
+
+.. code:: typescript
+
+   // hooks/useFreshAccessToken.ts
+   export function useFreshAccessToken(): FreshAccessToken {
+     const accessToken = useAuthStore((state) => state.accessToken);
+     const accessTokenExpires = useAuthStore((state) => state.accessTokenExpires);
+     const getFreshAccessToken = useAuthStore((state) => state.getFreshAccessToken);
+
+     const isFresh =
+       !!accessToken &&
+       !!accessTokenExpires &&
+       accessTokenExpires - Date.now() > ZM_INTEGRATION.accessTokenLeewayMs;
+
+     useEffect(() => {
+       if (!isFresh) {
+         void getFreshAccessToken();
+       }
+     }, [isFresh, getFreshAccessToken]);
+
+     return { token: isFresh ? accessToken : null, isFresh };
+   }
+
+Concurrent callers share one network round-trip. ``getFreshAccessToken``
+in ``stores/auth.ts`` holds a module-level ``pendingFreshToken``
+promise, so a montage view with twelve tiles plus an open hover preview
+issues one ``/host/login.json`` refresh, not thirteen.
+
+Callsites render a ``VideoOff`` placeholder while ``isFresh`` is
+``false`` rather than building a URL with a stale or empty token:
+
+.. code:: tsx
+
+   // components/monitors/MonitorHoverPreview.tsx
+   const { token: accessToken, isFresh: isAccessTokenFresh } = useFreshAccessToken();
+
+   if (!currentProfile || connKey === 0 || !isAccessTokenFresh) {
+     return <VideoOff className="h-8 w-8 text-muted-foreground/40" />;
+   }
+
+   const streamUrl = getStreamUrl(currentProfile.cgiUrl, monitor.Id, {
+     mode: 'jpeg',
+     token: accessToken || undefined,
+     connkey: connKey,
+     minStreamingPort: currentProfile.minStreamingPort,
+   });
+
+The hook is used by ``useMonitorStream``, ``MonitorHoverPreview``,
+``EventThumbnailHoverPreview``, ``EventPreviewPopover``,
+``TimelineScrubber``, ``ZmsEventPlayer``, ``NotificationHandler``,
+``EventMontage``, ``Events``, ``EventDetail``, and
+``NotificationHistory``. Anything that builds a token-bearing URL the
+runtime fetches directly should go through it.
+
+The 30-minute leeway is deliberately larger than the 60-second
+``tokenCheckInterval``. The background refresher prevents the leeway
+window from being hit under normal operation; the gate exists to catch
+the cases where it is hit anyway (return from sleep, cold start with a
+near-expired persisted token, a refresh that failed and is being
+retried).
+
 Connection Keys (connkey)
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 

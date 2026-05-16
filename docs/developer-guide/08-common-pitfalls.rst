@@ -1068,9 +1068,3 @@ Before submitting a PR, check for these pitfalls:
 - ☐ Sensitive data stored encrypted
 - ☐ Tauri HTTP scope uses ``*:*`` pattern for non-standard ports
 - ☐ ZMS streaming URLs normalized to ``mode=single`` before download
-
-Next Steps
-----------
-
-Continue to `Chapter 9: Contributing <09-contributing>` to learn
-how to contribute code to the project.
