@@ -9,7 +9,7 @@
 import { memo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Play, Clock, AlertTriangle, Tag, VideoOff, Camera } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+import { parseISO } from 'date-fns';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -17,6 +17,7 @@ import { getEventImageUrl } from '../../api/events';
 import { getPortalUrlForEvent } from '../../lib/server-resolver';
 import { resolveFallbackFids } from '../../lib/thumbnail-chain';
 import { useCurrentProfile } from '../../hooks/useCurrentProfile';
+import { useDateTimeFormat } from '../../hooks/useDateTimeFormat';
 import { useFreshAccessToken } from '../../hooks/useFreshAccessToken';
 import type { MonitorsResponse } from '../../api/types';
 import { HoverPreview } from '../ui/hover-preview';
@@ -65,6 +66,7 @@ export const EventPreviewPopover = memo(function EventPreviewPopover({
 }: EventPreviewPopoverProps) {
   const { t } = useTranslation();
   const { currentProfile, settings } = useCurrentProfile();
+  const { fmtDate, fmtTime } = useDateTimeFormat();
   const { token: accessToken, isFresh: isAccessTokenFresh } = useFreshAccessToken();
   const queryClient = useQueryClient();
 
@@ -126,8 +128,8 @@ export const EventPreviewPopover = memo(function EventPreviewPopover({
   };
 
   const parsed = parseISO(event.startDateTime.replace(' ', 'T'));
-  const dateLabel = format(parsed, 'EEE, MMM d');
-  const timeLabel = format(parsed, 'HH:mm:ss');
+  const dateLabel = fmtDate(parsed);
+  const timeLabel = fmtTime(parsed);
   const duration = formatDuration(parseFloat(event.duration) || 0);
   const detectedObjects = parseDetectedObjects(event.notes);
   const tags = event.tags ?? [];

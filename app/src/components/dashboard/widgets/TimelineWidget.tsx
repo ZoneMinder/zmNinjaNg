@@ -2,9 +2,8 @@ import { useState, useMemo, useEffect, useRef, useCallback, memo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { getEvents } from '../../../api/events';
-import { formatForServer } from '../../../lib/time';
+import { formatForServer, formatLocalDateTime } from '../../../lib/time';
 import {
-    format,
     subHours,
     subDays,
     startOfHour,
@@ -27,7 +26,7 @@ type TimeRange = '24h' | '48h' | '1w' | '2w' | '1m';
 export const TimelineWidget = memo(function TimelineWidget() {
     const { theme } = useTheme();
     const { t } = useTranslation();
-    const { fmtTimeShort } = useDateTimeFormat();
+    const { fmtDate, fmtTimeShort, fmtDateTimeShort } = useDateTimeFormat();
     const navigate = useNavigate();
     const bandwidth = useBandwidthSettings();
     const [start, setStart] = useState(() => subHours(new Date(), 24));
@@ -69,7 +68,7 @@ export const TimelineWidget = memo(function TimelineWidget() {
     }, []);
 
     const { data: events } = useQuery({
-        queryKey: ['events', 'timeline-widget', format(start, 'yyyy-MM-dd HH:mm:ss')],
+        queryKey: ['events', 'timeline-widget', start.getTime()],
         queryFn: () => getEvents({
             startDateTime: formatForServer(start),
             limit: 1000,
@@ -114,7 +113,7 @@ export const TimelineWidget = memo(function TimelineWidget() {
                 let timeLabel: string;
                 // Show hour, and mark midnight/noon
                 if (hour === 0) {
-                    timeLabel = format(interval, 'MMM dd');
+                    timeLabel = fmtDate(interval);
                 } else if (hour === 12) {
                     timeLabel = '12pm';
                 } else {
@@ -123,7 +122,7 @@ export const TimelineWidget = memo(function TimelineWidget() {
 
                 return {
                     time: timeLabel,
-                    fullTime: format(interval, 'MMM dd HH:mm'),
+                    fullTime: fmtDateTimeShort(interval),
                     count,
                     intervalStart,
                     intervalEnd,
@@ -151,7 +150,7 @@ export const TimelineWidget = memo(function TimelineWidget() {
                 let timeLabel: string;
                 // Mark day boundaries prominently
                 if (hour === 0) {
-                    timeLabel = format(interval, 'EEE dd');
+                    timeLabel = fmtDate(interval);
                 } else if (hour === 12) {
                     timeLabel = '12pm';
                 } else {
@@ -160,7 +159,7 @@ export const TimelineWidget = memo(function TimelineWidget() {
 
                 return {
                     time: timeLabel,
-                    fullTime: format(interval, 'MMM dd HH:mm'),
+                    fullTime: fmtDateTimeShort(interval),
                     count,
                     intervalStart,
                     intervalEnd,
@@ -186,8 +185,8 @@ export const TimelineWidget = memo(function TimelineWidget() {
                 }).length || 0;
 
                 return {
-                    time: format(interval, 'EEE'),
-                    fullTime: format(interval, 'EEEE, MMM dd'),
+                    time: new Intl.DateTimeFormat(undefined, { weekday: 'short' }).format(interval),
+                    fullTime: fmtDate(interval),
                     count,
                     intervalStart,
                     intervalEnd,
@@ -215,14 +214,14 @@ export const TimelineWidget = memo(function TimelineWidget() {
                 let timeLabel: string;
                 // Show Mondays prominently, other days with just the date
                 if (dayOfWeek === 1) {
-                    timeLabel = format(interval, 'MMM dd'); // Monday
+                    timeLabel = fmtDate(interval); // Monday
                 } else {
-                    timeLabel = format(interval, 'dd');
+                    timeLabel = String(interval.getDate()).padStart(2, '0');
                 }
 
                 return {
                     time: timeLabel,
-                    fullTime: format(interval, 'EEEE, MMM dd'),
+                    fullTime: fmtDate(interval),
                     count,
                     intervalStart,
                     intervalEnd,
@@ -251,16 +250,16 @@ export const TimelineWidget = memo(function TimelineWidget() {
                 let timeLabel: string;
                 // Show week starts (Mondays) and month boundaries
                 if (dayOfMonth === 1) {
-                    timeLabel = format(interval, 'MMM dd'); // First of month
+                    timeLabel = fmtDate(interval); // First of month
                 } else if (dayOfWeek === 1) {
-                    timeLabel = format(interval, 'dd'); // Monday
+                    timeLabel = String(interval.getDate()).padStart(2, '0'); // Monday
                 } else {
                     timeLabel = '';
                 }
 
                 return {
                     time: timeLabel,
-                    fullTime: format(interval, 'EEEE, MMM dd'),
+                    fullTime: fmtDate(interval),
                     count,
                     intervalStart,
                     intervalEnd,
@@ -274,7 +273,7 @@ export const TimelineWidget = memo(function TimelineWidget() {
             return { data: chartData, tickFormatter, tickInterval };
         }
     // Use events?.events (the array) for more stable dependency - only recalc when events actually change
-    }, [start, now, events?.events, containerSize.width, fmtTimeShort]);
+    }, [start, now, events?.events, containerSize.width, fmtDate, fmtTimeShort, fmtDateTimeShort]);
 
     // Memoize tooltip styles to prevent re-renders
     const tooltipContentStyle = useMemo(() => ({
@@ -295,12 +294,7 @@ export const TimelineWidget = memo(function TimelineWidget() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- recharts onClick payload is untyped
     const handleBarClick = useCallback((data: any) => {
         if (data && data.intervalStart && data.intervalEnd) {
-            const formatDateTime = (date: Date) => {
-                // Format as YYYY-MM-DDTHH:mm for datetime-local input
-                return format(date, "yyyy-MM-dd'T'HH:mm");
-            };
-
-            navigate(`/events?startDateTime=${formatDateTime(data.intervalStart)}&endDateTime=${formatDateTime(data.intervalEnd)}`, {
+            navigate(`/events?startDateTime=${formatLocalDateTime(data.intervalStart)}&endDateTime=${formatLocalDateTime(data.intervalEnd)}`, {
                 state: { from: '/dashboard' }
             });
         }

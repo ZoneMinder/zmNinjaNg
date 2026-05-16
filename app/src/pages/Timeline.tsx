@@ -10,9 +10,9 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Switch } from '../components/ui/switch';
 import { RefreshCw, Filter, Clock, ScanSearch, X, Crosshair, ZoomIn, ZoomOut, ChevronDown, SkipForward, RectangleHorizontal, Info, Move, HandMetal, Radio } from 'lucide-react';
-import { format, subDays } from 'date-fns';
+import { subDays } from 'date-fns';
 import { filterEnabledMonitors } from '../lib/filters';
-import { formatForServer } from '../lib/time';
+import { formatForServer, formatLocalDateTime } from '../lib/time';
 import {
   Popover,
   PopoverContent,
@@ -49,8 +49,8 @@ export default function Timeline() {
 
   // Stable default dates — computed once, not every render
   const defaultDates = useRef({
-    start: format(subDays(new Date(), 1), "yyyy-MM-dd'T'HH:mm"),
-    end: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
+    start: formatLocalDateTime(subDays(new Date(), 1)),
+    end: formatLocalDateTime(new Date()),
   });
   const startDate = startDateInput || defaultDates.current.start;
   const endDate = endDateInput || defaultDates.current.end;
@@ -460,7 +460,7 @@ export default function Timeline() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button onClick={() => { clearFilters(); setActiveQuickRange(null); defaultDates.current = { start: format(subDays(new Date(), 1), "yyyy-MM-dd'T'HH:mm"), end: format(new Date(), "yyyy-MM-dd'T'HH:mm") }; }} variant="outline" size="sm" className="h-8 sm:h-9" data-testid="timeline-reset-button">
+          <Button onClick={() => { clearFilters(); setActiveQuickRange(null); defaultDates.current = { start: formatLocalDateTime(subDays(new Date(), 1)), end: formatLocalDateTime(new Date()) }; }} variant="outline" size="sm" className="h-8 sm:h-9" data-testid="timeline-reset-button">
             <RefreshCw className="h-4 w-4 sm:mr-2" />
             <span className="hidden sm:inline">{t('common.reset')}</span>
           </Button>
@@ -552,8 +552,8 @@ export default function Timeline() {
               <QuickDateRangeButtons
                 activeHours={activeQuickRange}
                 onRangeSelect={({ start, end, hours }) => {
-                  setStartDateInput(format(start, "yyyy-MM-dd'T'HH:mm"));
-                  setEndDateInput(format(end, "yyyy-MM-dd'T'HH:mm"));
+                  setStartDateInput(formatLocalDateTime(start));
+                  setEndDateInput(formatLocalDateTime(end));
                   setActiveQuickRange(hours);
                 }}
               />
