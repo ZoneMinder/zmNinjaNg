@@ -360,7 +360,7 @@ export default function MonitorDetail() {
             'relative bg-black overflow-hidden border-0 touch-none transition-shadow',
             isFullscreen
               ? 'w-full h-full rounded-none shadow-none'
-              : 'w-full max-w-5xl aspect-video shadow-2xl max-md:landscape:max-w-[calc((100svh-7rem)*16/9)]',
+              : 'w-full max-w-5xl aspect-video shadow-2xl landscape:max-w-[calc((100svh-7rem)*16/9)]',
             isSliding && 'monitor-slide-in',
             alarmBorderClass
           )}
