@@ -92,10 +92,10 @@ async function clearStaleState(): Promise<void> {
   const clearStart = Date.now();
   log.profileService('Clearing stale auth and cache', LogLevel.INFO);
 
-  const { useAuthStore } = await import('./auth');
+  const { useAuthStore } = await import('../stores/auth');
   useAuthStore.getState().logout();
 
-  const { clearQueryCache } = await import('./query-cache');
+  const { clearQueryCache } = await import('../stores/query-cache');
   clearQueryCache();
 
   logDuration('Bootstrap step: cleared auth and cache', clearStart);
@@ -117,7 +117,7 @@ async function initializeApiClient(
 
   // Wire the same credentials reLogin into the auth store so
   // getFreshAccessToken can fall through to it when refresh fails.
-  const { useAuthStore } = await import('./auth');
+  const { useAuthStore } = await import('../stores/auth');
   useAuthStore.getState().setReLoginCallback(reLogin);
 
   logDuration('Bootstrap step: API client ready', apiClientStart, {

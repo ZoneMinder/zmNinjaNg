@@ -19,8 +19,8 @@ import { getServerTimeZone } from '../api/time';
 import { ProfileService } from '../services/profile';
 import { log, LogLevel } from '../lib/logger';
 import { useAuthStore } from './auth';
-import { performBootstrap } from './profile-bootstrap';
-import { handleProfileRehydration } from './profile-initialization';
+import { performBootstrap } from '../services/profile-bootstrap';
+import { handleProfileRehydration } from '../services/profile-initialization';
 
 interface ProfileState {
   profiles: Profile[];
@@ -395,7 +395,7 @@ export const useProfileStore = create<ProfileState>()(
     {
       name: 'zmng-profiles',
       // On load, initialize API client with current profile and authenticate
-      // Complex initialization logic is extracted to profile-initialization.ts for maintainability
+      // Complex initialization logic is extracted to services/profile-initialization.ts for maintainability
       onRehydrateStorage: () => {
         try {
           log.profileService('onRehydrateStorage: Zustand persist starting rehydration', LogLevel.INFO);

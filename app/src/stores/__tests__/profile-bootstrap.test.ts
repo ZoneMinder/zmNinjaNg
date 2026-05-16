@@ -7,7 +7,7 @@ import {
   bootstrapMultiPortStreaming,
   performBootstrap,
   type BootstrapContext,
-} from '../profile-bootstrap';
+} from '../../services/profile-bootstrap';
 import type { Profile } from '../../api/types';
 
 // Mock logger

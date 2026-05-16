@@ -26,7 +26,7 @@ export async function bootstrapAuth(
     log.profileService('No credentials stored, skipping authentication', LogLevel.INFO);
     log.profileService('This is normal for public servers', LogLevel.INFO);
     // Mark as authenticated so API client doesn't try to re-login
-    const { useAuthStore } = await import('./auth');
+    const { useAuthStore } = await import('../stores/auth');
     useAuthStore.getState().setTokens({});
     return;
   }
@@ -41,7 +41,7 @@ export async function bootstrapAuth(
       throw new Error('Failed to decrypt password');
     }
 
-    const { useAuthStore } = await import('./auth');
+    const { useAuthStore } = await import('../stores/auth');
     await useAuthStore.getState().login(profile.username, decryptedPassword);
     log.profileService('Authentication successful', LogLevel.INFO);
   } catch (authError: unknown) {
@@ -62,7 +62,7 @@ export async function bootstrapTimezone(
 ): Promise<void> {
   try {
     log.profileService('Fetching server timezone', LogLevel.INFO);
-    const { useAuthStore } = await import('./auth');
+    const { useAuthStore } = await import('../stores/auth');
     const { accessToken } = useAuthStore.getState();
     const timezone = await getServerTimeZone(accessToken || undefined);
 
@@ -190,7 +190,7 @@ export async function bootstrapMultiPortStreaming(
     // For NEW profiles (no existing settings), default to streaming mode
     // For existing profiles, respect user's current settings
     try {
-      const { useSettingsStore } = await import('./settings');
+      const { useSettingsStore } = await import('../stores/settings');
       const settingsStore = useSettingsStore.getState();
       const hasExistingSettings = settingsStore.profileSettings[profile.id] !== undefined;
 
@@ -254,7 +254,7 @@ export async function bootstrapSSLTrust(
   profile: Profile
 ): Promise<void> {
   try {
-    const { useSettingsStore } = await import('./settings');
+    const { useSettingsStore } = await import('../stores/settings');
     const settings = useSettingsStore.getState().getProfileSettings(profile.id);
     const { applySSLTrustSetting, getServerCertFingerprint } = await import('../lib/ssl-trust');
 
