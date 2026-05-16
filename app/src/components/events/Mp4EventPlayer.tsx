@@ -1,8 +1,6 @@
 /**
- * Video Player Component
- *
- * A wrapper around Video.js to provide a consistent video playback experience.
- * Handles HLS streams, authenticated requests (via hooks), and cleanup.
+ * Mp4EventPlayer. Video.js wrapper for recorded event playback (MP4 / HLS).
+ * Handles markers, PiP, and authenticated source URLs.
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -21,7 +19,7 @@ import type { MarkerConfig } from '../../types/videojs-markers';
 import { usePip } from '../../contexts/PipContext';
 import { Pip } from '../../plugins/pip';
 
-interface VideoPlayerProps {
+interface Mp4EventPlayerProps {
   /** The source URL of the video stream */
   src: string;
   /** The MIME type of the video (e.g., 'application/x-mpegURL') */
@@ -50,25 +48,7 @@ interface VideoPlayerProps {
   eventId?: string;
 }
 
-/**
- * VideoPlayer component.
- *
- * @param props - Component properties
- * @param props.src - Video source URL
- * @param props.type - Video MIME type
- * @param props.poster - Poster image URL
- * @param props.className - CSS class names
- * @param props.autoplay - Autoplay setting
- * @param props.controls - Show controls
- * @param props.muted - Mute video
- * @param props.aspectRatio - Aspect ratio
- * @param props.markers - Timeline markers for alarm frames
- * @param props.onMarkerClick - Marker click callback
- * @param props.onReady - Ready callback
- * @param props.onError - Error callback
- * @param props.eventId - Event ID for PiP persistence
- */
-export function VideoPlayer({
+export function Mp4EventPlayer({
   src,
   type = 'application/x-mpegURL',
   poster,
@@ -82,7 +62,7 @@ export function VideoPlayer({
   onReady,
   onError,
   eventId
-}: VideoPlayerProps) {
+}: Mp4EventPlayerProps) {
   const videoRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<Player | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -174,7 +154,7 @@ export function VideoPlayer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // When the user closes PiP from the OS while this VideoPlayer is still
+  // When the user closes PiP from the OS while this Mp4EventPlayer is still
   // mounted, PipContext moves the wrapper back into our videoRef host and flips
   // activePipEventId to null. We just need to drop the adopted flag so the
   // unmount cleanup correctly disposes the player.

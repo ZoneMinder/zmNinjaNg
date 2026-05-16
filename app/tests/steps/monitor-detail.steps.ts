@@ -9,7 +9,7 @@ let hasPTZ = false;
 
 // Video Player / Monitor Detail
 Then('I should see the monitor player', async ({ page }) => {
-  // MonitorDetail page has video-player (from VideoPlayer component) and monitor-detail-settings
+  // MonitorDetail page has video-player (from LiveMonitorPlayer) and monitor-detail-settings
   const videoPlayer = page.getByTestId('video-player');
   const detailSettings = page.getByTestId('monitor-detail-settings');
   const monitorPlayer = page.getByTestId('monitor-player');
@@ -32,7 +32,7 @@ Then('I should see the monitor rotation status', async ({ page }) => {
   await expect(rotationStatus).not.toBeEmpty();
 });
 
-// Go2RTC / VideoPlayer Steps
+// Go2RTC / LiveMonitorPlayer Steps
 Then('I should see a video player element', async ({ page }) => {
   const videoPlayer = page.getByTestId('video-player');
   await expect(videoPlayer).toBeVisible({ timeout: testConfig.timeouts.pageLoad });
@@ -50,7 +50,7 @@ Then('each monitor should have a video player element', async ({ page }) => {
 
   expect(count).toBeGreaterThan(0);
 
-  // Check that each has a video player (VideoPlayer component renders a video element inside)
+  // Check that each has a video player (LiveMonitorPlayer renders a video element inside)
   for (let i = 0; i < count; i++) {
     const card = monitorCards.nth(i);
     const video = card.locator('video[data-testid="video-player-video"]');
@@ -105,7 +105,7 @@ Then('I can change the streaming method preference', async ({ page }) => {
 
 When('viewing a monitor without active profile', async ({ page }) => {
   // This scenario tests edge case handling - normally not reachable in UI
-  // VideoPlayer should handle null profile gracefully
+  // LiveMonitorPlayer should handle null profile gracefully
   log.info('E2E: Testing null profile handling (edge case)', { component: 'e2e' });
 });
 

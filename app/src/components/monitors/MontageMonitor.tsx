@@ -23,7 +23,7 @@ import { useSettingsStore } from '../../stores/settings';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-import { VideoPlayer } from '../video/VideoPlayer';
+import { LiveMonitorPlayer } from './LiveMonitorPlayer';
 import { Clock, ChartGantt, Download, Volume2, VolumeX, Pin, MoreVertical } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { downloadSnapshotFromElement } from '../../lib/download';
@@ -270,7 +270,7 @@ function MontageMonitorComponent({
         tabIndex={isEditing ? -1 : 0}
         role="button"
       >
-        <VideoPlayer
+        <LiveMonitorPlayer
           monitor={monitor}
           profile={currentProfile}
           externalMediaRef={mediaRef}

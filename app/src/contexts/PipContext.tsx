@@ -19,7 +19,7 @@ interface PipState {
   eventId: string;
   /** The DOM node the wrapper was moved out of when adopted. If still attached
    * at PiP exit time, the wrapper is moved back here instead of being disposed,
-   * so the inline VideoPlayer that originally owned it stays functional. */
+   * so the inline Mp4EventPlayer that originally owned it stays functional. */
   originHost: HTMLElement | null;
 }
 
@@ -98,7 +98,7 @@ export function PipProvider({ children }: { children: ReactNode }) {
 
     // Listen for PiP ending (user closes the PiP window). If the original
     // inline host is still in the DOM, move the wrapper back so the inline
-    // VideoPlayer continues to work. Otherwise the owner has navigated away,
+    // Mp4EventPlayer continues to work. Otherwise the owner has navigated away,
     // and we dispose to avoid leaks.
     const handleLeavePip = () => {
       const state = pipStateRef.current;
@@ -106,7 +106,7 @@ export function PipProvider({ children }: { children: ReactNode }) {
       const movedBack = !!(state.originHost && state.originHost.isConnected && wrapper);
       if (movedBack) {
         state.originHost!.appendChild(wrapper!);
-        // The inline VideoPlayer reads activePipEventId; flipping to null tells
+        // The inline Mp4EventPlayer reads activePipEventId; flipping to null tells
         // it to clear its adoptedForPip flag so its own unmount will dispose.
         if (cleanupListener.current) {
           cleanupListener.current();

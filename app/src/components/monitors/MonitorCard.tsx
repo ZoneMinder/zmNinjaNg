@@ -16,7 +16,7 @@ import { cn, formatEventCount } from '../../lib/utils';
 import { handleKeyClick } from '../../lib/tv-a11y';
 import { downloadSnapshotFromElement } from '../../lib/download';
 import { toast } from 'sonner';
-import { VideoPlayer } from '../video/VideoPlayer';
+import { LiveMonitorPlayer } from './LiveMonitorPlayer';
 import { MonitorHoverPreview } from './MonitorHoverPreview';
 import { useCurrentProfile } from '../../hooks/useCurrentProfile';
 import type { MonitorCardProps } from '../../api/types';
@@ -63,7 +63,7 @@ function MonitorCardComponent({
   const showHover = compact ? settings.hoverPreview.monitorsGrid : settings.hoverPreview.monitorsList;
 
   const videoPlayer = (
-    <VideoPlayer
+    <LiveMonitorPlayer
       monitor={monitor}
       profile={currentProfile}
       className="w-full h-full"

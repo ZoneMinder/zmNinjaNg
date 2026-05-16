@@ -4,8 +4,8 @@ import userEvent from '@testing-library/user-event';
 import { MonitorCard } from '../MonitorCard';
 import type { Monitor, MonitorStatus } from '../../../api/types';
 
-vi.mock('../../video/VideoPlayer', () => ({
-  VideoPlayer: ({ monitor }: { monitor: { Name: string } }) => (
+vi.mock('../LiveMonitorPlayer', () => ({
+  LiveMonitorPlayer: ({ monitor }: { monitor: { Name: string } }) => (
     <div data-testid="video-player">{monitor.Name}</div>
   ),
 }));

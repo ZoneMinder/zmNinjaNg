@@ -17,7 +17,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { getMonitor, getMonitors } from '../../../api/monitors';
 import type { MonitorFeedFit } from '../../../stores/settings';
-import { VideoPlayer } from '../../video/VideoPlayer';
+import { LiveMonitorPlayer } from '../../monitors/LiveMonitorPlayer';
 import { MonitorHoverPreview } from '../../monitors/MonitorHoverPreview';
 import { useCurrentProfile } from '../../../hooks/useCurrentProfile';
 import { AlertTriangle } from 'lucide-react';
@@ -72,7 +72,7 @@ function SingleMonitor({ monitorId, objectFit }: { monitorId: string; objectFit:
         >
             {settings.hoverPreview.dashboard ? (
                 <MonitorHoverPreview monitor={monitor.Monitor}>
-                    <VideoPlayer
+                    <LiveMonitorPlayer
                         monitor={monitor.Monitor}
                         profile={currentProfile}
                         className="w-full h-full"
@@ -81,7 +81,7 @@ function SingleMonitor({ monitorId, objectFit }: { monitorId: string; objectFit:
                     />
                 </MonitorHoverPreview>
             ) : (
-                <VideoPlayer
+                <LiveMonitorPlayer
                     monitor={monitor.Monitor}
                     profile={currentProfile}
                     className="w-full h-full"

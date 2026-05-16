@@ -57,8 +57,8 @@ vi.mock('../../../lib/monitor-rotation', () => ({
     `${width}/${height}`,
 }));
 
-vi.mock('../../video/VideoPlayer', () => ({
-  VideoPlayer: () => <div data-testid="video-player">Mock VideoPlayer</div>,
+vi.mock('../LiveMonitorPlayer', () => ({
+  LiveMonitorPlayer: () => <div data-testid="video-player">Mock LiveMonitorPlayer</div>,
 }));
 
 vi.mock('../../../hooks/useServerUrls', () => ({

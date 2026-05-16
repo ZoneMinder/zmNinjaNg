@@ -1,6 +1,6 @@
 /**
- * VideoPlayer - Unified video player that selects WebRTC (Go2RTC) or MJPEG
- * based on user preferences and monitor capabilities.
+ * LiveMonitorPlayer. Selects WebRTC (Go2RTC) or MJPEG based on user
+ * preferences and monitor capabilities.
  *
  * Protocol negotiation: Go2RTC tries protocols in order (WebRTC → MSE → HLS).
  * If connected but no video frames arrive within a timeout, falls back to MJPEG.
@@ -41,7 +41,7 @@ function markGo2rtcFailed(monitorId: string): void {
   go2rtcFailureCache.set(monitorId, Date.now());
 }
 
-export interface VideoPlayerProps {
+export interface LiveMonitorPlayerProps {
   monitor: Monitor;
   profile: Profile | null;
   className?: string;
@@ -61,7 +61,7 @@ export interface VideoPlayerProps {
   forceViewMode?: 'streaming' | 'snapshot';
 }
 
-export function VideoPlayer({
+export function LiveMonitorPlayer({
   monitor,
   profile,
   className = '',
@@ -72,7 +72,7 @@ export function VideoPlayer({
   onLoad,
   onProtocolChange,
   forceViewMode,
-}: VideoPlayerProps) {
+}: LiveMonitorPlayerProps) {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);

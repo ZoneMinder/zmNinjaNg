@@ -24,8 +24,8 @@ import { downloadSnapshotFromElement } from '../lib/download';
 import { useTranslation } from 'react-i18next';
 import { useInsomnia } from '../hooks/useInsomnia';
 import { PTZControls } from '../components/monitors/PTZControls';
-import { VideoPlayer } from '../components/video/VideoPlayer';
-import { ZoneOverlay } from '../components/video/ZoneOverlay';
+import { LiveMonitorPlayer } from '../components/monitors/LiveMonitorPlayer';
+import { ZoneOverlay } from '../components/monitors/ZoneOverlay';
 import { log, LogLevel } from '../lib/logger';
 import { getOrientedResolution, parseMonitorRotation } from '../lib/monitor-rotation';
 import { isZmVersionAtLeast } from '../lib/zm-version';
@@ -366,7 +366,7 @@ export default function MonitorDetail() {
           )}
         >
           <div ref={zoomPan.innerRef}>
-            <VideoPlayer
+            <LiveMonitorPlayer
               monitor={monitor.Monitor}
               profile={currentProfile}
               externalMediaRef={mediaRef}

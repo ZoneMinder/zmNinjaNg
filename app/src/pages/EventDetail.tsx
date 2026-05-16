@@ -16,7 +16,7 @@ import { useEventTagMapping } from '../hooks/useEventTags';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
-import { VideoPlayer } from '../components/ui/video-player';
+import { Mp4EventPlayer } from '../components/events/Mp4EventPlayer';
 import { ZmsEventPlayer } from '../components/events/ZmsEventPlayer';
 import { TagChip } from '../components/events/TagChip';
 import { ArrowLeft, Calendar, Clock, HardDrive, AlertTriangle, Download, Archive, Video, Star, Timer, Tag, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
@@ -169,7 +169,7 @@ export default function EventDetail() {
   const posterFid = resolveFallbackFids(settings.thumbnailFallbackChain)[0] ?? 'snapshot';
 
   // Memoize so identity is stable across re-renders that don't touch the inputs.
-  // Without memoization the VideoPlayer's update effect calls player.src() mid-playback
+  // Without memoization the Mp4EventPlayer's update effect calls player.src() mid-playback
   // every time the parent re-renders for unrelated reasons (toast state, query refetch).
   const videoUrl = useMemo(
     () => (currentProfile && hasVideo && isAccessTokenFresh && eventIdForUrls
@@ -190,7 +190,7 @@ export default function EventDetail() {
     [currentProfile, isAccessTokenFresh, resolvedPortalUrl, eventIdForUrls, posterFid, accessToken, monitorIdForUrls]
   );
 
-  // Stable callback so VideoPlayer's effect doesn't re-run on every parent render.
+  // Stable callback so Mp4EventPlayer's effect doesn't re-run on every parent render.
   const handleVideoError = useCallback(() => {
     log.eventDetail('Video playback failed, falling back to ZMS stream', LogLevel.INFO);
     toast.error(t('event_detail.video_playback_failed'));
@@ -388,7 +388,7 @@ export default function EventDetail() {
                 <div className="aspect-video relative">
                   <div ref={zoomPan.innerRef}>
                     {videoUrl ? (
-                      <VideoPlayer
+                      <Mp4EventPlayer
                         src={videoUrl}
                         type={videoMimeType}
                         className="w-full h-full"
