@@ -159,6 +159,44 @@ export default function EventDetail() {
     ]
   );
 
+  // Hooks below must run on every render — keep them ABOVE the early returns.
+  // Reading event?.Event optionally so they're safe pre-data; consumers below
+  // already gate on `hasVideo` / `event` which are derived after the returns.
+  const hasVideo = !!(event?.Event.DefaultVideo || event?.Event.Videoed === '1');
+  const isHlsEvent = event?.Event.DefaultVideo?.endsWith('.m3u8') === true;
+  const eventIdForUrls = event?.Event.Id;
+  const monitorIdForUrls = event?.Event.MonitorId;
+  const posterFid = resolveFallbackFids(settings.thumbnailFallbackChain)[0] ?? 'snapshot';
+
+  // Memoize so identity is stable across re-renders that don't touch the inputs.
+  // Without memoization the VideoPlayer's update effect calls player.src() mid-playback
+  // every time the parent re-renders for unrelated reasons (toast state, query refetch).
+  const videoUrl = useMemo(
+    () => (currentProfile && hasVideo && isAccessTokenFresh && eventIdForUrls
+      ? getEventVideoUrl(resolvedPortalUrl, eventIdForUrls, accessToken || undefined, currentProfile.apiUrl, isHlsEvent, currentProfile.minStreamingPort, monitorIdForUrls)
+      : ''),
+    [currentProfile, hasVideo, isAccessTokenFresh, resolvedPortalUrl, eventIdForUrls, accessToken, isHlsEvent, monitorIdForUrls]
+  );
+
+  const posterUrl = useMemo(
+    () => (currentProfile && isAccessTokenFresh && eventIdForUrls
+      ? getEventImageUrl(resolvedPortalUrl, eventIdForUrls, posterFid, {
+        token: accessToken || undefined,
+        apiUrl: currentProfile.apiUrl,
+        minStreamingPort: currentProfile.minStreamingPort,
+        monitorId: monitorIdForUrls,
+      })
+      : undefined),
+    [currentProfile, isAccessTokenFresh, resolvedPortalUrl, eventIdForUrls, posterFid, accessToken, monitorIdForUrls]
+  );
+
+  // Stable callback so VideoPlayer's effect doesn't re-run on every parent render.
+  const handleVideoError = useCallback(() => {
+    log.eventDetail('Video playback failed, falling back to ZMS stream', LogLevel.INFO);
+    toast.error(t('event_detail.video_playback_failed'));
+    setUseZmsFallback(true);
+  }, [t]);
+
   if (isLoading) {
     return (
       <div className="p-8 space-y-6">
@@ -182,9 +220,8 @@ export default function EventDetail() {
     );
   }
 
-  // Check if event has video - use DefaultVideo field or Videoed field
-  const hasVideo = !!(event.Event.DefaultVideo || event.Event.Videoed === '1');
   const hasJPEGs = event.Event.SaveJPEGs !== null && event.Event.SaveJPEGs !== '0';
+  const videoMimeType = isHlsEvent ? 'application/x-mpegURL' : 'video/mp4';
 
   log.eventDetail('Event details', LogLevel.DEBUG, {
     eventId: event.Event.Id,
@@ -194,40 +231,6 @@ export default function EventDetail() {
     hasVideo,
     hasJPEGs
   });
-
-  // Detect HLS vs MP4 from DefaultVideo field
-  const isHlsEvent = event.Event.DefaultVideo?.endsWith('.m3u8') === true;
-  const videoMimeType = isHlsEvent ? 'application/x-mpegURL' : 'video/mp4';
-
-  // Memoize so identity is stable across re-renders that don't touch the inputs.
-  // Without memoization the VideoPlayer's update effect calls player.src() mid-playback
-  // every time the parent re-renders for unrelated reasons (toast state, query refetch).
-  const videoUrl = useMemo(
-    () => (currentProfile && hasVideo && isAccessTokenFresh
-      ? getEventVideoUrl(resolvedPortalUrl, event.Event.Id, accessToken || undefined, currentProfile.apiUrl, isHlsEvent, currentProfile.minStreamingPort, event.Event.MonitorId)
-      : ''),
-    [currentProfile, hasVideo, isAccessTokenFresh, resolvedPortalUrl, event.Event.Id, accessToken, isHlsEvent, event.Event.MonitorId]
-  );
-
-  const posterFid = resolveFallbackFids(settings.thumbnailFallbackChain)[0] ?? 'snapshot';
-  const posterUrl = useMemo(
-    () => (currentProfile && isAccessTokenFresh
-      ? getEventImageUrl(resolvedPortalUrl, event.Event.Id, posterFid, {
-        token: accessToken || undefined,
-        apiUrl: currentProfile.apiUrl,
-        minStreamingPort: currentProfile.minStreamingPort,
-        monitorId: event.Event.MonitorId,
-      })
-      : undefined),
-    [currentProfile, isAccessTokenFresh, resolvedPortalUrl, event.Event.Id, posterFid, accessToken, event.Event.MonitorId]
-  );
-
-  // Stable callback so VideoPlayer's effect doesn't re-run on every parent render.
-  const handleVideoError = useCallback(() => {
-    log.eventDetail('Video playback failed, falling back to ZMS stream', LogLevel.INFO);
-    toast.error(t('event_detail.video_playback_failed'));
-    setUseZmsFallback(true);
-  }, [t]);
 
   const startTime = new Date(event.Event.StartDateTime.replace(' ', 'T'));
   const incomingSlide = location.state?.slideDirection as 'left' | 'right' | undefined;
