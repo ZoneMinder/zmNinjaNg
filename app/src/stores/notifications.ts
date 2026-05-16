@@ -15,6 +15,7 @@ import { Platform } from '../lib/platform';
 import { getAppVersion } from '../lib/version';
 import { updateNotification } from '../api/notifications';
 import { useProfileStore } from './profile';
+import { NOTIFICATIONS_SERVICE } from '../lib/zmninja-ng-constants';
 
 export interface NotificationSettings {
   enabled: boolean;
@@ -93,9 +94,6 @@ interface NotificationState {
   _registerPushTokenIfAvailable: () => Promise<void>;
 }
 
-const MAX_EVENTS = 100; // Keep last 100 events
-const DEFAULT_PORT = 9000;
-
 /**
  * Helper for state updaters that modify a profile's event list and badge count.
  *
@@ -132,7 +130,7 @@ const DEFAULT_SETTINGS: NotificationSettings = {
   notificationMode: 'es',
   notificationId: null,
   host: '',
-  port: DEFAULT_PORT,
+  port: NOTIFICATIONS_SERVICE.defaultPort,
   ssl: true,
   allMonitors: true,
   monitorFilters: [],
@@ -361,7 +359,7 @@ export const useNotificationStore = create<NotificationState>()(
             // Remove any existing event with the same ID to avoid duplicates
             // This prevents duplicate entries when receiving the same event from both WebSocket and FCM
             const otherEvents = current.filter((e) => e.EventId !== event.EventId);
-            return [notificationEvent, ...otherEvents].slice(0, MAX_EVENTS);
+            return [notificationEvent, ...otherEvents].slice(0, NOTIFICATIONS_SERVICE.maxEvents);
           })
         );
 

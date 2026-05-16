@@ -6,9 +6,7 @@
  */
 
 import { create } from 'zustand';
-
-const MAX_PIN_ATTEMPTS = 5;
-const COOLDOWN_MS = 30_000;
+import { KIOSK } from '../lib/zmninja-ng-constants';
 
 interface KioskState {
   isLocked: boolean;
@@ -66,7 +64,7 @@ export const useKioskStore = create<KioskState>()((set, get) => ({
     const attempts = currentAttempts + 1;
     set({
       pinAttempts: attempts,
-      cooldownUntil: attempts >= MAX_PIN_ATTEMPTS ? Date.now() + COOLDOWN_MS : null,
+      cooldownUntil: attempts >= KIOSK.maxPinAttempts ? Date.now() + KIOSK.cooldownMs : null,
     });
   },
 

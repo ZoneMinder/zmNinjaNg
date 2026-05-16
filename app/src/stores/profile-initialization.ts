@@ -15,6 +15,7 @@
 import type { Profile } from '../api/types';
 import { createApiClient, setApiClient } from '../api/client';
 import { log, LogLevel } from '../lib/logger';
+import { BOOTSTRAP_TIMEOUTS } from '../lib/zmninja-ng-constants';
 import { performBootstrap, type BootstrapContext } from './profile-bootstrap';
 
 function safeLog(message: string, level: LogLevel, details?: Record<string, unknown>) {
@@ -32,17 +33,13 @@ interface ProfileState {
   reLogin: () => Promise<boolean>;
 }
 
-// Timeout configuration
-const BOOTSTRAP_STEP_TIMEOUT_MS = 8000;
-const BOOTSTRAP_TOTAL_TIMEOUT_MS = 20000;
-
 /**
  * Wraps a promise with a timeout to prevent hanging
  */
 async function withTimeout<T>(
   label: string,
   promise: Promise<T>,
-  timeoutMs = BOOTSTRAP_STEP_TIMEOUT_MS
+  timeoutMs: number = BOOTSTRAP_TIMEOUTS.stepTimeoutMs
 ): Promise<T> {
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
   const timeoutPromise = new Promise<never>((_, reject) => {
@@ -147,11 +144,11 @@ async function runBootstrapTasks(
         log.profileService(
           'Profile bootstrap exceeded timeout; allowing UI to continue',
           LogLevel.WARN,
-          { timeoutMs: BOOTSTRAP_TOTAL_TIMEOUT_MS }
+          { timeoutMs: BOOTSTRAP_TIMEOUTS.totalTimeoutMs }
         );
         storeSet({ isBootstrapping: false, bootstrapStep: null });
       }
-    }, BOOTSTRAP_TOTAL_TIMEOUT_MS);
+    }, BOOTSTRAP_TIMEOUTS.totalTimeoutMs);
 
     storeSet({ bootstrapStep: 'start' });
     log.profileService('Running bootstrap tasks on app load', LogLevel.INFO);
@@ -160,7 +157,7 @@ async function runBootstrapTasks(
     await withTimeout(
       'Bootstrap tasks',
       performBootstrap(profile, bootstrapContext),
-      BOOTSTRAP_TOTAL_TIMEOUT_MS
+      BOOTSTRAP_TIMEOUTS.totalTimeoutMs
     );
 
     storeSet({ bootstrapStep: 'finalize' });

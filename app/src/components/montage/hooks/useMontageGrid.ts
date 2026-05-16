@@ -9,7 +9,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
-import { GRID_LAYOUT } from '../../../lib/zmninja-ng-constants';
+import { GRID_LAYOUT, MONTAGE_GRID } from '../../../lib/zmninja-ng-constants';
 import { useSettingsStore } from '../../../stores/settings';
 import { getMonitorAspectRatio } from '../../../lib/monitor-rotation';
 import type { Layout } from 'react-grid-layout';
@@ -17,8 +17,8 @@ import type { Monitor, MonitorData } from '../../../api/types';
 import type { Profile } from '../../../api/types';
 import type { ProfileSettings } from '../../../stores/settings';
 
-/** Internal grid always uses 12 columns for fine-grained positioning. */
-export const INTERNAL_COLS = 12;
+/** Internal grid always uses 12 columns for fine-grained positioning. Re-exported from MONTAGE_GRID. */
+export const INTERNAL_COLS = MONTAGE_GRID.internalCols;
 
 const parseAspectRatioValue = (monitor: Monitor): number => {
   const ratio = getMonitorAspectRatio(monitor.Width, monitor.Height, monitor.Orientation);
@@ -48,12 +48,11 @@ const calculateHeightUnits = (
   const monitor = monitorMap.get(monitorId);
   if (!monitor) return 200;
 
-  const CARD_HEADER_HEIGHT = 32; // h-8 header bar with monitor name + buttons
   const aspectRatio = parseAspectRatioValue(monitor);
   const columnWidth = (gridWidth - margin * (INTERNAL_COLS - 1)) / INTERNAL_COLS;
   const itemWidth = columnWidth * widthUnits + margin * (widthUnits - 1);
   const videoPx = itemWidth * aspectRatio;
-  const heightPx = videoPx + CARD_HEADER_HEIGHT;
+  const heightPx = videoPx + MONTAGE_GRID.cardHeaderHeightPx;
   const unit = (heightPx + margin) / (GRID_LAYOUT.montageRowHeight + margin);
 
   return Math.max(2, Math.ceil(unit));

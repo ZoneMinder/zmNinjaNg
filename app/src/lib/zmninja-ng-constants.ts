@@ -139,6 +139,10 @@ export const BOOTSTRAP_TIMEOUTS = {
 
   // Total timeout for entire bootstrap process
   totalTimeoutMs: 20000,
+
+  // Fallback timeout for profile store initialization in App.tsx.
+  // Forces isInitialized=true if rehydration hasn't completed in time.
+  initFallbackMs: 5000,
 } as const;
 
 /**
@@ -274,6 +278,32 @@ export const NOTIFICATION_UI = {
 export const MONITOR_UI = {
   // Alarm pulse duration on a monitor tile after a new event (ms)
   alarmPulseMs: 6000,
+} as const;
+
+/**
+ * Kiosk (Lock) Mode Constants
+ *
+ * PIN attempt and cooldown configuration for kiosk lock mode.
+ */
+export const KIOSK = {
+  // Maximum failed PIN attempts before cooldown engages
+  maxPinAttempts: 5,
+
+  // Cooldown duration after exceeding max attempts (ms)
+  cooldownMs: 30_000,
+} as const;
+
+/**
+ * Montage Grid Constants
+ *
+ * Internal grid sizing for the Montage view.
+ */
+export const MONTAGE_GRID = {
+  // Internal grid column count for fine-grained positioning
+  internalCols: 12,
+
+  // h-8 header bar height with monitor name + buttons (px)
+  cardHeaderHeightPx: 32,
 } as const;
 
 /**

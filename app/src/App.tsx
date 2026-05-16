@@ -25,6 +25,7 @@ import { log, LogLevel, logger } from './lib/logger';
 import { initializeLogFile, hydrateLogStoreFromFile, getLogFile } from './lib/log-file';
 import { Platform } from './lib/platform';
 import { PipProvider } from './contexts/PipContext';
+import { BOOTSTRAP_TIMEOUTS } from './lib/zmninja-ng-constants';
 
 // Lazy load route components for code splitting
 const ProfileForm = lazy(() => import('./pages/ProfileForm'));
@@ -161,15 +162,15 @@ function AppRoutes() {
     }
   }, [isInitialized]);
 
-  // SAFETY: Timeout fallback to prevent indefinite hanging
-  // If initialization doesn't complete within 5 seconds, force it to complete
+  // SAFETY: Timeout fallback to prevent indefinite hanging.
+  // If initialization doesn't complete in time, force it to complete.
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (!isInitialized) {
         log.app('Profile store initialization timeout - forcing initialization', LogLevel.WARN, { });
         useProfileStore.setState({ isInitialized: true });
       }
-    }, 5000);
+    }, BOOTSTRAP_TIMEOUTS.initFallbackMs);
 
     return () => clearTimeout(timeout);
   }, [isInitialized]);
