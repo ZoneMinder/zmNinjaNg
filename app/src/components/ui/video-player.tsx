@@ -253,7 +253,10 @@ export function VideoPlayer({
     if (!player || player.isDisposed()) return;
 
     if (src) {
-      const currentSrc = player.currentSrc?.() ?? player.src?.();
+      // currentSrc() returns the resolved source URL after the player loads it.
+      // Comparing against it avoids re-issuing player.src() with the same value,
+      // which would otherwise reset playback state on iOS WKWebView.
+      const currentSrc = player.currentSrc();
       if (currentSrc !== src) {
         player.src([{ src, type }]);
       }
