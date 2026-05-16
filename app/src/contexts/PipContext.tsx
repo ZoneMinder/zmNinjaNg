@@ -17,6 +17,10 @@ interface PipState {
   player: Player;
   videoEl: HTMLVideoElement;
   eventId: string;
+  /** The DOM node the wrapper was moved out of when adopted. If still attached
+   * at PiP exit time, the wrapper is moved back here instead of being disposed,
+   * so the inline VideoPlayer that originally owned it stays functional. */
+  originHost: HTMLElement | null;
 }
 
 interface PipContextValue {
@@ -81,18 +85,38 @@ export function PipProvider({ children }: { children: ReactNode }) {
       cleanup();
     }
 
-    // Move the video element's parent (video-js wrapper) into the portal
+    // Move the video element's parent (video-js wrapper) into the portal,
+    // remembering where it came from so we can return it on PiP exit.
     const wrapper = videoEl.closest('video-js') || videoEl.parentElement;
+    const originHost = wrapper?.parentElement ?? null;
     if (wrapper && portalRef.current) {
       portalRef.current.appendChild(wrapper);
     }
 
-    pipStateRef.current = { player, videoEl, eventId };
+    pipStateRef.current = { player, videoEl, eventId, originHost };
     setActivePipEventId(eventId);
 
-    // Listen for PiP ending (user closes the PiP window)
+    // Listen for PiP ending (user closes the PiP window). If the original
+    // inline host is still in the DOM, move the wrapper back so the inline
+    // VideoPlayer continues to work. Otherwise the owner has navigated away,
+    // and we dispose to avoid leaks.
     const handleLeavePip = () => {
-      cleanup();
+      const state = pipStateRef.current;
+      if (!state) return;
+      const movedBack = !!(state.originHost && state.originHost.isConnected && wrapper);
+      if (movedBack) {
+        state.originHost!.appendChild(wrapper!);
+        // The inline VideoPlayer reads activePipEventId; flipping to null tells
+        // it to clear its adoptedForPip flag so its own unmount will dispose.
+        if (cleanupListener.current) {
+          cleanupListener.current();
+          cleanupListener.current = null;
+        }
+        pipStateRef.current = null;
+        setActivePipEventId(null);
+      } else {
+        cleanup();
+      }
     };
     videoEl.addEventListener('leavepictureinpicture', handleLeavePip);
     cleanupListener.current = () => {

@@ -174,6 +174,16 @@ export function VideoPlayer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // When the user closes PiP from the OS while this VideoPlayer is still
+  // mounted, PipContext moves the wrapper back into our videoRef host and flips
+  // activePipEventId to null. We just need to drop the adopted flag so the
+  // unmount cleanup correctly disposes the player.
+  useEffect(() => {
+    if (adoptedForPip.current && activePipEventId === null) {
+      adoptedForPip.current = false;
+    }
+  }, [activePipEventId]);
+
   // Init effect: create the player exactly once per mount.
   // Deliberately mount-only — prop updates are handled by the dedicated effect below.
   // eslint-disable-next-line react-hooks/exhaustive-deps
