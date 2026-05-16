@@ -118,6 +118,7 @@ export default function Logs() {
                     setIsLoadingZmLogs(false);
                 });
         }
+        // Refetch only when the source changes; `t` and `toast` would cause refetches on language change.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [logSource]);
 

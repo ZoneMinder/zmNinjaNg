@@ -133,6 +133,7 @@ export function SidebarContent({ onMobileClose, isCollapsed }: SidebarContentPro
       const bi = orderMap.get(b.path) ?? 999;
       return ai - bi;
     });
+    // `defaultNavItems` is rebuilt every render; `t` covers label refresh on language change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [savedOrder, t]);
 
