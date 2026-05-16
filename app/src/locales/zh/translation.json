@@ -412,7 +412,9 @@
         "monitors_grid": "监视器(网格)",
         "dashboard": "仪表板",
         "timeline": "时间线",
-        "notifications": "通知"
+        "notifications": "通知",
+        "playback_speed": "播放速度",
+        "playback_speed_desc": "事件悬停预览的播放速度。"
       }
     }
   },

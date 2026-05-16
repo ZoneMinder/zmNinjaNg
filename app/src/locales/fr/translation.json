@@ -412,7 +412,9 @@
         "monitors_grid": "Moniteurs (grille)",
         "dashboard": "Tableau de bord",
         "timeline": "Chronologie",
-        "notifications": "Notifications"
+        "notifications": "Notifications",
+        "playback_speed": "Vitesse",
+        "playback_speed_desc": "Vitesse des aperçus d'événement."
       }
     }
   },

@@ -239,7 +239,7 @@ export const UI_INTERACTIONS = {
   ptzHoldRepeatMs: 400,
 
   // Mouse hover delay before a preview opens (ms)
-  hoverDelayMs: 400,
+  hoverDelayMs: 700,
 
   // Touch long-press threshold for opening a preview (ms)
   longPressMs: 500,

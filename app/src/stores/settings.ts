@@ -43,6 +43,13 @@ export const DEFAULT_HOVER_PREVIEW: HoverPreviewSettings = {
   notifications: true,
 };
 
+/** ZMS rate parameter (percentage). 100 = 1x real time. */
+export type HoverPreviewPlaybackRate = 50 | 100 | 150 | 200 | 400;
+
+export const HOVER_PREVIEW_PLAYBACK_RATES: readonly HoverPreviewPlaybackRate[] = [50, 100, 150, 200, 400] as const;
+
+export const DEFAULT_HOVER_PREVIEW_PLAYBACK_RATE: HoverPreviewPlaybackRate = 200;
+
 export const DEFAULT_THUMBNAIL_FALLBACK_CHAIN: ThumbnailFallbackEntry[] = [
   { type: 'alarm', enabled: true },
   { type: 'snapshot', enabled: true },
@@ -147,6 +154,9 @@ export interface ProfileSettings {
   thumbnailFallbackChain: ThumbnailFallbackEntry[];
   // Hover preview toggles for events/monitors/dashboard/timeline
   hoverPreview: HoverPreviewSettings;
+  // Playback speed for event hover/longpress preview (ZMS rate percentage).
+  // Only affects EventZmsHoverPlayer; live monitor previews are real-time.
+  hoverPreviewPlaybackRate: HoverPreviewPlaybackRate;
 }
 
 interface SettingsState {
@@ -257,6 +267,7 @@ export const DEFAULT_SETTINGS: ProfileSettings = {
   componentLogLevels: {},
   thumbnailFallbackChain: DEFAULT_THUMBNAIL_FALLBACK_CHAIN,
   hoverPreview: DEFAULT_HOVER_PREVIEW,
+  hoverPreviewPlaybackRate: DEFAULT_HOVER_PREVIEW_PLAYBACK_RATE,
 };
 
 export const useSettingsStore = create<SettingsState>()(

@@ -14,6 +14,7 @@ import { getEventZmsUrl, getZmsControlUrl } from '../../lib/url-builder';
 import { httpGet } from '../../lib/http';
 import { log, LogLevel } from '../../lib/logger';
 import { ZMS_COMMANDS } from '../../lib/zm-constants';
+import { DEFAULT_HOVER_PREVIEW_PLAYBACK_RATE } from '../../stores/settings';
 import type { Event } from '../../api/types';
 
 export interface EventZmsHoverDescriptor {
@@ -65,7 +66,7 @@ export function EventThumbnailHoverPreview({
  * Mount → new connkey + event ZMS stream. Unmount → CMD_QUIT.
  */
 export function EventZmsHoverPlayer({ descriptor }: { descriptor: EventZmsHoverDescriptor }) {
-  const { currentProfile } = useCurrentProfile();
+  const { currentProfile, settings } = useCurrentProfile();
   const { token: accessToken, isFresh: isAccessTokenFresh } = useFreshAccessToken();
 
   const connkey = useMemo(
@@ -81,11 +82,13 @@ export function EventZmsHoverPlayer({ descriptor }: { descriptor: EventZmsHoverD
     monitorId: descriptor.monitorId,
   };
 
+  const rate = settings.hoverPreviewPlaybackRate ?? DEFAULT_HOVER_PREVIEW_PLAYBACK_RATE;
+
   const streamUrl = portalUrl && isAccessTokenFresh
     ? getEventZmsUrl(portalUrl, descriptor.eventId, {
         ...tokenOpts,
         connkey,
-        rate: 100,
+        rate,
         maxfps: 30,
         replay: 'single',
       })

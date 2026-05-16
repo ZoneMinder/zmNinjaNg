@@ -412,7 +412,9 @@
         "monitors_grid": "Monitors (grid)",
         "dashboard": "Dashboard",
         "timeline": "Timeline",
-        "notifications": "Notifications"
+        "notifications": "Notifications",
+        "playback_speed": "Playback speed",
+        "playback_speed_desc": "Speed for event hover/long-press previews."
       }
     }
   },

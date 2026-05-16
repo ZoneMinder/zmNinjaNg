@@ -412,7 +412,9 @@
         "monitors_grid": "Monitore (Raster)",
         "dashboard": "Dashboard",
         "timeline": "Zeitleiste",
-        "notifications": "Benachrichtigungen"
+        "notifications": "Benachrichtigungen",
+        "playback_speed": "Geschwindigkeit",
+        "playback_speed_desc": "Tempo der Ereignis-Vorschau bei Hover/Druck."
       }
     }
   },

@@ -35,7 +35,17 @@ import type {
   ThumbnailFallbackEntry,
   ThumbnailFallbackType,
   HoverPreviewSettings,
+  HoverPreviewPlaybackRate,
 } from '../../stores/settings';
+import { HOVER_PREVIEW_PLAYBACK_RATES } from '../../stores/settings';
+
+const HOVER_PREVIEW_RATE_LABELS: Record<HoverPreviewPlaybackRate, string> = {
+  50: '0.5x',
+  100: '1x',
+  150: '1.5x',
+  200: '2x',
+  400: '4x',
+};
 
 // ---- Date/time preset config ----
 // Format pattern labels (e.g. 'MMM D, YYYY') are kept as-is since they are
@@ -227,6 +237,8 @@ export function AppearanceSection({ settings, update }: AppearanceSectionProps) 
         <HoverPreviewEditor
           value={settings.hoverPreview}
           onChange={(next) => update('hoverPreview', next)}
+          playbackRate={settings.hoverPreviewPlaybackRate}
+          onPlaybackRateChange={(rate) => update('hoverPreviewPlaybackRate', rate)}
         />
       </SettingsCard>
     </section>
@@ -236,9 +248,11 @@ export function AppearanceSection({ settings, update }: AppearanceSectionProps) 
 interface HoverPreviewEditorProps {
   value: HoverPreviewSettings;
   onChange: (next: HoverPreviewSettings) => void;
+  playbackRate: HoverPreviewPlaybackRate;
+  onPlaybackRateChange: (rate: HoverPreviewPlaybackRate) => void;
 }
 
-function HoverPreviewEditor({ value, onChange }: HoverPreviewEditorProps) {
+function HoverPreviewEditor({ value, onChange, playbackRate, onPlaybackRateChange }: HoverPreviewEditorProps) {
   const { t } = useTranslation();
   const isNative = Platform.isNative;
   const titleKey = isNative
@@ -307,6 +321,33 @@ function HoverPreviewEditor({ value, onChange }: HoverPreviewEditorProps) {
             </li>
           ))}
         </ul>
+        <div
+          className="flex items-center justify-between gap-3 px-4 pb-3"
+          data-testid="settings-hover-preview-playback-rate-row"
+        >
+          <RowLabel
+            label={t('settings.appearance.hover_preview.playback_speed')}
+            desc={t('settings.appearance.hover_preview.playback_speed_desc')}
+          />
+          <Select
+            value={String(playbackRate)}
+            onValueChange={(v) => onPlaybackRateChange(Number(v) as HoverPreviewPlaybackRate)}
+          >
+            <SelectTrigger
+              className="w-24 min-w-0"
+              data-testid="settings-hover-preview-playback-rate"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {HOVER_PREVIEW_PLAYBACK_RATES.map((rate) => (
+                <SelectItem key={rate} value={String(rate)}>
+                  {HOVER_PREVIEW_RATE_LABELS[rate]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </CollapsibleContent>
     </Collapsible>
   );

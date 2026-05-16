@@ -412,7 +412,9 @@
         "monitors_grid": "Monitores (rejilla)",
         "dashboard": "Panel",
         "timeline": "Línea de tiempo",
-        "notifications": "Notificaciones"
+        "notifications": "Notificaciones",
+        "playback_speed": "Velocidad",
+        "playback_speed_desc": "Velocidad de previsualización de eventos."
       }
     }
   },

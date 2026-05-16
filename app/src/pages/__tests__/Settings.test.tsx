@@ -22,6 +22,7 @@ vi.mock('../../hooks/useCurrentProfile', () => ({
       disableLogRedaction: false,
       dashboardRefreshInterval: 30,
       hoverPreview: { eventsList: true, eventsGrid: false, monitorsList: true, monitorsGrid: false, dashboard: true, timeline: true, notifications: true },
+      hoverPreviewPlaybackRate: 200,
     },
     hasProfile: true,
   }),
@@ -49,6 +50,8 @@ vi.mock('../../stores/settings', () => ({
     defaultEventLimit: 300,
     disableLogRedaction: false,
   },
+  HOVER_PREVIEW_PLAYBACK_RATES: [50, 100, 150, 200, 400],
+  DEFAULT_HOVER_PREVIEW_PLAYBACK_RATE: 200,
   useSettingsStore: (selector: (state: { getProfileSettings: () => unknown; updateProfileSettings: typeof updateProfileSettings }) => unknown) =>
     selector({
       getProfileSettings: () => ({
@@ -58,6 +61,7 @@ vi.mock('../../stores/settings', () => ({
         defaultEventLimit: 100,
         disableLogRedaction: false,
         hoverPreview: { eventsList: true, eventsGrid: false, monitorsList: true, monitorsGrid: false, dashboard: true, timeline: true, notifications: true },
+        hoverPreviewPlaybackRate: 200,
       }),
       updateProfileSettings,
     }),
