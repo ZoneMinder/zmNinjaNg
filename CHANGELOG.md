@@ -1,5 +1,22 @@
 # Changelog
 
+## [zmNinjaNg-1.1.13](https://github.com/pliablepixels/zmNinjaNg/tree/zmNinjaNg-1.1.13) (2026-05-16)
+
+[Full Changelog](https://github.com/pliablepixels/zmNinjaNg/compare/zmNinjaNg-1.1.12...zmNinjaNg-1.1.13)
+
+**Implemented enhancements:**
+
+- feat\(settings\): hover preview playback speed [\#149](https://github.com/pliablepixels/zmNinjaNg/issues/149)
+- feat: token freshness gate \(30 min leeway, no stale tokens to server\) [\#145](https://github.com/pliablepixels/zmNinjaNg/issues/145)
+
+**Fixed bugs:**
+
+- fix: event playback stability — re-init churn, navigation remounts, cross-platform divergence [\#148](https://github.com/pliablepixels/zmNinjaNg/issues/148)
+- fix\(ios\): video controls hidden after rotation and unreachable in landscape fullscreen [\#147](https://github.com/pliablepixels/zmNinjaNg/issues/147)
+- fix\(android\): toolbar buttons unreachable in landscape under status bar [\#144](https://github.com/pliablepixels/zmNinjaNg/issues/144)
+- fix\(logs\): linux Tauri log file dir not created; reveal+truncate fail [\#143](https://github.com/pliablepixels/zmNinjaNg/issues/143)
+- fix\(ci\): linux-arm64 release fails — missing xdg-open on runner [\#142](https://github.com/pliablepixels/zmNinjaNg/issues/142)
+
 ## [zmNinjaNg-1.1.12](https://github.com/pliablepixels/zmNinjaNg/tree/zmNinjaNg-1.1.12) (2026-05-04)
 
 [Full Changelog](https://github.com/pliablepixels/zmNinjaNg/compare/zmNinjaNg-1.1.11...zmNinjaNg-1.1.12)
