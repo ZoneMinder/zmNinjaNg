@@ -143,45 +143,52 @@ export function ZmsEventPlayer({
     }
   }, [portalUrl, apiUrl, connKey, token, minStreamingPort, monitorId]);
 
-  // Poll stream status to track playback position
+  // Poll stream status to track playback position.
+  // Uses an AbortController shared with all in-flight httpGet calls so unmount
+  // (or pause) immediately cancels pending requests and prevents setState on an
+  // unmounted component.
   const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const queryStatus = useCallback(async () => {
-    const url = getZmsControlUrl(portalUrl, ZM_CMD.QUERY, connKey, { token, apiUrl, minStreamingPort, monitorId });
-    try {
-      const resp = await httpGet<{ status?: { progress?: number; duration?: number } }>(url);
-      const status = resp.data?.status;
-      if (status && typeof status.progress === 'number' && typeof status.duration === 'number' && status.duration > 0) {
-        const fraction = status.progress / status.duration;
-        const frame = Math.max(1, Math.round(fraction * totalFrames));
-        setCurrentFrame(frame);
-
-        // Stop at end of event to prevent looping
-        if (fraction >= 0.99) {
-          sendCommand(ZM_CMD.PAUSE);
-          setIsPlaying(false);
-          setCurrentFrame(totalFrames);
-        }
-      }
-    } catch {
-      // Status query failed — ignore and retry next tick
-    }
-  }, [portalUrl, connKey, token, apiUrl, totalFrames, minStreamingPort, monitorId]);
-
   useEffect(() => {
-    if (isPlaying) {
-      pollTimer.current = setInterval(queryStatus, bandwidth.zmsStatusInterval);
-    } else if (pollTimer.current) {
-      clearInterval(pollTimer.current);
-      pollTimer.current = null;
-    }
+    if (!isPlaying) return;
+
+    const controller = new AbortController();
+    const { signal } = controller;
+
+    const tick = async () => {
+      if (signal.aborted) return;
+      const url = getZmsControlUrl(portalUrl, ZM_CMD.QUERY, connKey, { token, apiUrl, minStreamingPort, monitorId });
+      try {
+        const resp = await httpGet<{ status?: { progress?: number; duration?: number } }>(url, { signal });
+        if (signal.aborted) return;
+        const status = resp.data?.status;
+        if (status && typeof status.progress === 'number' && typeof status.duration === 'number' && status.duration > 0) {
+          const fraction = status.progress / status.duration;
+          const frame = Math.max(1, Math.round(fraction * totalFrames));
+          setCurrentFrame(frame);
+
+          if (fraction >= 0.99) {
+            sendCommand(ZM_CMD.PAUSE);
+            setIsPlaying(false);
+            setCurrentFrame(totalFrames);
+          }
+        }
+      } catch (err) {
+        if (signal.aborted) return;
+        log.zmsEventPlayer('Status query failed', LogLevel.DEBUG, { error: err });
+      }
+    };
+
+    pollTimer.current = setInterval(tick, bandwidth.zmsStatusInterval);
+
     return () => {
+      controller.abort();
       if (pollTimer.current) {
         clearInterval(pollTimer.current);
         pollTimer.current = null;
       }
     };
-  }, [isPlaying, queryStatus, bandwidth.zmsStatusInterval]);
+  }, [isPlaying, bandwidth.zmsStatusInterval, portalUrl, connKey, token, apiUrl, totalFrames, minStreamingPort, monitorId, sendCommand]);
 
   // Calculate time offset from frame number
   const frameToOffset = useCallback((frame: number) => {
