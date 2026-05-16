@@ -8,6 +8,7 @@
 
 import { Capacitor } from '@capacitor/core';
 import type { Notification } from '@capacitor-firebase/messaging';
+import { Platform } from '../lib/platform';
 import { log, LogLevel } from '../lib/logger';
 import { navigationService } from '../lib/navigation';
 import { useNotificationStore } from '../stores/notifications';
@@ -47,7 +48,7 @@ export class MobilePushService {
    * Initialize push notifications (mobile only)
    */
   public async initialize(): Promise<void> {
-    if (!Capacitor.isNativePlatform()) {
+    if (!Platform.isNative) {
       log.push('Push notifications not available on web platform', LogLevel.INFO);
       return;
     }
@@ -159,7 +160,7 @@ export class MobilePushService {
    *   an automatic disconnect).
    */
   public async deregister(overrideProfileId?: string): Promise<void> {
-    if (!Capacitor.isNativePlatform()) {
+    if (!Platform.isNative) {
       return;
     }
 
@@ -273,7 +274,7 @@ export class MobilePushService {
    * Unregister from push notifications (local only)
    */
   private async _unregister(): Promise<void> {
-    if (!Capacitor.isNativePlatform()) {
+    if (!Platform.isNative) {
       return;
     }
 

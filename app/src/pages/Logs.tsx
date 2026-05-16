@@ -8,7 +8,7 @@ import { Badge } from '../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { ScrollText, Trash2, Download, Share2, ChevronDown, ChevronUp, Server, Smartphone, FolderOpen } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { Capacitor } from '@capacitor/core';
+import { Platform } from '../lib/platform';
 import { getLogFile } from '../lib/log-file';
 import { LOG_FILE_MAX_ENTRIES } from '../lib/log-file/types';
 import { useToast } from '../hooks/use-toast';
@@ -78,7 +78,7 @@ export default function Logs() {
     const clearLogs = useLogStore((state) => state.clearLogs);
     const { toast } = useToast();
     const { t } = useTranslation();
-    const isNative = Capacitor.isNativePlatform();
+    const isNative = Platform.isNative;
     const logFile = getLogFile();
     const showOpenLocation = logFile.capabilities.reveal;  // Tauri only
     const showShareFile = logFile.capabilities.share;      // Capacitor only

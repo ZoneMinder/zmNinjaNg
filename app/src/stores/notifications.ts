@@ -11,6 +11,7 @@ import {
   type NotificationMode,
 } from '../types/notifications';
 import { log, LogLevel } from '../lib/logger';
+import { Platform } from '../lib/platform';
 import { getAppVersion } from '../lib/version';
 import { updateNotification } from '../api/notifications';
 import { useProfileStore } from './profile';
@@ -385,12 +386,9 @@ export const useNotificationStore = create<NotificationState>()(
 
       _clearNativeBadge: () => {
         // Clear native badge and delivered notifications on mobile
-        import('@capacitor/core').then(({ Capacitor }) => {
-          if (Capacitor.isNativePlatform()) {
-            import('@capacitor-firebase/messaging').then(({ FirebaseMessaging }) => {
-              FirebaseMessaging.removeAllDeliveredNotifications();
-            }).catch(() => {});
-          }
+        if (!Platform.isNative) return;
+        import('@capacitor-firebase/messaging').then(({ FirebaseMessaging }) => {
+          FirebaseMessaging.removeAllDeliveredNotifications();
         }).catch(() => {});
       },
 
@@ -588,15 +586,14 @@ export const useNotificationStore = create<NotificationState>()(
         const badgeCount = count ?? settings.badgeCount;
 
         // Set the iOS/Android app icon badge locally
-        try {
-          const { Capacitor } = await import('@capacitor/core');
-          if (Capacitor.isNativePlatform()) {
+        if (Platform.isNative) {
+          try {
             const { Badge } = await import('@capawesome/capacitor-badge');
             await Badge.set({ count: badgeCount });
             log.notifications('Set native app badge', LogLevel.DEBUG, { badgeCount });
+          } catch {
+            // Badge plugin not available — non-fatal
           }
-        } catch {
-          // Badge plugin not available — non-fatal
         }
 
         try {
@@ -625,12 +622,11 @@ export const useNotificationStore = create<NotificationState>()(
           return;
         }
 
-        try {
-          const { Capacitor } = await import('@capacitor/core');
-          if (!Capacitor.isNativePlatform()) {
-            return;
-          }
+        if (!Platform.isNative) {
+          return;
+        }
 
+        try {
           const { getPushService } = await import('../services/pushNotifications');
           const pushService = getPushService();
 

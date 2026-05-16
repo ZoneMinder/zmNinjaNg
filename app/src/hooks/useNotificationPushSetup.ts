@@ -8,7 +8,7 @@
  */
 
 import { useEffect } from 'react';
-import { Capacitor } from '@capacitor/core';
+import { Platform } from '../lib/platform';
 import { log, LogLevel } from '../lib/logger';
 import { useNotificationStore } from '../stores/notifications';
 import { getPushService } from '../services/pushNotifications';
@@ -27,7 +27,7 @@ export function useNotificationPushSetup({
   settings,
 }: PushSetupParams): void {
   useEffect(() => {
-    if (!Capacitor.isNativePlatform() || !settings?.enabled || !currentProfile) return;
+    if (!Platform.isNative || !settings?.enabled || !currentProfile) return;
 
     const mode = settings.notificationMode || 'es';
 

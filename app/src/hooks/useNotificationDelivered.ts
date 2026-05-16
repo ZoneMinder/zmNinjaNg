@@ -9,7 +9,7 @@
  */
 
 import { useEffect } from 'react';
-import { Capacitor } from '@capacitor/core';
+import { Platform } from '../lib/platform';
 import { log, LogLevel } from '../lib/logger';
 import { useNotificationStore } from '../stores/notifications';
 import { useProfileStore } from '../stores/profile';
@@ -64,7 +64,7 @@ export function useNotificationDelivered({
   // Uses currentProfile (persisted, available immediately) instead of
   // currentProfileId (runtime-only, null on cold start).
   useEffect(() => {
-    if (!Capacitor.isNativePlatform() || !currentProfile) return;
+    if (!Platform.isNative || !currentProfile) return;
 
     const profileId = currentProfile.id;
 
@@ -94,7 +94,7 @@ export function useNotificationDelivered({
 
   // Clear native badge and sync badge count when app comes to foreground (iOS/Android)
   useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return;
+    if (!Platform.isNative) return;
 
     let listenerCleanup: (() => void) | undefined;
 

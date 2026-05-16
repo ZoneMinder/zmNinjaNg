@@ -23,7 +23,7 @@ import { Button } from './components/ui/button';
 import { X } from 'lucide-react';
 import { log, LogLevel, logger } from './lib/logger';
 import { initializeLogFile, hydrateLogStoreFromFile, getLogFile } from './lib/log-file';
-import { Capacitor } from '@capacitor/core';
+import { Platform } from './lib/platform';
 import { PipProvider } from './contexts/PipContext';
 
 // Lazy load route components for code splitting
@@ -99,7 +99,7 @@ function AppRoutes() {
     document.addEventListener('visibilitychange', onVisibility);
 
     let pauseListener: { remove: () => void } | null = null;
-    if (Capacitor.isNativePlatform()) {
+    if (Platform.isNative) {
       void (async () => {
         try {
           const { App: CapApp } = await import('@capacitor/app');

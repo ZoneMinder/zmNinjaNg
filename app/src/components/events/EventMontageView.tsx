@@ -27,7 +27,7 @@ import { EventThumbnailHoverPreview } from './EventThumbnailHoverPreview';
 import { calculateThumbnailDimensions, getMonitorDimensions } from '../../lib/event-utils';
 import { ZM_INTEGRATION } from '../../lib/zmninja-ng-constants';
 import type { EventData, Monitor, Tag } from '../../api/types';
-import { Capacitor } from '@capacitor/core';
+import { Platform } from '../../lib/platform';
 import { TagChipList } from './TagChip';
 
 interface EventMontageViewProps {
@@ -72,7 +72,7 @@ export const EventMontageView = ({
 
   // Haptic feedback helper
   const triggerHaptic = async () => {
-    if (Capacitor.isNativePlatform()) {
+    if (Platform.isNative) {
       try {
         const { Haptics, ImpactStyle } = await import('@capacitor/haptics');
         await Haptics.impact({ style: ImpactStyle.Light });

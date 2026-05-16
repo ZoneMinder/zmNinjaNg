@@ -1,4 +1,4 @@
-import { Capacitor } from '@capacitor/core';
+import { Platform } from '../platform';
 import { useLogStore } from '../../stores/logs';
 import { NoopLogFileStore } from './noop';
 import { CapacitorLogFileStore } from './capacitor';
@@ -11,7 +11,7 @@ function detect(): LogFileStore {
   if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
     return new TauriLogFileStore();
   }
-  if (Capacitor.isNativePlatform()) {
+  if (Platform.isNative) {
     return new CapacitorLogFileStore();
   }
   return new NoopLogFileStore();

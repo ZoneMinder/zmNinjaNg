@@ -18,6 +18,7 @@
 
 import { Capacitor } from '@capacitor/core';
 import { SecureStorage } from '@aparajita/capacitor-secure-storage';
+import { Platform } from './platform';
 import {
   encrypt,
   decrypt,
@@ -33,7 +34,7 @@ const STORAGE_PREFIX = 'zmng_secure_';
  * Check if we're running on a native platform (iOS/Android).
  */
 function isNativePlatform(): boolean {
-  return Capacitor.isNativePlatform();
+  return Platform.isNative;
 }
 
 /**

@@ -15,6 +15,7 @@ import { checkBiometricAvailability, authenticateWithBiometrics } from '../../ho
 import { PinPad } from './PinPad';
 import { useToast } from '../../hooks/use-toast';
 import { log, LogLevel } from '../../lib/logger';
+import { Platform } from '../../lib/platform';
 
 interface KioskOverlayProps {
   onUnlock: () => void;
@@ -69,17 +70,15 @@ export function KioskOverlay({ onUnlock }: KioskOverlayProps) {
     let removeListener: (() => void) | undefined;
 
     (async () => {
+      if (!Platform.isNative) return;
       try {
-        const { Capacitor } = await import('@capacitor/core');
-        if (Capacitor.isNativePlatform()) {
-          const { App } = await import('@capacitor/app');
-          const handle = await App.addListener('backButton', () => {
-            // No-op — swallow back button while locked
-          });
-          removeListener = () => handle.remove();
-        }
+        const { App } = await import('@capacitor/app');
+        const handle = await App.addListener('backButton', () => {
+          // No-op — swallow back button while locked
+        });
+        removeListener = () => handle.remove();
       } catch {
-        // Not on native platform or plugin unavailable
+        // Plugin unavailable
       }
     })();
 

@@ -1,4 +1,5 @@
-import { Capacitor, registerPlugin } from '@capacitor/core';
+import { registerPlugin } from '@capacitor/core';
+import { Platform } from './platform';
 import { log, LogLevel } from './logger';
 
 interface WindowThemePluginInterface {
@@ -16,7 +17,7 @@ function rgbStringToHex(rgb: string): string | null {
 }
 
 export function syncNativeWindowBackground(): void {
-  if (!Capacitor.isNativePlatform() || Capacitor.getPlatform() !== 'android') return;
+  if (!Platform.isAndroid) return;
   if (typeof window === 'undefined') return;
 
   const computed = getComputedStyle(window.document.documentElement).backgroundColor;

@@ -12,7 +12,6 @@
  */
 
 import { useEffect, useRef } from 'react';
-import { Capacitor } from '@capacitor/core';
 import { Platform } from '../lib/platform';
 import { log, LogLevel } from '../lib/logger';
 import { useNotificationStore } from '../stores/notifications';
@@ -177,7 +176,7 @@ export function useNotificationAutoConnect({
     // On native platforms, also use Capacitor's Network plugin for faster detection
     let networkCleanup: (() => void) | undefined;
 
-    if (Capacitor.isNativePlatform()) {
+    if (Platform.isNative) {
       import('@capacitor/network').then(({ Network }) => {
         Network.addListener('networkStatusChange', (status) => {
           if (status.connected) {
@@ -199,7 +198,7 @@ export function useNotificationAutoConnect({
   // Visibility change listener (desktop/web): check liveness when tab becomes visible
   useEffect(() => {
     const mode = settings?.notificationMode || 'es';
-    if (!settings?.enabled || mode !== 'es' || Capacitor.isNativePlatform()) return;
+    if (!settings?.enabled || mode !== 'es' || Platform.isNative) return;
 
     const handleVisibilityChange = async () => {
       if (document.visibilityState !== 'visible') return;
@@ -221,7 +220,7 @@ export function useNotificationAutoConnect({
 
   // App resume liveness check (mobile): verify WebSocket is alive when app returns to foreground
   useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return;
+    if (!Platform.isNative) return;
 
     const mode = settings?.notificationMode || 'es';
     if (!settings?.enabled || mode !== 'es') return;

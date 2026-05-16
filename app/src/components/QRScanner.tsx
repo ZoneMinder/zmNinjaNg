@@ -12,7 +12,7 @@
  */
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Capacitor } from '@capacitor/core';
+import { Platform } from '../lib/platform';
 import type { Html5Qrcode as Html5QrcodeType } from 'html5-qrcode';
 import { useTranslation } from 'react-i18next';
 import {
@@ -51,7 +51,7 @@ export function QRScanner({ open, onOpenChange, onScan }: QRScannerProps) {
   const [error, setError] = useState<string | null>(null);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [scannerReady, setScannerReady] = useState(false);
-  const isNative = Capacitor.isNativePlatform();
+  const isNative = Platform.isNative;
 
   // Create scanner container outside React's control
   const createScannerElement = useCallback(() => {

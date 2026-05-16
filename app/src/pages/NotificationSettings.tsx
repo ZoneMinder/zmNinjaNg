@@ -29,7 +29,6 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Capacitor } from '@capacitor/core';
 import { Platform } from '../lib/platform';
 import { useTranslation } from 'react-i18next';
 import { log, LogLevel } from '../lib/logger';
@@ -114,7 +113,7 @@ export default function NotificationSettings() {
       toast.info(t('notification_settings.notifications_enabled'));
     } else {
       // Deregister push notifications on mobile platforms
-      if (Capacitor.isNativePlatform()) {
+      if (Platform.isNative) {
         try {
           const { getPushService } = await import('../services/pushNotifications');
           const pushService = getPushService();

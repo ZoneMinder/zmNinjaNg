@@ -8,7 +8,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { Capacitor } from '@capacitor/core';
+import { Platform } from '../../lib/platform';
 import { getApiClient } from '../../api/client';
 import { cn } from '../../lib/utils';
 import { log, LogLevel } from '../../lib/logger';
@@ -32,7 +32,7 @@ interface SecureImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
  */
 export function SecureImage({ src, fallbackSrc, className, alt, ...props }: SecureImageProps) {
   const [imageSrc, setImageSrc] = useState<string>(src);
-  const isNative = Capacitor.isNativePlatform();
+  const isNative = Platform.isNative;
   const mountedRef = useRef(true);
 
   useEffect(() => {
