@@ -7,15 +7,24 @@
    extends under the notch and home indicator. Video.js does not inset its
    own control bar, so without these overrides the progress bar / fullscreen
    exit button land in the home-indicator strip and the player edge sits
-   under the landscape notch. refs #147. */
-.vjs-fullscreen {
-  padding-top: var(--sai-top, env(safe-area-inset-top));
-  padding-left: var(--sai-left, env(safe-area-inset-left));
-  padding-right: var(--sai-right, env(safe-area-inset-right));
+   under the landscape notch.
+
+   Specificity / cascade: video-js.css is imported from JS by video-player.tsx
+   and bundled AFTER this entry stylesheet, so equal-specificity rules from
+   Video.js win. Selectors below are chained (.video-js.vjs-fullscreen) for
+   higher specificity, with !important on the inset properties as a final
+   guard against future Video.js style changes. refs #147. */
+.video-js.vjs-fullscreen {
+  padding-top: var(--sai-top, env(safe-area-inset-top)) !important;
+  padding-left: var(--sai-left, env(safe-area-inset-left)) !important;
+  padding-right: var(--sai-right, env(safe-area-inset-right)) !important;
   background-color: #000;
+  box-sizing: border-box;
 }
-.vjs-fullscreen .vjs-control-bar {
-  margin-bottom: var(--sai-bottom, env(safe-area-inset-bottom));
+.video-js.vjs-fullscreen .vjs-control-bar {
+  margin-bottom: var(--sai-bottom, env(safe-area-inset-bottom)) !important;
+  margin-left: var(--sai-left, env(safe-area-inset-left)) !important;
+  margin-right: var(--sai-right, env(safe-area-inset-right)) !important;
 }
 
 @tailwind base;
