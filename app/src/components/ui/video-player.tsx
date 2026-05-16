@@ -89,6 +89,16 @@ export function VideoPlayer({
   const { adoptForPip, reclaimFromPip, closePip, activePipEventId, enterAndroidPip, getAndroidPipPosition, isAndroid } = usePip();
   const adoptedForPip = useRef(false);
 
+  // Callbacks held in refs so the init effect (mount-only) sees fresh values
+  // without taking unstable callback identities as deps and re-initializing the
+  // player on every parent render.
+  const onReadyRef = useRef(onReady);
+  const onErrorRef = useRef(onError);
+  const markersRef = useRef(markers);
+  useEffect(() => { onReadyRef.current = onReady; }, [onReady]);
+  useEffect(() => { onErrorRef.current = onError; }, [onError]);
+  useEffect(() => { markersRef.current = markers; }, [markers]);
+
   const updateMarkers = (player: Player, markers: VideoMarker[]) => {
     if (!player || player.isDisposed()) return;
 
@@ -163,74 +173,88 @@ export function VideoPlayer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Init effect: create the player exactly once per mount.
+  // Deliberately mount-only — prop updates are handled by the dedicated effect below.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    // Make sure Video.js player is only initialized once
-    if (!playerRef.current) {
-      // The Video.js player needs to be _inside_ the component el for React 18 Strict Mode. 
-      const videoElement = document.createElement("video-js");
+    // Reclaimed-from-PiP path populates playerRef.current before this runs;
+    // in that case we adopt the existing player and skip re-init.
+    if (playerRef.current) return;
 
-      videoElement.classList.add('vjs-big-play-centered');
-      videoElement.setAttribute('playsinline', '');
-      videoElement.setAttribute('webkit-playsinline', '');
+    const videoElement = document.createElement('video-js');
+    videoElement.classList.add('vjs-big-play-centered');
+    videoElement.setAttribute('playsinline', '');
+    videoElement.setAttribute('webkit-playsinline', '');
+    if (muted) videoElement.setAttribute('muted', '');
 
-      if (videoRef.current) {
-        videoRef.current.appendChild(videoElement);
+    if (videoRef.current) {
+      videoRef.current.appendChild(videoElement);
+    }
+
+    const player = playerRef.current = videojs(videoElement, {
+      autoplay,
+      controls,
+      responsive: true,
+      fluid: true,
+      playsinline: true,
+      preferFullWindow: true,
+      muted,
+      aspectRatio,
+      poster,
+      disablePictureInPicture: isAndroid,
+      controlBar: {
+        pictureInPictureToggle: !isAndroid,
+      },
+      sources: src ? [{ src, type }] : [],
+      html5: {
+        vhs: {
+          overrideNative: true
+        },
+        nativeAudioTracks: false,
+        nativeVideoTracks: false
+      }
+    }, () => {
+      videojs.log('player is ready');
+
+      const initialMarkers = markersRef.current;
+      if (initialMarkers && initialMarkers.length > 0) {
+        updateMarkers(player, initialMarkers);
+        log.videoPlayer('Video markers initialized', LogLevel.INFO, { count: initialMarkers.length });
       }
 
-      const player = playerRef.current = videojs(videoElement, {
-        autoplay,
-        controls,
-        responsive: true,
-        fluid: true,
-        playsinline: true,
-        preferFullWindow: true,
-        muted,
-        aspectRatio,
-        poster,
-        disablePictureInPicture: isAndroid,
-        controlBar: {
-          pictureInPictureToggle: !isAndroid,
-        },
-        sources: [{
-          src,
-          type
-        }],
-        html5: {
-          vhs: {
-            overrideNative: true
-          },
-          nativeAudioTracks: false,
-          nativeVideoTracks: false
-        }
-      }, () => {
-        videojs.log('player is ready');
+      onReadyRef.current?.(player);
+    });
 
-        // Initialize markers if provided
-        if (markers && markers.length > 0) {
-          updateMarkers(player, markers);
-          log.videoPlayer('Video markers initialized', LogLevel.INFO, { count: markers.length });
-        }
+    player.on('error', () => {
+      const err = player.error();
+      log.videoPlayer('VideoJS playback error', LogLevel.ERROR, err);
+      setError(err?.message || 'An unknown error occurred');
+      onErrorRef.current?.(err);
+    });
+  }, []);
 
-        onReady && onReady(player);
-      });
+  // Update effect: propagate src/poster/autoplay changes to the existing player
+  // without re-initializing. Only writes when the value actually changed to avoid
+  // mid-playback resets on token refresh, query refetch, etc.
+  useEffect(() => {
+    const player = playerRef.current;
+    if (!player || player.isDisposed()) return;
 
-      // Handle errors
-      player.on('error', () => {
-        const err = player.error();
-        log.videoPlayer('VideoJS playback error', LogLevel.ERROR, err);
-        setError(err?.message || 'An unknown error occurred');
-        if (onError) onError(err);
-      });
-
-    } else {
-      const player = playerRef.current;
-
-      // Update player if props change
-      player.autoplay(autoplay);
-      player.src([{ src, type }]);
-      if (poster) player.poster(poster);
+    if (src) {
+      const currentSrc = player.currentSrc?.() ?? player.src?.();
+      if (currentSrc !== src) {
+        player.src([{ src, type }]);
+      }
     }
-  }, [src, type, poster, autoplay, controls, muted, aspectRatio, onReady, onError]);
+
+    if (poster !== undefined && poster !== player.poster()) {
+      player.poster(poster);
+    }
+
+    if (autoplay !== player.autoplay()) {
+      player.autoplay(autoplay);
+    }
+  }, [src, type, poster, autoplay]);
 
   // Update markers when they change
   useEffect(() => {
@@ -240,30 +264,46 @@ export function VideoPlayer({
     }
   }, [markers, onMarkerClick]);
 
-  // Listen for PiP activation — browser API on desktop/iOS only
+  // Listen for PiP activation — browser API on desktop/iOS only.
+  // Attaches inside player 'ready' so we know the underlying <video> tech exists.
   useEffect(() => {
+    if (!eventId || isAndroid) return;
     const player = playerRef.current;
-    if (!player || !eventId || isAndroid) return;
+    if (!player || player.isDisposed()) return;
 
-    let videoEl: HTMLVideoElement | null = null;
-    try {
-      videoEl = player.tech({ IWillNotUseThisInPlugins: true })?.el() as HTMLVideoElement;
-    } catch (error) {
-      log.videoPlayer('Video tech access failed', LogLevel.DEBUG, { error });
-      return;
+    let cleanedUp = false;
+    let cleanup: (() => void) | null = null;
+
+    const attach = () => {
+      if (cleanedUp || player.isDisposed()) return;
+      let videoEl: HTMLVideoElement | null = null;
+      try {
+        videoEl = player.tech({ IWillNotUseThisInPlugins: true })?.el() as HTMLVideoElement;
+      } catch (err) {
+        log.videoPlayer('Video tech access failed', LogLevel.DEBUG, { error: err });
+        return;
+      }
+      if (!videoEl || !(videoEl instanceof HTMLVideoElement)) return;
+
+      const handleEnterPip = () => {
+        adoptForPip(player, videoEl!, eventId);
+        adoptedForPip.current = true;
+      };
+      videoEl.addEventListener('enterpictureinpicture', handleEnterPip);
+      cleanup = () => videoEl!.removeEventListener('enterpictureinpicture', handleEnterPip);
+    };
+
+    if (player.readyState() > 0 || player.isReady_) {
+      attach();
+    } else {
+      player.one('ready', attach);
     }
-    if (!videoEl || !(videoEl instanceof HTMLVideoElement)) return;
 
-    const handleEnterPip = () => {
-      adoptForPip(player, videoEl!, eventId);
-      adoptedForPip.current = true;
-    };
-
-    videoEl.addEventListener('enterpictureinpicture', handleEnterPip);
     return () => {
-      videoEl!.removeEventListener('enterpictureinpicture', handleEnterPip);
+      cleanedUp = true;
+      cleanup?.();
     };
-  }, [playerRef.current, eventId, adoptForPip, isAndroid]);
+  }, [eventId, adoptForPip, isAndroid]);
 
   // Android: add custom PiP button that triggers native ExoPlayer PiP
   useEffect(() => {
@@ -313,22 +353,21 @@ export function VideoPlayer({
     };
   }, [playerRef.current, eventId, isAndroid, enterAndroidPip, getAndroidPipPosition]);
 
-  // Dispose the player on unmount (skip if adopted for PiP)
+  // Dispose the player on unmount (skip if adopted for PiP).
+  // Reads playerRef.current inside cleanup so reassignments (PiP reclaim) are honored.
   useEffect(() => {
-    const player = playerRef.current;
-
     return () => {
       if (adoptedForPip.current) {
-        // PiP is active — don't dispose, the PipProvider owns the player now
         playerRef.current = null;
         return;
       }
+      const player = playerRef.current;
       if (player && !player.isDisposed()) {
         player.dispose();
-        playerRef.current = null;
       }
+      playerRef.current = null;
     };
-  }, [playerRef]);
+  }, []);
 
 
   if (error) {

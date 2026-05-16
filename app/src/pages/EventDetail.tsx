@@ -199,20 +199,35 @@ export default function EventDetail() {
   const isHlsEvent = event.Event.DefaultVideo?.endsWith('.m3u8') === true;
   const videoMimeType = isHlsEvent ? 'application/x-mpegURL' : 'video/mp4';
 
-  const videoUrl = currentProfile && hasVideo && isAccessTokenFresh
-    ? getEventVideoUrl(resolvedPortalUrl, event.Event.Id, accessToken || undefined, currentProfile.apiUrl, isHlsEvent, currentProfile.minStreamingPort, event.Event.MonitorId)
-    : '';
-
+  // Memoize so identity is stable across re-renders that don't touch the inputs.
+  // Without memoization the VideoPlayer's update effect calls player.src() mid-playback
+  // every time the parent re-renders for unrelated reasons (toast state, query refetch).
+  const videoUrl = useMemo(
+    () => (currentProfile && hasVideo && isAccessTokenFresh
+      ? getEventVideoUrl(resolvedPortalUrl, event.Event.Id, accessToken || undefined, currentProfile.apiUrl, isHlsEvent, currentProfile.minStreamingPort, event.Event.MonitorId)
+      : ''),
+    [currentProfile, hasVideo, isAccessTokenFresh, resolvedPortalUrl, event.Event.Id, accessToken, isHlsEvent, event.Event.MonitorId]
+  );
 
   const posterFid = resolveFallbackFids(settings.thumbnailFallbackChain)[0] ?? 'snapshot';
-  const posterUrl = currentProfile && isAccessTokenFresh
-    ? getEventImageUrl(resolvedPortalUrl, event.Event.Id, posterFid, {
-      token: accessToken || undefined,
-      apiUrl: currentProfile.apiUrl,
-      minStreamingPort: currentProfile.minStreamingPort,
-      monitorId: event.Event.MonitorId,
-    })
-    : undefined;
+  const posterUrl = useMemo(
+    () => (currentProfile && isAccessTokenFresh
+      ? getEventImageUrl(resolvedPortalUrl, event.Event.Id, posterFid, {
+        token: accessToken || undefined,
+        apiUrl: currentProfile.apiUrl,
+        minStreamingPort: currentProfile.minStreamingPort,
+        monitorId: event.Event.MonitorId,
+      })
+      : undefined),
+    [currentProfile, isAccessTokenFresh, resolvedPortalUrl, event.Event.Id, posterFid, accessToken, event.Event.MonitorId]
+  );
+
+  // Stable callback so VideoPlayer's effect doesn't re-run on every parent render.
+  const handleVideoError = useCallback(() => {
+    log.eventDetail('Video playback failed, falling back to ZMS stream', LogLevel.INFO);
+    toast.error(t('event_detail.video_playback_failed'));
+    setUseZmsFallback(true);
+  }, [t]);
 
   const startTime = new Date(event.Event.StartDateTime.replace(' ', 'T'));
   const incomingSlide = location.state?.slideDirection as 'left' | 'right' | undefined;
@@ -369,21 +384,23 @@ export default function EventDetail() {
               >
                 <div className="aspect-video relative">
                   <div ref={zoomPan.innerRef}>
-                    <VideoPlayer
-                      src={videoUrl}
-                      type={videoMimeType}
-                      className="w-full h-full"
-                      poster={posterUrl}
-                      autoplay={settings.eventVideoAutoplay}
-                      markers={videoMarkers}
-                      onMarkerClick={handleMarkerClick}
-                      eventId={event.Event.Id}
-                      onError={() => {
-                        log.eventDetail('Video playback failed, falling back to ZMS stream', LogLevel.INFO);
-                        toast.error(t('event_detail.video_playback_failed'));
-                        setUseZmsFallback(true);
-                      }}
-                    />
+                    {videoUrl ? (
+                      <VideoPlayer
+                        src={videoUrl}
+                        type={videoMimeType}
+                        className="w-full h-full"
+                        poster={posterUrl}
+                        autoplay={settings.eventVideoAutoplay}
+                        markers={videoMarkers}
+                        onMarkerClick={handleMarkerClick}
+                        eventId={event.Event.Id}
+                        onError={handleVideoError}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-muted-foreground/70">
+                        <Loader2 className="h-8 w-8 animate-spin" />
+                      </div>
+                    )}
                   </div>
                 </div>
                 <ZoomControls
