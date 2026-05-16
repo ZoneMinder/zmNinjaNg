@@ -23,6 +23,18 @@ import { useBandwidthSettings } from '../../../hooks/useBandwidthSettings';
 
 type TimeRange = '24h' | '48h' | '1w' | '2w' | '1m';
 
+const THEME_TOOLTIP_COLORS = {
+    cream: { background: '#ece5d8', border: '#d4c9b8' },
+    light: { background: '#ffffff', border: '#e5e7eb' },
+    slate: { background: '#1e293b', border: '#334155' },
+    amber: { background: '#262320', border: '#3d3731' },
+    dark: { background: '#1f2937', border: '#374151' },
+    system: { background: '#1f2937', border: '#374151' },
+} as const;
+
+const getTooltipColors = (theme: string) =>
+    THEME_TOOLTIP_COLORS[theme as keyof typeof THEME_TOOLTIP_COLORS] ?? THEME_TOOLTIP_COLORS.dark;
+
 export const TimelineWidget = memo(function TimelineWidget() {
     const { theme } = useTheme();
     const { t } = useTranslation();
@@ -276,12 +288,15 @@ export const TimelineWidget = memo(function TimelineWidget() {
     }, [start, now, events?.events, containerSize.width, fmtDate, fmtTimeShort, fmtDateTimeShort]);
 
     // Memoize tooltip styles to prevent re-renders
-    const tooltipContentStyle = useMemo(() => ({
-        backgroundColor: theme === 'cream' ? '#ece5d8' : theme === 'light' ? '#ffffff' : theme === 'slate' ? '#1e293b' : theme === 'amber' ? '#262320' : '#1f2937',
-        borderColor: theme === 'cream' ? '#d4c9b8' : theme === 'light' ? '#e5e7eb' : theme === 'slate' ? '#334155' : theme === 'amber' ? '#3d3731' : '#374151',
-        borderRadius: '0.5rem',
-        fontSize: '12px'
-    }), [theme]);
+    const tooltipContentStyle = useMemo(() => {
+        const colors = getTooltipColors(theme);
+        return {
+            backgroundColor: colors.background,
+            borderColor: colors.border,
+            borderRadius: '0.5rem',
+            fontSize: '12px'
+        };
+    }, [theme]);
 
     const tooltipLabelFormatter = useCallback((value: string, payload: readonly any[]) => {
         if (payload && payload[0]) {
