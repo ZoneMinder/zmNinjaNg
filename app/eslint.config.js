@@ -26,5 +26,20 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "MemberExpression[object.name='Capacitor'][property.name='isNativePlatform']",
+          message: 'Use Platform.isNative from lib/platform.ts instead of Capacitor.isNativePlatform() directly.',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/lib/platform.ts', 'src/lib/__tests__/secureStorage.test.ts'],
+    rules: {
+      'no-restricted-syntax': 'off',
+    },
   },
 ])
