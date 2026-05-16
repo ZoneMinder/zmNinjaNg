@@ -35,6 +35,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func applicationDidBecomeActive(_ application: UIApplication) {
         // Badge count is managed by the JS notification store.
         // Do NOT clear here — it is decremented as the user views notifications.
+
+        // Re-emit safe-area insets in case the device was rotated while the app
+        // was backgrounded — viewWillTransition does not fire in that case, so
+        // without this the CSS variables stay at the pre-background orientation.
+        SafeAreaPlugin.shared?.emitInsetsChanged()
     }
 
     func applicationWillTerminate(_ application: UIApplication) {
@@ -51,6 +56,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 }
 
 class ViewController: CAPBridgeViewController {
+    private var safeAreaSettleWorkItem: DispatchWorkItem?
+
     override func capacitorDidLoad() {
         bridge?.registerPluginInstance(SSLTrustPlugin())
         bridge?.registerPluginInstance(SafeAreaPlugin())
@@ -58,13 +65,27 @@ class ViewController: CAPBridgeViewController {
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
-        // Emit safe-area insets to JS only after the rotation animation
-        // finishes. viewSafeAreaInsetsDidChange fires multiple times during
-        // the transition with stale intermediate values; the completion
-        // block fires once, at the final settled orientation. See
-        // SafeAreaPlugin.swift.
+        // Primary emit path: after the rotation animation finishes, UIWindow.safeAreaInsets
+        // holds the final stable values. viewSafeAreaInsetsDidChange fires multiple times
+        // during the transition with stale intermediate values, so we deliberately do not
+        // use that as the primary signal. See SafeAreaPlugin.swift.
         coordinator.animate(alongsideTransition: nil) { _ in
             SafeAreaPlugin.shared?.emitInsetsChanged()
         }
+    }
+
+    override func viewSafeAreaInsetsDidChange() {
+        super.viewSafeAreaInsetsDidChange()
+        // Fallback path: coordinator.animate's completion can be missed for interrupted
+        // rotations, split-view resizes, or status-bar visibility toggles. Debounce so we
+        // only emit once the insets have stopped changing (the last fire during a rotation
+        // holds the final value). The primary path above usually wins; this is a safety net
+        // for cases it doesn't cover.
+        safeAreaSettleWorkItem?.cancel()
+        let work = DispatchWorkItem {
+            SafeAreaPlugin.shared?.emitInsetsChanged()
+        }
+        safeAreaSettleWorkItem = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: work)
     }
 }

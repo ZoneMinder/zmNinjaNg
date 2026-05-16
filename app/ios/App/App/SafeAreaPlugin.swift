@@ -21,6 +21,12 @@ import UIKit
  * intermediate values, and the last fire sometimes won — leading to JS
  * applying landscape insets while the device was in portrait. The
  * transition-completion approach fires once with the final stable value.
+ *
+ * The view controller now ALSO subscribes to viewSafeAreaInsetsDidChange as
+ * a debounced (250 ms) fallback so interrupted rotations, split-view resizes,
+ * and status-bar visibility toggles are not missed. The transition-completion
+ * path remains primary; the debounced fallback only matters when it does not
+ * fire.
  */
 @objc(SafeAreaPlugin)
 public class SafeAreaPlugin: CAPPlugin, CAPBridgedPlugin {
