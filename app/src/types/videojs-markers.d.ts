@@ -7,16 +7,18 @@
 
 import type videojs from 'video.js';
 
-// Extend the videojs Player type with markers plugin
-declare module 'video.js' {
-  interface Player {
-    /**
-     * Video.js markers plugin
-     */
-    markers(options?: MarkersOptions): {
-      removeAll?: () => void;
-    };
-  }
+/**
+ * Markers plugin surface attached to a Video.js Player at runtime by the
+ * videojs-markers package. The plugin does not ship type augmentation, so this
+ * shape is asserted via the getMarkersPlugin helper in Mp4EventPlayer.tsx.
+ */
+export interface MarkersPlugin {
+  (options?: MarkersOptions): MarkersPluginApi;
+  removeAll?: () => void;
+}
+
+export interface MarkersPluginApi {
+  removeAll?: () => void;
 }
 
 /**

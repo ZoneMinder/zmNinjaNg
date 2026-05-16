@@ -15,7 +15,7 @@ import { cn } from '../../lib/utils';
 import { log, LogLevel } from '../../lib/logger';
 import { Platform } from '../../lib/platform';
 import type { VideoMarker } from '../../lib/video-markers';
-import type { MarkerConfig } from '../../types/videojs-markers';
+import type { MarkerConfig, MarkersPlugin } from '../../types/videojs-markers';
 import { usePip } from '../../contexts/PipContext';
 import { Pip } from '../../plugins/pip';
 
@@ -80,22 +80,26 @@ export function Mp4EventPlayer({
   useEffect(() => { onErrorRef.current = onError; }, [onError]);
   useEffect(() => { markersRef.current = markers; }, [markers]);
 
+  // videojs-markers plugin attaches `markers` to the Player at runtime; types not shipped.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const getMarkersPlugin = (player: Player): MarkersPlugin | undefined => (player as any).markers;
+
   const updateMarkers = (player: Player, markers: VideoMarker[]) => {
     if (!player || player.isDisposed()) return;
 
+    const markersFn = getMarkersPlugin(player);
+
     // Remove existing markers if the markers plugin is initialized
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- videojs-markers augments video.js Player interface but ReturnType<typeof videojs> does not pick up interface augmentation
-    if (typeof (player as any).markers === 'function') {
+    if (typeof markersFn === 'function') {
       try {
-        // Check if player has markers to remove
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- same reason as above
-        (player as any).markers?.removeAll?.();
-      } catch (err) {
+        markersFn.removeAll?.();
+      } catch {
         // Ignore - markers plugin might not be fully initialized
       }
     }
 
     if (!markers || markers.length === 0) return;
+    if (typeof markersFn !== 'function') return;
 
     try {
       const markerConfigs: MarkerConfig[] = markers.map(m => ({
@@ -105,8 +109,7 @@ export function Mp4EventPlayer({
         frameId: m.frameId,
       }));
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- same reason as above
-      (player as any).markers({
+      markersFn({
         markerTip: {
           display: true,
           text: (marker: MarkerConfig) => marker.text || `Frame ${marker.frameId || ''}`,
