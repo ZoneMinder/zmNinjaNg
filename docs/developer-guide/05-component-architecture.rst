@@ -746,6 +746,118 @@ A dialog-based QR code scanner for importing server profiles.
 - File scanning creates a temporary DOM element, scans the image, then
   cleans up
 
+Common Components
+-----------------
+
+Shared UI building blocks used across pages, extracted to remove
+duplication. They live in ``src/components/common/`` and have unit tests
+alongside in ``src/components/common/__tests__/``.
+
+RefreshButton
+~~~~~~~~~~~~~
+
+**Location**: ``src/components/common/RefreshButton.tsx``
+
+Replaces the ``Button`` + ``RefreshCw`` icon pattern that page headers
+re-implemented for every data page.
+
+.. code:: tsx
+
+   export type RefreshButtonShowLabel = 'always' | 'never' | 'sm-and-up';
+
+   export interface RefreshButtonProps {
+     onRefresh: () => void;
+     isLoading?: boolean;
+     disabled?: boolean;
+     label?: string;
+     showLabel?: RefreshButtonShowLabel;
+     size?: 'sm' | 'icon';
+     className?: string;
+     'data-testid'?: string;
+     'aria-label'?: string;
+   }
+
+The icon gets ``animate-spin`` whenever ``isLoading`` is true, and the
+button is disabled while loading or when ``disabled`` is set. The label
+defaults to the ``common.refresh`` translation key (present in all five
+locales: ``en``, ``de``, ``es``, ``fr``, ``zh``) and doubles as the
+button ``title`` and ``aria-label`` when no explicit ``aria-label`` is
+passed. The ``showLabel`` variants control label visibility:
+``'never'`` (default) wraps the text in ``sr-only``, ``'always'``
+renders it inline with an ``mr-2`` icon gap, and ``'sm-and-up'`` hides
+it below the ``sm`` breakpoint via ``hidden sm:inline``.
+
+The default ``data-testid`` is ``'refresh-button'``; pages override it
+when multiple refresh buttons can be on screen at once (for example
+``monitors-refresh-button``).
+
+.. code:: tsx
+
+   // src/pages/Monitors.tsx
+   <RefreshButton
+     onRefresh={() => refetch()}
+     isLoading={isFetching}
+     className="h-8 w-8 sm:h-9 sm:w-9"
+     data-testid="monitors-refresh-button"
+   />
+
+PageContainer
+~~~~~~~~~~~~~
+
+**Location**: ``src/components/common/PageContainer.tsx``
+
+Replaces the ``<div className="p-3 sm:p-4 md:p-6 space-y-...">`` wrapper
+that every page used to inline.
+
+.. code:: tsx
+
+   export type PageContainerSpacing = 'tight' | 'normal' | 'loose' | 'none';
+
+   export interface PageContainerProps extends HTMLAttributes<HTMLDivElement> {
+     children: ReactNode;
+     spacing?: PageContainerSpacing;
+     className?: string;
+   }
+
+The wrapper always emits ``p-3 sm:p-4 md:p-6``. The ``spacing`` prop
+maps to one fixed vertical-gap class:
+
+- ``'none'`` emits no ``space-y-*`` class (use this when the page needs
+  its own responsive variant, then pass it via ``className``)
+- ``'tight'`` emits ``space-y-3``
+- ``'normal'`` (default) emits ``space-y-4``
+- ``'loose'`` emits ``space-y-6``
+
+The component is wrapped in ``forwardRef`` and spreads remaining props
+onto the underlying ``<div>``, so ``ref`` and ``data-testid`` flow
+through. The ``className`` prop is additive: extra utility classes are
+merged via ``cn()`` and win on conflict.
+
+.. code:: tsx
+
+   // src/pages/Settings.tsx
+   <PageContainer spacing="loose">
+     <div>
+       <div className="flex items-center gap-2">
+         <h1 className="text-base sm:text-lg font-bold tracking-tight">
+           {t('settings.title')}
+         </h1>
+         <NotificationBadge />
+       </div>
+       {/* ... */}
+     </div>
+   </PageContainer>
+
+For pages that need a responsive vertical gap, pair ``spacing="none"``
+with a custom ``className``:
+
+.. code:: tsx
+
+   // src/pages/Monitors.tsx
+   <PageContainer className="space-y-4 sm:space-y-6" spacing="none">
+     {/* ... */}
+   </PageContainer>
+
 UI Components
 -------------
 
