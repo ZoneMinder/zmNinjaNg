@@ -31,6 +31,7 @@ import { formatDistanceToNow, isToday, isYesterday, startOfWeek, startOfMonth } 
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { NotificationBadge } from '../components/NotificationBadge';
+import { PageContainer } from '../components/common/PageContainer';
 import { useFreshAccessToken } from '../hooks/useFreshAccessToken';
 import { useDateTimeFormat } from '../hooks/useDateTimeFormat';
 
@@ -133,8 +134,9 @@ export default function NotificationHistory() {
   }
 
   return (
-    <div
-      className="p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4"
+    <PageContainer
+      spacing="none"
+      className="space-y-3 sm:space-y-4"
       data-testid="notification-history"
     >
       {/* Header */}
@@ -319,6 +321,6 @@ export default function NotificationHistory() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </PageContainer>
   );
 }

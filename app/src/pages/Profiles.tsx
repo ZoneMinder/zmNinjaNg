@@ -32,6 +32,7 @@ import {
   AlertDialogTitle,
 } from '../components/ui/alert-dialog';
 import { Server, Edit, Plus, Check, Loader2, Eye, EyeOff, Trash2 } from 'lucide-react';
+import { PageContainer } from '../components/common/PageContainer';
 import { Badge } from '../components/ui/badge';
 import type { Profile } from '../api/types';
 import { useToast } from '../hooks/use-toast';
@@ -287,7 +288,7 @@ export default function Profiles() {
 
   return (
     <>
-      <div className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
+      <PageContainer spacing="none" className="space-y-4 sm:space-y-6">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-base sm:text-lg font-bold tracking-tight">{t('profiles.title')}</h1>
@@ -423,7 +424,7 @@ export default function Profiles() {
             </CardContent>
           </Card>
         </div>
-      </div>
+      </PageContainer>
 
       {/* Edit Profile Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>

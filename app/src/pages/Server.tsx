@@ -12,6 +12,8 @@ import { useAuthStore } from '../stores/auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
+import { PageContainer } from '../components/common/PageContainer';
+import { RefreshButton } from '../components/common/RefreshButton';
 import {
   Server as ServerIcon,
   Activity,
@@ -19,7 +21,6 @@ import {
   Cpu,
   Info,
   PlayCircle,
-  RefreshCw,
   Loader2,
   Play,
   Square,
@@ -161,7 +162,7 @@ export default function Server() {
   const diskUsageGB = diskData?.usage;
 
   return (
-    <div className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
+    <PageContainer spacing="none" className="space-y-4 sm:space-y-6">
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-2">
@@ -174,17 +175,14 @@ export default function Server() {
             {t('server.subtitle')}
           </p>
         </div>
-        <Button
-          variant="outline"
+        <RefreshButton
           size="sm"
-          onClick={handleRefreshAll}
-          disabled={isRefreshing}
+          onRefresh={handleRefreshAll}
+          isLoading={isRefreshing}
+          showLabel="sm-and-up"
           className="flex items-center gap-2"
           data-testid="server-refresh-button"
-        >
-          <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-          <span className="hidden sm:inline">{t('common.refresh')}</span>
-        </Button>
+        />
       </div>
 
       {/* Version Information */}
@@ -609,6 +607,6 @@ export default function Server() {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </PageContainer>
   );
 }

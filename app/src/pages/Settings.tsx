@@ -7,6 +7,7 @@
 
 import { useTranslation } from 'react-i18next';
 import { NotificationBadge } from '../components/NotificationBadge';
+import { PageContainer } from '../components/common/PageContainer';
 import { useSettingsStore } from '../stores/settings';
 import { useCurrentProfile } from '../hooks/useCurrentProfile';
 import { AppearanceSection } from '../components/settings/AppearanceSection';
@@ -30,7 +31,7 @@ export default function Settings() {
   };
 
   return (
-    <div className="p-3 sm:p-4 md:p-6 space-y-6">
+    <PageContainer spacing="loose">
       {/* Page header */}
       <div>
         <div className="flex items-center gap-2">
@@ -60,6 +61,6 @@ export default function Settings() {
         currentProfile={currentProfile}
         updateSettings={updateSettings}
       />
-    </div>
+    </PageContainer>
   );
 }

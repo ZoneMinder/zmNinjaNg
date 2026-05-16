@@ -15,7 +15,9 @@ import { useBandwidthSettings } from '../hooks/useBandwidthSettings';
 import { useAuthStore } from '../stores/auth';
 import { useSettingsStore } from '../stores/settings';
 import { Button } from '../components/ui/button';
-import { RefreshCw, AlertCircle, LayoutGrid, List } from 'lucide-react';
+import { AlertCircle, LayoutGrid, List } from 'lucide-react';
+import { PageContainer } from '../components/common/PageContainer';
+import { RefreshButton } from '../components/common/RefreshButton';
 import { MonitorCard } from '../components/monitors/MonitorCard';
 import { MonitorSettingsDialog } from '../components/monitor-detail/MonitorSettingsDialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
@@ -60,7 +62,7 @@ export default function Monitors() {
     onGridChange: handleMonitorGridChange,
   });
 
-  const { data, isLoading, error, refetch } = useQuery({
+  const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ['monitors', currentProfile?.id],
     queryFn: getMonitors,
     enabled: !!currentProfile && isAuthenticated,
@@ -160,7 +162,7 @@ export default function Monitors() {
   }
 
   return (
-    <div className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
+    <PageContainer className="space-y-4 sm:space-y-6" spacing="none">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
           <div className="flex items-center gap-2">
@@ -211,9 +213,12 @@ export default function Monitors() {
               </SelectItem>
             </SelectContent>
           </Select>
-          <Button onClick={() => refetch()} variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-9" title={t('common.refresh')} data-testid="monitors-refresh-button">
-            <RefreshCw className="h-4 w-4" />
-          </Button>
+          <RefreshButton
+            onRefresh={() => refetch()}
+            isLoading={isFetching}
+            className="h-8 w-8 sm:h-9 sm:w-9"
+            data-testid="monitors-refresh-button"
+          />
         </div>
       </div>
 
@@ -269,6 +274,6 @@ export default function Monitors() {
           isSaving={isSavingSettings}
         />
       )}
-    </div>
+    </PageContainer>
   );
 }

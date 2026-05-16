@@ -10,6 +10,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Switch } from '../components/ui/switch';
 import { RefreshCw, Filter, Clock, ScanSearch, X, Crosshair, ZoomIn, ZoomOut, ChevronDown, SkipForward, RectangleHorizontal, Info, Move, HandMetal, Radio } from 'lucide-react';
+import { PageContainer } from '../components/common/PageContainer';
 import { subDays } from 'date-fns';
 import { filterEnabledMonitors } from '../lib/filters';
 import { formatForServer, formatLocalDateTime } from '../lib/time';
@@ -447,7 +448,7 @@ export default function Timeline() {
   })() : null;
 
   return (
-    <div className="p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 md:space-y-6" data-testid="timeline-page">
+    <PageContainer spacing="none" className="space-y-3 sm:space-y-4 md:space-y-6" data-testid="timeline-page">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
           <div className="flex items-center gap-2">
@@ -741,6 +742,6 @@ export default function Timeline() {
           <span><span className="font-semibold text-purple-500">{totalDurationMins}m</span> {t('timeline.total_duration')}</span>
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

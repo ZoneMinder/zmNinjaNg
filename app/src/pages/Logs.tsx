@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Badge } from '../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { ScrollText, Trash2, Download, Share2, ChevronDown, ChevronUp, Server, Smartphone, FolderOpen } from 'lucide-react';
+import { PageContainer } from '../components/common/PageContainer';
 import { cn } from '../lib/utils';
 import { Platform } from '../lib/platform';
 import { getLogFile } from '../lib/log-file';
@@ -391,7 +392,7 @@ export default function Logs() {
     };
 
     return (
-        <div className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6 h-[calc(100vh-4rem)] flex flex-col">
+        <PageContainer spacing="none" className="space-y-4 sm:space-y-6 h-[calc(100vh-4rem)] flex flex-col">
             <div className="flex items-center justify-between gap-4 shrink-0">
                 <div>
                     <div className="flex items-center gap-2">
@@ -649,6 +650,6 @@ export default function Logs() {
                     )}
                 </CardContent>
             </Card>
-        </div>
+        </PageContainer>
     );
 }

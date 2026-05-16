@@ -19,7 +19,8 @@ import { useTvMode } from '../hooks/useTvMode';
 import { Button } from '../components/ui/button';
 import { MontageMonitor } from '../components/monitors/MontageMonitor';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { RefreshCw, Video, AlertCircle, Maximize, Pencil, ArrowLeftRight } from 'lucide-react';
+import { Video, AlertCircle, Maximize, Pencil, ArrowLeftRight } from 'lucide-react';
+import { RefreshButton } from '../components/common/RefreshButton';
 import { filterEnabledMonitors, filterMonitorsByGroup } from '../lib/filters';
 import { useGroupFilter } from '../hooks/useGroupFilter';
 import { GroupFilterSelect } from '../components/filters/GroupFilterSelect';
@@ -53,7 +54,7 @@ export default function Montage() {
   const accessToken = useAuthStore((state) => state.accessToken);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
-  const { data, isLoading, error, refetch } = useQuery({
+  const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ['monitors'],
     queryFn: getMonitors,
     enabled: !!currentProfile && isAuthenticated,
@@ -275,10 +276,12 @@ export default function Montage() {
       <div className="p-8">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-lg font-bold tracking-tight">{t('montage.title')}</h1>
-          <Button onClick={() => refetch()} variant="outline" size="sm">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            {t('common.refresh')}
-          </Button>
+          <RefreshButton
+            size="sm"
+            onRefresh={() => refetch()}
+            isLoading={isFetching}
+            showLabel="always"
+          />
         </div>
         <div className="text-center py-20 text-muted-foreground">
           <Video className="h-12 w-12 mx-auto mb-4 opacity-20" />
@@ -326,10 +329,14 @@ export default function Montage() {
                   </SelectItem>
                 </SelectContent>
               </Select>
-              <Button onClick={() => refetch()} variant="outline" size="sm" className="h-8 sm:h-9" data-testid="montage-refresh-button">
-                <RefreshCw className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">{t('common.refresh')}</span>
-              </Button>
+              <RefreshButton
+                size="sm"
+                onRefresh={() => refetch()}
+                isLoading={isFetching}
+                showLabel="sm-and-up"
+                className="h-8 sm:h-9"
+                data-testid="montage-refresh-button"
+              />
               <Button
                 onClick={handleEditModeToggle}
                 variant={isEditMode ? 'default' : 'outline'}

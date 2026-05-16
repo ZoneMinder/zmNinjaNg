@@ -14,9 +14,10 @@ import { useFreshAccessToken } from '../hooks/useFreshAccessToken';
 import { useSettingsStore } from '../stores/settings';
 import { useEventPagination } from '../hooks/useEventPagination';
 import { useEventMontageGrid } from '../hooks/useEventMontageGrid';
-import { Button } from '../components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { RefreshCw, AlertCircle, Clock, LayoutGrid } from 'lucide-react';
+import { AlertCircle, Clock, LayoutGrid } from 'lucide-react';
+import { PageContainer } from '../components/common/PageContainer';
+import { RefreshButton } from '../components/common/RefreshButton';
 import { filterEnabledMonitors } from '../lib/filters';
 import { EventMontageView } from '../components/events/EventMontageView';
 import { EventMontageGridControls } from '../components/events/EventMontageGridControls';
@@ -80,7 +81,7 @@ export default function EventMontage() {
   }, [selectedMonitorIds, selectedCause, startDate, endDate, settings.defaultEventLimit]);
 
   // Fetch events
-  const { data: eventsData, isLoading, error, refetch } = useQuery({
+  const { data: eventsData, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ['event-montage', filterParams],
     queryFn: () => getEvents(filterParams),
   });
@@ -204,9 +205,10 @@ export default function EventMontage() {
   }
 
   return (
-    <div
+    <PageContainer
       ref={containerRef}
-      className="h-full overflow-auto p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 md:space-y-6"
+      spacing="none"
+      className="h-full overflow-auto space-y-3 sm:space-y-4 md:space-y-6"
     >
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -249,14 +251,11 @@ export default function EventMontage() {
           />
 
           {/* Refresh Button */}
-          <Button
-            onClick={() => refetch()}
-            variant="outline"
-            size="icon"
+          <RefreshButton
+            onRefresh={() => refetch()}
+            isLoading={isFetching}
             aria-label={t('eventMontage.refresh')}
-          >
-            <RefreshCw className="h-4 w-4" />
-          </Button>
+          />
         </div>
       </div>
 
@@ -300,6 +299,6 @@ export default function EventMontage() {
           minStreamingPort={currentProfile?.minStreamingPort}
         />
       )}
-    </div>
+    </PageContainer>
   );
 }

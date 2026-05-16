@@ -24,7 +24,8 @@ import { useEventMontageGrid } from '../hooks/useEventMontageGrid';
 import { useEventTags, useEventTagMapping } from '../hooks/useEventTags';
 import { PullToRefreshIndicator } from '../components/ui/pull-to-refresh-indicator';
 import { Button } from '../components/ui/button';
-import { RefreshCw, Filter, AlertCircle, ArrowLeft, LayoutGrid, List, Clock, X } from 'lucide-react';
+import { Filter, AlertCircle, ArrowLeft, LayoutGrid, List, Clock, X } from 'lucide-react';
+import { RefreshButton } from '../components/common/RefreshButton';
 import { filterMonitorsByGroup } from '../lib/filters';
 import { useGroupFilter } from '../hooks/useGroupFilter';
 import { GroupFilterSelect } from '../components/filters/GroupFilterSelect';
@@ -426,15 +427,12 @@ export default function Events() {
                 />
               </Popover>
 
-              <Button
-                onClick={() => refetch()}
-                variant="outline"
-                size="icon"
+              <RefreshButton
+                onRefresh={() => refetch()}
+                isLoading={isFetching}
                 aria-label={t('events.refresh')}
                 data-testid="events-refresh-button"
-              >
-                <RefreshCw className="h-4 w-4" />
-              </Button>
+              />
             </div>
           </div>
           {viewMode === 'montage' && gridControls.isScreenTooSmall && (
