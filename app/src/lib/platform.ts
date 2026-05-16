@@ -24,6 +24,16 @@ export const Platform = {
     return Capacitor.isNativePlatform();
   },
 
+  /** True if running on iOS via Capacitor (not Tauri WKWebView on macOS). */
+  get isIOS() {
+    return Capacitor.getPlatform() === 'ios' && Capacitor.isNativePlatform();
+  },
+
+  /** True if running on Android via Capacitor. */
+  get isAndroid() {
+    return Capacitor.getPlatform() === 'android' && Capacitor.isNativePlatform();
+  },
+
   /** True if running in Tauri desktop app */
   get isTauri() {
     return isTauri();

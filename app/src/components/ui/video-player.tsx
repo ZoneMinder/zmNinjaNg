@@ -15,6 +15,7 @@ import 'videojs-markers';
 type Player = ReturnType<typeof videojs>;
 import { cn } from '../../lib/utils';
 import { log, LogLevel } from '../../lib/logger';
+import { Platform } from '../../lib/platform';
 import type { VideoMarker } from '../../lib/video-markers';
 import type { MarkerConfig } from '../../types/videojs-markers';
 import { usePip } from '../../contexts/PipContext';
@@ -191,13 +192,24 @@ export function VideoPlayer({
       videoRef.current.appendChild(videoElement);
     }
 
+    // preferFullWindow:true puts Video.js into CSS-fullscreen instead of the real
+    // Fullscreen API. Required on iOS because iOS native fullscreen shows the page
+    // URL banner ("capacitor://...") which is unstyleable. On Android/web/Tauri the
+    // real Fullscreen API works correctly and gives a better immersive experience.
+    const isIOS = Platform.isIOS;
+    // overrideNative:true forces hls.js / MediaSource everywhere. On iOS WKWebView
+    // native HLS via <video> is more battery-efficient and avoids MSE quirks. Keep
+    // override on for other platforms (web/Android/Tauri) where native HLS support
+    // varies.
+    const overrideNativeHls = !isIOS;
+
     const player = playerRef.current = videojs(videoElement, {
       autoplay,
       controls,
       responsive: true,
       fluid: true,
       playsinline: true,
-      preferFullWindow: true,
+      preferFullWindow: isIOS,
       muted,
       aspectRatio,
       poster,
@@ -208,10 +220,10 @@ export function VideoPlayer({
       sources: src ? [{ src, type }] : [],
       html5: {
         vhs: {
-          overrideNative: true
+          overrideNative: overrideNativeHls,
         },
-        nativeAudioTracks: false,
-        nativeVideoTracks: false
+        nativeAudioTracks: !overrideNativeHls,
+        nativeVideoTracks: !overrideNativeHls,
       }
     }, () => {
       videojs.log('player is ready');
