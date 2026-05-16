@@ -368,53 +368,60 @@ export function VideoPlayer({
     };
   }, [eventId, adoptForPip, isAndroid]);
 
-  // Android: add custom PiP button that triggers native ExoPlayer PiP
+  // Android: add custom PiP button that triggers native ExoPlayer PiP.
+  // Pip.isPipSupported is async; the effect can be cleaned up before it resolves,
+  // in which case we must not mutate the DOM or leak the button + listener.
   useEffect(() => {
-    if (!isAndroid || !playerRef.current || !eventId) return;
+    if (!isAndroid || !eventId) return;
     const player = playerRef.current;
+    if (!player) return;
+
+    let cancelled = false;
     let pipBtn: HTMLButtonElement | null = null;
 
     Pip.isPipSupported().then(({ supported }) => {
-      if (!supported || !player || player.isDisposed()) return;
+      if (cancelled || !supported || player.isDisposed()) return;
 
       const controlBar = (player as unknown as { controlBar?: { el(): HTMLElement | undefined } }).controlBar?.el();
       if (!controlBar) return;
 
-      pipBtn = document.createElement('button');
-      pipBtn.className = 'vjs-control vjs-button';
-      pipBtn.title = 'Picture-in-Picture';
-      pipBtn.setAttribute('aria-label', 'Picture-in-Picture');
-      pipBtn.innerHTML = '<span class="vjs-icon-placeholder" style="display:flex;align-items:center;justify-content:center;height:100%"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><rect x="12" y="9" width="8" height="6" rx="1" fill="currentColor" opacity="0.3"/></svg></span>';
+      const btn = document.createElement('button');
+      btn.className = 'vjs-control vjs-button';
+      btn.title = 'Picture-in-Picture';
+      btn.setAttribute('aria-label', 'Picture-in-Picture');
+      btn.innerHTML = '<span class="vjs-icon-placeholder" style="display:flex;align-items:center;justify-content:center;height:100%"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><rect x="12" y="9" width="8" height="6" rx="1" fill="currentColor" opacity="0.3"/></svg></span>';
 
-      pipBtn.addEventListener('click', async () => {
+      btn.addEventListener('click', async () => {
+        if (player.isDisposed()) return;
         const currentTime = player.currentTime() || 0;
         const videoSrc = player.currentSrc();
-        if (videoSrc) {
-          player.pause();
-          await enterAndroidPip(videoSrc, currentTime, eventId);
-          const returnedPosition = getAndroidPipPosition();
-          if (returnedPosition > 0) {
-            player.currentTime(returnedPosition);
-          }
-          player.play();
+        if (!videoSrc) return;
+        player.pause();
+        await enterAndroidPip(videoSrc, currentTime, eventId);
+        if (player.isDisposed()) return;
+        const returnedPosition = getAndroidPipPosition();
+        if (returnedPosition > 0) {
+          player.currentTime(returnedPosition);
         }
+        player.play();
       });
 
-      // Insert before fullscreen button
       const fullscreenBtn = controlBar.querySelector('.vjs-fullscreen-control');
       if (fullscreenBtn) {
-        controlBar.insertBefore(pipBtn, fullscreenBtn);
+        controlBar.insertBefore(btn, fullscreenBtn);
       } else {
-        controlBar.appendChild(pipBtn);
+        controlBar.appendChild(btn);
       }
+      pipBtn = btn;
     });
 
     return () => {
+      cancelled = true;
       if (pipBtn?.parentNode) {
         pipBtn.parentNode.removeChild(pipBtn);
       }
     };
-  }, [playerRef.current, eventId, isAndroid, enterAndroidPip, getAndroidPipPosition]);
+  }, [eventId, isAndroid, enterAndroidPip, getAndroidPipPosition]);
 
   // Dispose the player on unmount (skip if adopted for PiP).
   // Reads playerRef.current inside cleanup so reassignments (PiP reclaim) are honored.
