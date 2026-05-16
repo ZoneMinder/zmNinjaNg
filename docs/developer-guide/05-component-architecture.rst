@@ -86,7 +86,6 @@ Components are organized by domain in ``src/components/``:
    ├── timeline/           # Event timeline components
    ├── tv/                 # TV-mode components
    ├── ui/                 # Reusable UI primitives (shadcn/ui + Tailwind)
-   ├── video/              # VideoPlayer (smart streaming) and overlays
    ├── BackgroundTaskDrawer.tsx
    ├── CertTrustDialog.tsx
    ├── ErrorBoundary.tsx
@@ -463,41 +462,6 @@ instead of lingering as a zombie.
 Used from ``MonitorCard`` (both compact and list layouts) and the
 dashboard ``MonitorWidget``'s ``SingleMonitor``.
 
-ZmsEventPlayer
-~~~~~~~~~~~~~~
-
-**Location**: ``src/components/events/ZmsEventPlayer.tsx``
-
-Video player for event playback using ZoneMinder’s zms streaming.
-
-**Controls layout:** ``|<`` (start), ``< 5s`` (seek back), Play/Pause,
-``5s >`` (seek forward), ``>|`` (end). Seek operations use 5-second
-increments via ``ZM_CMD.SEEK``.
-
-**Features:**
-
-- Play/pause and seek controls (5-second increments)
-- Speed control (0.25x - 2x)
-- Progress bar displays time (``m:ss``) when duration is provided,
-  falls back to frame numbers otherwise
-- Polls ZMS stream status via ``ZM_CMD.QUERY`` to track playback
-  position; uses bandwidth-aware interval via ``zmsStatusInterval``
-- Auto-pauses at end of event to prevent looping
-- Fullscreen support
-
-**Implementation Detail:**
-
-The player generates a progressive stream URL:
-
-.. code:: tsx
-
-   const streamUrl = `${profile.portalUrl}/cgi-bin/nph-zms?mode=jpeg&event=${eventId}&frame=1&scale=100&rate=100&maxfps=30&connkey=${connkey}`;
-
-Parameters: - ``mode=jpeg``: JPEG stream (vs MPEG) - ``event``: Event ID
-- ``frame``: Starting frame - ``rate``: Playback speed (100 = 1x, 200 =
-2x, 50 = 0.5x) - ``maxfps``: Frame rate cap - ``connkey``:
-Authentication token
-
 EventHeatmap
 ~~~~~~~~~~~~
 
@@ -533,6 +497,180 @@ Displays event tags as small badge/chip elements.
        <TagChip key={tag.Id} tag={tag} />
      ))}
    </div>
+
+Video Playback
+--------------
+
+Three players exist because there are three distinct delivery protocols.
+Live monitor streams negotiate Go2RTC (WebRTC / MSE / HLS) and fall back
+to MJPEG. Recorded events come in two shapes: either ZoneMinder produced
+an MP4 (``Videoed === '1'``), in which case Video.js handles it as MP4
+or HLS, or only JPEG frames are stored and the only way to play them
+back is the ZMS streaming endpoint. EventDetail also exposes a user
+toggle (TV mode defaults to on) that forces the ZMS path even when an
+MP4 is available.
+
+The three player files sit next to their consumers. Live playback lives
+under ``components/monitors/``; event playback lives under
+``components/events/``. The file name carries the protocol so the
+selection at each call site is self-evident from the import.
+
+LiveMonitorPlayer
+~~~~~~~~~~~~~~~~~
+
+**Location**: ``src/components/monitors/LiveMonitorPlayer.tsx``
+
+Live monitor player. Picks between Go2RTC and MJPEG based on monitor
+capabilities and user preference. Consumed by ``MonitorCard``,
+``MontageMonitor``, the dashboard ``MonitorWidget``, and the
+``MonitorDetail`` page.
+
+**Props (from ``LiveMonitorPlayerProps``):**
+
+.. code:: tsx
+
+   export interface LiveMonitorPlayerProps {
+     monitor: Monitor;
+     profile: Profile | null;
+     className?: string;
+     objectFit?: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down';
+     showControls?: boolean;
+     externalMediaRef?: React.RefObject<HTMLImageElement | HTMLVideoElement | null>;
+     muted?: boolean;
+     onLoad?: () => void;
+     onProtocolChange?: (protocol: string) => void;
+     forceViewMode?: 'streaming' | 'snapshot';
+   }
+
+**Protocol selection.** Go2RTC is used when the user's
+``streamingMethod`` is not ``'mjpeg'``, ``monitor.Go2RTCEnabled`` is
+true, and the profile has a ``go2rtcUrl``. A per-monitor override in
+``monitorStreamingOverrides`` wins over the global setting. Otherwise
+MJPEG. The Go2RTC hook (``useGo2RTCStream``) tries WebRTC then MSE then
+HLS in order and reports the active protocol back via
+``onProtocolChange``.
+
+**Failure cache.** A module-level ``go2rtcFailureCache`` records the
+last failure timestamp per ``monitor.Id``. While that entry is younger
+than ``GO2RTC_RETRY_INTERVAL_MIN`` (5 minutes), the player skips Go2RTC
+entirely and starts on MJPEG. This avoids montage grids re-attempting
+WebRTC on every tile every render. The cache is cleared immediately
+when the user explicitly switches a monitor's preference back to
+Go2RTC, so a manual retry does not have to wait out the window.
+
+**No-frame fallback.** After Go2RTC reports ``connected``, the player
+arms an 8-second timer (``GO2RTC_VIDEO_TIMEOUT_S``). When it fires the
+player inspects ``videoWidth`` / ``videoHeight`` on the underlying
+``<video>``. Zero dimensions count as a soft failure: the monitor is
+marked failed and MJPEG takes over. Nonzero dimensions with the video
+paused triggers a single ``video.play()`` attempt to recover from
+autoplay restrictions.
+
+**Test IDs.** The outer wrapper carries
+``data-testid="video-player"``. Internal states expose
+``video-player-loading``, ``video-player-webrtc-container``,
+``video-player-mjpeg``, ``video-player-error``, and
+``video-player-retry``. E2E step definitions in
+``tests/steps/monitor-detail.steps.ts`` and ``tests/steps/events.steps.ts``
+bind to these IDs, so renaming any of them breaks the cross-platform
+suite.
+
+Mp4EventPlayer
+~~~~~~~~~~~~~~
+
+**Location**: ``src/components/events/Mp4EventPlayer.tsx``
+
+Video.js wrapper for recorded event playback. Consumed only by
+``EventDetail``, on the MP4 / HLS branch.
+
+**Props:**
+
+.. code:: tsx
+
+   interface Mp4EventPlayerProps {
+     src: string;
+     type?: string;
+     poster?: string;
+     className?: string;
+     autoplay?: boolean | 'muted' | 'play' | 'any';
+     controls?: boolean;
+     muted?: boolean;
+     aspectRatio?: string;
+     markers?: VideoMarker[];
+     onMarkerClick?: (marker: VideoMarker) => void;
+     onReady?: (player: Player) => void;
+     onError?: (error: unknown) => void;
+     eventId?: string;
+   }
+
+Markers are rendered via ``videojs-markers``; the ``markers`` array
+maps to alarm / max-score frames on the event timeline and
+``onMarkerClick`` seeks to a frame. Source, poster, and autoplay
+changes propagate through a separate update effect that diffs against
+``player.currentSrc()`` before reassigning, so token refresh does not
+restart playback on iOS WKWebView.
+
+When ``eventId`` is set, the player participates in Picture-in-Picture
+via ``usePip()`` from ``contexts/PipContext.tsx``: it adopts its
+``<video>`` element into the root portal on PiP entry, reclaims it on
+remount of the same event, and closes any existing PiP session if a
+different event is opened. Android uses a custom control-bar button
+that triggers native ExoPlayer PiP via ``Pip.enterAndroidPip``;
+desktop and iOS use the browser ``enterpictureinpicture`` event.
+
+ZmsEventPlayer
+~~~~~~~~~~~~~~
+
+**Location**: ``src/components/events/ZmsEventPlayer.tsx``
+
+Player for events backed by ZoneMinder's ZMS streaming endpoint
+(``cgi-bin/nph-zms``). ZMS serves a progressive JPEG stream and accepts
+control commands (PAUSE, PLAY, SEEK, FASTFWD, etc.) over a separate URL
+keyed by ``connkey``. Consumed only by ``EventDetail``, on the
+JPEG-only branch and on the user-forced-ZMS branch.
+
+**Props:** ``portalUrl``, ``eventId``, ``token``, ``apiUrl``,
+``totalFrames``, ``alarmFrames``, ``alarmFrameId``, ``maxScoreFrameId``,
+``eventLength``, ``minStreamingPort``, ``monitorId``, ``className``.
+
+The player exposes transport controls (start, seek back 5s, play /
+pause, seek forward 5s, end), speed presets (0.25x, 0.5x, 1x, 2x, 4x),
+a frame-position scrubber with alarm-frame markers, and jump buttons
+for the first alarm frame and the max-score frame. Playback position
+is tracked by polling ``ZM_CMD.QUERY`` at the bandwidth-aware
+``zmsStatusInterval``; the poll is cancelled via an ``AbortController``
+on unmount.
+
+URL construction is gated on a fresh access token via
+``useFreshAccessToken``. When the token is stale, ``zmsUrl`` evaluates
+to ``''`` and the ``<img>`` does not render until the auth store
+returns a refreshed value. See the access-token freshness gate in
+:doc:`07-api-and-data-fetching` for why this gate exists and what
+counts as fresh.
+
+Player Selection in EventDetail
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The branch in ``src/pages/EventDetail.tsx`` reduces to:
+
+.. code:: tsx
+
+   {hasVideo ? (
+     useZmsFallback ? (
+       <ZmsEventPlayer ... />
+     ) : (
+       <Mp4EventPlayer src={videoUrl} ... />
+     )
+   ) : hasJPEGs ? (
+     <ZmsEventPlayer ... />
+   ) : (
+     /* no media */
+   )}
+
+``hasVideo`` is ``event.Event.DefaultVideo || event.Event.Videoed === '1'``.
+``hasJPEGs`` is true when ``event.Event.SaveJPEGs`` is set and nonzero.
+``useZmsFallback`` defaults to ``true`` in TV mode and on Tauri, and is
+toggleable from the EventDetail header.
 
 Filter Components
 -----------------
@@ -649,76 +787,6 @@ requiring auth).
 
 Fetches the image with credentials, converts to a blob, and creates a
 local URL. Used for servers that require auth on every request.
-
-VideoPlayer (Smart Streaming Component)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-**Location**: ``src/components/video/VideoPlayer.tsx``
-
-Unified player that selects Go2RTC (WebRTC/MSE/HLS) or MJPEG based on
-monitor capabilities and user settings.
-
-**Props:**
-
-- ``monitor``: monitor data object
-- ``profile``: active profile
-- ``showControls``: enables native video controls (used on MonitorDetail)
-- ``onProtocolChange``: callback when streaming protocol changes
-- ``externalMediaRef``: external ref for the video/img element
-
-**Streaming selection:** VideoPlayer checks the user's streaming method
-preference, whether Go2RTC is available, and per-monitor overrides
-(``monitorStreamingOverrides`` in settings store) to decide between
-Go2RTC and MJPEG.
-
-**Go2RTC failure cache:** Monitors that fail Go2RTC connection are
-cached and skipped for 5 minutes to avoid repeated connection attempts
-in montage views.
-
-**Video frame timeout:** 8 seconds after reaching "connected" state,
-VideoPlayer checks ``videoWidth``/``videoHeight``. If no frames have
-arrived, it falls back to MJPEG.
-
-**Autoplay handling:** If the video element reports paused but has valid
-dimensions, VideoPlayer calls ``video.play()`` to recover from
-browser autoplay restrictions.
-
-**Controls:** When ``showControls`` is true (MonitorDetail only), native
-video controls are enabled with
-``controlsList='nodownload noplaybackrate'`` and
-``disablePictureInPicture=true``. Click on the video element calls
-``stopPropagation`` to prevent navigation.
-
-**Picture-in-Picture integration:**
-
-- Accepts an ``eventId`` prop to enable PiP persistence across route
-  changes.
-- When PiP activates, VideoPlayer adopts the player element to the
-  ``PipProvider`` portal so the video stays alive outside the component
-  tree.
-- On unmount, skips ``dispose()`` if PiP is active so the stream
-  continues.
-- On remount with the same ``eventId``, reclaims the player from the
-  portal for inline resume.
-- On remount with a different ``eventId``, closes the existing PiP
-  session first.
-
-VideoPlayer (Event Playback)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-**Location**: ``src/components/ui/video-player.tsx``
-
-Wrapper around Video.js for event playback (HLS streams, markers,
-PiP integration). Separate from the live streaming VideoPlayer above.
-
-**Features:**
-
-- Autoplay control
-- Play/pause callbacks
-- Error handling
-- Fullscreen support
-- Timeline markers for alarm frames (``videojs-markers``)
-- PiP persistence via ``PipContext`` when an ``eventId`` prop is provided
 
 PipContext
 ~~~~~~~~~~
@@ -1028,7 +1096,7 @@ view:
            <h1>{monitor.Name}</h1>
          </div>
          <div className="flex-1 p-3">
-           <VideoPlayer monitor={monitor} profile={currentProfile} />
+           <LiveMonitorPlayer monitor={monitor} profile={currentProfile} />
            {monitor.Controllable === '1' && (
              <PTZControls onCommand={handlePTZCommand} />
            )}
