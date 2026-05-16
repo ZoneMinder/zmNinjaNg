@@ -264,6 +264,57 @@ export function VideoPlayer({
     }
   }, [markers, onMarkerClick]);
 
+  // Re-poke Video.js after rotation / safe-area changes.
+  // Without this, .vjs-user-inactive can latch hidden after rotation (no mousemove
+  // / touchmove fires inside WKWebView during the transition) and the player's
+  // cached layout dimensions are stale relative to the new container box.
+  // Listens to the native SafeArea plugin first (fires after iOS rotation completes
+  // with correct insets), with screen.orientation.change and window resize as
+  // fallbacks for Android / web / Tauri.
+  useEffect(() => {
+    const wake = () => {
+      const player = playerRef.current;
+      if (!player || player.isDisposed()) return;
+      try {
+        player.trigger('resize');
+        player.userActive(true);
+      } catch (err) {
+        log.videoPlayer('Player wake on rotation failed', LogLevel.DEBUG, { error: err });
+      }
+    };
+
+    let safeAreaHandle: { remove: () => void } | undefined;
+    let cancelled = false;
+
+    // Native iOS path — landed at the right moment in the rotation timeline.
+    import('../../plugins/safe-area')
+      .then(({ SafeArea }) => SafeArea.addListener('safeAreaInsetsChanged', wake))
+      .then((handle) => {
+        if (cancelled) {
+          handle.remove();
+        } else {
+          safeAreaHandle = handle;
+        }
+      })
+      .catch(() => {
+        // Plugin unavailable on this platform — fallbacks below cover it.
+      });
+
+    // Cross-platform fallbacks. On iOS these may fire mid-rotation with stale
+    // dimensions; the SafeArea listener above lands at completion. Calling wake()
+    // a second time on those is harmless and self-correcting.
+    const orientation = typeof screen !== 'undefined' ? screen.orientation : undefined;
+    orientation?.addEventListener?.('change', wake);
+    window.addEventListener('resize', wake);
+
+    return () => {
+      cancelled = true;
+      safeAreaHandle?.remove();
+      orientation?.removeEventListener?.('change', wake);
+      window.removeEventListener('resize', wake);
+    };
+  }, []);
+
   // Listen for PiP activation — browser API on desktop/iOS only.
   // Attaches inside player 'ready' so we know the underlying <video> tech exists.
   useEffect(() => {
