@@ -12,7 +12,7 @@ Yes. Enable **Allow self-signed certificates** in Settings > Advanced (the toggl
 
 ### Is zmNinjaNg free?
 
-Yes. zmNinjaNg is open source and free to use. The source code is available on [GitHub](https://github.com/pliablepixels/zmNinjaNg).
+Yes. zmNinjaNg is open source and free to use. The source code is available on [GitHub](https://github.com/ZoneMinder/zmNinjaNg).
 
 ### How is it free if you are charging for it in the playstore/appstore?
 
@@ -91,7 +91,7 @@ For personal use, you can use a free Apple Developer account to side-load the ap
 
 ### The pre-built Linux binary doesn't work
 
-The pre-built binaries are built for specific distributions. Check the [GitHub Actions workflows](https://github.com/pliablepixels/zmNinjaNg/tree/main/.github/workflows) to see the build configuration and adjust for your system. You can also {doc}`build from source <installation>`.
+The pre-built binaries are built for specific distributions. Check the [GitHub Actions workflows](https://github.com/ZoneMinder/zmNinjaNg/tree/main/.github/workflows) to see the build configuration and adjust for your system. You can also {doc}`build from source <installation>`.
 
 ## Debugging the Desktop App
 

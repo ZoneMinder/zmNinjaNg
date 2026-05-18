@@ -199,7 +199,7 @@ git push origin "$TAG" --force
 
 echo ""
 echo "✅ Release triggered! Check GitHub Actions for progress."
-echo "   https://github.com/pliablepixels/zmNinjaNg/actions"
+echo "   https://github.com/ZoneMinder/zmNinjaNg/actions"
 echo ""
 echo "The create-release workflow will:"
 echo "  - Generate release notes with changelog"

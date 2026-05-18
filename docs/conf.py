@@ -71,7 +71,7 @@ html_js_files = ['js/collapse-nav.js']
 
 html_context = {
     'display_github': True,
-    'github_user': 'pliablepixels',
+    'github_user': 'ZoneMinder',
     'github_repo': 'zmNinjaNg',
     'github_version': 'main',
     'conf_py_path': '/docs/',

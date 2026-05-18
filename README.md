@@ -1,12 +1,12 @@
 # zmNinjaNg - ZoneMinder Client
 
-[![Build Android](https://github.com/pliablepixels/zmNinjaNg/actions/workflows/build-android.yml/badge.svg)](https://github.com/pliablepixels/zmNinjaNg/actions/workflows/build-android.yml)
-[![Build macOS](https://github.com/pliablepixels/zmNinjaNg/actions/workflows/build-macos.yml/badge.svg)](https://github.com/pliablepixels/zmNinjaNg/actions/workflows/build-macos.yml)
-[![Build Windows](https://github.com/pliablepixels/zmNinjaNg/actions/workflows/build-windows.yml/badge.svg)](https://github.com/pliablepixels/zmNinjaNg/actions/workflows/build-windows.yml)
-[![Build Linux](https://github.com/pliablepixels/zmNinjaNg/actions/workflows/build-linux-amd64.yml/badge.svg)](https://github.com/pliablepixels/zmNinjaNg/actions/workflows/build-linux-amd64.yml)
-[![Tests](https://github.com/pliablepixels/zmNinjaNg/actions/workflows/test.yml/badge.svg)](https://github.com/pliablepixels/zmNinjaNg/actions/workflows/test.yml)
-[![GitHub release](https://img.shields.io/github/v/release/pliablepixels/zmNinjaNg)](https://github.com/pliablepixels/zmNinjaNg/releases)
-[![GitHub downloads](https://img.shields.io/github/downloads/pliablepixels/zmNinjaNg/total?cache=none)](https://github.com/pliablepixels/zmNinjaNg/releases)
+[![Build Android](https://github.com/ZoneMinder/zmNinjaNg/actions/workflows/build-android.yml/badge.svg)](https://github.com/ZoneMinder/zmNinjaNg/actions/workflows/build-android.yml)
+[![Build macOS](https://github.com/ZoneMinder/zmNinjaNg/actions/workflows/build-macos.yml/badge.svg)](https://github.com/ZoneMinder/zmNinjaNg/actions/workflows/build-macos.yml)
+[![Build Windows](https://github.com/ZoneMinder/zmNinjaNg/actions/workflows/build-windows.yml/badge.svg)](https://github.com/ZoneMinder/zmNinjaNg/actions/workflows/build-windows.yml)
+[![Build Linux](https://github.com/ZoneMinder/zmNinjaNg/actions/workflows/build-linux-amd64.yml/badge.svg)](https://github.com/ZoneMinder/zmNinjaNg/actions/workflows/build-linux-amd64.yml)
+[![Tests](https://github.com/ZoneMinder/zmNinjaNg/actions/workflows/test.yml/badge.svg)](https://github.com/ZoneMinder/zmNinjaNg/actions/workflows/test.yml)
+[![GitHub release](https://img.shields.io/github/v/release/ZoneMinder/zmNinjaNg)](https://github.com/ZoneMinder/zmNinjaNg/releases)
+[![GitHub downloads](https://img.shields.io/github/downloads/ZoneMinder/zmNinjaNg/total?cache=none)](https://github.com/ZoneMinder/zmNinjaNg/releases)
 
 <img src="app/assets/logo.png" align="right" width="120" />
 
@@ -16,7 +16,7 @@ A web and mobile application for ZoneMinder for viewing live camera feeds, revie
 
 ### Demo
 
-[Watch the demo](https://pliablepixels.github.io/zmNinjaNg/)
+[Watch the demo](https://zmninjang.zoneminder.com/)
 
 ### Important Notes:
 - zmNinjaNg supports self-signed certificates on mobile (iOS/Android). Enable it in Settings > Connection. On desktop, add your CA to the system trust store. Using proper certificates (e.g. [LetsEncrypt](https://letsencrypt.org/)) is still recommended.
@@ -65,8 +65,8 @@ I am happy to accept PRs, but I don't want [AI slop](https://en.wikipedia.org/wi
 ## Quick Start
 
 ### Binaries
-- Download from [here](https://pliablepixels.github.io/zmNinjaNg/)
-- I use Github workflows and runners to automatically build release binaries [here](https://github.com/pliablepixels/zmNinjaNg/tree/main/.github/workflows). Binaries are built for specific platforms. If the binary doesn't work for your linux distro, look at those files
+- Download from [here](https://zmninjang.zoneminder.com/)
+- I use Github workflows and runners to automatically build release binaries [here](https://github.com/ZoneMinder/zmNinjaNg/tree/main/.github/workflows). Binaries are built for specific platforms. If the binary doesn't work for your linux distro, look at those files
 
 ## Build from Source
 
@@ -90,7 +90,7 @@ This allows the workflows to create GitHub releases automatically when you push 
 ### Desktop Development
 
 ```bash
-git clone https://github.com/pliablepixels/zmNinjaNg
+git clone https://github.com/ZoneMinder/zmNinjaNg
 cd zmNinjaNg/app
 npm install
 

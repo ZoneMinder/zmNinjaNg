@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Before opening, please read the [self-support guidelines](https://github.com/pliablepixels/zmNinjaNg/blob/main/README.md#agentic-ai-you-and-me). You are free to post issues, but there is no guarantee of a response.
+        Before opening, please read the [self-support guidelines](https://github.com/ZoneMinder/zmNinjaNg/blob/main/README.md#agentic-ai-you-and-me). You are free to post issues, but there is no guarantee of a response.
 
         If you use self-signed certificates, enable the toggle in **Settings > Connection** (mobile) or add your CA to the system trust store (desktop). Proper certificates (e.g. Let's Encrypt) are recommended.
 

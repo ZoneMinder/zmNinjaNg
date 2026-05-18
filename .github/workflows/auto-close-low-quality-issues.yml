@@ -35,9 +35,9 @@ jobs:
             const message = [
               `Hi @${issue.user.login}, this issue was closed automatically because ${reasons.join(' and ')}.`,
               '',
-              'If this is a real bug report, please open a new issue using the [Bug report form](https://github.com/pliablepixels/zmNinjaNg/issues/new/choose) and fill in the required fields (version, platform, repro steps, expected behavior).',
+              'If this is a real bug report, please open a new issue using the [Bug report form](https://github.com/ZoneMinder/zmNinjaNg/issues/new/choose) and fill in the required fields (version, platform, repro steps, expected behavior).',
               '',
-              'For questions or general help, please use [Discussions](https://github.com/pliablepixels/zmNinjaNg/discussions) instead.',
+              'For questions or general help, please use [Discussions](https://github.com/ZoneMinder/zmNinjaNg/discussions) instead.',
             ].join('\n');
 
             await github.rest.issues.createComment({

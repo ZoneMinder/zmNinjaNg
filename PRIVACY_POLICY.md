@@ -48,4 +48,4 @@ Updates to this policy will be posted in this repository. Continued use of the a
 
 ## Contact
 
-For questions about this privacy policy, please open an issue at [github.com/pliablepixels/zmNinjaNg](https://github.com/pliablepixels/zmNinjaNg/issues).
+For questions about this privacy policy, please open an issue at [github.com/ZoneMinder/zmNinjaNg](https://github.com/ZoneMinder/zmNinjaNg/issues).

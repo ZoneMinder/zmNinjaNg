@@ -27,6 +27,6 @@ See [README](README.md)
 
 ## Support
 
-This is personal software with no official support. For issues or contributions, see the [GitHub repository](https://github.com/pliablepixels/zmNinjaNg).
+This is personal software with no official support. For issues or contributions, see the [GitHub repository](https://github.com/ZoneMinder/zmNinjaNg).
 
 ---

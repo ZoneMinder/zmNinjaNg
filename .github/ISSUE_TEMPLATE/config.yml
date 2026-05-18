@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Questions and discussion
-    url: https://github.com/pliablepixels/zmNinjaNg/discussions
+    url: https://github.com/ZoneMinder/zmNinjaNg/discussions
     about: Use Discussions for questions, ideas, or general help. Issues are for bug reports and feature requests only.
   - name: Self-support guidelines
-    url: https://github.com/pliablepixels/zmNinjaNg/blob/main/README.md#agentic-ai-you-and-me
+    url: https://github.com/ZoneMinder/zmNinjaNg/blob/main/README.md#agentic-ai-you-and-me
     about: Read this before opening an issue. There is no guarantee of a response.

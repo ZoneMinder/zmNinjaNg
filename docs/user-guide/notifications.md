@@ -8,7 +8,7 @@ zmNinjaNg supports two notification modes. You choose the mode in **Notification
 
 ### Event Server (ES) Mode
 
-Uses a WebSocket connection to the [ZoneMinder Event Notification Server](https://github.com/pliablepixels/zmeventnotificationNg) (zmeventnotification). Choose this mode if you run ES.
+Uses a WebSocket connection to the [ZoneMinder Event Notification Server](https://github.com/ZoneMinder/zmeventnotificationNg) (zmeventnotification). Choose this mode if you run ES.
 
 - **Desktop/Web**: WebSocket delivers events in real time while the app is open; toast notifications shown in-app.
 - **Mobile (iOS/Android)**: ES sends FCM push notifications for background delivery. When the app is in the foreground, events arrive via WebSocket and are shown as in-app toasts; FCM duplicates are suppressed automatically.
@@ -26,7 +26,7 @@ Both modes support native push notifications on iOS and Android via Firebase Clo
 
 ### Requirements
 
-1. **ES mode**: The [Event Notification Server](https://github.com/pliablepixels/zmeventnotificationNg) with FCM support
+1. **ES mode**: The [Event Notification Server](https://github.com/ZoneMinder/zmeventnotificationNg) with FCM support
 2. **Direct mode**: ZoneMinder with the Notifications REST API
 
 :::{tip}

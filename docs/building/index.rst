@@ -69,7 +69,7 @@ Automated Releases
 ------------------
 
 zmNinjaNg uses GitHub Actions to build release binaries automatically. See
-`make_release.sh <https://github.com/pliablepixels/zmNinjaNg/blob/main/scripts/make_release.sh>`_
+`make_release.sh <https://github.com/ZoneMinder/zmNinjaNg/blob/main/scripts/make_release.sh>`_
 for the release workflow.
 
 To enable automated builds on your fork:

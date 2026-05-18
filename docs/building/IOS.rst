@@ -50,7 +50,7 @@ Project Setup
 
 .. code:: bash
 
-   git clone https://github.com/pliablepixels/zmNinjaNg
+   git clone https://github.com/ZoneMinder/zmNinjaNg
    cd zmNinjaNg/app
 
 2. Install Dependencies
@@ -158,7 +158,7 @@ want push notification support, the ZoneMinder event notification server
 (``zmeventnotification.pl``) needs to be configured to work with your
 Firebase project. You will need to use a modified version that I
 provided
-`here <https://github.com/pliablepixels/zm_docker_macos/tree/master>`__.
+`here <https://github.com/ZoneMinder/zmeventnotificationNg>`__.
 Follow its README
 
 Building and Running

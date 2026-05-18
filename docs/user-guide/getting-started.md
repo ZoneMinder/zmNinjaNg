@@ -30,7 +30,7 @@ zmNinjaNg runs on Android, iOS, Windows, macOS, Linux, and the web from a single
 
 ## Quick Start
 
-1. **Download** the latest release for your platform from [GitHub Releases](https://github.com/pliablepixels/zmNinjaNg/releases)
+1. **Download** the latest release for your platform from [GitHub Releases](https://github.com/ZoneMinder/zmNinjaNg/releases)
 2. **Open** the app - you'll land on the Profiles screen
 3. **Add a profile** by entering your ZoneMinder server URL, username, and password
 4. **Test the connection** - zmNinjaNg will validate your credentials and discover the API
@@ -68,4 +68,4 @@ zmNinjaNg is not a port of zmNinja, it's a new application built from scratch. D
 - Drag-and-drop dashboard widgets
 - Notification history
 
-See the full [comparison](https://github.com/pliablepixels/zmNinjaNg/blob/main/notes/COMPARISON.md) for details.
+See the full [comparison](https://github.com/ZoneMinder/zmNinjaNg/blob/main/notes/COMPARISON.md) for details.

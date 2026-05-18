@@ -2,14 +2,14 @@
 
 ## Pre-built Binaries
 
-Download links for every platform are on the [zmNinjaNg downloads page](https://pliablepixels.github.io/zmNinjaNg/). Mobile users install from the App Store or Google Play; desktop users grab an installer from [GitHub Releases](https://github.com/pliablepixels/zmNinjaNg/releases).
+Download links for every platform are on the [zmNinjaNg downloads page](https://zmninjang.zoneminder.com/). Mobile users install from the App Store or Google Play; desktop users grab an installer from [GitHub Releases](https://github.com/ZoneMinder/zmNinjaNg/releases).
 
 ### Android
 
 Install from [Google Play](https://play.google.com/store/apps/details?id=com.zoneminder.zmNinjaNG). Launch zmNinjaNg and set up your first {doc}`profile <profiles>`.
 
 :::{tip}
-An APK is also published on the [releases page](https://github.com/pliablepixels/zmNinjaNg/releases) for sideloading. Enable **Install from unknown sources** (Settings > Security) before running it. Sideloaded builds do not receive automatic updates.
+An APK is also published on the [releases page](https://github.com/ZoneMinder/zmNinjaNg/releases) for sideloading. Enable **Install from unknown sources** (Settings > Security) before running it. Sideloaded builds do not receive automatic updates.
 :::
 
 ### Windows
@@ -32,7 +32,7 @@ An APK is also published on the [releases page](https://github.com/pliablepixels
    - **AppImage**: `chmod +x zmNinjaNg_*.AppImage && ./zmNinjaNg_*.AppImage`
 
 :::{tip}
-If the pre-built binary doesn't work on your Linux distribution, check the [GitHub Actions workflows](https://github.com/pliablepixels/zmNinjaNg/tree/main/.github/workflows) for build details and adjust for your system.
+If the pre-built binary doesn't work on your Linux distribution, check the [GitHub Actions workflows](https://github.com/ZoneMinder/zmNinjaNg/tree/main/.github/workflows) for build details and adjust for your system.
 :::
 
 ### iOS
@@ -50,7 +50,7 @@ You can also host zmNinjaNg as a web application.
 ### Build from Source
 
 ```bash
-git clone https://github.com/pliablepixels/zmNinjaNg
+git clone https://github.com/ZoneMinder/zmNinjaNg
 cd zmNinjaNg/app
 npm install
 npm run build
@@ -76,7 +76,7 @@ server {
 ## Build from Source (Desktop)
 
 ```bash
-git clone https://github.com/pliablepixels/zmNinjaNg
+git clone https://github.com/ZoneMinder/zmNinjaNg
 cd zmNinjaNg/app
 npm install
 npm run tauri:build

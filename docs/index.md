@@ -47,7 +47,7 @@ building/index
 
 ## Links
 
-- [GitHub Repository](https://github.com/pliablepixels/zmNinjaNg)
-- [Downloads](https://pliablepixels.github.io/zmNinjaNg/)
-- [Issue Tracker](https://github.com/pliablepixels/zmNinjaNg/issues)
+- [GitHub Repository](https://github.com/ZoneMinder/zmNinjaNg)
+- [Downloads](https://zmninjang.zoneminder.com/)
+- [Issue Tracker](https://github.com/ZoneMinder/zmNinjaNg/issues)
 - [ZoneMinder](https://zoneminder.com/)

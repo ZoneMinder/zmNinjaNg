@@ -86,5 +86,5 @@ Development Quick Start
    npm test         # Run unit tests
    npm run build    # Build for production
 
-Also see the `AGENTS.md <https://github.com/pliablepixels/zmNinjaNg/blob/main/AGENTS.md>`_
+Also see the `AGENTS.md <https://github.com/ZoneMinder/zmNinjaNg/blob/main/AGENTS.md>`_
 file for the full development guidelines and checklists.
