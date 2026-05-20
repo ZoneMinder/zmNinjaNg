@@ -1,5 +1,5 @@
 /**
- * useMonitorStream — Tauri blob snapshot path (#150)
+ * useMonitorStream: Tauri blob snapshot path (#150)
  *
  * On Linux desktop (Tauri/WebKitGTK) the network process leaks CLOSE_WAIT
  * sockets when an <img src> points directly at ZoneMinder's nph-zms CGI in
@@ -74,7 +74,7 @@ vi.mock('../../lib/zm-constants', () => ({
 
 const mockHttpGet = vi.mocked(httpGet);
 
-describe('useMonitorStream — Tauri blob snapshot path', () => {
+describe('useMonitorStream: Tauri blob snapshot path', () => {
   const mockProfile: Profile = {
     id: 'profile-1',
     name: 'Test Profile',
@@ -122,7 +122,7 @@ describe('useMonitorStream — Tauri blob snapshot path', () => {
       regenerateConnKey: vi.fn(() => 12345),
     });
 
-    // jsdom does not implement object URL APIs — stub them with counting spies.
+    // jsdom does not implement object URL APIs. Stub them with counting spies.
     objectUrlCounter = 0;
     createObjectURL = vi.fn(() => `blob:mock-${++objectUrlCounter}`);
     revokeObjectURL = vi.fn();
