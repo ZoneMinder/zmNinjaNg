@@ -407,10 +407,17 @@ export async function httpRequest<T = unknown>(
     const httpError = error as HttpError;
     const status = httpError.status ?? 'ERR';
 
+    // A caller-initiated cancellation (a superseded snapshot frame, a cancelled
+    // download) is expected, not a failure. Log it quietly so it does not
+    // surface as a red HTTP error, but still rethrow so callers can handle it.
+    const wasCancelled = signal?.aborted === true;
+
     log.groupCollapsed(
       'HTTP',
-      `${corrTag} ${intentTag}${method} ${path} ✗ ${status} (${duration}ms)`,
-      LogLevel.ERROR,
+      wasCancelled
+        ? `${corrTag} ${intentTag}${method} ${path} ⊘ cancelled (${duration}ms)`
+        : `${corrTag} ${intentTag}${method} ${path} ✗ ${status} (${duration}ms)`,
+      wasCancelled ? LogLevel.DEBUG : LogLevel.ERROR,
       {
         platform,
         request: {

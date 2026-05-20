@@ -20,6 +20,7 @@ import {
   type HttpError,
 } from '../http';
 import { Platform } from '../platform';
+import { log, LogLevel } from '../logger';
 
 vi.mock('@capacitor/core', () => ({
   CapacitorHttp: {
@@ -887,5 +888,45 @@ describe('Convenience Methods', () => {
       'https://example.com/api/delete/1',
       expect.objectContaining({ method: 'DELETE' })
     );
+  });
+});
+
+describe('HTTP Client - cancellation logging', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    global.fetch = vi.fn();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('logs a caller-aborted request at DEBUG (cancelled), not ERROR, and still rejects', async () => {
+    const controller = new AbortController();
+    controller.abort();
+    vi.mocked(global.fetch).mockRejectedValue(
+      new DOMException('The operation was aborted.', 'AbortError')
+    );
+
+    await expect(
+      httpRequest('https://example.com/zm/cgi-bin/nph-zms', { signal: controller.signal })
+    ).rejects.toBeTruthy();
+
+    const groupCollapsed = vi.mocked(log.groupCollapsed);
+    expect(groupCollapsed).toHaveBeenCalled();
+    const [, headline, level] = groupCollapsed.mock.calls[groupCollapsed.mock.calls.length - 1];
+    expect(headline).toContain('cancelled');
+    expect(level).toBe(LogLevel.DEBUG);
+  });
+
+  it('logs a genuine failure at ERROR', async () => {
+    vi.mocked(global.fetch).mockRejectedValue(new Error('network down'));
+
+    await expect(httpRequest('https://example.com/api/data')).rejects.toBeTruthy();
+
+    const groupCollapsed = vi.mocked(log.groupCollapsed);
+    const [, headline, level] = groupCollapsed.mock.calls[groupCollapsed.mock.calls.length - 1];
+    expect(headline).toContain('✗');
+    expect(level).toBe(LogLevel.ERROR);
   });
 });
