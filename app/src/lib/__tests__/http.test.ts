@@ -929,4 +929,24 @@ describe('HTTP Client - cancellation logging', () => {
     expect(headline).toContain('✗');
     expect(level).toBe(LogLevel.ERROR);
   });
+
+  it('emits no HTTP log when suppressLog is set, on success or failure', async () => {
+    const okResponse = {
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      headers: new Headers({ 'content-type': 'application/octet-stream' }),
+      body: null,
+      arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(4)),
+    };
+    vi.mocked(global.fetch).mockResolvedValue(okResponse as any);
+    await httpRequest('https://example.com/frame', { responseType: 'blob', suppressLog: true });
+    expect(vi.mocked(log.groupCollapsed)).not.toHaveBeenCalled();
+
+    vi.mocked(global.fetch).mockRejectedValue(new Error('boom'));
+    await expect(
+      httpRequest('https://example.com/frame', { suppressLog: true })
+    ).rejects.toBeTruthy();
+    expect(vi.mocked(log.groupCollapsed)).not.toHaveBeenCalled();
+  });
 });

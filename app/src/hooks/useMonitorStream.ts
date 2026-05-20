@@ -26,6 +26,11 @@ import { httpGet } from '../lib/http';
 import { ZM_INTEGRATION } from '../lib/zmninja-ng-constants';
 import type { StreamOptions } from '../api/types';
 
+// Last image transport reported to the log. Module-scoped so the montage's
+// many monitor hooks emit a single transport line per app session instead of
+// one each. Re-logs only when the transport actually changes.
+let lastLoggedImageTransport: string | null = null;
+
 interface UseMonitorStreamOptions {
   monitorId: string;
   serverId?: string | null;
@@ -176,6 +181,9 @@ export function useMonitorStream({
           responseType: 'blob',
           signal: controller.signal,
           timeoutMs: ZM_INTEGRATION.snapshotFrameFetchTimeoutMs,
+          // One request per frame per monitor would flood the HTTP log; the
+          // transport is reported once below and failures are logged here.
+          suppressLog: true,
         });
         if (cancelled) return;
 
@@ -216,23 +224,23 @@ export function useMonitorStream({
     };
   }, []);
 
-  // Report which transport loads the image so #150 can be diagnosed in the
-  // field: 'tauri' means frames go through the Rust HTTP client (blob URL),
-  // 'webview' means the <img> loads directly through the webview's own network
+  // Report which transport loads images so #150 can be diagnosed in the field:
+  // 'native HTTP' means frames go through the Rust HTTP client (blob URL),
+  // 'WebKit' means the <img> loads directly through the webview's own network
   // stack (WebKitGTK on Linux desktop, WKWebView on iOS, the browser on web).
-  // Fires once per monitor and again if the transport changes.
+  // Logged once per app session (module guard) and again only if it changes,
+  // so the montage's many monitors do not each emit a line.
   useEffect(() => {
     if (!enabled) return;
+    const transport = useBlobSnapshots ? 'native-http' : 'webkit';
+    if (transport === lastLoggedImageTransport) return;
+    lastLoggedImageTransport = transport;
     log.monitor(
-      `Image transport for monitor ${monitorId}: ${useBlobSnapshots ? 'Tauri HTTP (blob)' : 'WebView (direct <img>)'}`,
-      LogLevel.DEBUG,
-      {
-        monitorId,
-        transport: useBlobSnapshots ? 'tauri' : 'webview',
-        viewMode: effectiveViewMode,
-      },
+      `Image transport: ${useBlobSnapshots ? 'native HTTP (Tauri Rust client)' : 'WebKit (webview <img>)'}`,
+      LogLevel.INFO,
+      { transport, viewMode: effectiveViewMode },
     );
-  }, [enabled, useBlobSnapshots, monitorId, effectiveViewMode]);
+  }, [enabled, useBlobSnapshots, effectiveViewMode]);
 
   const regenerateConnection = () => {
     log.monitor(`Manually regenerating connection for monitor ${monitorId}`, LogLevel.WARN);
