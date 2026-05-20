@@ -320,6 +320,14 @@ export function HoverPreview({
   const rect = targetRect ?? startRectRef.current;
   const isNative = !Platform.isDesktopOrWeb;
 
+  // On Android WebView a long-press on the child <img> starts the native
+  // image drag / context menu (the white drag-ghost border) and fires
+  // pointercancel, which clears the long-press timer below before it can
+  // open the preview. Suppressing the context menu and disabling native
+  // image drag (via the no-native-drag class) keeps the press alive.
+  // touch-action is deliberately left default so the surrounding list can
+  // still scroll; the move threshold in handlePointerMove cancels the
+  // long-press when a scroll begins.
   return (
     <div
       ref={anchorRef}
@@ -330,7 +338,8 @@ export function HoverPreview({
       onPointerUp={isNative ? handlePointerUp : undefined}
       onPointerCancel={isNative ? handlePointerCancel : undefined}
       onClickCapture={isNative ? handleClickCapture : undefined}
-      className={className}
+      onContextMenu={isNative ? (e) => e.preventDefault() : undefined}
+      className={isNative ? `${className} no-native-drag` : className}
       style={
         isNative
           ? {
