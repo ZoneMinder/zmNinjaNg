@@ -25,6 +25,11 @@ export const ZM_INTEGRATION = {
   maxFps: 30, // Maximum FPS allowed
   streamMaxFps: 10, // Max FPS for live monitor streams (to reduce bandwidth)
 
+  // Timeout for a single snapshot frame fetched via the Rust HTTP client on
+  // Tauri desktop (WebKitGTK socket-leak workaround). One frame is small, so a
+  // short timeout keeps a stalled request from blocking the next refresh.
+  snapshotFrameFetchTimeoutMs: 10000, // 10 seconds
+
   // Image quality settings
   safeImageQuality: 10, // Safe quality setting for bandwidth-constrained scenarios
   defaultMontageQuality: 50, // Default JPEG quality for montage view

@@ -415,9 +415,19 @@ the per-origin limit doesn't apply.
   ``snapshotRefreshInterval`` seconds. Lower resource use, lower
   frame rate.
 
-In snapshot mode, ``useMonitorStream`` preloads the next frame via
-``Image()`` and swaps ``src`` only after it's decoded, avoiding
-flicker.
+In snapshot mode, ``useMonitorStream`` exposes ``imageSrc`` for the
+``<img>`` to bind to. On web and iOS/Android native this equals
+``streamUrl``, so the browser loads each ``mode=single`` URL directly as
+the cache buster changes.
+
+On Tauri desktop, snapshot mode instead fetches each frame through the
+Rust HTTP client (``httpGet`` with ``responseType: 'blob'``) and sets
+``imageSrc`` to a ``blob:`` object URL. WebKitGTK's network process
+leaks the sockets it opens for completed ``<img src>`` requests to
+``nph-zms`` (they pile up in ``CLOSE_WAIT``), so routing frames through
+reqwest keeps the webview from opening those sockets at all. The hook
+revokes the previous object URL when a new frame arrives and on unmount,
+so only the current frame's blob is held. Refs #150.
 
 React Query
 -----------

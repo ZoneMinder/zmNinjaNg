@@ -8,7 +8,8 @@
  * Features:
  * - Supports both 'streaming' (MJPEG) and 'snapshot' (JPEG refresh) modes
  * - Handles connection cleanup on unmount to prevent zombie streams on server
- * - Implements image preloading for smooth snapshot transitions
+ * - On Tauri desktop in snapshot mode, fetches frames through the Rust HTTP
+ *   client and serves them as blob: URLs to avoid WebKitGTK socket leaks (#150)
  * - Generates unique connection keys per stream instance
  */
 
@@ -20,6 +21,9 @@ import { useStreamLifecycle } from './useStreamLifecycle';
 import { useFreshAccessToken } from './useFreshAccessToken';
 import { useServerUrls } from './useServerUrls';
 import { log, LogLevel } from '../lib/logger';
+import { Platform } from '../lib/platform';
+import { httpGet } from '../lib/http';
+import { ZM_INTEGRATION } from '../lib/zmninja-ng-constants';
 import type { StreamOptions } from '../api/types';
 
 interface UseMonitorStreamOptions {
@@ -37,7 +41,17 @@ interface UseMonitorStreamOptions {
 
 interface UseMonitorStreamReturn {
   streamUrl: string;
-  displayedImageUrl: string;
+  /**
+   * The value to bind to the `<img src>`.
+   *
+   * - In every case except Tauri desktop snapshot mode this equals `streamUrl`
+   *   (set synchronously), so streaming and web/native snapshot behavior is
+   *   byte-for-byte unchanged.
+   * - On Tauri desktop in snapshot mode this is the latest `blob:` object URL
+   *   produced by fetching the frame through the Rust HTTP client, or `''`
+   *   until the first frame has been fetched.
+   */
+  imageSrc: string;
   imgRef: React.RefObject<HTMLImageElement | null>;
   regenerateConnection: () => void;
 }
@@ -66,8 +80,17 @@ export function useMonitorStream({
   const effectiveViewMode = viewModeOverride ?? settings.viewMode;
 
   const [cacheBuster, setCacheBuster] = useState(Date.now());
-  const [displayedImageUrl, setDisplayedImageUrl] = useState<string>('');
   const imgRef = useRef<HTMLImageElement>(null);
+
+  // On Tauri desktop in snapshot mode we fetch each frame through the Rust HTTP
+  // client and display it as a blob: URL, so WebKitGTK's network process never
+  // opens a socket to ZoneMinder (which it leaks in CLOSE_WAIT). Refs #150.
+  const useBlobSnapshots = Platform.isTauri && effectiveViewMode === 'snapshot';
+  // The blob: URL of the frame currently bound to <img src>. Tracked so the
+  // previous one can be revoked when a newer frame lands, preventing a memory
+  // leak. Holds the latest URL only.
+  const blobUrlRef = useRef<string>('');
+  const [imageSrc, setImageSrc] = useState<string>('');
 
   // Stream lifecycle: connKey generation, CMD_QUIT on regen/unmount, media abort
   const { connKey, forceRegenerate } = useStreamLifecycle({
@@ -121,37 +144,77 @@ export function useMonitorStream({
     })
     : '';
 
-  // Preload images in snapshot mode to avoid flickering
+  // Default path (streaming, web, iOS/Android native snapshot): the <img>
+  // points straight at streamUrl. We mirror it into imageSrc synchronously so
+  // the consumer binds to a single field with identical behavior to before.
+  //
+  // Native (Capacitor) snapshot fetch was tried previously and caused
+  // NSURLErrorDomain errors on iOS, so it is deliberately not reintroduced
+  // here. Only Tauri desktop uses the blob path below.
   useEffect(() => {
-    if (!enabled) return;
+    if (useBlobSnapshots) return;
+    setImageSrc(streamUrl);
+  }, [useBlobSnapshots, streamUrl]);
 
-    // In streaming mode or if no URL, just use the streamUrl directly
-    if (effectiveViewMode !== 'snapshot') {
-      setDisplayedImageUrl(streamUrl);
-      return;
-    }
+  // Tauri desktop + snapshot mode: fetch each frame through the Rust HTTP
+  // client and hand the webview a blob: URL. The existing cacheBuster interval
+  // drives streamUrl changes, so this effect re-runs once per refresh.
+  useEffect(() => {
+    if (!enabled || !useBlobSnapshots) return;
 
-    // In snapshot mode, preload the image to avoid flickering
     if (!streamUrl) {
-      setDisplayedImageUrl('');
+      setImageSrc('');
       return;
     }
 
-    // Note: We previously attempted to use native HTTP fetch for snapshots on native platforms
-    // to bypass CORS, but it caused NSURLErrorDomain errors on iOS.
-    // We now rely on standard Image preloading which works fine.
+    const controller = new AbortController();
+    let cancelled = false;
 
-    const img = new Image();
-    img.onload = () => {
-      // Only update the displayed URL when the new image is fully loaded
-      setDisplayedImageUrl(streamUrl);
+    (async () => {
+      try {
+        const { data: blob } = await httpGet<Blob>(streamUrl, {
+          responseType: 'blob',
+          signal: controller.signal,
+          timeoutMs: ZM_INTEGRATION.snapshotFrameFetchTimeoutMs,
+        });
+        if (cancelled) return;
+
+        const url = URL.createObjectURL(blob);
+        const previousUrl = blobUrlRef.current;
+        blobUrlRef.current = url;
+        setImageSrc(url);
+        if (previousUrl) {
+          URL.revokeObjectURL(previousUrl);
+        }
+      } catch (error) {
+        // An aborted fetch is the normal outcome when a newer frame supersedes
+        // this one or the component unmounts. Swallow it quietly; log anything
+        // else (network failure, cert rejection) without crashing.
+        if (controller.signal.aborted) return;
+        log.monitor(
+          `Snapshot frame fetch failed for monitor ${monitorId}`,
+          LogLevel.WARN,
+          { monitorId, error: error instanceof Error ? error.message : String(error) },
+        );
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
     };
-    img.onerror = () => {
-      // On error, still update to trigger the error handler
-      setDisplayedImageUrl(streamUrl);
+  }, [enabled, useBlobSnapshots, streamUrl, monitorId]);
+
+  // On unmount, revoke the last outstanding object URL so the final frame's
+  // blob is not leaked.
+  useEffect(() => {
+    return () => {
+      if (blobUrlRef.current) {
+        URL.revokeObjectURL(blobUrlRef.current);
+        blobUrlRef.current = '';
+      }
     };
-    img.src = streamUrl;
-  }, [enabled, streamUrl, effectiveViewMode]);
+  }, []);
 
   const regenerateConnection = () => {
     log.monitor(`Manually regenerating connection for monitor ${monitorId}`, LogLevel.WARN);
@@ -161,7 +224,7 @@ export function useMonitorStream({
 
   return {
     streamUrl,
-    displayedImageUrl,
+    imageSrc,
     imgRef,
     regenerateConnection,
   };
