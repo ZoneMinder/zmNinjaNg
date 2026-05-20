@@ -1,6 +1,5 @@
 name: Bug report
 description: Report a bug in zmNinjaNg
-labels: ["bug"]
 body:
   - type: markdown
     attributes:
