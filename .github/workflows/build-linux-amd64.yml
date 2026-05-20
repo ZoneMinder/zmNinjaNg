@@ -47,6 +47,9 @@ jobs:
         working-directory: ./app
         run: npm run tauri:build
 
+      - name: Strip bundled Wayland libs from AppImage (refs #151)
+        run: bash scripts/strip-appimage-libs.sh
+
       - name: Rename Linux AMD64 artifacts
         run: |
           VERSION="${{ github.event.inputs.version || github.ref_name }}"
