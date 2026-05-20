@@ -216,6 +216,24 @@ export function useMonitorStream({
     };
   }, []);
 
+  // Report which transport loads the image so #150 can be diagnosed in the
+  // field: 'tauri' means frames go through the Rust HTTP client (blob URL),
+  // 'webview' means the <img> loads directly through the webview's own network
+  // stack (WebKitGTK on Linux desktop, WKWebView on iOS, the browser on web).
+  // Fires once per monitor and again if the transport changes.
+  useEffect(() => {
+    if (!enabled) return;
+    log.monitor(
+      `Image transport for monitor ${monitorId}: ${useBlobSnapshots ? 'Tauri HTTP (blob)' : 'WebView (direct <img>)'}`,
+      LogLevel.DEBUG,
+      {
+        monitorId,
+        transport: useBlobSnapshots ? 'tauri' : 'webview',
+        viewMode: effectiveViewMode,
+      },
+    );
+  }, [enabled, useBlobSnapshots, monitorId, effectiveViewMode]);
+
   const regenerateConnection = () => {
     log.monitor(`Manually regenerating connection for monitor ${monitorId}`, LogLevel.WARN);
     forceRegenerate();
