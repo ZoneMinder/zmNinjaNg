@@ -128,6 +128,11 @@ The app loads (logs reach `React app initialized` / `Splash screen hidden`) but 
 1. `WEBKIT_DISABLE_DMABUF_RENDERER=1 ./zmninja-ng`
 2. `WEBKIT_DISABLE_COMPOSITING_MODE=1 ./zmninja-ng`
 3. On Wayland: `GDK_BACKEND=x11 ./zmninja-ng`
+4. AppImage on Wayland, if the options above still produce a blank window or a crash: preload the host's `libwayland-client` so the AppImage's bundled copy is not used. The path varies by distro:
+   - Debian/Ubuntu: `LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libwayland-client.so.0 ./zmninja-ng`
+   - Arch/CachyOS: `LD_PRELOAD=/usr/lib/libwayland-client.so ./zmninja-ng`
+
+   Find your path with `find /usr/lib -name 'libwayland-client.so*'`.
 
 ## Data & Privacy
 
