@@ -43,8 +43,8 @@ export default function Timeline() {
   const location = useLocation();
   const { t } = useTranslation();
   const {
-    selectedMonitorIds, startDateInput, endDateInput, onlyDetectedObjects, activeQuickRange,
-    setSelectedMonitorIds, setStartDateInput, setEndDateInput, setOnlyDetectedObjects, setActiveQuickRange,
+    selectedMonitorIds, startDateInput, endDateInput, onlyDetectedObjects, causeFilter, activeQuickRange,
+    setSelectedMonitorIds, setStartDateInput, setEndDateInput, setOnlyDetectedObjects, setCauseFilter, setActiveQuickRange,
     clearFilters, activeFilterCount,
   } = useTimelineFilters();
 
@@ -154,19 +154,47 @@ export default function Timeline() {
   // In live mode without notifications, fall back to polling
   const livePolling = liveMode && !notificationsEnabled;
 
+  // When cause filter is active, build per-monitor list so one busy camera
+  // can't consume the entire page budget
+  const monitorsToQuery = useMemo(() => {
+    if (!causeFilter) return [];
+    if (selectedMonitorIds.length > 0) return selectedMonitorIds;
+    return enabledMonitors.map(({ Monitor }) => Monitor.Id);
+  }, [causeFilter, selectedMonitorIds, enabledMonitors]);
+
   const { data, isLoading, error } = useQuery({
-    queryKey: ['timeline-events', startDate, endDate, monitorFilter, onlyDetectedObjects],
-    queryFn: () =>
-      getEvents({
+    queryKey: ['timeline-events', startDate, endDate, monitorFilter, onlyDetectedObjects, causeFilter],
+    queryFn: async () => {
+      if (causeFilter && monitorsToQuery.length > 0) {
+        // Fetch each monitor separately so one busy camera can't consume all pages
+        const perMonitorResults = await Promise.all(
+          monitorsToQuery.map((id) =>
+            getEvents({
+              startDateTime: formatForServer(new Date(startDate)),
+              endDateTime: formatForServer(liveMode ? new Date() : new Date(endDate)),
+              monitorId: id,
+              notesRegexp: causeFilter === 'motion_detected' ? 'Motion:' : (onlyDetectedObjects ? 'detected:' : undefined),
+              cause: causeFilter !== 'motion_detected' ? causeFilter : undefined,
+              sort: 'StartDateTime',
+              direction: 'desc',
+              limit: 100,
+            })
+          )
+        );
+        const allEvents = perMonitorResults.flatMap((r) => r.events);
+        return { events: allEvents, pagination: perMonitorResults[0]?.pagination };
+      }
+      return getEvents({
         startDateTime: formatForServer(new Date(startDate)),
-        // In live mode, always query up to "now" so new events aren't filtered out
         endDateTime: formatForServer(liveMode ? new Date() : new Date(endDate)),
         monitorId: monitorFilter,
-        notesRegexp: onlyDetectedObjects ? 'detected:' : undefined,
+        notesRegexp: causeFilter === 'motion_detected' ? 'Motion:' : (onlyDetectedObjects ? 'detected:' : undefined),
+        cause: causeFilter !== 'motion_detected' ? (causeFilter || undefined) : undefined,
         sort: 'StartDateTime',
         direction: 'desc',
         limit: 2000,
-      }),
+      });
+    },
     refetchInterval: livePolling ? bandwidth.timelineHeatmapInterval : false,
   });
 
@@ -529,7 +557,28 @@ export default function Timeline() {
               </Popover>
             </div>
           </div>
-
+          {/* Cause Filter */}
+          <div className="flex items-center justify-between p-3 rounded-md border bg-card">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <Label htmlFor="timeline-cause-filter" className="cursor-pointer">
+                {t('timeline.cause_filter')}
+              </Label>
+            </div>
+            <select
+              id="timeline-cause-filter"
+              value={causeFilter}
+              onChange={(e) => setCauseFilter(e.target.value)}
+              className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+              data-testid="timeline-cause-filter"
+            >
+              <option value="">{t('timeline.cause_all')}</option>
+              <option value="motion_detected">{t('timeline.cause_motion')}</option>
+              <option value="Continuous">{t('timeline.cause_continuous')}</option>
+              <option value="Signal">{t('timeline.cause_signal')}</option>
+              <option value="Forced">{t('timeline.cause_forced')}</option>
+            </select>
+          </div>
           {/* Object Detection Filter */}
           <div className="flex items-center justify-between p-3 rounded-md border bg-card">
             <div className="flex items-center gap-2">

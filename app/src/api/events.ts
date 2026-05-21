@@ -24,6 +24,7 @@ export interface EventFilters {
   archived?: boolean;
   minAlarmFrames?: number;
   notesRegexp?: string; // REGEXP filter on Notes field (e.g., "detected:" for object detection)
+  cause?: string; // Filter by event cause (e.g., "Motion", "Continuous", "Signal", "Forced")
   limit?: number;
   sort?: string;
   direction?: 'asc' | 'desc';
@@ -68,6 +69,9 @@ export async function getEvents(filters: EventFilters = {}): Promise<EventsRespo
   }
   if (filters.notesRegexp) {
     addFilterSegment(`Notes REGEXP:${filters.notesRegexp}`);
+  }
+  if (filters.cause) {
+    addFilterSegment(`Cause REGEXP:${filters.cause}`);
   }
 
   const filterPath = filterSegments.join('');
