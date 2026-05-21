@@ -4,12 +4,12 @@
  * On Linux desktop (Tauri/WebKitGTK) the network process leaks CLOSE_WAIT
  * sockets when an <img src> points directly at ZoneMinder's nph-zms CGI in
  * snapshot mode. The fix: on Tauri desktop in snapshot mode only, fetch each
- * frame through the Rust HTTP client (httpGet, responseType 'blob') and display
- * it as a blob: object URL so the webview never opens a socket to ZoneMinder.
+ * frame through the Rust mjpeg_snapshot command and display it as a blob:
+ * object URL so the webview never opens a socket to ZoneMinder.
  *
  * These tests verify the URL lifecycle (create on success, revoke the previous
- * frame, revoke on unmount), the abort behavior, and that the path is strictly
- * gated to Tauri + snapshot. They exercise real behavior, not mock construction.
+ * frame, revoke on unmount), and that the path is strictly gated to Tauri +
+ * snapshot. They exercise real behavior, not mock construction.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -19,6 +19,7 @@ import { useMonitorStore } from '../../stores/monitors';
 import { useProfileStore } from '../../stores/profile';
 import { useAuthStore } from '../../stores/auth';
 import { useSettingsStore, DEFAULT_SETTINGS } from '../../stores/settings';
+import { fetchMjpegSnapshot } from '../../lib/tauri-mjpeg';
 import { httpGet } from '../../lib/http';
 import type { Profile } from '../../api/types';
 
@@ -29,12 +30,13 @@ vi.mock('@tauri-apps/api/core', () => ({
 }));
 
 vi.mock('../../lib/http', () => ({
-  httpGet: vi.fn(),
+  httpGet: vi.fn().mockResolvedValue({ data: null, status: 200, statusText: 'OK', headers: {} }),
 }));
 
 vi.mock('../../lib/tauri-mjpeg', () => ({
   startMjpegStream: vi.fn().mockResolvedValue(1),
   stopMjpegStream: vi.fn(),
+  fetchMjpegSnapshot: vi.fn(),
 }));
 
 vi.mock('../../lib/logger', () => ({
@@ -77,6 +79,8 @@ vi.mock('../../lib/zm-constants', () => ({
   },
 }));
 
+const mockFetchMjpegSnapshot = vi.mocked(fetchMjpegSnapshot);
+// httpGet is used by useStreamLifecycle for CMD_QUIT; needs a Promise return.
 const mockHttpGet = vi.mocked(httpGet);
 
 describe('useMonitorStream: Tauri blob snapshot path', () => {
@@ -134,29 +138,19 @@ describe('useMonitorStream: Tauri blob snapshot path', () => {
     URL.createObjectURL = createObjectURL as unknown as typeof URL.createObjectURL;
     URL.revokeObjectURL = revokeObjectURL as unknown as typeof URL.revokeObjectURL;
 
-    mockHttpGet.mockResolvedValue({
-      data: new Blob(['frame'], { type: 'image/jpeg' }),
-      status: 200,
-      statusText: 'OK',
-      headers: {},
-    });
-
     vi.clearAllMocks();
-    // clearAllMocks resets the createObjectURL implementation; restore it.
+    // clearAllMocks resets mock implementations; restore them.
     createObjectURL.mockImplementation(() => `blob:mock-${++objectUrlCounter}`);
-    mockHttpGet.mockResolvedValue({
-      data: new Blob(['frame'], { type: 'image/jpeg' }),
-      status: 200,
-      statusText: 'OK',
-      headers: {},
-    });
+    mockFetchMjpegSnapshot.mockResolvedValue(new Uint8Array([1, 2, 3]).buffer);
+    // useStreamLifecycle calls httpGet for CMD_QUIT; must return a Promise.
+    mockHttpGet.mockResolvedValue({ data: null, status: 200, statusText: 'OK', headers: {} });
   });
 
   afterEach(() => {
     vi.useRealTimers();
   });
 
-  it('fetches the frame via httpGet with responseType blob and exposes the object URL as imageSrc', async () => {
+  it('fetches the frame via the Rust mjpeg_snapshot command and exposes the object URL as imageSrc', async () => {
     const { result } = renderHook(() => useMonitorStream({ monitorId: '1' }));
 
     await waitFor(() => {
@@ -164,17 +158,15 @@ describe('useMonitorStream: Tauri blob snapshot path', () => {
     });
 
     await waitFor(() => {
-      expect(mockHttpGet).toHaveBeenCalled();
+      expect(mockFetchMjpegSnapshot).toHaveBeenCalled();
     });
 
-    // It must fetch the nph-zms snapshot URL through the Rust HTTP client as a
-    // blob, with an abort signal, instead of pointing <img src> at it directly.
-    const [calledUrl, calledOptions] = mockHttpGet.mock.calls[0];
+    // It must fetch the nph-zms snapshot URL through the Rust mjpeg_snapshot
+    // command instead of pointing <img src> at it directly.
+    const [calledUrl] = mockFetchMjpegSnapshot.mock.calls[0];
     expect(calledUrl).toContain('/nph-zms?');
     expect(calledUrl).toContain('mode=single');
     expect(calledUrl).toContain('connkey=12345');
-    expect(calledOptions).toMatchObject({ responseType: 'blob' });
-    expect((calledOptions as { signal?: AbortSignal }).signal).toBeInstanceOf(AbortSignal);
 
     await waitFor(() => {
       expect(result.current.imageSrc).toBe('blob:mock-1');
@@ -210,28 +202,15 @@ describe('useMonitorStream: Tauri blob snapshot path', () => {
     expect(revokeObjectURL).not.toHaveBeenCalledWith('blob:mock-2');
   });
 
-  it('revokes the outstanding object URL and aborts the in-flight fetch on unmount', async () => {
-    let capturedSignal: AbortSignal | undefined;
-    mockHttpGet.mockImplementation(async (_url, options) => {
-      capturedSignal = (options as { signal?: AbortSignal }).signal;
-      return {
-        data: new Blob(['frame'], { type: 'image/jpeg' }),
-        status: 200,
-        statusText: 'OK',
-        headers: {},
-      };
-    });
-
+  it('revokes the outstanding object URL on unmount', async () => {
     const { result, unmount } = renderHook(() => useMonitorStream({ monitorId: '1' }));
 
     await waitFor(() => {
       expect(result.current.imageSrc).toBe('blob:mock-1');
     });
-    expect(capturedSignal?.aborted).toBe(false);
 
     unmount();
 
-    expect(capturedSignal?.aborted).toBe(true);
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock-1');
   });
 
@@ -256,18 +235,18 @@ describe('useMonitorStream: Tauri blob snapshot path', () => {
     await waitFor(() => {
       expect(startMjpegStream).toHaveBeenCalled();
     });
-    expect(mockHttpGet).not.toHaveBeenCalled();
+    expect(mockFetchMjpegSnapshot).not.toHaveBeenCalled();
     expect(result.current.imageSrc).not.toBe(result.current.streamUrl);
   });
 
   it('does not throw when a fetch fails and logs the error', async () => {
     const { log } = await import('../../lib/logger');
-    mockHttpGet.mockRejectedValue(new Error('network down'));
+    mockFetchMjpegSnapshot.mockRejectedValue(new Error('network down'));
 
     const { result } = renderHook(() => useMonitorStream({ monitorId: '1' }));
 
     await waitFor(() => {
-      expect(mockHttpGet).toHaveBeenCalled();
+      expect(mockFetchMjpegSnapshot).toHaveBeenCalled();
     });
 
     // No object URL was created, imageSrc stays empty, component did not crash.

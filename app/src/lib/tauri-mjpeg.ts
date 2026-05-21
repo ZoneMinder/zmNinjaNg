@@ -50,3 +50,11 @@ export async function startMjpegStream(
 export async function stopMjpegStream(streamId: number): Promise<void> {
   await invoke('mjpeg_stop', { streamId });
 }
+
+/** Fetch a single snapshot frame's bytes through the Rust HTTP path (desktop). */
+export async function fetchMjpegSnapshot(url: string): Promise<ArrayBuffer> {
+  return invoke<ArrayBuffer>('mjpeg_snapshot', {
+    url,
+    acceptInvalidCerts: isTauriSslTrustEnabled(),
+  });
+}

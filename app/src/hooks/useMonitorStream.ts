@@ -22,8 +22,7 @@ import { useFreshAccessToken } from './useFreshAccessToken';
 import { useServerUrls } from './useServerUrls';
 import { log, LogLevel } from '../lib/logger';
 import { Platform } from '../lib/platform';
-import { httpGet } from '../lib/http';
-import { startMjpegStream, stopMjpegStream } from '../lib/tauri-mjpeg';
+import { startMjpegStream, stopMjpegStream, fetchMjpegSnapshot } from '../lib/tauri-mjpeg';
 import { ZM_INTEGRATION } from '../lib/zmninja-ng-constants';
 import type { StreamOptions } from '../api/types';
 
@@ -180,33 +179,22 @@ export function useMonitorStream({
       return;
     }
 
-    const controller = new AbortController();
     let cancelled = false;
 
     (async () => {
       try {
-        const { data: blob } = await httpGet<Blob>(streamUrl, {
-          responseType: 'blob',
-          signal: controller.signal,
-          timeoutMs: ZM_INTEGRATION.snapshotFrameFetchTimeoutMs,
-          // One request per frame per monitor would flood the HTTP log; the
-          // transport is reported once below and failures are logged here.
-          suppressLog: true,
-        });
+        const bytes = await fetchMjpegSnapshot(streamUrl);
         if (cancelled) return;
-
+        const blob = new Blob([bytes], { type: 'image/jpeg' });
         const url = URL.createObjectURL(blob);
         const previousUrl = blobUrlRef.current;
         blobUrlRef.current = url;
         setImageSrc(url);
-        if (previousUrl) {
-          URL.revokeObjectURL(previousUrl);
-        }
+        if (previousUrl) URL.revokeObjectURL(previousUrl);
       } catch (error) {
-        // An aborted fetch is the normal outcome when a newer frame supersedes
-        // this one or the component unmounts. Swallow it quietly; log anything
-        // else (network failure, cert rejection) without crashing.
-        if (controller.signal.aborted) return;
+        // Tauri invoke is not abortable mid-flight; discard stale results via
+        // the cancelled flag. Log network failures without crashing.
+        if (cancelled) return;
         log.monitor(
           `Snapshot frame fetch failed for monitor ${monitorId}`,
           LogLevel.WARN,
@@ -217,7 +205,6 @@ export function useMonitorStream({
 
     return () => {
       cancelled = true;
-      controller.abort();
     };
   }, [enabled, useBlobSnapshots, streamUrl, monitorId]);
 

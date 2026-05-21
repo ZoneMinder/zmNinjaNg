@@ -37,6 +37,7 @@ pub fn run() {
       biometric::authenticate_biometric,
       mjpeg::mjpeg_start,
       mjpeg::mjpeg_stop,
+      mjpeg::mjpeg_snapshot,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

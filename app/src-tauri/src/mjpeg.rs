@@ -159,6 +159,27 @@ pub async fn mjpeg_stop(state: tauri::State<'_, MjpegState>, stream_id: u64) -> 
     Ok(())
 }
 
+/// Fetch a single frame (mode=single) and return its bytes. Used by the desktop
+/// snapshot path so all ZM image transport runs through this module. Unlike
+/// mjpeg_start there is no persistent connection: one GET, response dropped.
+#[tauri::command]
+pub async fn mjpeg_snapshot(
+    url: String,
+    accept_invalid_certs: bool,
+) -> Result<tauri::ipc::Response, String> {
+    let client = reqwest::Client::builder()
+        .danger_accept_invalid_certs(accept_invalid_certs)
+        .danger_accept_invalid_hostnames(accept_invalid_certs)
+        .build()
+        .map_err(|e| e.to_string())?;
+    let response = client.get(&url).send().await.map_err(|e| e.to_string())?;
+    if !response.status().is_success() {
+        return Err(format!("HTTP {}", response.status()));
+    }
+    let bytes = response.bytes().await.map_err(|e| e.to_string())?;
+    Ok(tauri::ipc::Response::new(bytes.to_vec()))
+}
+
 async fn pump(
     mut response: reqwest::Response,
     channel: &Channel<InvokeResponseBody>,

@@ -25,7 +25,7 @@ vi.mock('../ssl-trust', () => ({
   isTauriSslTrustEnabled: vi.fn(() => true),
 }));
 
-import { startMjpegStream, stopMjpegStream } from '../tauri-mjpeg';
+import { startMjpegStream, stopMjpegStream, fetchMjpegSnapshot } from '../tauri-mjpeg';
 
 describe('tauri-mjpeg wrapper', () => {
   beforeEach(() => {
@@ -93,5 +93,16 @@ describe('tauri-mjpeg wrapper', () => {
     invoke.mockResolvedValue(undefined);
     await stopMjpegStream(42);
     expect(invoke).toHaveBeenCalledWith('mjpeg_stop', { streamId: 42 });
+  });
+
+  it('fetches a single snapshot frame as an ArrayBuffer with the ssl-trust flag', async () => {
+    const buf = new Uint8Array([9, 9, 9]).buffer;
+    invoke.mockResolvedValue(buf);
+    const out = await fetchMjpegSnapshot('https://zm/nph-zms?mode=single');
+    expect(out).toBe(buf);
+    expect(invoke).toHaveBeenCalledWith('mjpeg_snapshot', {
+      url: 'https://zm/nph-zms?mode=single',
+      acceptInvalidCerts: true,
+    });
   });
 });
