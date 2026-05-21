@@ -1149,6 +1149,144 @@ refs #155"
 
 ---
 
+## Task 8: Unify desktop snapshot onto a custom Rust command
+
+Replace the desktop snapshot transport (`@tauri-apps/plugin-http` via `httpGet`)
+with a custom Rust `mjpeg_snapshot` command so all desktop ZM image transport
+lives in the `mjpeg` module. Snapshot stays discrete/low-bandwidth; only the
+mechanism changes. Tauri-only; web/iOS/Android snapshot paths unchanged.
+
+**Files:**
+- Modify: `app/src-tauri/src/mjpeg.rs` (add `mjpeg_snapshot` command)
+- Modify: `app/src-tauri/src/lib.rs` (register command)
+- Modify: `app/src/lib/tauri-mjpeg.ts` (add `fetchMjpegSnapshot`)
+- Modify: `app/src/lib/__tests__/tauri-mjpeg.test.ts` (test the wrapper)
+- Modify: `app/src/hooks/useMonitorStream.ts` (rewire `useBlobSnapshots` effect)
+- Modify: `app/src/hooks/__tests__/useMonitorStream.blob-snapshot.test.ts` (mock `fetchMjpegSnapshot` instead of `httpGet`)
+
+- [ ] **Step 1: Rust command (returns one JPEG frame's bytes)**
+
+Add to `app/src-tauri/src/mjpeg.rs` (reuses the same reqwest client construction as `mjpeg_start`):
+
+```rust
+/// Fetch a single frame (mode=single) and return its bytes. Used by the desktop
+/// snapshot path so all ZM image transport runs through this module. Unlike
+/// mjpeg_start there is no persistent connection: one GET, response dropped.
+#[tauri::command]
+pub async fn mjpeg_snapshot(
+    url: String,
+    accept_invalid_certs: bool,
+) -> Result<tauri::ipc::Response, String> {
+    let client = reqwest::Client::builder()
+        .danger_accept_invalid_certs(accept_invalid_certs)
+        .danger_accept_invalid_hostnames(accept_invalid_certs)
+        .build()
+        .map_err(|e| e.to_string())?;
+    let response = client.get(&url).send().await.map_err(|e| e.to_string())?;
+    if !response.status().is_success() {
+        return Err(format!("HTTP {}", response.status()));
+    }
+    let bytes = response.bytes().await.map_err(|e| e.to_string())?;
+    Ok(tauri::ipc::Response::new(bytes.to_vec()))
+}
+```
+
+Register in `lib.rs` `generate_handler!`: add `mjpeg::mjpeg_snapshot,`.
+
+Verify the `tauri::ipc::Response::new(Vec<u8>)` API against the installed Tauri 2.10.x; if it differs, return raw bytes by whatever API delivers an `ArrayBuffer` to JS. Build: `cd app/src-tauri && cargo build 2>&1 | tail -15` (Finished).
+
+- [ ] **Step 2: JS wrapper test (TDD)**
+
+Add to `app/src/lib/__tests__/tauri-mjpeg.test.ts`:
+
+```typescript
+  it('fetches a single snapshot frame as an ArrayBuffer with the ssl-trust flag', async () => {
+    const buf = new Uint8Array([9, 9, 9]).buffer;
+    invoke.mockResolvedValue(buf);
+    const out = await fetchMjpegSnapshot('https://zm/nph-zms?mode=single');
+    expect(out).toBe(buf);
+    expect(invoke).toHaveBeenCalledWith('mjpeg_snapshot', {
+      url: 'https://zm/nph-zms?mode=single',
+      acceptInvalidCerts: true,
+    });
+  });
+```
+
+Add `fetchMjpegSnapshot` to the import under test. Run `cd app && npm test -- tauri-mjpeg 2>&1 | tail -20` (fails: not exported).
+
+- [ ] **Step 3: Implement the wrapper**
+
+Add to `app/src/lib/tauri-mjpeg.ts`:
+
+```typescript
+/** Fetch a single snapshot frame's bytes through the Rust HTTP path (desktop). */
+export async function fetchMjpegSnapshot(url: string): Promise<ArrayBuffer> {
+  return invoke<ArrayBuffer>('mjpeg_snapshot', {
+    url,
+    acceptInvalidCerts: isTauriSslTrustEnabled(),
+  });
+}
+```
+
+Run the wrapper test again (passes).
+
+- [ ] **Step 4: Rewire the snapshot effect in useMonitorStream.ts**
+
+In the `useBlobSnapshots` effect, replace the `httpGet<Blob>(streamUrl, {responseType:'blob', signal, ...})` call with `fetchMjpegSnapshot(streamUrl)`, building the blob from the returned bytes: `const blob = new Blob([bytes], { type: 'image/jpeg' });`. Drop the `AbortController`/`signal` (Tauri `invoke` is not abortable); keep the `cancelled` flag to discard stale results, and keep the blob-URL create/revoke and error logging. Remove the now-unused `httpGet` import if nothing else in the file uses it (check first; the file may still use it elsewhere).
+
+- [ ] **Step 5: Update the blob-snapshot test file**
+
+In `app/src/hooks/__tests__/useMonitorStream.blob-snapshot.test.ts`, replace the `vi.mock('../../lib/http', ...)` usage for the snapshot path with a mock of `fetchMjpegSnapshot` from `../../lib/tauri-mjpeg` (the file already mocks `tauri-mjpeg` for the streaming test from Task 5; extend it to include `fetchMjpegSnapshot: vi.fn().mockResolvedValue(new ArrayBuffer(4))`). Update the snapshot assertions: they should assert `fetchMjpegSnapshot` is called with a `mode=single` URL and that the blob-URL lifecycle (create on success, revoke previous, revoke on unmount) still holds. Keep the error-path test (reject `fetchMjpegSnapshot`, assert no crash, `imageSrc` stays `''`, error logged).
+
+- [ ] **Step 6: Full gate + commit**
+
+`cd app && npm test 2>&1 | tail -25` (all pass), `npx tsc --noEmit` (clean), `npm run build` (succeeds); `cd app/src-tauri && cargo test mjpeg::tests 2>&1 | tail -15` (pass), `cargo build` (Finished). Commit the six files (plus Cargo.lock if changed):
+
+```bash
+git commit -m "feat(stream): unify desktop snapshot onto the mjpeg Rust command
+
+refs #155"
+```
+
+---
+
+## Task 9: Streaming as the default view mode on desktop
+
+**Files:**
+- Modify: `app/src/stores/settings.ts:188-189` (`DEFAULT_SETTINGS.viewMode`)
+- Test: `app/src/stores/__tests__/settings.test.ts` (or the existing settings test file)
+
+- [ ] **Step 1: Write the failing test**
+
+Add a test that asserts the default `viewMode` is `'streaming'` when `Platform.isTauri` is true and `'snapshot'` otherwise, and that an explicitly stored `viewMode` is preserved by `getProfileSettings`/the merge. Mock `@tauri-apps/api/core` `isTauri` to true in one case. (Match the existing settings test file's structure; if none tests defaults, create `app/src/stores/__tests__/settings.test.ts`.)
+
+- [ ] **Step 2: Implement**
+
+In `app/src/stores/settings.ts`, import `Platform` and change the default:
+
+```typescript
+import { Platform } from '../lib/platform';
+// ...
+export const DEFAULT_SETTINGS: ProfileSettings = {
+  viewMode: Platform.isTauri ? 'streaming' : 'snapshot',
+  // ...
+};
+```
+
+Confirm the `{...DEFAULT_SETTINGS, ...stored}` merge (settings.ts:280, :288) still preserves an explicit stored `viewMode` (it does, since stored wins). If `DEFAULT_SETTINGS` is evaluated at module load before the Tauri runtime is ready, verify `Platform.isTauri` returns correctly at that point; if not, compute the default in the getter/merge path instead of the const.
+
+- [ ] **Step 3: Gate + commit**
+
+`cd app && npm test 2>&1 | tail -20`, `npx tsc --noEmit`, `npm run build`. Commit:
+
+```bash
+git commit -m "feat(settings): default to streaming view mode on desktop
+
+refs #155"
+```
+
+---
+
 ## Final verification
 
 - [ ] **Step 1: Full gate**
