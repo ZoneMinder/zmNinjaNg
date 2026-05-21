@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import type { Layout, Layouts } from 'react-grid-layout';
 import { LogLevel } from '../lib/log-level';
 import type { BandwidthMode } from '../lib/zmninja-ng-constants';
+import { Platform } from '../lib/platform';
 
 export type ViewMode = 'snapshot' | 'streaming';
 export type DisplayMode = 'normal' | 'compact';
@@ -185,8 +186,10 @@ const getDefaultLogLevel = (): LogLevel => (
   typeof import.meta !== 'undefined' && import.meta.env?.DEV ? LogLevel.DEBUG : LogLevel.INFO
 );
 
+export const getDefaultViewMode = (): ViewMode => (Platform.isTauri ? 'streaming' : 'snapshot');
+
 export const DEFAULT_SETTINGS: ProfileSettings = {
-  viewMode: 'snapshot',
+  viewMode: getDefaultViewMode(),
   displayMode: getDefaultDisplayMode(),
   theme: 'slate',
   logLevel: getDefaultLogLevel(),
