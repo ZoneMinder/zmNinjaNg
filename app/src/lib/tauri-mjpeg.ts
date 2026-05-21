@@ -8,6 +8,7 @@
 
 import { invoke, Channel } from '@tauri-apps/api/core';
 import { isTauriSslTrustEnabled } from './ssl-trust';
+import { ZM_INTEGRATION } from './zmninja-ng-constants';
 
 interface MjpegErrorMessage {
   type: 'error';
@@ -56,5 +57,6 @@ export async function fetchMjpegSnapshot(url: string): Promise<ArrayBuffer> {
   return invoke<ArrayBuffer>('mjpeg_snapshot', {
     url,
     acceptInvalidCerts: isTauriSslTrustEnabled(),
+    timeoutMs: ZM_INTEGRATION.snapshotFrameFetchTimeoutMs,
   });
 }

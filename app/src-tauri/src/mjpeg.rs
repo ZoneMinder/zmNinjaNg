@@ -166,10 +166,12 @@ pub async fn mjpeg_stop(state: tauri::State<'_, MjpegState>, stream_id: u64) -> 
 pub async fn mjpeg_snapshot(
     url: String,
     accept_invalid_certs: bool,
+    timeout_ms: u64,
 ) -> Result<tauri::ipc::Response, String> {
     let client = reqwest::Client::builder()
         .danger_accept_invalid_certs(accept_invalid_certs)
         .danger_accept_invalid_hostnames(accept_invalid_certs)
+        .timeout(std::time::Duration::from_millis(timeout_ms))
         .build()
         .map_err(|e| e.to_string())?;
     let response = client.get(&url).send().await.map_err(|e| e.to_string())?;

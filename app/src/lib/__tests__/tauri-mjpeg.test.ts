@@ -26,6 +26,7 @@ vi.mock('../ssl-trust', () => ({
 }));
 
 import { startMjpegStream, stopMjpegStream, fetchMjpegSnapshot } from '../tauri-mjpeg';
+import { ZM_INTEGRATION } from '../zmninja-ng-constants';
 
 describe('tauri-mjpeg wrapper', () => {
   beforeEach(() => {
@@ -103,6 +104,7 @@ describe('tauri-mjpeg wrapper', () => {
     expect(invoke).toHaveBeenCalledWith('mjpeg_snapshot', {
       url: 'https://zm/nph-zms?mode=single',
       acceptInvalidCerts: true,
+      timeoutMs: ZM_INTEGRATION.snapshotFrameFetchTimeoutMs,
     });
   });
 });
