@@ -11,9 +11,15 @@
 /// frames by scanning for SOI (0xFFD8) and EOI (0xFFD9) markers. Multipart part
 /// headers between frames are ignored. Safe across arbitrary chunk boundaries:
 /// push() buffers a partial frame until its EOI arrives.
+#[derive(Default)]
 pub struct MjpegParser {
     buf: Vec<u8>,
 }
+
+/// Hard cap on a single buffered JPEG frame. ZM frames are well under this; a
+/// larger partial means a truncated/corrupt stream, so we drop the bad frame
+/// rather than buffer unboundedly.
+const MAX_FRAME_BYTES: usize = 4 * 1024 * 1024; // 4 MiB
 
 impl MjpegParser {
     pub fn new() -> Self {
@@ -34,7 +40,14 @@ impl MjpegParser {
                 break;
             };
             let Some(rel_end) = find(&self.buf[start + 2..], &[0xFF, 0xD9]) else {
-                // Have a start but no end yet: drop junk before SOI, keep partial.
+                // Have a start but no end yet. A partial that exceeds the cap is a
+                // truncated/corrupt frame: skip past the bad SOI and rescan for
+                // the next one rather than buffer unboundedly.
+                if self.buf.len() > MAX_FRAME_BYTES {
+                    self.buf.drain(0..start + 2);
+                    continue;
+                }
+                // Otherwise drop junk before SOI and keep the partial.
                 if start > 0 {
                     self.buf.drain(0..start);
                 }
@@ -107,5 +120,28 @@ mod tests {
         // Finish the second frame on the next chunk.
         let frames = p.push(&EOI);
         assert_eq!(frames, vec![frame(b"partial")]);
+    }
+
+    #[test]
+    fn discards_junk_with_no_soi() {
+        let mut p = MjpegParser::new();
+        let frames = p.push(b"--boundary\r\nContent-Type: image/jpeg\r\n\r\n");
+        assert!(frames.is_empty());
+        let f = frame(b"x");
+        let frames = p.push(&f);
+        assert_eq!(frames, vec![f]);
+    }
+
+    #[test]
+    fn drops_oversized_partial_frame() {
+        let mut p = MjpegParser::new();
+        assert!(p.push(&SOI).is_empty());
+        // Oversized payload with no EOI (zero bytes never form 0xFF 0xD9).
+        let frames = p.push(&vec![0u8; MAX_FRAME_BYTES + 16]);
+        assert!(frames.is_empty());
+        // Parser recovered: a following complete frame still parses.
+        let f = frame(b"ok");
+        let frames = p.push(&f);
+        assert_eq!(frames, vec![f]);
     }
 }
