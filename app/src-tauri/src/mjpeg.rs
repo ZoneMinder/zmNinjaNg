@@ -7,6 +7,12 @@
 //! pushes them to the webview over a Channel. Dropping the response closes the
 //! socket cleanly, so the webview never opens one.
 
+use std::collections::HashMap;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Arc, Mutex};
+use tauri::ipc::{Channel, InvokeResponseBody};
+use tokio_util::sync::CancellationToken;
+
 /// Demuxes a multipart/x-mixed-replace MJPEG byte stream into individual JPEG
 /// frames by scanning for SOI (0xFFD8) and EOI (0xFFD9) markers. Multipart part
 /// headers between frames are ignored. Safe across arbitrary chunk boundaries:
@@ -71,12 +77,6 @@ fn find(haystack: &[u8], needle: &[u8]) -> Option<usize> {
         .position(|w| w == needle)
 }
 
-use std::collections::HashMap;
-use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Arc, Mutex};
-use tauri::ipc::{Channel, InvokeResponseBody};
-use tokio_util::sync::CancellationToken;
-
 /// Per-app registry mapping a stream id to its cancellation token. Cloneable so
 /// the streaming task can capture it and remove its own entry on exit.
 #[derive(Clone, Default)]
@@ -136,6 +136,8 @@ pub async fn mjpeg_start(
     state.insert(id, token.clone());
 
     let registry = state.inner().clone();
+    // `client` is dropped when this fn returns; that's fine — the reqwest
+    // Response keeps its own connection alive independently of the Client.
     tauri::async_runtime::spawn(async move {
         if let Err(message) = pump(response, &on_frame, &token).await {
             // Suppress the cancellation-induced error; a normal stop is not an error.
@@ -175,6 +177,8 @@ async fn pump(
                                 .map_err(|e| e.to_string())?;
                         }
                     }
+                    // Clean server close (ZM restart, session end). Surfaced as an
+                    // error so the JS hook treats it as a reconnect signal.
                     None => return Err("stream ended".to_string()),
                 }
             }
