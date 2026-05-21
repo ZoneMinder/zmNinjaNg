@@ -69,6 +69,26 @@ describe('tauri-mjpeg wrapper', () => {
     expect(onError).toHaveBeenCalledWith('boom');
   });
 
+  it('normalizes a typed-array (Uint8Array) frame message to an ArrayBuffer', async () => {
+    let captured: InstanceType<typeof FakeChannel<unknown>> | undefined;
+    invoke.mockImplementation(async (_cmd: string, args: { onFrame: InstanceType<typeof FakeChannel<unknown>> }) => {
+      captured = args.onFrame;
+      return 1;
+    });
+    const onFrame = vi.fn();
+    const onError = vi.fn();
+
+    await startMjpegStream('https://zm/x', onFrame, onError);
+
+    captured!.emit(new Uint8Array([1, 2, 3]));
+
+    expect(onFrame).toHaveBeenCalledTimes(1);
+    const received = onFrame.mock.calls[0][0];
+    expect(received).toBeInstanceOf(ArrayBuffer);
+    expect(Array.from(new Uint8Array(received))).toEqual([1, 2, 3]);
+    expect(onError).not.toHaveBeenCalled();
+  });
+
   it('stops a stream by id', async () => {
     invoke.mockResolvedValue(undefined);
     await stopMjpegStream(42);

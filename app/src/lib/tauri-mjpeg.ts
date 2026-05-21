@@ -14,7 +14,7 @@ interface MjpegErrorMessage {
   message: string;
 }
 
-type MjpegMessage = ArrayBuffer | MjpegErrorMessage;
+type MjpegMessage = ArrayBuffer | ArrayBufferView | MjpegErrorMessage;
 
 /**
  * Start a Rust-owned MJPEG stream. Resolves with a stream id to pass to
@@ -30,6 +30,10 @@ export async function startMjpegStream(
   channel.onmessage = (message) => {
     if (message instanceof ArrayBuffer) {
       onFrame(message);
+    } else if (ArrayBuffer.isView(message)) {
+      // Some Tauri versions deliver raw bytes as a typed-array view; normalize
+      // to the exact backing slice so a byteOffset/length view isn't mis-copied.
+      onFrame(message.buffer.slice(message.byteOffset, message.byteOffset + message.byteLength));
     } else if (message && typeof message === 'object' && message.type === 'error') {
       onError(message.message);
     }
