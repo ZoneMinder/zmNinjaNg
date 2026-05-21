@@ -175,6 +175,37 @@ the non-Tauri path is unchanged.
 No new user-facing strings expected; reconnect reuses the existing stream-error
 UI. Any new string updates all 5 locales (en, de, es, fr, zh).
 
+## Addendum: unify desktop snapshot + streaming default on desktop
+
+After the streaming path landed, two follow-on decisions:
+
+### Unify desktop snapshot onto the custom Rust command
+
+Desktop snapshot mode already avoids the webview socket: it fetches each frame
+via `httpGet(... responseType:'blob')`, which on Tauri goes through
+`@tauri-apps/plugin-http` (reqwest). To put all desktop ZM image transport in one
+module, add a custom Rust command `mjpeg_snapshot(url, accept_invalid_certs) ->
+Response` that fetches a single frame and returns the JPEG bytes, plus a JS
+`fetchMjpegSnapshot(url)` wrapper. `useBlobSnapshots` calls it instead of
+`httpGet`. Snapshot stays a discrete, low-bandwidth mode (one fetch per refresh
+interval); only the mechanism changes. The custom command is Tauri-only; web,
+iOS, and Android snapshot paths are unchanged (the iOS Capacitor snapshot fetch
+was previously tried and caused NSURLErrorDomain, so it stays on the webview
+`<img>`). Because Tauri `invoke` is not abortable mid-flight, the snapshot effect
+drops the AbortController and discards stale results via its existing `cancelled`
+flag (frames are small, so an in-flight fetch completing late is harmless).
+
+### Streaming as the default view mode on desktop
+
+`DEFAULT_SETTINGS.viewMode` is `'snapshot'`. Make the default resolve to
+`'streaming'` on Tauri and `'snapshot'` elsewhere. Profiles with an explicitly
+stored `viewMode` keep it (the `{...DEFAULT_SETTINGS, ...stored}` merge preserves
+explicit values); only unset/new desktop profiles flip to streaming. Rationale:
+with the Rust reader there is no per-host connection ceiling on desktop, so the
+historical reason to default to snapshot (bandwidth / connection-limit
+avoidance) is weaker. Trade-off: a montage with many tiles defaults to many
+simultaneous live streams, which is more ZM server load than snapshot polling.
+
 ## Out of scope
 
 - Frame-dropping / backpressure beyond ZM's `maxfps`.
