@@ -50,12 +50,11 @@ interface UseMonitorStreamReturn {
   /**
    * The value to bind to the `<img src>`.
    *
-   * - In every case except Tauri desktop snapshot mode this equals `streamUrl`
-   *   (set synchronously), so streaming and web/native snapshot behavior is
-   *   byte-for-byte unchanged.
-   * - On Tauri desktop in snapshot mode this is the latest `blob:` object URL
-   *   produced by fetching the frame through the Rust HTTP client, or `''`
-   *   until the first frame has been fetched.
+   * - On Tauri desktop, in both snapshot and streaming mode, this is the latest
+   *   `blob:` object URL (snapshot frames via the Rust HTTP client, streaming
+   *   frames via the Rust MJPEG reader), or `''` until the first frame arrives.
+   * - In all other cases this equals `streamUrl` (set synchronously), so web and
+   *   native (iOS/Android) behavior is byte-for-byte unchanged.
    */
   imageSrc: string;
   imgRef: React.RefObject<HTMLImageElement | null>;
@@ -249,6 +248,10 @@ export function useMonitorStream({
     };
 
     const scheduleReconnect = () => {
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
+      }
       const attempt = reconnectAttemptRef.current;
       if (attempt >= ZM_INTEGRATION.mjpegReconnectMaxAttempts) {
         log.monitor(
