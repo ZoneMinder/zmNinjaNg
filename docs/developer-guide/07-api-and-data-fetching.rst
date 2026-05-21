@@ -277,13 +277,15 @@ Three things keep stale tokens in play between refresh ticks:
   whatever ``accessTokenExpires`` was persisted last session.
 
 ``hooks/useFreshAccessToken.ts`` gates URL construction on this. The
-hook reads ``accessToken`` and ``accessTokenExpires`` from the auth
-store and returns ``{ token, isFresh }``. A token is fresh only when
-it has more than ``ZM_INTEGRATION.accessTokenLeewayMs`` (30 minutes)
-of validity left. When it is not fresh, the hook returns
-``{ token: null, isFresh: false }`` and triggers
-``authStore.getFreshAccessToken()`` from an effect. Subscribers
-re-render once the new token lands.
+hook reads ``accessToken``, ``accessTokenExpires``, and ``requiresAuth``
+from the auth store and returns ``{ token, isFresh }``. On a server with
+authentication disabled (``requiresAuth`` is false) no token is needed,
+so ``isFresh`` is always true and ``token`` is null. On a server that
+uses auth, a token is fresh only when it has more than
+``ZM_INTEGRATION.accessTokenLeewayMs`` (30 minutes) of validity left;
+when it is not fresh the hook returns ``{ token: null, isFresh: false }``
+and triggers ``authStore.getFreshAccessToken()`` from an effect.
+Subscribers re-render once the new token lands.
 
 .. code:: typescript
 
@@ -291,20 +293,24 @@ re-render once the new token lands.
    export function useFreshAccessToken(): FreshAccessToken {
      const accessToken = useAuthStore((state) => state.accessToken);
      const accessTokenExpires = useAuthStore((state) => state.accessTokenExpires);
+     const requiresAuth = useAuthStore((state) => state.requiresAuth);
      const getFreshAccessToken = useAuthStore((state) => state.getFreshAccessToken);
 
-     const isFresh =
+     const tokenValid =
        !!accessToken &&
        !!accessTokenExpires &&
        accessTokenExpires - Date.now() > ZM_INTEGRATION.accessTokenLeewayMs;
 
+     // A no-auth server needs no token, so it is always fresh.
+     const isFresh = !requiresAuth || tokenValid;
+
      useEffect(() => {
-       if (!isFresh) {
+       if (requiresAuth && !tokenValid) {
          void getFreshAccessToken();
        }
-     }, [isFresh, getFreshAccessToken]);
+     }, [requiresAuth, tokenValid, getFreshAccessToken]);
 
-     return { token: isFresh ? accessToken : null, isFresh };
+     return { token: tokenValid ? accessToken : null, isFresh };
    }
 
 Concurrent callers share one network round-trip. ``getFreshAccessToken``

@@ -33,7 +33,25 @@ describe('useFreshAccessToken', () => {
       refreshToken: null,
       refreshTokenExpires: null,
       isAuthenticated: false,
+      requiresAuth: true,
     });
+  });
+
+  it('treats a no-auth server as fresh and does not trigger a token refresh', () => {
+    const getFreshAccessToken = vi.fn(async () => null);
+    useAuthStore.setState({
+      requiresAuth: false,
+      accessToken: null,
+      accessTokenExpires: null,
+      isAuthenticated: true,
+      getFreshAccessToken,
+    });
+
+    const { result } = renderHook(() => useFreshAccessToken());
+
+    expect(result.current.isFresh).toBe(true);
+    expect(result.current.token).toBeNull();
+    expect(getFreshAccessToken).not.toHaveBeenCalled();
   });
 
   it('returns isFresh=true with the token when expiry is comfortably ahead', () => {

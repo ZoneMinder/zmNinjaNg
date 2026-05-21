@@ -26,18 +26,23 @@ export interface FreshAccessToken {
 export function useFreshAccessToken(): FreshAccessToken {
   const accessToken = useAuthStore((state) => state.accessToken);
   const accessTokenExpires = useAuthStore((state) => state.accessTokenExpires);
+  const requiresAuth = useAuthStore((state) => state.requiresAuth);
   const getFreshAccessToken = useAuthStore((state) => state.getFreshAccessToken);
 
-  const isFresh =
+  const tokenValid =
     !!accessToken &&
     !!accessTokenExpires &&
     accessTokenExpires - Date.now() > ZM_INTEGRATION.accessTokenLeewayMs;
 
+  // A no-auth server needs no token, so it is always "fresh". Only servers that
+  // use auth gate on a valid token (and trigger a background refresh otherwise).
+  const isFresh = !requiresAuth || tokenValid;
+
   useEffect(() => {
-    if (!isFresh) {
+    if (requiresAuth && !tokenValid) {
       void getFreshAccessToken();
     }
-  }, [isFresh, getFreshAccessToken]);
+  }, [requiresAuth, tokenValid, getFreshAccessToken]);
 
-  return { token: isFresh ? accessToken : null, isFresh };
+  return { token: tokenValid ? accessToken : null, isFresh };
 }

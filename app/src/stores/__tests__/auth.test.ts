@@ -34,6 +34,7 @@ describe('Auth Store', () => {
       version: null,
       apiVersion: null,
       isAuthenticated: false,
+      requiresAuth: true,
     });
     vi.clearAllMocks();
     vi.useFakeTimers();
@@ -156,6 +157,7 @@ describe('Auth Store', () => {
         accessTokenExpires: null,
         refreshTokenExpires: null,
         isAuthenticated: false,
+        requiresAuth: true,
       });
     });
 
@@ -274,6 +276,57 @@ describe('Auth Store', () => {
       vi.mocked(apiRefreshToken).mockClear();
       await expect(useAuthStore.getState().refreshAccessToken()).rejects.toThrow();
       expect(apiRefreshToken).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('no-auth servers (requiresAuth)', () => {
+    it('marks requiresAuth false and clears any stale refresh token when the server returns no tokens', () => {
+      useAuthStore.setState({
+        refreshToken: 'stale-from-previous-profile',
+        refreshTokenExpires: Date.now() + 24 * 60 * 60 * 1000,
+      });
+
+      useAuthStore.getState().setTokens({ version: '1.36.35', apiversion: '2.0' });
+
+      const state = useAuthStore.getState();
+      expect(state.requiresAuth).toBe(false);
+      expect(state.accessToken).toBeNull();
+      expect(state.refreshToken).toBeNull();
+      expect(state.isAuthenticated).toBe(true);
+    });
+
+    it('marks requiresAuth true when the server returns tokens', () => {
+      useAuthStore.getState().setTokens({
+        access_token: 'a',
+        access_token_expires: 60,
+        refresh_token: 'r',
+        refresh_token_expires: 120,
+      });
+      expect(useAuthStore.getState().requiresAuth).toBe(true);
+    });
+
+    it('getFreshAccessToken returns null without attempting refresh or reLogin on a no-auth server', async () => {
+      useAuthStore.setState({
+        requiresAuth: false,
+        accessToken: null,
+        refreshToken: null,
+        accessTokenExpires: null,
+        isAuthenticated: true,
+      });
+      const reLogin = vi.fn(async () => true);
+      useAuthStore.getState().setReLoginCallback(reLogin);
+
+      const result = await useAuthStore.getState().getFreshAccessToken();
+
+      expect(result).toBeNull();
+      expect(apiRefreshToken).not.toHaveBeenCalled();
+      expect(reLogin).not.toHaveBeenCalled();
+    });
+
+    it('login against a no-auth server sets requiresAuth false', async () => {
+      vi.mocked(apiLogin).mockResolvedValue({ version: '1.36.35', apiversion: '2.0' });
+      await useAuthStore.getState().login('', '');
+      expect(useAuthStore.getState().requiresAuth).toBe(false);
     });
   });
 });

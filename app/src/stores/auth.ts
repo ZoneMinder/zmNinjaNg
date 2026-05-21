@@ -28,6 +28,13 @@ interface AuthState {
   version: string | null;
   apiVersion: string | null;
   isAuthenticated: boolean;
+  /**
+   * Whether the connected server uses authentication. False for servers with
+   * auth disabled, which return login success but no tokens. When false the app
+   * does not require or refresh an access token. Defaults to true until a login
+   * response tells us otherwise.
+   */
+  requiresAuth: boolean;
 
   // Actions
   login: (username: string, password: string) => Promise<void>;
@@ -43,6 +50,7 @@ interface PersistedAuthState {
   refreshTokenExpires: number | null;
   version: string | null;
   apiVersion: string | null;
+  requiresAuth: boolean;
 }
 
 /**
@@ -136,6 +144,7 @@ export const useAuthStore = create<AuthState>()(
       version: null,
       apiVersion: null,
       isAuthenticated: false,
+      requiresAuth: true,
 
       /**
        * Authenticate with the ZoneMinder server.
@@ -186,6 +195,7 @@ export const useAuthStore = create<AuthState>()(
           version: null,
           apiVersion: null,
           isAuthenticated: false,
+          requiresAuth: true,
         });
         log.auth('Logged out, auth state cleared');
       },
@@ -223,7 +233,25 @@ export const useAuthStore = create<AuthState>()(
         const now = Date.now();
         const currentState = get();
 
-        // Handle case where server returns success but no tokens (no auth required)
+        // A server with auth disabled returns login success but no tokens. Mark
+        // it as no-auth and clear any token state, including a stale refresh
+        // token carried over from a previously authed profile, so nothing tries
+        // to refresh a token the server will never issue. Refs #153.
+        const serverUsesAuth = !!(response.access_token || response.refresh_token);
+        if (!serverUsesAuth) {
+          set({
+            accessToken: null,
+            refreshToken: null,
+            accessTokenExpires: null,
+            refreshTokenExpires: null,
+            version: response.version || currentState.version,
+            apiVersion: response.apiversion || currentState.apiVersion,
+            isAuthenticated: true,
+            requiresAuth: false,
+          });
+          return;
+        }
+
         const accessToken = response.access_token || null;
         const accessTokenExpires = response.access_token_expires
           ? now + response.access_token_expires * 1000
@@ -239,6 +267,7 @@ export const useAuthStore = create<AuthState>()(
           version: response.version || currentState.version,
           apiVersion: response.apiversion || currentState.apiVersion,
           isAuthenticated: true,
+          requiresAuth: true,
         });
       },
 
@@ -247,6 +276,11 @@ export const useAuthStore = create<AuthState>()(
       },
 
       getFreshAccessToken: async () => {
+        // No-auth server: there is no token to fetch and nothing to refresh.
+        // Returning null here stops the refresh/reLogin loop. Refs #153.
+        if (!get().requiresAuth) {
+          return null;
+        }
         if (pendingFreshToken) {
           return pendingFreshToken;
         }
@@ -306,6 +340,7 @@ export const useAuthStore = create<AuthState>()(
         refreshTokenExpires: state.refreshTokenExpires,
         version: state.version,
         apiVersion: state.apiVersion,
+        requiresAuth: state.requiresAuth,
       }),
       onRehydrateStorage: () => (state) => {
         try {
