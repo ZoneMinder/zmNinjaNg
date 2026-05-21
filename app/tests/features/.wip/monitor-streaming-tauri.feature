@@ -1,3 +1,8 @@
+# Parked in .wip until a Tauri e2e runner exists (scripts/test-tauri.sh is a stub).
+# Kept out of tests/features/ because the web CI run has no tag filter and would
+# execute @tauri scenarios on chromium, which tests the webview path, not the Rust
+# MJPEG path this regression targets. Move back to tests/features/ when Tauri e2e
+# is implemented. refs #155
 @tauri @native
 Feature: MJPEG streaming socket pool (Tauri desktop)
   Regression test for issue #155. Opening many monitors in streaming mode
