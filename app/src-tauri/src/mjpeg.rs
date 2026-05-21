@@ -71,6 +71,117 @@ fn find(haystack: &[u8], needle: &[u8]) -> Option<usize> {
         .position(|w| w == needle)
 }
 
+use std::collections::HashMap;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Arc, Mutex};
+use tauri::ipc::{Channel, InvokeResponseBody};
+use tokio_util::sync::CancellationToken;
+
+/// Per-app registry mapping a stream id to its cancellation token. Cloneable so
+/// the streaming task can capture it and remove its own entry on exit.
+#[derive(Clone, Default)]
+pub struct MjpegState {
+    next: Arc<AtomicU64>,
+    map: Arc<Mutex<HashMap<u64, CancellationToken>>>,
+}
+
+impl MjpegState {
+    fn next_id(&self) -> u64 {
+        self.next.fetch_add(1, Ordering::Relaxed) + 1
+    }
+
+    fn insert(&self, id: u64, token: CancellationToken) {
+        self.map.lock().unwrap().insert(id, token);
+    }
+
+    fn remove(&self, id: u64) {
+        self.map.lock().unwrap().remove(&id);
+    }
+
+    fn cancel(&self, id: u64) {
+        if let Some(token) = self.map.lock().unwrap().remove(&id) {
+            token.cancel();
+        }
+    }
+}
+
+fn send_error(channel: &Channel<InvokeResponseBody>, message: String) {
+    let body = serde_json::json!({ "type": "error", "message": message }).to_string();
+    let _ = channel.send(InvokeResponseBody::Json(body));
+}
+
+/// Open an MJPEG stream, demux frames, and push each as raw bytes down `on_frame`.
+/// Returns a stream id for `mjpeg_stop`. Returns Err for immediate failures
+/// (bad URL, TLS handshake, connect refused, non-2xx status).
+#[tauri::command]
+pub async fn mjpeg_start(
+    state: tauri::State<'_, MjpegState>,
+    url: String,
+    accept_invalid_certs: bool,
+    on_frame: Channel<InvokeResponseBody>,
+) -> Result<u64, String> {
+    let client = reqwest::Client::builder()
+        .danger_accept_invalid_certs(accept_invalid_certs)
+        .danger_accept_invalid_hostnames(accept_invalid_certs)
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    let response = client.get(&url).send().await.map_err(|e| e.to_string())?;
+    if !response.status().is_success() {
+        return Err(format!("HTTP {}", response.status()));
+    }
+
+    let id = state.next_id();
+    let token = CancellationToken::new();
+    state.insert(id, token.clone());
+
+    let registry = state.inner().clone();
+    tauri::async_runtime::spawn(async move {
+        if let Err(message) = pump(response, &on_frame, &token).await {
+            // Suppress the cancellation-induced error; a normal stop is not an error.
+            if !token.is_cancelled() {
+                send_error(&on_frame, message);
+            }
+        }
+        registry.remove(id);
+    });
+
+    Ok(id)
+}
+
+/// Cancel a running stream. The task's reqwest response is dropped, closing the
+/// socket in hyper. No-op if the id is unknown.
+#[tauri::command]
+pub async fn mjpeg_stop(state: tauri::State<'_, MjpegState>, stream_id: u64) -> Result<(), String> {
+    state.cancel(stream_id);
+    Ok(())
+}
+
+async fn pump(
+    mut response: reqwest::Response,
+    channel: &Channel<InvokeResponseBody>,
+    token: &CancellationToken,
+) -> Result<(), String> {
+    let mut parser = MjpegParser::new();
+    loop {
+        tokio::select! {
+            _ = token.cancelled() => return Ok(()),
+            chunk = response.chunk() => {
+                match chunk.map_err(|e| e.to_string())? {
+                    Some(bytes) => {
+                        for frame in parser.push(&bytes) {
+                            channel
+                                .send(InvokeResponseBody::Raw(frame))
+                                .map_err(|e| e.to_string())?;
+                        }
+                    }
+                    None => return Err("stream ended".to_string()),
+                }
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -143,5 +254,27 @@ mod tests {
         let f = frame(b"ok");
         let frames = p.push(&f);
         assert_eq!(frames, vec![f]);
+    }
+
+    #[test]
+    fn cancel_signals_token_and_removes_entry() {
+        let state = MjpegState::default();
+        let id = state.next_id();
+        let token = tokio_util::sync::CancellationToken::new();
+        state.insert(id, token.clone());
+        assert!(!token.is_cancelled());
+
+        state.cancel(id);
+
+        assert!(token.is_cancelled());
+        assert!(state.map.lock().unwrap().is_empty());
+    }
+
+    #[test]
+    fn ids_are_unique_and_increasing() {
+        let state = MjpegState::default();
+        let a = state.next_id();
+        let b = state.next_id();
+        assert!(b > a);
     }
 }
