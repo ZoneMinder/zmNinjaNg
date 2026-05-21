@@ -645,7 +645,7 @@ Then('the zone toggle should be inactive', async ({ page }) => {
   log.info('E2E: Zone toggle inactive state', { component: 'e2e', overlayHidden: !isOverlayVisible });
 });
 
-// MJPEG streaming regression steps (issue #155 — Tauri socket pool)
+// MJPEG streaming regression steps (issue #155, Tauri socket pool)
 
 /**
  * Verify the MJPEG <img> element has a non-empty src with positive naturalWidth,

@@ -136,7 +136,7 @@ pub async fn mjpeg_start(
     state.insert(id, token.clone());
 
     let registry = state.inner().clone();
-    // `client` is dropped when this fn returns; that's fine — the reqwest
+    // `client` is dropped when this fn returns; that is fine. The reqwest
     // Response keeps its own connection alive independently of the Client.
     tauri::async_runtime::spawn(async move {
         if let Err(message) = pump(response, &on_frame, &token).await {
