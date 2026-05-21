@@ -33,7 +33,7 @@ export async function startMjpegStream(
     } else if (ArrayBuffer.isView(message)) {
       // Some Tauri versions deliver raw bytes as a typed-array view; normalize
       // to the exact backing slice so a byteOffset/length view isn't mis-copied.
-      onFrame(message.buffer.slice(message.byteOffset, message.byteOffset + message.byteLength));
+      onFrame(message.buffer.slice(message.byteOffset, message.byteOffset + message.byteLength) as ArrayBuffer);
     } else if (message && typeof message === 'object' && message.type === 'error') {
       onError(message.message);
     }

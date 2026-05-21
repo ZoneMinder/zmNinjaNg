@@ -23,6 +23,7 @@ import { useServerUrls } from './useServerUrls';
 import { log, LogLevel } from '../lib/logger';
 import { Platform } from '../lib/platform';
 import { httpGet } from '../lib/http';
+import { startMjpegStream, stopMjpegStream } from '../lib/tauri-mjpeg';
 import { ZM_INTEGRATION } from '../lib/zmninja-ng-constants';
 import type { StreamOptions } from '../api/types';
 
@@ -91,10 +92,18 @@ export function useMonitorStream({
   // client and display it as a blob: URL, so WebKitGTK's network process never
   // opens a socket to ZoneMinder (which it leaks in CLOSE_WAIT). Refs #150.
   const useBlobSnapshots = Platform.isTauri && effectiveViewMode === 'snapshot';
+  // On Tauri desktop in streaming mode, the persistent MJPEG connection is owned
+  // by the Rust reader (mjpeg_start). Frames arrive over a Channel and are shown
+  // as blob: URLs, so the webview never opens the nph-zms socket that WebKitGTK
+  // leaks in CLOSE_WAIT. Refs #155, #150.
+  const useRustStreaming = Platform.isTauri && effectiveViewMode === 'streaming';
   // The blob: URL of the frame currently bound to <img src>. Tracked so the
   // previous one can be revoked when a newer frame lands, preventing a memory
   // leak. Holds the latest URL only.
   const blobUrlRef = useRef<string>('');
+  const streamIdRef = useRef<number | null>(null);
+  const reconnectAttemptRef = useRef(0);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [imageSrc, setImageSrc] = useState<string>('');
 
   // Stream lifecycle: connKey generation, CMD_QUIT on regen/unmount, media abort
@@ -157,9 +166,9 @@ export function useMonitorStream({
   // NSURLErrorDomain errors on iOS, so it is deliberately not reintroduced
   // here. Only Tauri desktop uses the blob path below.
   useEffect(() => {
-    if (useBlobSnapshots) return;
+    if (useBlobSnapshots || useRustStreaming) return;
     setImageSrc(streamUrl);
-  }, [useBlobSnapshots, streamUrl]);
+  }, [useBlobSnapshots, useRustStreaming, streamUrl]);
 
   // Tauri desktop + snapshot mode: fetch each frame through the Rust HTTP
   // client and hand the webview a blob: URL. The existing cacheBuster interval
@@ -213,6 +222,91 @@ export function useMonitorStream({
     };
   }, [enabled, useBlobSnapshots, streamUrl, monitorId]);
 
+  // Tauri desktop + streaming mode: the Rust reader owns the nph-zms socket and
+  // pushes JPEG frames over a Channel. Each frame becomes a blob: URL; the
+  // previous one is revoked. On error/EOF we reconnect with exponential backoff
+  // by minting a fresh connkey (forceRegenerate), which re-runs this effect.
+  useEffect(() => {
+    if (!enabled || !useRustStreaming) return;
+    if (!streamUrl) {
+      setImageSrc('');
+      return;
+    }
+
+    let cancelled = false;
+    let localId: number | null = null;
+
+    const onFrame = (bytes: ArrayBuffer) => {
+      if (cancelled) return;
+      reconnectAttemptRef.current = 0;
+      const url = URL.createObjectURL(new Blob([bytes], { type: 'image/jpeg' }));
+      const previousUrl = blobUrlRef.current;
+      blobUrlRef.current = url;
+      setImageSrc(url);
+      if (previousUrl) {
+        URL.revokeObjectURL(previousUrl);
+      }
+    };
+
+    const scheduleReconnect = () => {
+      const attempt = reconnectAttemptRef.current;
+      if (attempt >= ZM_INTEGRATION.mjpegReconnectMaxAttempts) {
+        log.monitor(
+          `MJPEG stream gave up after ${attempt} reconnect attempts for monitor ${monitorId}`,
+          LogLevel.ERROR,
+          { monitorId },
+        );
+        return;
+      }
+      reconnectAttemptRef.current = attempt + 1;
+      const delay = Math.min(
+        ZM_INTEGRATION.mjpegReconnectBaseDelayMs * 2 ** attempt,
+        ZM_INTEGRATION.mjpegReconnectMaxDelayMs,
+      );
+      reconnectTimerRef.current = setTimeout(() => {
+        if (!cancelled) forceRegenerate();
+      }, delay);
+    };
+
+    const onError = (message: string) => {
+      if (cancelled) return;
+      log.monitor(`MJPEG stream error for monitor ${monitorId}`, LogLevel.WARN, {
+        monitorId,
+        message,
+      });
+      scheduleReconnect();
+    };
+
+    startMjpegStream(streamUrl, onFrame, onError)
+      .then((id) => {
+        if (cancelled) {
+          stopMjpegStream(id);
+        } else {
+          localId = id;
+          streamIdRef.current = id;
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) onError(error instanceof Error ? error.message : String(error));
+      });
+
+    return () => {
+      cancelled = true;
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
+      }
+      const id = localId ?? streamIdRef.current;
+      if (id != null) {
+        stopMjpegStream(id);
+        streamIdRef.current = null;
+      }
+    };
+    // forceRegenerate is a stable-enough callback from useStreamLifecycle; adding
+    // it would re-run the effect every render. Mirror the connkey effect's deps.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled, useRustStreaming, streamUrl, monitorId]);
+
   // On unmount, revoke the last outstanding object URL so the final frame's
   // blob is not leaked.
   useEffect(() => {
@@ -232,15 +326,24 @@ export function useMonitorStream({
   // so the montage's many monitors do not each emit a line.
   useEffect(() => {
     if (!enabled) return;
-    const transport = useBlobSnapshots ? 'native-http' : 'webkit';
+    const transport = useBlobSnapshots
+      ? 'native-http'
+      : useRustStreaming
+        ? 'rust-mjpeg'
+        : 'webkit';
     if (transport === lastLoggedImageTransport) return;
     lastLoggedImageTransport = transport;
-    log.monitor(
-      `Image transport: ${useBlobSnapshots ? 'native HTTP (Tauri Rust client)' : 'WebKit (webview <img>)'}`,
-      LogLevel.INFO,
-      { transport, viewMode: effectiveViewMode },
-    );
-  }, [enabled, useBlobSnapshots, effectiveViewMode]);
+    const label =
+      transport === 'native-http'
+        ? 'native HTTP (Tauri Rust client)'
+        : transport === 'rust-mjpeg'
+          ? 'Rust MJPEG reader (Tauri Channel)'
+          : 'WebKit (webview <img>)';
+    log.monitor(`Image transport: ${label}`, LogLevel.INFO, {
+      transport,
+      viewMode: effectiveViewMode,
+    });
+  }, [enabled, useBlobSnapshots, useRustStreaming, effectiveViewMode]);
 
   const regenerateConnection = () => {
     log.monitor(`Manually regenerating connection for monitor ${monitorId}`, LogLevel.WARN);

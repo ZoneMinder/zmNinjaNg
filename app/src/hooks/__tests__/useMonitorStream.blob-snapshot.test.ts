@@ -32,6 +32,11 @@ vi.mock('../../lib/http', () => ({
   httpGet: vi.fn(),
 }));
 
+vi.mock('../../lib/tauri-mjpeg', () => ({
+  startMjpegStream: vi.fn().mockResolvedValue(1),
+  stopMjpegStream: vi.fn(),
+}));
+
 vi.mock('../../lib/logger', () => ({
   log: {
     monitor: vi.fn(),
@@ -230,7 +235,8 @@ describe('useMonitorStream: Tauri blob snapshot path', () => {
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock-1');
   });
 
-  it('streaming mode on Tauri does not fetch frames and imageSrc equals streamUrl', async () => {
+  it('streaming mode on Tauri uses the Rust reader, not the snapshot httpGet path', async () => {
+    const { startMjpegStream } = await import('../../lib/tauri-mjpeg');
     useSettingsStore.setState({
       profileSettings: {
         'profile-1': {
@@ -247,10 +253,11 @@ describe('useMonitorStream: Tauri blob snapshot path', () => {
       expect(result.current.streamUrl).toContain('mode=jpeg');
     });
 
-    // The persistent MJPEG connection must load directly via <img src>.
-    expect(result.current.imageSrc).toBe(result.current.streamUrl);
+    await waitFor(() => {
+      expect(startMjpegStream).toHaveBeenCalled();
+    });
     expect(mockHttpGet).not.toHaveBeenCalled();
-    expect(createObjectURL).not.toHaveBeenCalled();
+    expect(result.current.imageSrc).not.toBe(result.current.streamUrl);
   });
 
   it('does not throw when a fetch fails and logs the error', async () => {
