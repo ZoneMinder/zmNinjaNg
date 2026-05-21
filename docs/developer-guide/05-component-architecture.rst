@@ -134,7 +134,7 @@ preview, status, and actions.
      // Custom hook manages stream URL and connection state
      const {
        streamUrl,
-       displayedImageUrl,
+       imageSrc,
        imgRef,
        regenerateConnection,
      } = useMonitorStream({ monitorId: monitor.Id });
@@ -173,7 +173,7 @@ preview, status, and actions.
          <div onClick={() => navigate(`/monitors/${monitor.Id}`)}>
            <img
              ref={imgRef}
-             src={displayedImageUrl || streamUrl}
+             src={imageSrc}
              onError={handleImageError}
              style={{ objectFit: resolvedFit }}
            />
@@ -205,9 +205,12 @@ props change.
 - Regenerates the key on stream failure
 - Returns a ref to the ``<img>`` element for snapshot downloads
 - Builds URLs via ``src/lib/url-builder.ts``
+- Exposes ``imageSrc``, the value to bind to ``<img src>``. It equals
+  ``streamUrl`` in every case except Tauri desktop snapshot mode, where it is a
+  ``blob:`` object URL fetched through the Rust HTTP client (see below)
 
 See :doc:`07-api-and-data-fetching` for cache busting (``_t``),
-multi-port streaming, and snapshot preloading.
+multi-port streaming, and the Tauri snapshot blob fetch.
 
 MontageMonitor
 ~~~~~~~~~~~~~~

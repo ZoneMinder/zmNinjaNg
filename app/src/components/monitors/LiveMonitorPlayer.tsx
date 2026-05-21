@@ -300,10 +300,13 @@ export function LiveMonitorPlayer({
   // Whether we're in a "waiting for video" state
   // Show VideoOff placeholder only when truly no video:
   // - Go2RTC connecting (not yet connected)
-  // - MJPEG with no stream URL or error
+  // - MJPEG with no stream configured, no frame yet, or an error.
+  //   imageSrc is empty during the Tauri-snapshot first-frame gap (the frame is
+  //   being fetched through the Rust HTTP client); for every other case imageSrc
+  //   equals streamUrl, so this matches the previous behavior.
   // Don't show during isWaitingForVideo — Go2RTC container may already be rendering
   const showNoVideo = (isWebRTC && status.state === 'connecting') ||
-    (!isWebRTC && (!mjpegStream.streamUrl || mjpegError));
+    (!isWebRTC && (!mjpegStream.streamUrl || !mjpegStream.imageSrc || mjpegError));
 
   return (
     <div className="relative w-full h-full" data-testid="video-player">
@@ -323,13 +326,13 @@ export function LiveMonitorPlayer({
         />
       )}
 
-      {!isWebRTC && mjpegStream.streamUrl && (
+      {!isWebRTC && mjpegStream.streamUrl && mjpegStream.imageSrc && (
         <img
           ref={imgRef}
           className={`w-full h-full ${className}`}
           style={{ objectFit, ...(mjpegError ? { display: 'none' } : {}) }}
           data-testid="video-player-mjpeg"
-          src={mjpegStream.streamUrl}
+          src={mjpegStream.imageSrc}
           alt={monitor.Name}
           onLoad={handleMjpegLoad}
           onError={handleMjpegError}

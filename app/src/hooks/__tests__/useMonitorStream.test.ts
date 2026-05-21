@@ -11,12 +11,15 @@ import { useMonitorStore } from '../../stores/monitors';
 import { useProfileStore } from '../../stores/profile';
 import { useAuthStore } from '../../stores/auth';
 import { useSettingsStore, DEFAULT_SETTINGS } from '../../stores/settings';
+import { httpGet } from '../../lib/http';
 import type { Profile } from '../../api/types';
 
 // Mock dependencies
 vi.mock('../../lib/http', () => ({
   httpGet: vi.fn().mockResolvedValue({}),
 }));
+
+const mockHttpGet = vi.mocked(httpGet);
 
 vi.mock('../../lib/logger', () => ({
   log: {
@@ -199,6 +202,31 @@ describe('useMonitorStream', () => {
     expect(result.current.streamUrl).toContain('scale=100');
     expect(result.current.streamUrl).not.toContain('maxfps'); // No maxfps in snapshot
     expect(result.current.streamUrl).toContain('rand='); // cacheBuster in snapshot
+  });
+
+  it('on web, snapshot mode mirrors streamUrl into imageSrc without fetching frames', async () => {
+    useSettingsStore.setState({
+      profileSettings: {
+        'profile-1': {
+          ...DEFAULT_SETTINGS,
+          viewMode: 'snapshot',
+        },
+      },
+    });
+
+    const regenerateConnKey = vi.fn(() => 12345);
+    useMonitorStore.setState({ regenerateConnKey });
+
+    const { result } = renderHook(() => useMonitorStream({ monitorId: '1' }));
+
+    await waitFor(() => {
+      expect(result.current.streamUrl).toContain('mode=single');
+    });
+
+    // Web/native snapshot is unchanged: the <img> loads streamUrl directly.
+    expect(result.current.imageSrc).toBe(result.current.streamUrl);
+    // No per-frame fetch happens off the Tauri path.
+    expect(mockHttpGet).not.toHaveBeenCalled();
   });
 
   it('viewModeOverride forces streaming when settings say snapshot', async () => {

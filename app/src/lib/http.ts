@@ -40,9 +40,15 @@ export interface HttpOptions {
    * Caller-supplied business-level label for the request, e.g.
    * "Fetch monitors list". Rendered in the HTTP completion headline so a
    * single line carries both the wire fact and the domain intent.
-   * No leading verb requirement — keep it short.
+   * No leading verb requirement. Keep it short.
    */
   intent?: string;
+  /**
+   * Suppress the per-request HTTP log line. Use for high-frequency internal
+   * fetches (e.g. snapshot frames) that would otherwise flood the log on every
+   * refresh. The caller is responsible for logging genuine failures.
+   */
+  suppressLog?: boolean;
 }
 
 export interface HttpResponse<T = unknown> {
@@ -284,6 +290,7 @@ export async function httpRequest<T = unknown>(
     onDownloadProgress,
     correlationId,
     intent,
+    suppressLog,
   } = options;
 
   // Add token to params if provided
@@ -377,9 +384,9 @@ export async function httpRequest<T = unknown>(
 
     // Headline + collapsed details. The headline carries everything you
     // need at a glance; click to expand for the full sanitized request
-    // and response. Bodies are NOT flattened — the user opted in to see
+    // and response. Bodies are NOT flattened: the user opted in to see
     // them by expanding the row, so they get the real shape.
-    log.groupCollapsed(
+    if (!suppressLog) log.groupCollapsed(
       'HTTP',
       `${corrTag} ${intentTag}${method} ${path} → ${response.status} (${duration}ms)`,
       LogLevel.DEBUG,
@@ -407,10 +414,17 @@ export async function httpRequest<T = unknown>(
     const httpError = error as HttpError;
     const status = httpError.status ?? 'ERR';
 
-    log.groupCollapsed(
+    // A caller-initiated cancellation (a superseded snapshot frame, a cancelled
+    // download) is expected, not a failure. Log it quietly so it does not
+    // surface as a red HTTP error, but still rethrow so callers can handle it.
+    const wasCancelled = signal?.aborted === true;
+
+    if (!suppressLog) log.groupCollapsed(
       'HTTP',
-      `${corrTag} ${intentTag}${method} ${path} ✗ ${status} (${duration}ms)`,
-      LogLevel.ERROR,
+      wasCancelled
+        ? `${corrTag} ${intentTag}${method} ${path} ⊘ cancelled (${duration}ms)`
+        : `${corrTag} ${intentTag}${method} ${path} ✗ ${status} (${duration}ms)`,
+      wasCancelled ? LogLevel.DEBUG : LogLevel.ERROR,
       {
         platform,
         request: {
