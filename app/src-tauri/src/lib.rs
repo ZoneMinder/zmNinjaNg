@@ -24,6 +24,7 @@ pub fn run() {
       // leak and we decode to pixels instead. Linux desktop only.
       #[cfg(target_os = "linux")]
       {
+        use tauri::Manager;
         if let Some(window) = app.get_webview_window("main") {
           std::thread::spawn(move || loop {
             std::thread::sleep(std::time::Duration::from_secs(120));
