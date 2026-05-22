@@ -31,20 +31,30 @@ import type { StreamOptions } from '../api/types';
 // one each. Re-logs only when the transport actually changes.
 let lastLoggedImageTransport: string | null = null;
 
-// TEMPORARY diagnostic for the WebKitGTK NetworkProcess memory leak (refs the
-// MJPEG streaming investigation). When enabled, streaming frames are still
-// delivered over the Tauri Channel (so the transport is exercised) but are
-// discarded immediately: no Blob is constructed, nothing is decoded or drawn.
-// If the NetworkProcess still grows with this on, the leak is the Channel
-// transport itself, not the frame handling. Enable at runtime in devtools:
-//   localStorage.setItem('mjpegDropFrames', '1'); location.reload();
-// Revert this block once the measurement is done.
-function mjpegDropFramesEnabled(): boolean {
-  try {
-    return typeof localStorage !== 'undefined' && localStorage.getItem('mjpegDropFrames') === '1';
-  } catch {
-    return false;
+// Frames are decoded with WebCodecs ImageDecoder, which takes the raw bytes
+// directly. We deliberately avoid constructing a Blob per frame: WebKitGTK's
+// blob registry lives in the network process and never frees the backing bytes
+// (even on revokeObjectURL or GC), so a Blob per frame grew that process at
+// ~24 MB/min. ImageDecoder has no such registry. ImageDecoder is not in every
+// TS DOM lib, so reach it through a minimal typed view of the global.
+type DecodedImage = { displayWidth: number; displayHeight: number; close(): void };
+type ImageDecoderInstance = { decode(): Promise<{ image: DecodedImage }>; close(): void };
+type ImageDecoderCtor = new (init: { data: ArrayBuffer | ArrayBufferView; type: string }) => ImageDecoderInstance;
+function getImageDecoder(): ImageDecoderCtor | undefined {
+  return (globalThis as unknown as { ImageDecoder?: ImageDecoderCtor }).ImageDecoder;
+}
+
+// Base64-encode raw bytes for the data: URL fallback (used only when the webview
+// lacks ImageDecoder). data: URLs are parsed inline and never touch the blob
+// registry, so this stays Blob-free.
+function bytesToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
   }
+  return btoa(binary);
 }
 
 interface UseMonitorStreamOptions {
@@ -136,24 +146,47 @@ export function useMonitorStream({
   const hasFrameRef = useRef(false);
   const [hasCanvasFrame, setHasCanvasFrame] = useState(false);
 
-  // Decode one JPEG frame and draw it to the canvas, then free the bitmap. Used
-  // by both the snapshot (one frame per refresh) and streaming (continuous) paths.
+  // Decode one JPEG frame and draw it to the canvas. Used by both the snapshot
+  // (one frame per refresh) and streaming (continuous) paths. No Blob is created
+  // (see ImageDecoderClass note above). Returns after the frame is drawn or
+  // silently skips an undecodable frame.
   const drawFrame = useCallback(async (bytes: ArrayBuffer, isCancelled: () => boolean) => {
-    let bitmap: ImageBitmap;
+    const paint = (source: CanvasImageSource, width: number, height: number) => {
+      const canvas = canvasRef.current;
+      if (isCancelled() || !canvas) return false;
+      if (width && canvas.width !== width) canvas.width = width;
+      if (height && canvas.height !== height) canvas.height = height;
+      canvas.getContext('2d')?.drawImage(source, 0, 0);
+      return true;
+    };
+
     try {
-      bitmap = await createImageBitmap(new Blob([bytes], { type: 'image/jpeg' }));
+      let drawn = false;
+      const ImageDecoderClass = getImageDecoder();
+      if (ImageDecoderClass) {
+        const decoder = new ImageDecoderClass({ data: bytes, type: 'image/jpeg' });
+        try {
+          const { image } = await decoder.decode();
+          drawn = paint(image as unknown as CanvasImageSource, image.displayWidth, image.displayHeight);
+          image.close();
+        } finally {
+          decoder.close();
+        }
+      } else {
+        // Fallback for webviews without WebCodecs: data: URL <img>, still Blob-free.
+        const img = new Image();
+        await new Promise<void>((resolve, reject) => {
+          img.onload = () => resolve();
+          img.onerror = () => reject(new Error('image decode failed'));
+          img.src = `data:image/jpeg;base64,${bytesToBase64(bytes)}`;
+        });
+        drawn = paint(img, img.naturalWidth, img.naturalHeight);
+      }
+      if (!drawn) return;
     } catch {
       return; // skip an undecodable frame
     }
-    const canvas = canvasRef.current;
-    if (isCancelled() || !canvas) {
-      bitmap.close();
-      return;
-    }
-    if (canvas.width !== bitmap.width) canvas.width = bitmap.width;
-    if (canvas.height !== bitmap.height) canvas.height = bitmap.height;
-    canvas.getContext('2d')?.drawImage(bitmap, 0, 0);
-    bitmap.close();
+
     if (!hasFrameRef.current) {
       hasFrameRef.current = true;
       setHasCanvasFrame(true);
@@ -281,8 +314,6 @@ export function useMonitorStream({
     // while a decode is in flight, so a slow decode never builds a backlog.
     let latest: ArrayBuffer | null = null;
     let decoding = false;
-    // TEMPORARY: transport-only leak diagnostic (read once per stream).
-    const dropFrames = mjpegDropFramesEnabled();
 
     const pump = async () => {
       if (decoding) return;
@@ -301,7 +332,6 @@ export function useMonitorStream({
     const onFrame = (bytes: ArrayBuffer) => {
       if (cancelled) return;
       reconnectAttemptRef.current = 0;
-      if (dropFrames) return; // transport-only leak diagnostic: discard the frame
       latest = bytes;
       void pump();
     };

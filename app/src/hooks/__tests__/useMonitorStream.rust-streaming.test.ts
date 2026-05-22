@@ -71,8 +71,11 @@ describe('useMonitorStream: Tauri Rust MJPEG streaming path', () => {
   };
 
   let drawImage: ReturnType<typeof vi.fn>;
-  let closeBitmap: ReturnType<typeof vi.fn>;
-  let createImageBitmapMock: ReturnType<typeof vi.fn>;
+  let closeImage: ReturnType<typeof vi.fn>;
+  let closeDecoder: ReturnType<typeof vi.fn>;
+  let decodeMock: ReturnType<typeof vi.fn>;
+  let imageDecoderCtor: ReturnType<typeof vi.fn>;
+  let createImageBitmapSpy: ReturnType<typeof vi.fn>;
   let mockCanvas: HTMLCanvasElement;
 
   let lastOnFrame: ((bytes: ArrayBuffer) => void) | undefined;
@@ -110,19 +113,22 @@ describe('useMonitorStream: Tauri Rust MJPEG streaming path', () => {
     });
 
     drawImage = vi.fn();
-    closeBitmap = vi.fn();
+    closeImage = vi.fn();
+    closeDecoder = vi.fn();
     mockCanvas = {
       width: 0,
       height: 0,
       getContext: vi.fn(() => ({ drawImage })),
     } as unknown as HTMLCanvasElement;
-    createImageBitmapMock = vi.fn(async () => ({
-      width: 640,
-      height: 480,
-      close: closeBitmap,
+    // WebCodecs ImageDecoder mock: decodes without constructing a Blob.
+    decodeMock = vi.fn(async () => ({
+      image: { displayWidth: 640, displayHeight: 480, close: closeImage },
     }));
-    global.createImageBitmap = createImageBitmapMock as unknown as typeof createImageBitmap;
-    // Spy so the canvas path can assert it never creates blob URLs.
+    imageDecoderCtor = vi.fn(() => ({ decode: decodeMock, close: closeDecoder }));
+    (globalThis as unknown as { ImageDecoder: unknown }).ImageDecoder = imageDecoderCtor;
+    // Spies so the canvas path can assert it never falls back to Blob/object URLs.
+    createImageBitmapSpy = vi.fn();
+    global.createImageBitmap = createImageBitmapSpy as unknown as typeof createImageBitmap;
     URL.createObjectURL = vi.fn() as unknown as typeof URL.createObjectURL;
 
     let nextId = 100;
@@ -153,7 +159,7 @@ describe('useMonitorStream: Tauri Rust MJPEG streaming path', () => {
     expect(result.current.imageSrc).toBe('');
   });
 
-  it('decodes each frame to the canvas and closes the bitmap, never creating blob URLs', async () => {
+  it('decodes each frame via ImageDecoder and draws it, never creating a Blob', async () => {
     const { result } = renderHook(() => useMonitorStream({ monitorId: '1' }));
     await waitFor(() => expect(mockStart).toHaveBeenCalled());
     attachCanvas(result.current.canvasRef);
@@ -161,15 +167,18 @@ describe('useMonitorStream: Tauri Rust MJPEG streaming path', () => {
     act(() => lastOnFrame!(new ArrayBuffer(4)));
 
     await waitFor(() => expect(drawImage).toHaveBeenCalledTimes(1));
-    expect(createImageBitmapMock).toHaveBeenCalledTimes(1);
-    expect(closeBitmap).toHaveBeenCalledTimes(1);
+    expect(imageDecoderCtor).toHaveBeenCalledTimes(1);
+    expect(decodeMock).toHaveBeenCalledTimes(1);
+    expect(closeImage).toHaveBeenCalledTimes(1);
+    expect(closeDecoder).toHaveBeenCalledTimes(1);
     await waitFor(() => expect(result.current.hasFrame).toBe(true));
 
     act(() => lastOnFrame!(new ArrayBuffer(4)));
     await waitFor(() => expect(drawImage).toHaveBeenCalledTimes(2));
-    expect(closeBitmap).toHaveBeenCalledTimes(2);
+    expect(closeImage).toHaveBeenCalledTimes(2);
 
-    // The canvas path must not touch the blob-URL registry at all.
+    // The fix: no Blob path at all (no createImageBitmap, no object URLs).
+    expect(createImageBitmapSpy).not.toHaveBeenCalled();
     expect(URL.createObjectURL).not.toHaveBeenCalled();
   });
 

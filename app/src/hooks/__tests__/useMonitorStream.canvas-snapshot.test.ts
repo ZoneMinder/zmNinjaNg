@@ -97,8 +97,11 @@ describe('useMonitorStream: Tauri canvas snapshot path', () => {
   };
 
   let drawImage: ReturnType<typeof vi.fn>;
-  let closeBitmap: ReturnType<typeof vi.fn>;
-  let createImageBitmapMock: ReturnType<typeof vi.fn>;
+  let closeImage: ReturnType<typeof vi.fn>;
+  let closeDecoder: ReturnType<typeof vi.fn>;
+  let decodeMock: ReturnType<typeof vi.fn>;
+  let imageDecoderCtor: ReturnType<typeof vi.fn>;
+  let createImageBitmapSpy: ReturnType<typeof vi.fn>;
   let createObjectURL: ReturnType<typeof vi.fn>;
   let mockCanvas: HTMLCanvasElement;
 
@@ -144,19 +147,22 @@ describe('useMonitorStream: Tauri canvas snapshot path', () => {
 
     // Fresh decode/draw spies created after clearAllMocks so they start clean.
     drawImage = vi.fn();
-    closeBitmap = vi.fn();
+    closeImage = vi.fn();
+    closeDecoder = vi.fn();
     mockCanvas = {
       width: 0,
       height: 0,
       getContext: vi.fn(() => ({ drawImage })),
     } as unknown as HTMLCanvasElement;
-    createImageBitmapMock = vi.fn(async () => ({
-      width: 640,
-      height: 480,
-      close: closeBitmap,
+    // WebCodecs ImageDecoder mock: decodes without constructing a Blob.
+    decodeMock = vi.fn(async () => ({
+      image: { displayWidth: 640, displayHeight: 480, close: closeImage },
     }));
-    global.createImageBitmap = createImageBitmapMock as unknown as typeof createImageBitmap;
-    // Spy so we can assert the canvas path never creates blob URLs.
+    imageDecoderCtor = vi.fn(() => ({ decode: decodeMock, close: closeDecoder }));
+    (globalThis as unknown as { ImageDecoder: unknown }).ImageDecoder = imageDecoderCtor;
+    // Spies to assert the canvas path never falls back to Blob/object URLs.
+    createImageBitmapSpy = vi.fn();
+    global.createImageBitmap = createImageBitmapSpy as unknown as typeof createImageBitmap;
     createObjectURL = vi.fn();
     URL.createObjectURL = createObjectURL as unknown as typeof URL.createObjectURL;
 
@@ -187,15 +193,18 @@ describe('useMonitorStream: Tauri canvas snapshot path', () => {
     expect(calledUrl).toContain('mode=single');
     expect(calledUrl).toContain('connkey=12345');
 
-    // The frame is decoded and drawn to the canvas, then the bitmap is freed.
+    // The frame is decoded via ImageDecoder and drawn, then image+decoder freed.
     await waitFor(() => expect(drawImage).toHaveBeenCalledTimes(1));
-    expect(createImageBitmapMock).toHaveBeenCalledTimes(1);
-    expect(closeBitmap).toHaveBeenCalledTimes(1);
+    expect(imageDecoderCtor).toHaveBeenCalledTimes(1);
+    expect(decodeMock).toHaveBeenCalledTimes(1);
+    expect(closeImage).toHaveBeenCalledTimes(1);
+    expect(closeDecoder).toHaveBeenCalledTimes(1);
     await waitFor(() => expect(result.current.hasFrame).toBe(true));
 
-    // Canvas path: no blob URLs, and <img src> is never used for Tauri.
+    // No Blob path: no createImageBitmap, no object URLs, and <img src> unused for Tauri.
     expect(result.current.useCanvas).toBe(true);
     expect(result.current.imageSrc).toBe('');
+    expect(createImageBitmapSpy).not.toHaveBeenCalled();
     expect(createObjectURL).not.toHaveBeenCalled();
   });
 
@@ -209,7 +218,7 @@ describe('useMonitorStream: Tauri canvas snapshot path', () => {
     attachCanvas(result.current.canvasRef);
 
     await waitFor(() => expect(drawImage).toHaveBeenCalledTimes(1));
-    expect(closeBitmap).toHaveBeenCalledTimes(1);
+    expect(closeImage).toHaveBeenCalledTimes(1);
 
     // Trigger a new connection -> new streamUrl -> second frame fetch.
     act(() => {
@@ -217,7 +226,8 @@ describe('useMonitorStream: Tauri canvas snapshot path', () => {
     });
 
     await waitFor(() => expect(drawImage).toHaveBeenCalledTimes(2));
-    expect(closeBitmap).toHaveBeenCalledTimes(2);
+    expect(closeImage).toHaveBeenCalledTimes(2);
+    expect(createImageBitmapSpy).not.toHaveBeenCalled();
     expect(createObjectURL).not.toHaveBeenCalled();
   });
 

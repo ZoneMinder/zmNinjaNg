@@ -493,26 +493,28 @@ In ``useMonitorStream``:
    const useRustStreaming = Platform.isTauri && effectiveViewMode === 'streaming';
    const useCanvas        = useTauriSnapshot || useRustStreaming;
 
-Both Tauri paths render to a ``<canvas>`` via ``createImageBitmap``; only
-the frame source differs:
+Both Tauri paths render to a ``<canvas>``; only the frame source differs:
 
 - **Snapshot** (``useTauriSnapshot``) fetches one frame per refresh through
   the Rust ``mjpeg_snapshot`` command.
 - **Streaming** (``useRustStreaming``) receives frames continuously over the
   Rust ``Channel``.
 
-Each frame is decoded with ``createImageBitmap``, drawn to a reused
-``<canvas>`` (exposed as ``canvasRef``), then freed with ``bitmap.close()``.
-Neither path creates ``blob:`` URLs. This is deliberate: in WebKitGTK's
-multi-process model the blob registry lives in the network process, and a
-``<img src=blob:>`` stream retained the decoded bytes there, growing that
-process at roughly 24 MB/min until it was killed. ``createImageBitmap`` plus
-``<canvas>`` keeps decoding in the web process with a deterministic
-``close()`` per frame. The hook returns ``useCanvas`` (true on both Tauri
-paths), ``canvasRef``, and ``hasFrame`` (true once the first frame is drawn)
-so the consumer renders a ``<canvas>`` instead of an ``<img>``. Streaming
-decoding is latest-frame-wins: only the newest frame is held while a decode
-is in flight, so a slow decode never builds a backlog.
+Each frame is decoded with WebCodecs ``ImageDecoder`` (``decode()`` then
+``drawImage`` to a reused ``<canvas>``, then ``image.close()`` and
+``decoder.close()``). No ``Blob`` is constructed. This is the load-bearing
+detail: in WebKitGTK's multi-process model the blob registry lives in the
+network process, and constructing a ``Blob`` per frame (whether via
+``URL.createObjectURL`` + ``<img src=blob:>`` or ``createImageBitmap``)
+retained the bytes there and grew that process at roughly 24 MB/min, with no
+plateau, even though every object URL was revoked. ``ImageDecoder`` takes the
+raw buffer directly and never touches the blob registry. When ``ImageDecoder``
+is unavailable, ``drawFrame`` falls back to a ``data:`` URL ``<img>`` (base64,
+also Blob-free). The hook returns ``useCanvas`` (true on both Tauri paths),
+``canvasRef``, and ``hasFrame`` (true once the first frame is drawn) so the
+consumer renders a ``<canvas>`` instead of an ``<img>``. Streaming decoding is
+latest-frame-wins: only the newest frame is held while a decode is in flight,
+so a slow decode never builds a backlog.
 
 **Streaming reconnect.** When the ``onError`` callback fires (stream
 error or clean server close), the hook schedules a reconnect using
