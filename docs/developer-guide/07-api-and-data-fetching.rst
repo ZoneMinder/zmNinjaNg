@@ -489,12 +489,15 @@ In ``useMonitorStream``:
 
 .. code-block:: typescript
 
-   const useBlobSnapshots = Platform.isTauri && effectiveViewMode === 'snapshot';
-   const useRustStreaming  = Platform.isTauri && effectiveViewMode === 'streaming';
+   const useDataUrlSnapshots = Platform.isTauri && effectiveViewMode === 'snapshot';
+   const useRustStreaming    = Platform.isTauri && effectiveViewMode === 'streaming';
 
-In both paths the hook converts each frame to a ``blob:`` object URL,
-sets it as ``imageSrc``, and revokes the previous URL immediately to
-avoid memory accumulation. The last active URL is revoked on unmount.
+In both paths the hook encodes each frame as a ``data:image/jpeg;base64,...``
+URL and sets it as ``imageSrc``. ``data:`` URLs are used rather than ``blob:``
+object URLs because WebKitGTK's network process never frees blob-registry
+entries (not even on ``revokeObjectURL``), so they leak; ``data:`` resources
+land in the resource cache that the periodic purge (see "WebKitGTK cache
+purge" below) clears.
 
 **Streaming reconnect.** When the ``onError`` callback fires (stream
 error or clean server close), the hook schedules a reconnect using

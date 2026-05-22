@@ -2,9 +2,9 @@
  * useMonitorStream: Tauri Rust MJPEG streaming path (#155)
  *
  * On Tauri desktop in streaming mode, frames are pulled by the Rust reader and
- * pushed over a Channel, then shown as blob: URLs, so the webview never opens an
+ * pushed over a Channel, then shown as data: URLs, so the webview never opens an
  * nph-zms socket (WebKitGTK CLOSE_WAIT leak). These tests verify the start call,
- * the per-frame blob lifecycle, teardown on unmount, and error-driven reconnect.
+ * per-frame data: URL rendering, teardown on unmount, and error-driven reconnect.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -132,30 +132,30 @@ describe('useMonitorStream: Tauri Rust MJPEG streaming path', () => {
     expect(result.current.imageSrc).not.toBe(result.current.streamUrl);
   });
 
-  it('renders each frame as a blob URL and revokes the previous one', async () => {
+  it('renders each frame as a data: URL, never a blob URL', async () => {
     const { result } = renderHook(() => useMonitorStream({ monitorId: '1' }));
     await waitFor(() => expect(mockStart).toHaveBeenCalled());
 
-    act(() => lastOnFrame!(new ArrayBuffer(4)));
-    await waitFor(() => expect(result.current.imageSrc).toBe('blob:mock-1'));
-    expect(revokeObjectURL).not.toHaveBeenCalled();
+    act(() => lastOnFrame!(new Uint8Array([1, 2, 3]).buffer));
+    await waitFor(() => expect(result.current.imageSrc).toMatch(/^data:image\/jpeg;base64,/));
 
-    act(() => lastOnFrame!(new ArrayBuffer(4)));
-    await waitFor(() => expect(result.current.imageSrc).toBe('blob:mock-2'));
-    expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock-1');
-    expect(revokeObjectURL).not.toHaveBeenCalledWith('blob:mock-2');
+    act(() => lastOnFrame!(new Uint8Array([4, 5, 6]).buffer));
+    await waitFor(() => expect(result.current.imageSrc).toMatch(/^data:image\/jpeg;base64,/));
+
+    // data: URLs go through the purgeable resource cache; no blob registry use.
+    expect(createObjectURL).not.toHaveBeenCalled();
+    expect(revokeObjectURL).not.toHaveBeenCalled();
   });
 
-  it('stops the stream and revokes the last blob URL on unmount', async () => {
+  it('stops the stream on unmount', async () => {
     const { result, unmount } = renderHook(() => useMonitorStream({ monitorId: '1' }));
     await waitFor(() => expect(mockStart).toHaveBeenCalled());
-    act(() => lastOnFrame!(new ArrayBuffer(4)));
-    await waitFor(() => expect(result.current.imageSrc).toBe('blob:mock-1'));
+    act(() => lastOnFrame!(new Uint8Array([1, 2, 3]).buffer));
+    await waitFor(() => expect(result.current.imageSrc).toMatch(/^data:/));
 
     unmount();
 
     expect(mockStop).toHaveBeenCalled();
-    expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock-1');
   });
 
   it('reconnects with backoff after an error by regenerating the connkey', async () => {

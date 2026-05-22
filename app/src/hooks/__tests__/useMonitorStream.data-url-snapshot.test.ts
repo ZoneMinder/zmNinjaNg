@@ -1,15 +1,15 @@
 /**
- * useMonitorStream: Tauri blob snapshot path (#150)
+ * useMonitorStream: Tauri data: URL snapshot path (#150)
  *
  * On Linux desktop (Tauri/WebKitGTK) the network process leaks CLOSE_WAIT
  * sockets when an <img src> points directly at ZoneMinder's nph-zms CGI in
  * snapshot mode. The fix: on Tauri desktop in snapshot mode only, fetch each
- * frame through the Rust mjpeg_snapshot command and display it as a blob:
- * object URL so the webview never opens a socket to ZoneMinder.
+ * frame through the Rust mjpeg_snapshot command and display it as a data: URL
+ * so the webview never opens a socket to ZoneMinder. data: URLs (not blob:) are
+ * used so the periodic resource-cache purge can reclaim them.
  *
- * These tests verify the URL lifecycle (create on success, revoke the previous
- * frame, revoke on unmount), and that the path is strictly gated to Tauri +
- * snapshot. They exercise real behavior, not mock construction.
+ * These tests verify each frame renders as a data: URL with no blob URLs, and
+ * that the path is strictly gated to Tauri + snapshot.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -83,7 +83,7 @@ const mockFetchMjpegSnapshot = vi.mocked(fetchMjpegSnapshot);
 // httpGet is used by useStreamLifecycle for CMD_QUIT; needs a Promise return.
 const mockHttpGet = vi.mocked(httpGet);
 
-describe('useMonitorStream: Tauri blob snapshot path', () => {
+describe('useMonitorStream: Tauri data: URL snapshot path', () => {
   const mockProfile: Profile = {
     id: 'profile-1',
     name: 'Test Profile',
@@ -150,7 +150,7 @@ describe('useMonitorStream: Tauri blob snapshot path', () => {
     vi.useRealTimers();
   });
 
-  it('fetches the frame via the Rust mjpeg_snapshot command and exposes the object URL as imageSrc', async () => {
+  it('fetches the frame via the Rust mjpeg_snapshot command and renders a data: URL', async () => {
     const { result } = renderHook(() => useMonitorStream({ monitorId: '1' }));
 
     await waitFor(() => {
@@ -169,49 +169,35 @@ describe('useMonitorStream: Tauri blob snapshot path', () => {
     expect(calledUrl).toContain('connkey=12345');
 
     await waitFor(() => {
-      expect(result.current.imageSrc).toBe('blob:mock-1');
+      expect(result.current.imageSrc).toMatch(/^data:image\/jpeg;base64,/);
     });
-    expect(createObjectURL).toHaveBeenCalledTimes(1);
+    // data: URLs (not blob: object URLs) so the resource-cache purge reclaims them.
+    expect(createObjectURL).not.toHaveBeenCalled();
   });
 
-  it('revokes the previous object URL when a newer frame is fetched', async () => {
+  it('re-fetches on refresh and renders a data: URL, never a blob URL', async () => {
     // Incrementing connKey so a refresh produces a different streamUrl and
-    // drives a second fetch deterministically (no reliance on timers).
+    // drives another fetch (no reliance on timers).
     let nextKey = 1000;
     useMonitorStore.setState({ regenerateConnKey: vi.fn(() => ++nextKey) });
 
     const { result } = renderHook(() => useMonitorStream({ monitorId: '1' }));
 
     await waitFor(() => {
-      expect(result.current.imageSrc).toBe('blob:mock-1');
+      expect(result.current.imageSrc).toMatch(/^data:image\/jpeg;base64,/);
     });
-    expect(revokeObjectURL).not.toHaveBeenCalled();
+    const firstFetchCount = mockFetchMjpegSnapshot.mock.calls.length;
 
-    // Trigger a new connection → new streamUrl → second frame fetch.
+    // Trigger a new connection -> new streamUrl -> another frame fetch.
     act(() => {
       result.current.regenerateConnection();
     });
 
     await waitFor(() => {
-      expect(result.current.imageSrc).toBe('blob:mock-2');
+      expect(mockFetchMjpegSnapshot.mock.calls.length).toBeGreaterThan(firstFetchCount);
     });
-
-    expect(createObjectURL).toHaveBeenCalledTimes(2);
-    // The first frame's URL must be revoked; the current one must not.
-    expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock-1');
-    expect(revokeObjectURL).not.toHaveBeenCalledWith('blob:mock-2');
-  });
-
-  it('revokes the outstanding object URL on unmount', async () => {
-    const { result, unmount } = renderHook(() => useMonitorStream({ monitorId: '1' }));
-
-    await waitFor(() => {
-      expect(result.current.imageSrc).toBe('blob:mock-1');
-    });
-
-    unmount();
-
-    expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock-1');
+    expect(result.current.imageSrc).toMatch(/^data:image\/jpeg;base64,/);
+    expect(createObjectURL).not.toHaveBeenCalled();
   });
 
   it('streaming mode on Tauri uses the Rust reader, not the snapshot httpGet path', async () => {
