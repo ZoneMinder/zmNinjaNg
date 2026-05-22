@@ -2,6 +2,7 @@ mod biometric;
 mod mjpeg;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
+#[allow(deprecated)] // webkit2gtk run_javascript is deprecated but stable; used for the purge marker
 pub fn run() {
   // On some Linux GPU/compositor combinations WebKitGTK cannot create an EGL
   // context for its DMABUF renderer (EGL_BAD_PARAMETER), so the window paints
@@ -15,6 +16,37 @@ pub fn run() {
 
   tauri::Builder::default()
     .manage(mjpeg::MjpegState::default())
+    .setup(|app| {
+      // EXPERIMENT (WebKitGTK NetworkProcess leak): the network process never
+      // frees the per-frame image resources loaded while streaming, even after
+      // streams stop. Periodically clear WebKitGTK's resource cache and watch
+      // whether RSS drops. If it does, this is the fix; if not, it is a true
+      // leak and we decode to pixels instead. Linux desktop only.
+      #[cfg(target_os = "linux")]
+      {
+        if let Some(window) = app.get_webview_window("main") {
+          std::thread::spawn(move || loop {
+            std::thread::sleep(std::time::Duration::from_secs(120));
+            let _ = window.with_webview(|webview| {
+              use webkit2gtk::{WebContextExt, WebViewExt};
+              let wv = webview.inner();
+              if let Some(context) = wv.context() {
+                context.clear_cache();
+              }
+              // Bold/colored devtools marker so the purge is visible in the console.
+              wv.run_javascript(
+                "console.log('%c CACHE PURGE: WebKitGTK resource cache cleared ','background:#c0392b;color:#fff;font-weight:bold;padding:2px 8px;border-radius:3px;font-size:12px')",
+                webkit2gtk::gio::Cancellable::NONE,
+                |_| {},
+              );
+            });
+          });
+        }
+      }
+      #[cfg(not(target_os = "linux"))]
+      let _ = app;
+      Ok(())
+    })
     .plugin(tauri_plugin_http::init())
     .plugin(tauri_plugin_fs::init())
     .plugin(tauri_plugin_dialog::init())
