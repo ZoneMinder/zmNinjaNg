@@ -489,16 +489,10 @@ In ``useMonitorStream``:
 
 .. code-block:: typescript
 
-   const useDataUrlSnapshots = Platform.isTauriLinux && effectiveViewMode === 'snapshot';
-   const useRustStreaming    = Platform.isTauriLinux && effectiveViewMode === 'streaming';
+   const useDataUrlSnapshots = Platform.isTauri && effectiveViewMode === 'snapshot';
+   const useRustStreaming    = Platform.isTauri && effectiveViewMode === 'streaming';
 
-These paths are gated to ``Platform.isTauriLinux``. Only WebKitGTK (Linux)
-leaks on a direct ``nph-zms`` ``<img>`` (CLOSE_WAIT sockets, #150/#155) and on
-per-frame image resources (network-process memory). macOS (WKWebView), Windows
-(WebView2), iOS, Android, and web all render multipart MJPEG in an ``<img>``
-natively without leaking, so they use the default ``<img src=streamUrl>`` path.
-
-On the Linux path the hook encodes each frame as a ``data:image/jpeg;base64,...``
+In both paths the hook encodes each frame as a ``data:image/jpeg;base64,...``
 URL and sets it as ``imageSrc``. ``data:`` URLs are used rather than ``blob:``
 object URLs because WebKitGTK's network process never frees blob-registry
 entries (not even on ``revokeObjectURL``), so they leak; ``data:`` resources

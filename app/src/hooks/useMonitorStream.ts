@@ -104,19 +104,15 @@ export function useMonitorStream({
   const [cacheBuster, setCacheBuster] = useState(Date.now());
   const imgRef = useRef<HTMLImageElement>(null);
 
-  // Linux/WebKitGTK only. On other platforms (macOS WKWebView, Windows WebView2,
-  // mobile, web) the webview renders nph-zms multipart MJPEG in an <img> natively
-  // without leaking, so they use the default <img src=streamUrl> path below.
-  //
-  // Snapshot: fetch each frame through the Rust HTTP client and display it as a
-  // data: URL, so WebKitGTK's network process never opens a socket to ZoneMinder
-  // (which it leaks in CLOSE_WAIT). Refs #150.
-  const useDataUrlSnapshots = Platform.isTauriLinux && effectiveViewMode === 'snapshot';
-  // Streaming: the persistent MJPEG connection is owned by the Rust reader
-  // (mjpeg_start). Frames arrive over a Channel and are shown as data: URLs, so
-  // the webview never opens the nph-zms socket that WebKitGTK leaks in CLOSE_WAIT,
-  // and the periodic cache purge can reclaim the data: resources. Refs #155, #150.
-  const useRustStreaming = Platform.isTauriLinux && effectiveViewMode === 'streaming';
+  // On Tauri desktop in snapshot mode we fetch each frame through the Rust HTTP
+  // client and display it as a data: URL, so WebKitGTK's network process never
+  // opens a socket to ZoneMinder (which it leaks in CLOSE_WAIT). Refs #150.
+  const useDataUrlSnapshots = Platform.isTauri && effectiveViewMode === 'snapshot';
+  // On Tauri desktop in streaming mode, the persistent MJPEG connection is owned
+  // by the Rust reader (mjpeg_start). Frames arrive over a Channel and are shown
+  // as data: URLs, so the webview never opens the nph-zms socket that WebKitGTK
+  // leaks in CLOSE_WAIT. Refs #155, #150.
+  const useRustStreaming = Platform.isTauri && effectiveViewMode === 'streaming';
   const streamIdRef = useRef<number | null>(null);
   const reconnectAttemptRef = useRef(0);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -180,7 +176,7 @@ export function useMonitorStream({
   //
   // Native (Capacitor) snapshot fetch was tried previously and caused
   // NSURLErrorDomain errors on iOS, so it is deliberately not reintroduced
-  // here. Only Tauri desktop on Linux uses the data: URL path below.
+  // here. Only Tauri desktop uses the data: URL path below.
   useEffect(() => {
     if (useDataUrlSnapshots || useRustStreaming) return;
     setImageSrc(streamUrl);
