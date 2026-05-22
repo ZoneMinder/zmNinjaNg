@@ -13,7 +13,7 @@
  * - Generates unique connection keys per stream instance
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getStreamUrl } from '../api/monitors';
 import { useCurrentProfile } from './useCurrentProfile';
 import { useBandwidthSettings } from './useBandwidthSettings';
@@ -30,32 +30,6 @@ import type { StreamOptions } from '../api/types';
 // many monitor hooks emit a single transport line per app session instead of
 // one each. Re-logs only when the transport actually changes.
 let lastLoggedImageTransport: string | null = null;
-
-// Frames are decoded with WebCodecs ImageDecoder, which takes the raw bytes
-// directly. We deliberately avoid constructing a Blob per frame: WebKitGTK's
-// blob registry lives in the network process and never frees the backing bytes
-// (even on revokeObjectURL or GC), so a Blob per frame grew that process at
-// ~24 MB/min. ImageDecoder has no such registry. ImageDecoder is not in every
-// TS DOM lib, so reach it through a minimal typed view of the global.
-type DecodedImage = { displayWidth: number; displayHeight: number; close(): void };
-type ImageDecoderInstance = { decode(): Promise<{ image: DecodedImage }>; close(): void };
-type ImageDecoderCtor = new (init: { data: ArrayBuffer | ArrayBufferView; type: string }) => ImageDecoderInstance;
-function getImageDecoder(): ImageDecoderCtor | undefined {
-  return (globalThis as unknown as { ImageDecoder?: ImageDecoderCtor }).ImageDecoder;
-}
-
-// Base64-encode raw bytes for the data: URL fallback (used only when the webview
-// lacks ImageDecoder). data: URLs are parsed inline and never touch the blob
-// registry, so this stays Blob-free.
-function bytesToBase64(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
-  let binary = '';
-  const chunk = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunk) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
-  }
-  return btoa(binary);
-}
 
 interface UseMonitorStreamOptions {
   monitorId: string;
@@ -75,24 +49,14 @@ interface UseMonitorStreamReturn {
   /**
    * The value to bind to the `<img src>`.
    *
-   * - On Tauri desktop (snapshot and streaming) this stays `''`; frames are drawn
-   *   to the `<canvas>` at `canvasRef` instead (see `useCanvas`).
+   * - On Tauri desktop, in both snapshot and streaming mode, this is the latest
+   *   `blob:` object URL (snapshot frames via the Rust HTTP client, streaming
+   *   frames via the Rust MJPEG reader), or `''` until the first frame arrives.
    * - In all other cases this equals `streamUrl` (set synchronously), so web and
    *   native (iOS/Android) behavior is byte-for-byte unchanged.
    */
   imageSrc: string;
   imgRef: React.RefObject<HTMLImageElement | null>;
-  /**
-   * The `<canvas>` to draw frames into on Tauri desktop, in both snapshot and
-   * streaming mode (`useCanvas` is true); null elsewhere. Frames are decoded with
-   * createImageBitmap and drawn here, avoiding `blob:` URLs whose bytes WebKitGTK
-   * retained in the network process.
-   */
-  canvasRef: React.RefObject<HTMLCanvasElement | null>;
-  /** True when the consumer should render the `<canvas>` instead of the `<img>`. */
-  useCanvas: boolean;
-  /** True once there is something to display (first frame drawn or imageSrc set). */
-  hasFrame: boolean;
   regenerateConnection: () => void;
 }
 
@@ -123,75 +87,22 @@ export function useMonitorStream({
   const imgRef = useRef<HTMLImageElement>(null);
 
   // On Tauri desktop in snapshot mode we fetch each frame through the Rust HTTP
-  // client (so WebKitGTK's network process never opens a socket to ZoneMinder,
-  // which it leaks in CLOSE_WAIT, refs #150) and draw it to the canvas.
-  const useTauriSnapshot = Platform.isTauri && effectiveViewMode === 'snapshot';
+  // client and display it as a blob: URL, so WebKitGTK's network process never
+  // opens a socket to ZoneMinder (which it leaks in CLOSE_WAIT). Refs #150.
+  const useBlobSnapshots = Platform.isTauri && effectiveViewMode === 'snapshot';
   // On Tauri desktop in streaming mode, the persistent MJPEG connection is owned
-  // by the Rust reader (mjpeg_start). Frames arrive over a Channel, so the webview
-  // never opens the nph-zms socket that WebKitGTK leaks in CLOSE_WAIT (refs #155,
-  // #150) and are drawn to the canvas.
+  // by the Rust reader (mjpeg_start). Frames arrive over a Channel and are shown
+  // as blob: URLs, so the webview never opens the nph-zms socket that WebKitGTK
+  // leaks in CLOSE_WAIT. Refs #155, #150.
   const useRustStreaming = Platform.isTauri && effectiveViewMode === 'streaming';
-  // Both Tauri paths render to a <canvas> via createImageBitmap rather than a
-  // blob: <img>, because WebKitGTK retained the decoded blob bytes in its network
-  // process (it grew ~24 MB/min during streaming). Web and native keep the <img>.
-  const useCanvas = useTauriSnapshot || useRustStreaming;
+  // The blob: URL of the frame currently bound to <img src>. Tracked so the
+  // previous one can be revoked when a newer frame lands, preventing a memory
+  // leak. Holds the latest URL only.
+  const blobUrlRef = useRef<string>('');
   const streamIdRef = useRef<number | null>(null);
   const reconnectAttemptRef = useRef(0);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [imageSrc, setImageSrc] = useState<string>('');
-  // Canvas target for the Tauri paths. Frames are decoded and drawn here, then
-  // the bitmap is closed. hasFrameRef guards the one-time setHasCanvasFrame(true)
-  // so we do not re-render on every frame.
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const hasFrameRef = useRef(false);
-  const [hasCanvasFrame, setHasCanvasFrame] = useState(false);
-
-  // Decode one JPEG frame and draw it to the canvas. Used by both the snapshot
-  // (one frame per refresh) and streaming (continuous) paths. No Blob is created
-  // (see ImageDecoderClass note above). Returns after the frame is drawn or
-  // silently skips an undecodable frame.
-  const drawFrame = useCallback(async (bytes: ArrayBuffer, isCancelled: () => boolean) => {
-    const paint = (source: CanvasImageSource, width: number, height: number) => {
-      const canvas = canvasRef.current;
-      if (isCancelled() || !canvas) return false;
-      if (width && canvas.width !== width) canvas.width = width;
-      if (height && canvas.height !== height) canvas.height = height;
-      canvas.getContext('2d')?.drawImage(source, 0, 0);
-      return true;
-    };
-
-    try {
-      let drawn = false;
-      const ImageDecoderClass = getImageDecoder();
-      if (ImageDecoderClass) {
-        const decoder = new ImageDecoderClass({ data: bytes, type: 'image/jpeg' });
-        try {
-          const { image } = await decoder.decode();
-          drawn = paint(image as unknown as CanvasImageSource, image.displayWidth, image.displayHeight);
-          image.close();
-        } finally {
-          decoder.close();
-        }
-      } else {
-        // Fallback for webviews without WebCodecs: data: URL <img>, still Blob-free.
-        const img = new Image();
-        await new Promise<void>((resolve, reject) => {
-          img.onload = () => resolve();
-          img.onerror = () => reject(new Error('image decode failed'));
-          img.src = `data:image/jpeg;base64,${bytesToBase64(bytes)}`;
-        });
-        drawn = paint(img, img.naturalWidth, img.naturalHeight);
-      }
-      if (!drawn) return;
-    } catch {
-      return; // skip an undecodable frame
-    }
-
-    if (!hasFrameRef.current) {
-      hasFrameRef.current = true;
-      setHasCanvasFrame(true);
-    }
-  }, []);
 
   // Stream lifecycle: connKey generation, CMD_QUIT on regen/unmount, media abort
   const { connKey, forceRegenerate } = useStreamLifecycle({
@@ -251,21 +162,20 @@ export function useMonitorStream({
   //
   // Native (Capacitor) snapshot fetch was tried previously and caused
   // NSURLErrorDomain errors on iOS, so it is deliberately not reintroduced
-  // here. Only Tauri desktop uses the canvas path below.
+  // here. Only Tauri desktop uses the blob path below.
   useEffect(() => {
-    if (useCanvas) return;
+    if (useBlobSnapshots || useRustStreaming) return;
     setImageSrc(streamUrl);
-  }, [useCanvas, streamUrl]);
+  }, [useBlobSnapshots, useRustStreaming, streamUrl]);
 
-  // Tauri desktop + snapshot mode: fetch each frame through the Rust HTTP client
-  // and draw it to the canvas. The cacheBuster interval drives streamUrl changes,
-  // so this effect re-runs once per refresh.
+  // Tauri desktop + snapshot mode: fetch each frame through the Rust HTTP
+  // client and hand the webview a blob: URL. The existing cacheBuster interval
+  // drives streamUrl changes, so this effect re-runs once per refresh.
   useEffect(() => {
-    if (!enabled || !useTauriSnapshot) return;
+    if (!enabled || !useBlobSnapshots) return;
 
     if (!streamUrl) {
-      hasFrameRef.current = false;
-      setHasCanvasFrame(false);
+      setImageSrc('');
       return;
     }
 
@@ -275,7 +185,12 @@ export function useMonitorStream({
       try {
         const bytes = await fetchMjpegSnapshot(streamUrl);
         if (cancelled) return;
-        await drawFrame(bytes, () => cancelled);
+        const blob = new Blob([bytes], { type: 'image/jpeg' });
+        const url = URL.createObjectURL(blob);
+        const previousUrl = blobUrlRef.current;
+        blobUrlRef.current = url;
+        setImageSrc(url);
+        if (previousUrl) URL.revokeObjectURL(previousUrl);
       } catch (error) {
         // Tauri invoke is not abortable mid-flight; discard stale results via
         // the cancelled flag. Log network failures without crashing.
@@ -291,49 +206,32 @@ export function useMonitorStream({
     return () => {
       cancelled = true;
     };
-  }, [enabled, useTauriSnapshot, streamUrl, monitorId, drawFrame]);
+  }, [enabled, useBlobSnapshots, streamUrl, monitorId]);
 
   // Tauri desktop + streaming mode: the Rust reader owns the nph-zms socket and
-  // pushes JPEG frames over a Channel. Each frame is decoded with
-  // createImageBitmap and drawn to a reused <canvas>, then the bitmap is closed.
-  // This avoids blob: URLs, whose decoded bytes WebKitGTK retained in the network
-  // process (the <img src=blob:> path leaked there at ~24 MB/min). On error/EOF we
-  // reconnect with exponential backoff by minting a fresh connkey (forceRegenerate),
-  // which re-runs this effect.
+  // pushes JPEG frames over a Channel. Each frame becomes a blob: URL; the
+  // previous one is revoked. On error/EOF we reconnect with exponential backoff
+  // by minting a fresh connkey (forceRegenerate), which re-runs this effect.
   useEffect(() => {
     if (!enabled || !useRustStreaming) return;
     if (!streamUrl) {
-      hasFrameRef.current = false;
-      setHasCanvasFrame(false);
+      setImageSrc('');
       return;
     }
 
     let cancelled = false;
     let localId: number | null = null;
-    // Latest-frame-wins: hold only the newest frame and drop any that arrive
-    // while a decode is in flight, so a slow decode never builds a backlog.
-    let latest: ArrayBuffer | null = null;
-    let decoding = false;
-
-    const pump = async () => {
-      if (decoding) return;
-      decoding = true;
-      try {
-        while (!cancelled && latest) {
-          const bytes = latest;
-          latest = null;
-          await drawFrame(bytes, () => cancelled);
-        }
-      } finally {
-        decoding = false;
-      }
-    };
 
     const onFrame = (bytes: ArrayBuffer) => {
       if (cancelled) return;
       reconnectAttemptRef.current = 0;
-      latest = bytes;
-      void pump();
+      const url = URL.createObjectURL(new Blob([bytes], { type: 'image/jpeg' }));
+      const previousUrl = blobUrlRef.current;
+      blobUrlRef.current = url;
+      setImageSrc(url);
+      if (previousUrl) {
+        URL.revokeObjectURL(previousUrl);
+      }
     };
 
     const scheduleReconnect = () => {
@@ -384,7 +282,6 @@ export function useMonitorStream({
 
     return () => {
       cancelled = true;
-      latest = null;
       if (reconnectTimerRef.current) {
         clearTimeout(reconnectTimerRef.current);
         reconnectTimerRef.current = null;
@@ -398,18 +295,28 @@ export function useMonitorStream({
     // forceRegenerate is a stable-enough callback from useStreamLifecycle; adding
     // it would re-run the effect every render. Mirror the connkey effect's deps.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, useRustStreaming, streamUrl, monitorId, drawFrame]);
+  }, [enabled, useRustStreaming, streamUrl, monitorId]);
+
+  // On unmount, revoke the last outstanding object URL so the final frame's
+  // blob is not leaked.
+  useEffect(() => {
+    return () => {
+      if (blobUrlRef.current) {
+        URL.revokeObjectURL(blobUrlRef.current);
+        blobUrlRef.current = '';
+      }
+    };
+  }, []);
 
   // Report which transport loads images so #150 can be diagnosed in the field:
-  // 'native HTTP' means frames go through the Rust HTTP client (snapshot canvas),
-  // 'rust-mjpeg' means the Rust Channel reader (streaming canvas), and 'WebKit'
-  // means the <img> loads directly through the webview's own network stack
-  // (WKWebView on iOS, the browser on web). Logged once per app session (module
-  // guard) and again only if it changes, so the montage's many monitors do not
-  // each emit a line.
+  // 'native HTTP' means frames go through the Rust HTTP client (blob URL),
+  // 'WebKit' means the <img> loads directly through the webview's own network
+  // stack (WebKitGTK on Linux desktop, WKWebView on iOS, the browser on web).
+  // Logged once per app session (module guard) and again only if it changes,
+  // so the montage's many monitors do not each emit a line.
   useEffect(() => {
     if (!enabled) return;
-    const transport = useTauriSnapshot
+    const transport = useBlobSnapshots
       ? 'native-http'
       : useRustStreaming
         ? 'rust-mjpeg'
@@ -426,7 +333,7 @@ export function useMonitorStream({
       transport,
       viewMode: effectiveViewMode,
     });
-  }, [enabled, useTauriSnapshot, useRustStreaming, effectiveViewMode]);
+  }, [enabled, useBlobSnapshots, useRustStreaming, effectiveViewMode]);
 
   const regenerateConnection = () => {
     log.monitor(`Manually regenerating connection for monitor ${monitorId}`, LogLevel.WARN);
@@ -438,9 +345,6 @@ export function useMonitorStream({
     streamUrl,
     imageSrc,
     imgRef,
-    canvasRef,
-    useCanvas,
-    hasFrame: useCanvas ? hasCanvasFrame : !!imageSrc,
     regenerateConnection,
   };
 }

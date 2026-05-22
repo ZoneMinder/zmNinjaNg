@@ -73,7 +73,7 @@ function MontageMonitorComponent({
   );
   const [protocol, setProtocol] = useState('MJPEG');
   const [isMuted, setIsMuted] = useState(true);
-  const mediaRef = useRef<HTMLImageElement | HTMLVideoElement | HTMLCanvasElement>(null);
+  const mediaRef = useRef<HTMLImageElement | HTMLVideoElement>(null);
   const resolvedFit = objectFit ?? 'cover';
   const isRTC = monitor.Go2RTCEnabled === true && !!currentProfile?.go2rtcUrl;
 

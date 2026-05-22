@@ -489,32 +489,12 @@ In ``useMonitorStream``:
 
 .. code-block:: typescript
 
-   const useTauriSnapshot = Platform.isTauri && effectiveViewMode === 'snapshot';
-   const useRustStreaming = Platform.isTauri && effectiveViewMode === 'streaming';
-   const useCanvas        = useTauriSnapshot || useRustStreaming;
+   const useBlobSnapshots = Platform.isTauri && effectiveViewMode === 'snapshot';
+   const useRustStreaming  = Platform.isTauri && effectiveViewMode === 'streaming';
 
-Both Tauri paths render to a ``<canvas>``; only the frame source differs:
-
-- **Snapshot** (``useTauriSnapshot``) fetches one frame per refresh through
-  the Rust ``mjpeg_snapshot`` command.
-- **Streaming** (``useRustStreaming``) receives frames continuously over the
-  Rust ``Channel``.
-
-Each frame is decoded with WebCodecs ``ImageDecoder`` (``decode()`` then
-``drawImage`` to a reused ``<canvas>``, then ``image.close()`` and
-``decoder.close()``). No ``Blob`` is constructed. This is the load-bearing
-detail: in WebKitGTK's multi-process model the blob registry lives in the
-network process, and constructing a ``Blob`` per frame (whether via
-``URL.createObjectURL`` + ``<img src=blob:>`` or ``createImageBitmap``)
-retained the bytes there and grew that process at roughly 24 MB/min, with no
-plateau, even though every object URL was revoked. ``ImageDecoder`` takes the
-raw buffer directly and never touches the blob registry. When ``ImageDecoder``
-is unavailable, ``drawFrame`` falls back to a ``data:`` URL ``<img>`` (base64,
-also Blob-free). The hook returns ``useCanvas`` (true on both Tauri paths),
-``canvasRef``, and ``hasFrame`` (true once the first frame is drawn) so the
-consumer renders a ``<canvas>`` instead of an ``<img>``. Streaming decoding is
-latest-frame-wins: only the newest frame is held while a decode is in flight,
-so a slow decode never builds a backlog.
+In both paths the hook converts each frame to a ``blob:`` object URL,
+sets it as ``imageSrc``, and revokes the previous URL immediately to
+avoid memory accumulation. The last active URL is revoked on unmount.
 
 **Streaming reconnect.** When the ``onError`` callback fires (stream
 error or clean server close), the hook schedules a reconnect using
@@ -534,8 +514,18 @@ unmount.
 ``imageSrc`` directly from ``streamUrl`` so the ``<img>`` tag loads each
 URL via the platform's own network stack.
 
-React Query
------------
+Tauri desktop: WebKitGTK cache purge
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+WebKitGTK's network process does not release the per-frame image resources
+loaded while streaming, even after the streams stop, so its RSS grows
+unbounded (the web and Rust processes stay flat). A Linux-only thread in
+``app/src-tauri/src/lib.rs`` clears the WebKitGTK resource cache every
+``WEBKIT_CACHE_PURGE_INTERVAL_SECS`` (120 s) via
+``webview.with_webview(|w| w.inner().context().clear_cache())``. Measured:
+the network process holds at roughly 50 MB with the purge versus unbounded
+growth (~24 MB/min, to 573 MB) without it. The purge bounds the leak
+regardless of how frames are rendered.
 
 Server state is managed via ``@tanstack/react-query``. See the
 `TanStack Query docs <https://tanstack.com/query/latest>`_ for general

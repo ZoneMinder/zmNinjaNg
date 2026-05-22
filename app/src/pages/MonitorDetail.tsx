@@ -52,7 +52,7 @@ export default function MonitorDetail() {
   const [showZones, setShowZones] = useState(false);
   const [protocol, setProtocol] = useState('MJPEG');
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const mediaRef = useRef<HTMLImageElement | HTMLVideoElement | HTMLCanvasElement>(null);
+  const mediaRef = useRef<HTMLImageElement | HTMLVideoElement>(null);
 
   // Navigation state
   const referrer = location.state?.from as string | undefined;

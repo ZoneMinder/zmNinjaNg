@@ -2,15 +2,12 @@
  * useMonitorStream: Tauri Rust MJPEG streaming path (#155)
  *
  * On Tauri desktop in streaming mode, frames are pulled by the Rust reader and
- * pushed over a Channel, then decoded with createImageBitmap and drawn to a
- * <canvas>, so the webview never opens an nph-zms socket (WebKitGTK CLOSE_WAIT
- * leak) and never creates blob: URLs (which WebKitGTK retained in the network
- * process). These tests verify the start call, the per-frame decode/draw/close
- * lifecycle, teardown on unmount, and error-driven reconnect.
+ * pushed over a Channel, then shown as blob: URLs, so the webview never opens an
+ * nph-zms socket (WebKitGTK CLOSE_WAIT leak). These tests verify the start call,
+ * the per-frame blob lifecycle, teardown on unmount, and error-driven reconnect.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import type { RefObject } from 'react';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { useMonitorStream } from '../useMonitorStream';
 import { useMonitorStore } from '../../stores/monitors';
@@ -70,21 +67,12 @@ describe('useMonitorStream: Tauri Rust MJPEG streaming path', () => {
     createdAt: Date.now(),
   };
 
-  let drawImage: ReturnType<typeof vi.fn>;
-  let closeImage: ReturnType<typeof vi.fn>;
-  let closeDecoder: ReturnType<typeof vi.fn>;
-  let decodeMock: ReturnType<typeof vi.fn>;
-  let imageDecoderCtor: ReturnType<typeof vi.fn>;
-  let createImageBitmapSpy: ReturnType<typeof vi.fn>;
-  let mockCanvas: HTMLCanvasElement;
+  let objectUrlCounter = 0;
+  let createObjectURL: ReturnType<typeof vi.fn>;
+  let revokeObjectURL: ReturnType<typeof vi.fn>;
 
   let lastOnFrame: ((bytes: ArrayBuffer) => void) | undefined;
   let lastOnError: ((message: string) => void) | undefined;
-
-  // Attach a mock canvas to the hook's canvasRef so the decode loop has a target.
-  function attachCanvas(canvasRef: RefObject<HTMLCanvasElement | null>) {
-    canvasRef.current = mockCanvas;
-  }
 
   beforeEach(() => {
     useProfileStore.setState({
@@ -112,24 +100,11 @@ describe('useMonitorStream: Tauri Rust MJPEG streaming path', () => {
       regenerateConnKey: vi.fn(() => ++nextKey),
     });
 
-    drawImage = vi.fn();
-    closeImage = vi.fn();
-    closeDecoder = vi.fn();
-    mockCanvas = {
-      width: 0,
-      height: 0,
-      getContext: vi.fn(() => ({ drawImage })),
-    } as unknown as HTMLCanvasElement;
-    // WebCodecs ImageDecoder mock: decodes without constructing a Blob.
-    decodeMock = vi.fn(async () => ({
-      image: { displayWidth: 640, displayHeight: 480, close: closeImage },
-    }));
-    imageDecoderCtor = vi.fn(() => ({ decode: decodeMock, close: closeDecoder }));
-    (globalThis as unknown as { ImageDecoder: unknown }).ImageDecoder = imageDecoderCtor;
-    // Spies so the canvas path can assert it never falls back to Blob/object URLs.
-    createImageBitmapSpy = vi.fn();
-    global.createImageBitmap = createImageBitmapSpy as unknown as typeof createImageBitmap;
-    URL.createObjectURL = vi.fn() as unknown as typeof URL.createObjectURL;
+    objectUrlCounter = 0;
+    createObjectURL = vi.fn(() => `blob:mock-${++objectUrlCounter}`);
+    revokeObjectURL = vi.fn();
+    URL.createObjectURL = createObjectURL as unknown as typeof URL.createObjectURL;
+    URL.revokeObjectURL = revokeObjectURL as unknown as typeof URL.revokeObjectURL;
 
     let nextId = 100;
     mockStart.mockReset();
@@ -145,7 +120,7 @@ describe('useMonitorStream: Tauri Rust MJPEG streaming path', () => {
     vi.useRealTimers();
   });
 
-  it('starts a Rust MJPEG stream and selects the canvas render path', async () => {
+  it('starts a Rust MJPEG stream for the streamUrl instead of binding <img src> to it', async () => {
     const { result } = renderHook(() => useMonitorStream({ monitorId: '1' }));
 
     await waitFor(() => {
@@ -154,44 +129,33 @@ describe('useMonitorStream: Tauri Rust MJPEG streaming path', () => {
     const [calledUrl] = mockStart.mock.calls[0];
     expect(calledUrl).toContain('/nph-zms?');
     expect(calledUrl).toContain('mode=jpeg');
-    expect(result.current.useCanvas).toBe(true);
-    // Streaming frames go to the canvas, never to <img src>.
-    expect(result.current.imageSrc).toBe('');
+    expect(result.current.imageSrc).not.toBe(result.current.streamUrl);
   });
 
-  it('decodes each frame via ImageDecoder and draws it, never creating a Blob', async () => {
+  it('renders each frame as a blob URL and revokes the previous one', async () => {
     const { result } = renderHook(() => useMonitorStream({ monitorId: '1' }));
     await waitFor(() => expect(mockStart).toHaveBeenCalled());
-    attachCanvas(result.current.canvasRef);
 
     act(() => lastOnFrame!(new ArrayBuffer(4)));
-
-    await waitFor(() => expect(drawImage).toHaveBeenCalledTimes(1));
-    expect(imageDecoderCtor).toHaveBeenCalledTimes(1);
-    expect(decodeMock).toHaveBeenCalledTimes(1);
-    expect(closeImage).toHaveBeenCalledTimes(1);
-    expect(closeDecoder).toHaveBeenCalledTimes(1);
-    await waitFor(() => expect(result.current.hasFrame).toBe(true));
+    await waitFor(() => expect(result.current.imageSrc).toBe('blob:mock-1'));
+    expect(revokeObjectURL).not.toHaveBeenCalled();
 
     act(() => lastOnFrame!(new ArrayBuffer(4)));
-    await waitFor(() => expect(drawImage).toHaveBeenCalledTimes(2));
-    expect(closeImage).toHaveBeenCalledTimes(2);
-
-    // The fix: no Blob path at all (no createImageBitmap, no object URLs).
-    expect(createImageBitmapSpy).not.toHaveBeenCalled();
-    expect(URL.createObjectURL).not.toHaveBeenCalled();
+    await waitFor(() => expect(result.current.imageSrc).toBe('blob:mock-2'));
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock-1');
+    expect(revokeObjectURL).not.toHaveBeenCalledWith('blob:mock-2');
   });
 
-  it('stops the stream on unmount', async () => {
+  it('stops the stream and revokes the last blob URL on unmount', async () => {
     const { result, unmount } = renderHook(() => useMonitorStream({ monitorId: '1' }));
     await waitFor(() => expect(mockStart).toHaveBeenCalled());
-    attachCanvas(result.current.canvasRef);
     act(() => lastOnFrame!(new ArrayBuffer(4)));
-    await waitFor(() => expect(drawImage).toHaveBeenCalled());
+    await waitFor(() => expect(result.current.imageSrc).toBe('blob:mock-1'));
 
     unmount();
 
     expect(mockStop).toHaveBeenCalled();
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock-1');
   });
 
   it('reconnects with backoff after an error by regenerating the connkey', async () => {

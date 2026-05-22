@@ -59,7 +59,7 @@ function MonitorCardComponent({
   const runState = getMonitorRunState(monitor, status, zmVersion);
   const isRTC = monitor.Go2RTCEnabled === true && !!currentProfile?.go2rtcUrl;
   const aspectRatio = getMonitorAspectRatio(monitor.Width, monitor.Height, monitor.Orientation);
-  const mediaRef = useRef<HTMLImageElement | HTMLVideoElement | HTMLCanvasElement | null>(null);
+  const mediaRef = useRef<HTMLImageElement | HTMLVideoElement | null>(null);
   const showHover = compact ? settings.hoverPreview.monitorsGrid : settings.hoverPreview.monitorsList;
 
   const videoPlayer = (

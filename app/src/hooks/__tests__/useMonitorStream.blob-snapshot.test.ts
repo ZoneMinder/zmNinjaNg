@@ -1,20 +1,18 @@
 /**
- * useMonitorStream: Tauri canvas snapshot path (#150)
+ * useMonitorStream: Tauri blob snapshot path (#150)
  *
  * On Linux desktop (Tauri/WebKitGTK) the network process leaks CLOSE_WAIT
  * sockets when an <img src> points directly at ZoneMinder's nph-zms CGI in
- * snapshot mode. The fix: on Tauri desktop in snapshot mode, fetch each frame
- * through the Rust mjpeg_snapshot command, decode it with createImageBitmap, and
- * draw it to a <canvas>. No blob: URLs are created (WebKitGTK retained their
- * decoded bytes in the network process).
+ * snapshot mode. The fix: on Tauri desktop in snapshot mode only, fetch each
+ * frame through the Rust mjpeg_snapshot command and display it as a blob:
+ * object URL so the webview never opens a socket to ZoneMinder.
  *
- * These tests verify the fetch goes through Rust, frames are decoded and drawn to
- * the canvas (bitmaps closed, no blob URLs), the path is gated to Tauri snapshot,
- * and fetch failures are handled.
+ * These tests verify the URL lifecycle (create on success, revoke the previous
+ * frame, revoke on unmount), and that the path is strictly gated to Tauri +
+ * snapshot. They exercise real behavior, not mock construction.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import type { RefObject } from 'react';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { useMonitorStream } from '../useMonitorStream';
 import { useMonitorStore } from '../../stores/monitors';
@@ -85,7 +83,7 @@ const mockFetchMjpegSnapshot = vi.mocked(fetchMjpegSnapshot);
 // httpGet is used by useStreamLifecycle for CMD_QUIT; needs a Promise return.
 const mockHttpGet = vi.mocked(httpGet);
 
-describe('useMonitorStream: Tauri canvas snapshot path', () => {
+describe('useMonitorStream: Tauri blob snapshot path', () => {
   const mockProfile: Profile = {
     id: 'profile-1',
     name: 'Test Profile',
@@ -96,19 +94,9 @@ describe('useMonitorStream: Tauri canvas snapshot path', () => {
     createdAt: Date.now(),
   };
 
-  let drawImage: ReturnType<typeof vi.fn>;
-  let closeImage: ReturnType<typeof vi.fn>;
-  let closeDecoder: ReturnType<typeof vi.fn>;
-  let decodeMock: ReturnType<typeof vi.fn>;
-  let imageDecoderCtor: ReturnType<typeof vi.fn>;
-  let createImageBitmapSpy: ReturnType<typeof vi.fn>;
+  let objectUrlCounter = 0;
   let createObjectURL: ReturnType<typeof vi.fn>;
-  let mockCanvas: HTMLCanvasElement;
-
-  // Attach a mock canvas to the hook's canvasRef so the decode loop has a target.
-  function attachCanvas(canvasRef: RefObject<HTMLCanvasElement | null>) {
-    canvasRef.current = mockCanvas;
-  }
+  let revokeObjectURL: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     useProfileStore.setState({
@@ -132,7 +120,7 @@ describe('useMonitorStream: Tauri canvas snapshot path', () => {
           ...DEFAULT_SETTINGS,
           viewMode: 'snapshot',
           // Long interval by default so the periodic refresh does not fire
-          // mid-assertion. Tests that need a second frame use regenerateConnection.
+          // mid-assertion. Tests that need a second frame use fake timers.
           snapshotRefreshInterval: 600,
         },
       },
@@ -143,31 +131,18 @@ describe('useMonitorStream: Tauri canvas snapshot path', () => {
       regenerateConnKey: vi.fn(() => 12345),
     });
 
-    vi.clearAllMocks();
-
-    // Fresh decode/draw spies created after clearAllMocks so they start clean.
-    drawImage = vi.fn();
-    closeImage = vi.fn();
-    closeDecoder = vi.fn();
-    mockCanvas = {
-      width: 0,
-      height: 0,
-      getContext: vi.fn(() => ({ drawImage })),
-    } as unknown as HTMLCanvasElement;
-    // WebCodecs ImageDecoder mock: decodes without constructing a Blob.
-    decodeMock = vi.fn(async () => ({
-      image: { displayWidth: 640, displayHeight: 480, close: closeImage },
-    }));
-    imageDecoderCtor = vi.fn(() => ({ decode: decodeMock, close: closeDecoder }));
-    (globalThis as unknown as { ImageDecoder: unknown }).ImageDecoder = imageDecoderCtor;
-    // Spies to assert the canvas path never falls back to Blob/object URLs.
-    createImageBitmapSpy = vi.fn();
-    global.createImageBitmap = createImageBitmapSpy as unknown as typeof createImageBitmap;
-    createObjectURL = vi.fn();
+    // jsdom does not implement object URL APIs. Stub them with counting spies.
+    objectUrlCounter = 0;
+    createObjectURL = vi.fn(() => `blob:mock-${++objectUrlCounter}`);
+    revokeObjectURL = vi.fn();
     URL.createObjectURL = createObjectURL as unknown as typeof URL.createObjectURL;
+    URL.revokeObjectURL = revokeObjectURL as unknown as typeof URL.revokeObjectURL;
 
-    // Re-establish module mock implementations cleared by clearAllMocks.
+    vi.clearAllMocks();
+    // clearAllMocks resets mock implementations; restore them.
+    createObjectURL.mockImplementation(() => `blob:mock-${++objectUrlCounter}`);
     mockFetchMjpegSnapshot.mockResolvedValue(new Uint8Array([1, 2, 3]).buffer);
+    // useStreamLifecycle calls httpGet for CMD_QUIT; must return a Promise.
     mockHttpGet.mockResolvedValue({ data: null, status: 200, statusText: 'OK', headers: {} });
   });
 
@@ -175,13 +150,13 @@ describe('useMonitorStream: Tauri canvas snapshot path', () => {
     vi.useRealTimers();
   });
 
-  it('fetches the frame via the Rust mjpeg_snapshot command and draws it to the canvas', async () => {
+  it('fetches the frame via the Rust mjpeg_snapshot command and exposes the object URL as imageSrc', async () => {
     const { result } = renderHook(() => useMonitorStream({ monitorId: '1' }));
-    attachCanvas(result.current.canvasRef);
 
     await waitFor(() => {
       expect(result.current.streamUrl).toContain('mode=single');
     });
+
     await waitFor(() => {
       expect(mockFetchMjpegSnapshot).toHaveBeenCalled();
     });
@@ -193,45 +168,53 @@ describe('useMonitorStream: Tauri canvas snapshot path', () => {
     expect(calledUrl).toContain('mode=single');
     expect(calledUrl).toContain('connkey=12345');
 
-    // The frame is decoded via ImageDecoder and drawn, then image+decoder freed.
-    await waitFor(() => expect(drawImage).toHaveBeenCalledTimes(1));
-    expect(imageDecoderCtor).toHaveBeenCalledTimes(1);
-    expect(decodeMock).toHaveBeenCalledTimes(1);
-    expect(closeImage).toHaveBeenCalledTimes(1);
-    expect(closeDecoder).toHaveBeenCalledTimes(1);
-    await waitFor(() => expect(result.current.hasFrame).toBe(true));
-
-    // No Blob path: no createImageBitmap, no object URLs, and <img src> unused for Tauri.
-    expect(result.current.useCanvas).toBe(true);
-    expect(result.current.imageSrc).toBe('');
-    expect(createImageBitmapSpy).not.toHaveBeenCalled();
-    expect(createObjectURL).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(result.current.imageSrc).toBe('blob:mock-1');
+    });
+    expect(createObjectURL).toHaveBeenCalledTimes(1);
   });
 
-  it('decodes a new frame on refresh without creating blob URLs', async () => {
+  it('revokes the previous object URL when a newer frame is fetched', async () => {
     // Incrementing connKey so a refresh produces a different streamUrl and
     // drives a second fetch deterministically (no reliance on timers).
     let nextKey = 1000;
     useMonitorStore.setState({ regenerateConnKey: vi.fn(() => ++nextKey) });
 
     const { result } = renderHook(() => useMonitorStream({ monitorId: '1' }));
-    attachCanvas(result.current.canvasRef);
 
-    await waitFor(() => expect(drawImage).toHaveBeenCalledTimes(1));
-    expect(closeImage).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(result.current.imageSrc).toBe('blob:mock-1');
+    });
+    expect(revokeObjectURL).not.toHaveBeenCalled();
 
-    // Trigger a new connection -> new streamUrl -> second frame fetch.
+    // Trigger a new connection → new streamUrl → second frame fetch.
     act(() => {
       result.current.regenerateConnection();
     });
 
-    await waitFor(() => expect(drawImage).toHaveBeenCalledTimes(2));
-    expect(closeImage).toHaveBeenCalledTimes(2);
-    expect(createImageBitmapSpy).not.toHaveBeenCalled();
-    expect(createObjectURL).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(result.current.imageSrc).toBe('blob:mock-2');
+    });
+
+    expect(createObjectURL).toHaveBeenCalledTimes(2);
+    // The first frame's URL must be revoked; the current one must not.
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock-1');
+    expect(revokeObjectURL).not.toHaveBeenCalledWith('blob:mock-2');
   });
 
-  it('streaming mode on Tauri uses the Rust reader, not the snapshot fetch path', async () => {
+  it('revokes the outstanding object URL on unmount', async () => {
+    const { result, unmount } = renderHook(() => useMonitorStream({ monitorId: '1' }));
+
+    await waitFor(() => {
+      expect(result.current.imageSrc).toBe('blob:mock-1');
+    });
+
+    unmount();
+
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock-1');
+  });
+
+  it('streaming mode on Tauri uses the Rust reader, not the snapshot httpGet path', async () => {
     const { startMjpegStream } = await import('../../lib/tauri-mjpeg');
     useSettingsStore.setState({
       profileSettings: {
@@ -248,13 +231,12 @@ describe('useMonitorStream: Tauri canvas snapshot path', () => {
     await waitFor(() => {
       expect(result.current.streamUrl).toContain('mode=jpeg');
     });
+
     await waitFor(() => {
       expect(startMjpegStream).toHaveBeenCalled();
     });
-
     expect(mockFetchMjpegSnapshot).not.toHaveBeenCalled();
-    expect(result.current.useCanvas).toBe(true);
-    expect(result.current.imageSrc).toBe('');
+    expect(result.current.imageSrc).not.toBe(result.current.streamUrl);
   });
 
   it('does not throw when a fetch fails and logs the error', async () => {
@@ -262,18 +244,16 @@ describe('useMonitorStream: Tauri canvas snapshot path', () => {
     mockFetchMjpegSnapshot.mockRejectedValue(new Error('network down'));
 
     const { result } = renderHook(() => useMonitorStream({ monitorId: '1' }));
-    attachCanvas(result.current.canvasRef);
 
     await waitFor(() => {
       expect(mockFetchMjpegSnapshot).toHaveBeenCalled();
     });
+
+    // No object URL was created, imageSrc stays empty, component did not crash.
     await waitFor(() => {
       expect(log.monitor).toHaveBeenCalled();
     });
-
-    // No frame drawn, hasFrame stays false, nothing crashed, no blob URLs.
-    expect(result.current.hasFrame).toBe(false);
-    expect(drawImage).not.toHaveBeenCalled();
+    expect(result.current.imageSrc).toBe('');
     expect(createObjectURL).not.toHaveBeenCalled();
   });
 });
