@@ -48,7 +48,7 @@ export interface LiveMonitorPlayerProps {
   objectFit?: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down';
   /** Show native video controls on Go2RTC streams (mute, fullscreen) */
   showControls?: boolean;
-  externalMediaRef?: React.RefObject<HTMLImageElement | HTMLVideoElement | null>;
+  externalMediaRef?: React.RefObject<HTMLImageElement | HTMLVideoElement | HTMLCanvasElement | null>;
   muted?: boolean;
   onLoad?: () => void;
   /** Called when the effective streaming protocol changes (e.g., 'MSE', 'WebRTC', 'MJPEG') */
@@ -236,17 +236,28 @@ export function LiveMonitorPlayer({
     setMjpegError(true);
   }, []);
 
-  // Sync media ref for snapshot capture
+  // On the Tauri streaming (canvas) path there is no <img onLoad>; treat the
+  // first decoded frame as the load event so the placeholder clears and the
+  // parent's onLoad fires once.
+  useEffect(() => {
+    if (effectiveStreamingMethod === 'mjpeg' && mjpegStream.useCanvas && mjpegStream.hasFrame) {
+      setMjpegError(false);
+      onLoad?.();
+    }
+  }, [effectiveStreamingMethod, mjpegStream.useCanvas, mjpegStream.hasFrame, onLoad]);
+
+  // Sync media ref for snapshot capture. On the canvas path the snapshot source
+  // is the <canvas> (captured via toDataURL); otherwise it is the <img>.
   useEffect(() => {
     if (!externalMediaRef) return;
-    const ref = externalMediaRef as React.MutableRefObject<HTMLImageElement | HTMLVideoElement | null>;
+    const ref = externalMediaRef as React.MutableRefObject<HTMLImageElement | HTMLVideoElement | HTMLCanvasElement | null>;
 
-    if (effectiveStreamingMethod === 'mjpeg' && imgRef.current) {
-      ref.current = imgRef.current;
+    if (effectiveStreamingMethod === 'mjpeg') {
+      ref.current = mjpegStream.useCanvas ? mjpegStream.canvasRef.current : imgRef.current;
     } else if (effectiveStreamingMethod === 'webrtc') {
       ref.current = go2rtcStream.getVideoElement();
     }
-  }, [externalMediaRef, effectiveStreamingMethod, mjpegStream.streamUrl, go2rtcStream.state, go2rtcStream]);
+  }, [externalMediaRef, effectiveStreamingMethod, mjpegStream.streamUrl, mjpegStream.useCanvas, mjpegStream.hasFrame, mjpegStream.canvasRef, go2rtcStream.state, go2rtcStream]);
 
   // Derive current status
   const isWebRTC = effectiveStreamingMethod === 'webrtc';
@@ -301,12 +312,12 @@ export function LiveMonitorPlayer({
   // Show VideoOff placeholder only when truly no video:
   // - Go2RTC connecting (not yet connected)
   // - MJPEG with no stream configured, no frame yet, or an error.
-  //   imageSrc is empty during the Tauri-snapshot first-frame gap (the frame is
-  //   being fetched through the Rust HTTP client); for every other case imageSrc
-  //   equals streamUrl, so this matches the previous behavior.
+  //   hasFrame is false during the first-frame gap (Tauri snapshot fetch or the
+  //   first decoded streaming frame); for web/native it tracks imageSrc, so this
+  //   matches the previous behavior.
   // Don't show during isWaitingForVideo — Go2RTC container may already be rendering
   const showNoVideo = (isWebRTC && status.state === 'connecting') ||
-    (!isWebRTC && (!mjpegStream.streamUrl || !mjpegStream.imageSrc || mjpegError));
+    (!isWebRTC && (!mjpegStream.streamUrl || !mjpegStream.hasFrame || mjpegError));
 
   return (
     <div className="relative w-full h-full" data-testid="video-player">
@@ -326,7 +337,16 @@ export function LiveMonitorPlayer({
         />
       )}
 
-      {!isWebRTC && mjpegStream.streamUrl && mjpegStream.imageSrc && (
+      {!isWebRTC && mjpegStream.useCanvas && mjpegStream.streamUrl && (
+        <canvas
+          ref={mjpegStream.canvasRef}
+          className={`w-full h-full ${className}`}
+          style={{ objectFit }}
+          data-testid="video-player-mjpeg-canvas"
+        />
+      )}
+
+      {!isWebRTC && !mjpegStream.useCanvas && mjpegStream.streamUrl && mjpegStream.imageSrc && (
         <img
           ref={imgRef}
           className={`w-full h-full ${className}`}

@@ -100,6 +100,21 @@ global.AudioContext = vi.fn(() => ({
   currentTime: 0,
 })) as unknown as typeof AudioContext;
 
+// Mock canvas 2D context, toDataURL, and createImageBitmap for the MJPEG canvas
+// render path. jsdom has no real canvas; provide enough surface to draw frames
+// and read a snapshot without throwing.
+HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
+  drawImage: vi.fn(),
+})) as unknown as typeof HTMLCanvasElement.prototype.getContext;
+HTMLCanvasElement.prototype.toDataURL = vi.fn(
+  () => 'data:image/jpeg;base64,bW9jaw=='
+) as unknown as typeof HTMLCanvasElement.prototype.toDataURL;
+global.createImageBitmap = vi.fn(async () => ({
+  width: 1280,
+  height: 720,
+  close: vi.fn(),
+})) as unknown as typeof createImageBitmap;
+
 // Mock Capacitor
 vi.mock('@capacitor/core', () => ({
   Capacitor: {

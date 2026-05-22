@@ -489,12 +489,30 @@ In ``useMonitorStream``:
 
 .. code-block:: typescript
 
-   const useBlobSnapshots = Platform.isTauri && effectiveViewMode === 'snapshot';
-   const useRustStreaming  = Platform.isTauri && effectiveViewMode === 'streaming';
+   const useTauriSnapshot = Platform.isTauri && effectiveViewMode === 'snapshot';
+   const useRustStreaming = Platform.isTauri && effectiveViewMode === 'streaming';
+   const useCanvas        = useTauriSnapshot || useRustStreaming;
 
-In both paths the hook converts each frame to a ``blob:`` object URL,
-sets it as ``imageSrc``, and revokes the previous URL immediately to
-avoid memory accumulation. The last active URL is revoked on unmount.
+Both Tauri paths render to a ``<canvas>`` via ``createImageBitmap``; only
+the frame source differs:
+
+- **Snapshot** (``useTauriSnapshot``) fetches one frame per refresh through
+  the Rust ``mjpeg_snapshot`` command.
+- **Streaming** (``useRustStreaming``) receives frames continuously over the
+  Rust ``Channel``.
+
+Each frame is decoded with ``createImageBitmap``, drawn to a reused
+``<canvas>`` (exposed as ``canvasRef``), then freed with ``bitmap.close()``.
+Neither path creates ``blob:`` URLs. This is deliberate: in WebKitGTK's
+multi-process model the blob registry lives in the network process, and a
+``<img src=blob:>`` stream retained the decoded bytes there, growing that
+process at roughly 24 MB/min until it was killed. ``createImageBitmap`` plus
+``<canvas>`` keeps decoding in the web process with a deterministic
+``close()`` per frame. The hook returns ``useCanvas`` (true on both Tauri
+paths), ``canvasRef``, and ``hasFrame`` (true once the first frame is drawn)
+so the consumer renders a ``<canvas>`` instead of an ``<img>``. Streaming
+decoding is latest-frame-wins: only the newest frame is held while a decode
+is in flight, so a slow decode never builds a backlog.
 
 **Streaming reconnect.** When the ``onError`` callback fires (stream
 error or clean server close), the hook schedules a reconnect using

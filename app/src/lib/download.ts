@@ -317,12 +317,20 @@ export async function downloadSnapshot(imageUrl: string, monitorName: string): P
  * Capture current frame from an img element and download.
  */
 export async function downloadSnapshotFromElement(
-  element: HTMLImageElement | HTMLVideoElement,
+  element: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement,
   monitorName: string
 ): Promise<void> {
   try {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
     const filename = `${monitorName}_${timestamp}.jpg`;
+
+    // Canvas (Tauri streaming path): the current frame is already drawn, so read
+    // it directly as a JPEG data URL.
+    if (element instanceof HTMLCanvasElement) {
+      const dataUrl = element.toDataURL('image/jpeg', 0.95);
+      await downloadSnapshot(dataUrl, monitorName);
+      return;
+    }
 
     // For video elements, capture current frame to canvas
     if (element instanceof HTMLVideoElement) {
