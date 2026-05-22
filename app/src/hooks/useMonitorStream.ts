@@ -31,6 +31,22 @@ import type { StreamOptions } from '../api/types';
 // one each. Re-logs only when the transport actually changes.
 let lastLoggedImageTransport: string | null = null;
 
+// TEMPORARY diagnostic for the WebKitGTK NetworkProcess memory leak (refs the
+// MJPEG streaming investigation). When enabled, streaming frames are still
+// delivered over the Tauri Channel (so the transport is exercised) but are
+// discarded immediately: no Blob is constructed, nothing is decoded or drawn.
+// If the NetworkProcess still grows with this on, the leak is the Channel
+// transport itself, not the frame handling. Enable at runtime in devtools:
+//   localStorage.setItem('mjpegDropFrames', '1'); location.reload();
+// Revert this block once the measurement is done.
+function mjpegDropFramesEnabled(): boolean {
+  try {
+    return typeof localStorage !== 'undefined' && localStorage.getItem('mjpegDropFrames') === '1';
+  } catch {
+    return false;
+  }
+}
+
 interface UseMonitorStreamOptions {
   monitorId: string;
   serverId?: string | null;
@@ -265,6 +281,8 @@ export function useMonitorStream({
     // while a decode is in flight, so a slow decode never builds a backlog.
     let latest: ArrayBuffer | null = null;
     let decoding = false;
+    // TEMPORARY: transport-only leak diagnostic (read once per stream).
+    const dropFrames = mjpegDropFramesEnabled();
 
     const pump = async () => {
       if (decoding) return;
@@ -283,6 +301,7 @@ export function useMonitorStream({
     const onFrame = (bytes: ArrayBuffer) => {
       if (cancelled) return;
       reconnectAttemptRef.current = 0;
+      if (dropFrames) return; // transport-only leak diagnostic: discard the frame
       latest = bytes;
       void pump();
     };
