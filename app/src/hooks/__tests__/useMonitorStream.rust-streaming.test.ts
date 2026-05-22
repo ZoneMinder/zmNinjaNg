@@ -75,6 +75,12 @@ describe('useMonitorStream: Tauri Rust MJPEG streaming path', () => {
   let lastOnError: ((message: string) => void) | undefined;
 
   beforeEach(() => {
+    // Platform.isTauriLinux checks the UA for "Linux"; force a WebKitGTK UA so
+    // the Tauri Linux path (Rust reader + data: URL) is exercised.
+    Object.defineProperty(navigator, 'userAgent', {
+      value: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/605.1.15',
+      configurable: true,
+    });
     useProfileStore.setState({
       profiles: [mockProfile],
       currentProfileId: 'profile-1',

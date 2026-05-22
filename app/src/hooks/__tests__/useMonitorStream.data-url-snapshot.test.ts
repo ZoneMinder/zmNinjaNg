@@ -99,6 +99,12 @@ describe('useMonitorStream: Tauri data: URL snapshot path', () => {
   let revokeObjectURL: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
+    // Platform.isTauriLinux checks the UA for "Linux"; force a WebKitGTK UA so
+    // the Tauri Linux path (Rust snapshot + data: URL) is exercised.
+    Object.defineProperty(navigator, 'userAgent', {
+      value: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/605.1.15',
+      configurable: true,
+    });
     useProfileStore.setState({
       profiles: [mockProfile],
       currentProfileId: 'profile-1',
