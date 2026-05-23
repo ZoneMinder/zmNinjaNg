@@ -143,10 +143,10 @@ export function useMonitorStream({
 
     const interval = setInterval(() => {
       setCacheBuster(Date.now());
-    }, bandwidth.snapshotRefreshInterval * 1000);
+    }, settings.snapshotRefreshInterval * 1000);
 
     return () => clearInterval(interval);
-  }, [enabled, effectiveViewMode, bandwidth.snapshotRefreshInterval]);
+  }, [enabled, effectiveViewMode, settings.snapshotRefreshInterval]);
 
   // Build stream URL - ONLY when we have a valid connKey to prevent zombie streams
   const streamUrl = currentProfile && connKey !== 0 && isAccessTokenFresh
