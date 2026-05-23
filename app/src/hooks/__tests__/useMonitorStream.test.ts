@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import { useMonitorStream } from '../useMonitorStream';
 import { useMonitorStore } from '../../stores/monitors';
 import { useProfileStore } from '../../stores/profile';
@@ -227,6 +227,54 @@ describe('useMonitorStream', () => {
     expect(result.current.imageSrc).toBe(result.current.streamUrl);
     // No per-frame fetch happens off the Tauri path.
     expect(mockHttpGet).not.toHaveBeenCalled();
+  });
+
+  it('snapshot refresh fires at the user-set interval, not the bandwidth default', async () => {
+    // Normal bandwidth mode has a 3s snapshotRefreshInterval default. The user
+    // sets 7s. The refresh must honor the user value, not the bandwidth default.
+    useSettingsStore.setState({
+      profileSettings: {
+        'profile-1': {
+          ...DEFAULT_SETTINGS,
+          viewMode: 'snapshot',
+          bandwidthMode: 'normal',
+          snapshotRefreshInterval: 7,
+        },
+      },
+    });
+
+    const regenerateConnKey = vi.fn(() => 12345);
+    useMonitorStore.setState({ regenerateConnKey });
+
+    vi.useFakeTimers();
+    try {
+      const { result } = renderHook(() => useMonitorStream({ monitorId: '1' }));
+
+      // Let mount effects (connKey, cacheBuster, interval registration) settle.
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(0);
+      });
+
+      const getRand = () =>
+        new URLSearchParams(result.current.streamUrl.split('?')[1] ?? '').get('rand');
+
+      const initialRand = getRand();
+      expect(initialRand).toBeTruthy();
+
+      // At 3s (the bandwidth-mode default) the snapshot must NOT have refreshed.
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(3000);
+      });
+      expect(getRand()).toBe(initialRand);
+
+      // At 7s (the user-set interval) it refreshes.
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(4000);
+      });
+      expect(getRand()).not.toBe(initialRand);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('viewModeOverride forces streaming when settings say snapshot', async () => {
