@@ -111,6 +111,7 @@ function MonitorCardComponent({
           onKeyDown={handleKeyClick}
           tabIndex={0}
           role="button"
+          data-testid="monitor-player"
         >
           {wrappedVideo}
           <div className="absolute top-1.5 left-1.5 z-10">
@@ -244,6 +245,7 @@ function MonitorCardComponent({
           role="button"
           tabIndex={0}
           aria-label={`${t('monitors.view_live')}: ${monitor.Name}`}
+          data-testid="monitor-player"
         >
           {wrappedVideo}
           {settings.showProtocolLabel && (
