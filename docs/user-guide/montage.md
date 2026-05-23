@@ -50,7 +50,7 @@ Go2RTC streams in the montage are muted by default. The protocol label (MJPEG/MS
 
 ## Performance
 
-When you have many cameras open at once, switch *Streaming Mode* to *Snapshot* in {doc}`settings` so each tile refreshes on an interval rather than holding an open stream. This trades motion smoothness for lower bandwidth and CPU. Go2RTC tiles continue to stream regardless and are unaffected by the setting.
+On phones, tablets, and the web app, the webview holds only about 6 live connections open to one server, so a grid full of *Streaming* tiles stalls after the first few. Switch *Streaming Mode* to *Snapshot* in {doc}`settings` so each tile refreshes on an interval rather than holding an open stream. This trades motion smoothness for lower bandwidth and CPU. The desktop app reads each feed natively and is not subject to that limit, so it streams many cameras at once and defaults to *Streaming*. Go2RTC tiles continue to stream regardless and are unaffected by the setting.
 
 :::{tip}
 If you have many cameras, use **Low bandwidth mode** in Settings to reduce data usage. You can also filter to show only the cameras you need, or use saved layouts to switch between different subsets.

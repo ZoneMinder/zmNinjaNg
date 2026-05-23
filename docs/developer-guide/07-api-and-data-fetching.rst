@@ -432,6 +432,53 @@ directly. WebKitGTK leaks the TCP sockets it opens for ``nph-zms``
 responses in ``CLOSE_WAIT``, which exhausts the per-host connection pool
 at around 8 concurrent monitors. Refs #155, #150.
 
+Per-platform transport
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+How each platform fetches MJPEG feeds, and whether the per-origin
+connection cap applies. The view mode (Streaming vs Snapshot) is the
+same setting everywhere; only the transport underneath differs.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 14 30 26
+
+   * - Platform
+     - Default mode
+     - MJPEG transport (both modes)
+     - Per-origin cap applies?
+   * - Web browser (Chromium, Firefox, Safari)
+     - Snapshot
+     - ``<img>`` loads ``nph-zms`` directly
+     - Yes, about 6 per origin
+   * - Android (Capacitor WebView)
+     - Snapshot
+     - ``<img>`` loads ``nph-zms`` directly
+     - Yes, about 6 per origin
+   * - iOS / iPadOS (WKWebView)
+     - Snapshot
+     - ``<img>`` loads ``nph-zms`` directly
+     - Yes, about 6 per origin
+   * - Desktop (Tauri: WebKitGTK, WKWebView, WebView2)
+     - Streaming
+     - Rust reqwest reader, frames as ``data:`` URLs
+     - No, Rust owns the sockets
+
+The split is ``Platform.isTauri``: every Tauri build uses the Rust path
+regardless of OS, and every non-Tauri build (web, iOS, Android) binds the
+``<img>`` straight to ``streamUrl``. There is no per-OS branch in the JS
+layer; the only OS-specific code is the Linux cache purge in Rust (see
+"WebKitGTK cache purge" below).
+
+On the webview platforms each streaming tile holds one HTTP connection,
+so a montage hits the per-origin cap after about six simultaneous
+streams. Two mitigations: Snapshot mode (the default there) issues short
+single-frame requests instead of holding a connection, and multi-port
+streaming (see above) spreads tiles across ports so they count as
+separate origins. On Tauri desktop the Rust reader owns the sockets, so
+the webview never opens an ``nph-zms`` connection and the cap does not
+apply. That is why desktop defaults to Streaming.
+
 Default view mode on Tauri desktop
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
