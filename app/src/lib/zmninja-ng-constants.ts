@@ -30,6 +30,13 @@ export const ZM_INTEGRATION = {
   // short timeout keeps a stalled request from blocking the next refresh.
   snapshotFrameFetchTimeoutMs: 10000, // 10 seconds
 
+  // Reconnect backoff for the Tauri Rust MJPEG stream when the connection drops
+  // or ends (server restart, network blip). Exponential from base, capped, with
+  // a bounded attempt count before surfacing the stream-error state. Refs #155.
+  mjpegReconnectBaseDelayMs: 1000, // 1 second
+  mjpegReconnectMaxDelayMs: 15000, // 15 seconds
+  mjpegReconnectMaxAttempts: 6,
+
   // Image quality settings
   safeImageQuality: 10, // Safe quality setting for bandwidth-constrained scenarios
   defaultMontageQuality: 50, // Default JPEG quality for montage view

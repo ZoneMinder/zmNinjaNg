@@ -1,6 +1,6 @@
 [package]
 name = "app"
-version = "1.1.13"
+version = "1.1.14"
 description = "A Tauri App"
 authors = ["you"]
 license = ""
@@ -28,7 +28,15 @@ tauri-plugin-http = { version = "2.5.7", features = ["dangerous-settings"] }
 tauri-plugin-fs = "2.5.0"
 tauri-plugin-opener = "2.5.0"
 tauri-plugin-dialog = "2.7.0"
+reqwest = { version = "0.12", features = ["stream"] }
+tokio = { version = "1", features = ["macros", "rt"] }
+tokio-util = "0.7"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2 = "0.6.4"
 objc2-foundation = "0.3.1"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+# Matches the webkit2gtk version wry links against. Used to clear the WebKitGTK
+# resource cache from Rust (network-process leak experiment).
+webkit2gtk = "=2.0.2"

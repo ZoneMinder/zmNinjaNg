@@ -426,17 +426,109 @@ In snapshot mode, ``useMonitorStream`` exposes ``imageSrc`` for the
 ``streamUrl``, so the browser loads each ``mode=single`` URL directly as
 the cache buster changes.
 
-On Tauri desktop, snapshot mode instead fetches each frame through the
-Rust HTTP client (``httpGet`` with ``responseType: 'blob'``) and sets
-``imageSrc`` to a ``blob:`` object URL. WebKitGTK's network process
-leaks the sockets it opens for completed ``<img src>`` requests to
-``nph-zms`` (they pile up in ``CLOSE_WAIT``), so routing frames through
-reqwest keeps the webview from opening those sockets at all. The hook
-revokes the previous object URL when a new frame arrives and on unmount,
-so only the current frame's blob is held. Refs #150.
+On Tauri desktop, both modes route image data through a Rust reqwest
+client so WebKitGTK's network process never opens a socket to ZoneMinder
+directly. WebKitGTK leaks the TCP sockets it opens for ``nph-zms``
+responses in ``CLOSE_WAIT``, which exhausts the per-host connection pool
+at around 8 concurrent monitors. Refs #155, #150.
 
-React Query
------------
+Default view mode on Tauri desktop
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``getDefaultViewMode()`` in ``app/src/stores/settings.ts`` returns
+``'streaming'`` when ``Platform.isTauri`` is true and ``'snapshot'``
+otherwise. ``DEFAULT_SETTINGS.viewMode`` calls this function, so a fresh
+Tauri profile starts in streaming mode. Profiles with an explicit saved
+``viewMode`` keep their stored value.
+
+Tauri desktop: Rust MJPEG streaming (refs #155)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Rust source: ``app/src-tauri/src/mjpeg.rs``, registered in
+``app/src-tauri/src/lib.rs``.
+
+JS wrapper: ``app/src/lib/tauri-mjpeg.ts``.
+
+**``mjpeg_start(url, accept_invalid_certs, on_frame: Channel)``** opens
+the ``multipart/x-mixed-replace`` MJPEG stream with reqwest, then spawns
+an async task that reads response chunks and passes them to
+``MjpegParser``. The parser scans for SOI (``0xFF 0xD8``) and EOI
+(``0xFF 0xD9``) markers to extract complete JPEG frames across arbitrary
+chunk boundaries. Each complete frame is sent to the webview as raw bytes
+on the ``Channel``. The command returns a ``u64`` stream id on success,
+or an error string for immediate failures (bad URL, TLS, connect refused,
+non-2xx status). Stream errors and clean server closes after the stream
+starts arrive on the channel as a JSON ``{"type":"error","message":"..."}``
+object.
+
+**``mjpeg_stop(stream_id)``** cancels the running task via a
+``CancellationToken``, which drops the reqwest response and closes the
+socket. It is a no-op for unknown ids.
+
+**``mjpeg_snapshot(url, accept_invalid_certs, timeout_ms)``** fetches a
+single frame for snapshot mode and returns its bytes as a
+``tauri::ipc::Response``. Timeout is set from
+``ZM_INTEGRATION.snapshotFrameFetchTimeoutMs`` (10000 ms).
+
+JS wrapper exports:
+
+- ``startMjpegStream(url, onFrame, onError): Promise<number>`` builds a
+  ``Channel``, routes raw ``ArrayBuffer`` (or typed-array view, normalized
+  to the exact backing slice) messages to ``onFrame``, and JSON error
+  objects to ``onError``. Passes the self-signed-cert flag from
+  ``isTauriSslTrustEnabled()``.
+- ``stopMjpegStream(streamId): Promise<void>`` calls ``mjpeg_stop``.
+- ``fetchMjpegSnapshot(url): Promise<ArrayBuffer>`` calls
+  ``mjpeg_snapshot`` with ``isTauriSslTrustEnabled()`` and
+  ``ZM_INTEGRATION.snapshotFrameFetchTimeoutMs``.
+
+Tauri desktop: hook integration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In ``useMonitorStream``:
+
+.. code-block:: typescript
+
+   const useDataUrlSnapshots = Platform.isTauri && effectiveViewMode === 'snapshot';
+   const useRustStreaming    = Platform.isTauri && effectiveViewMode === 'streaming';
+
+In both paths the hook encodes each frame as a ``data:image/jpeg;base64,...``
+URL and sets it as ``imageSrc``. ``data:`` URLs are used rather than ``blob:``
+object URLs because WebKitGTK's network process never frees blob-registry
+entries (not even on ``revokeObjectURL``), so they leak; ``data:`` resources
+land in the resource cache that the periodic purge (see "WebKitGTK cache
+purge" below) clears.
+
+**Streaming reconnect.** When the ``onError`` callback fires (stream
+error or clean server close), the hook schedules a reconnect using
+exponential backoff:
+
+- Base delay: ``ZM_INTEGRATION.mjpegReconnectBaseDelayMs`` (1000 ms)
+- Max delay: ``ZM_INTEGRATION.mjpegReconnectMaxDelayMs`` (15000 ms)
+- Max attempts: ``ZM_INTEGRATION.mjpegReconnectMaxAttempts`` (6)
+
+A reconnect calls ``forceRegenerate()`` from ``useStreamLifecycle``,
+which mints a fresh ``connKey``. The changed ``connKey`` causes the
+streaming effect to re-run: it calls ``stopMjpegStream`` on the old id
+and starts a new ``mjpeg_start``. ``stopMjpegStream`` is also called on
+unmount.
+
+**Web, iOS, and Android are unchanged.** Those platforms set
+``imageSrc`` directly from ``streamUrl`` so the ``<img>`` tag loads each
+URL via the platform's own network stack.
+
+Tauri desktop: WebKitGTK cache purge
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+WebKitGTK's network process does not release the per-frame image resources
+loaded while streaming, even after the streams stop, so its RSS grows
+unbounded (the web and Rust processes stay flat). A Linux-only thread in
+``app/src-tauri/src/lib.rs`` clears the WebKitGTK resource cache every
+``WEBKIT_CACHE_PURGE_INTERVAL_SECS`` (120 s) via
+``webview.with_webview(|w| w.inner().context().clear_cache())``. Measured:
+the network process holds at roughly 50 MB with the purge versus unbounded
+growth (~24 MB/min, to 573 MB) without it. The purge bounds the leak
+regardless of how frames are rendered.
 
 Server state is managed via ``@tanstack/react-query``. See the
 `TanStack Query docs <https://tanstack.com/query/latest>`_ for general
