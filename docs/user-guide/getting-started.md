@@ -38,6 +38,17 @@ zmNinjaNg runs on Android, iOS, Windows, macOS, Linux, and the web from a single
 
 See {doc}`installation` for detailed instructions per platform, and {doc}`profiles` for profile configuration options.
 
+## Navigation and sidebar
+
+The sidebar (fixed on the left on desktop, a slide-out menu on mobile) moves you between the main screens: Dashboard, {doc}`monitors`, {doc}`montage`, {doc}`events`, {doc}`timeline`, {doc}`notifications`, {doc}`profiles`, {doc}`settings`, {doc}`server`, and {doc}`logs`.
+
+Controls at the bottom of the sidebar:
+
+- **Menu Order**: drag the navigation items into the order you prefer. The order is saved per device.
+- **Theme**: a quick toggle that switches theme without opening Settings.
+- **Keep screen awake (Insomnia)**: stops the device from sleeping while you watch live feeds. Useful on a wall display or while monitoring.
+- **Kiosk lock**: locks the app into kiosk mode; unlocking requires your PIN or biometrics. See {doc}`kiosk`.
+
 ## Supported Features
 
 | Feature | Status |

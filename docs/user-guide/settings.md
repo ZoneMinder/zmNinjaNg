@@ -7,10 +7,12 @@ Settings are stored per profile. Each ZoneMinder server profile has its own inde
 | Setting | Description |
 |---------|-------------|
 | **Language** | Interface language (English, German, Spanish, French, Chinese) |
-| **Theme** | Light, Cream, Dark, Slate, Amber, or System (follows system setting by default) |
+| **Theme** | Light, Cream, Dark, Slate, Amber, or System (follows system setting by default). The quick toggle is in the sidebar; see {doc}`getting-started`. |
 | **Date format** | How dates are displayed throughout the app |
 | **Time format** | 12-hour or 24-hour clock |
+| **TV mode** | Larger touch targets and D-pad/remote navigation for TV and set-top devices. See [TV mode](#tv-mode). |
 | **Thumbnail display** | Order of frame types to try when loading event thumbnails |
+| **Hover preview** | Where an enlarged live or event preview appears on hover (long-press on mobile). See [Hover preview](#hover-preview). |
 
 ### Thumbnail display
 
@@ -21,6 +23,22 @@ The **Thumbnail display** setting lets you pick the order in which the app tries
 When a thumbnail loads successfully, the winning frame type is cached for the session so the app doesn't re-try earlier entries for the same event. If every entry fails, a placeholder image is shown. At no point does the app flash a broken-image icon, the thumbnail area stays blank until a frame succeeds or the chain is exhausted.
 
 The setting applies to every thumbnail surface in the app: events list, event montage, event detail hero, timeline scrubber, timeline preview popover, and notification history.
+
+### TV mode
+
+TV mode adapts the interface for televisions and set-top boxes (for example Fire TV or Android TV). It enlarges touch targets and enables D-pad and remote navigation, so you can move focus and select with a remote instead of a pointer. Turn it on when running zmNinjaNg on a TV; leave it off on phones, tablets, and desktops.
+
+### Hover preview
+
+Hover preview enlarges a feed or event in place when you hover over it on desktop, or long-press it on mobile. Each surface has its own toggle, so you can enable previews only where you want them:
+
+- Events list and Events grid
+- Monitors list and Monitors grid
+- Dashboard
+- Timeline
+- Notifications
+
+The **playback speed** control (0.5x, 1x, 1.5x, 2x, 4x) sets how fast an event preview plays. Live monitor previews open a fresh stream while the preview is on screen and close it when you move away.
 
 ## Bandwidth Settings
 
@@ -50,9 +68,14 @@ Settings that control live camera feeds:
 | Setting | Description |
 |---------|-------------|
 | **Streaming Mode** | *Streaming* delivers continuous video. *Snapshot* fetches a periodic still image instead, lower bandwidth, lower frame rate. See [Streaming Mode](#streaming-mode) below for where this setting applies. |
+| **Enable Go2RTC** | When on, the app tries WebRTC/MSE/HLS for each monitor and falls back to MJPEG. When off, all monitors use MJPEG. |
 | **Streaming Protocols** | WebRTC, MSE, and HLS, tried in parallel when Go2RTC is configured. The first protocol to produce video wins. |
 | **Snapshot interval** | How often to refresh the still image when Streaming Mode is set to *Snapshot* (1–30 seconds) |
 | **Protocol Label** | Shows or hides the streaming protocol indicator (MJPEG/MSE/WebRTC) on video feeds across all pages |
+| **Stream FPS** | Maximum frame rate for live MJPEG streams (1–30 fps, default 10; presets 5/10/15/30). Lower values reduce bandwidth and CPU. |
+| **Stream Scale** | Server-side scaling applied to MJPEG frames before they are sent (10–100%, default 50; presets 25/50/75/100). Lower values reduce bandwidth. |
+
+Switching to **Low bandwidth mode** resets Stream FPS, Stream Scale, and Snapshot interval to lower defaults.
 
 ### Streaming Protocols
 
@@ -78,7 +101,22 @@ A new profile picks a default based on the platform:
 
 Changing the Streaming Mode toggle overrides the default for that profile.
 
-If your ZoneMinder server sets `ZM_MIN_STREAMING_PORT`, the app loads each monitor from a different port, which also gets around the connection limit on phone, tablet, and web. See [Multi-Server](#multi-server).
+(connection-limits-by-platform)=
+
+#### Connection limits by platform
+
+How a live MJPEG feed reaches the screen differs by platform, and that decides whether the per-server stream limit applies:
+
+| Platform | How live feeds load | ~6 simultaneous live streams limit? |
+|----------|---------------------|-------------------------------------|
+| Web browser | Loaded directly from ZoneMinder by the browser | Yes, about 6 per server |
+| Android | Loaded directly through the app WebView | Yes, about 6 per server |
+| iOS / iPadOS | Loaded directly through the app WebView | Yes, about 6 per server |
+| Desktop (Windows, macOS, Linux) | Read natively by the app, not through the webview | No limit |
+
+:::{note}
+On **iOS, Android, and the web app**, a ZoneMinder server keeps only about 6 live streams open at a time, so a montage with more than ~6 live tiles stalls after the first few. To show more than 6 live feeds at once, either keep **Snapshot** mode (the default on these platforms, which fetches a still on an interval instead of holding a connection) or enable multi-port streaming on the server by setting `ZM_MIN_STREAMING_PORT`. That spreads each camera across a different port, so the limit no longer applies. On **desktop** the app reads feeds natively, so this limit never applies. See [Multi-Server](#multi-server).
+:::
 
 #### Where Streaming Mode applies
 
@@ -147,15 +185,5 @@ In a multi-server setup:
 - All API calls, ZMS streams, and portal URLs route to the appropriate server
 - Multi-port streaming (`ZM_MIN_STREAMING_PORT`) is automatically applied to per-monitor URLs
 
-### Server Page
-
-The Server page (accessible from the sidebar) shows all servers in the cluster with per-server status including CPU, memory, and disk usage. Storage areas are displayed with disk usage and their server association.
-
-## Server Information
-
-For single-server setups, the Server screen shows:
-
-- Server version
-- API version
-- Daemon status
+For the full Server page (version, load, disk usage, daemon state, per-server metrics, storage areas, and run-state control), see {doc}`server`.
 

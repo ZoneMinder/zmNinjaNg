@@ -14,6 +14,7 @@ montage
 events
 timeline
 settings
+server
 notifications
 logs
 kiosk
