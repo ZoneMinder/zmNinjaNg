@@ -1020,7 +1020,13 @@
       "go_now": "Zu Jetzt springen",
       "live": "Bei neuen Ereignissen aktualisieren"
     },
-    "live": "Live"
+    "live": "Live",
+    "cause_filter": "Ursache",
+    "cause_all": "Alle Ursachen",
+    "cause_motion": "Bewegung erkannt",
+    "cause_continuous": "Kontinuierlich",
+    "cause_signal": "Signal",
+    "cause_forced": "Erzwungen"
   },
   "error": {
     "something_went_wrong": "Etwas ist schief gelaufen",

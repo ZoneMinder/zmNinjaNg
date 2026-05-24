@@ -1020,7 +1020,13 @@
       "go_now": "Aller à maintenant",
       "live": "Mise à jour auto sur nouveaux événements"
     },
-    "live": "Direct"
+    "live": "Direct",
+    "cause_filter": "Cause",
+    "cause_all": "Toutes les causes",
+    "cause_motion": "Mouvement détecté",
+    "cause_continuous": "Continu",
+    "cause_signal": "Signal",
+    "cause_forced": "Forcé"
   },
   "error": {
     "something_went_wrong": "Quelque chose s'est mal passé",

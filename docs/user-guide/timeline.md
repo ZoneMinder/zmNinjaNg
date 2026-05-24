@@ -10,6 +10,19 @@ Events are drawn as colored bars on a horizontal time axis. Each monitor gets it
 - **Pan** left and right to move through time
 - **Tap an event bar** to jump to that event's detail view
 
+## Filtering
+
+Open the **Filters** panel at the top of the page to narrow what the timeline shows. Filter selections are saved per profile.
+
+- **Date range** and **Monitors**: limit events to a time window and to specific cameras.
+- **Detected objects only**: show only events whose notes contain object-detection results.
+- **Event Cause**: filter by why ZoneMinder recorded the event.
+  - **All Causes**: no filtering (default).
+  - **Motion Detected**: events with motion activity. On cameras set to continuous recording (Mocord/Record), every event has the cause "Continuous", but ZoneMinder writes `Motion: <zones>` into the event Notes whenever motion occurs. This option matches that note, so motion events still surface on continuous setups.
+  - **Continuous**, **Signal**, **Forced**: match the ZoneMinder event cause directly.
+
+When an Event Cause is selected, the timeline fetches each monitor separately so one busy camera does not use up the whole result budget.
+
 ## Heatmap
 
 The heatmap shows event density over time as a colored grid. Darker colors indicate more events during that period, useful for spotting busy hours, quiet periods, and recurring activity.
