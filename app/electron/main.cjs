@@ -1,0 +1,65 @@
+// Experimental Electron desktop shell for zmNinjaNg.
+//
+// Purpose: run the existing React app on Chromium (the same engine as Windows
+// WebView2 and the web build) instead of the system WebKit that Tauri uses on
+// macOS and Linux, to compare MJPEG memory behavior. The renderer is detected
+// as a plain web page (no Tauri/Capacitor runtime), so it uses the browser
+// <img src> streaming path. no Rust reader, no cache purge, no auto-restart.
+
+const { app, BrowserWindow, shell } = require('electron');
+const path = require('node:path');
+
+// The renderer fetches the user's ZoneMinder server, which generally does not
+// send CORS headers, so same-origin enforcement is disabled (this is a desktop
+// client hitting a user-configured server, like the Tauri/Capacitor builds).
+// This is an experiment shell, not a hardened production build.
+const DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL;
+
+function createWindow() {
+  const win = new BrowserWindow({
+    width: 1280,
+    height: 800,
+    title: 'zmNinjaNg (Electron)',
+    backgroundColor: '#0b0f14',
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.cjs'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      // Allow cross-origin requests to the ZoneMinder server and mixed content.
+      webSecurity: false,
+    },
+  });
+
+  // Open external links (http/https that aren't our app) in the system browser.
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (/^https?:/i.test(url)) {
+      shell.openExternal(url);
+      return { action: 'deny' };
+    }
+    return { action: 'allow' };
+  });
+
+  if (DEV_SERVER_URL) {
+    win.loadURL(DEV_SERVER_URL);
+    win.webContents.openDevTools({ mode: 'detach' });
+  } else {
+    win.loadFile(path.join(__dirname, '..', 'dist', 'index.html'));
+  }
+}
+
+// Accept self-signed certificates (ZoneMinder servers commonly use them).
+app.on('certificate-error', (event, _webContents, _url, _error, _cert, callback) => {
+  event.preventDefault();
+  callback(true);
+});
+
+app.whenReady().then(() => {
+  createWindow();
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+  });
+});
+
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') app.quit();
+});

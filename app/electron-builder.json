@@ -1,0 +1,25 @@
+{
+  "appId": "org.zoneminder.zmninjang.electron",
+  "productName": "zmNinjaNg Electron",
+  "directories": {
+    "output": "release-electron"
+  },
+  "files": [
+    "dist/**/*",
+    "electron/**/*",
+    "package.json"
+  ],
+  "npmRebuild": false,
+  "mac": {
+    "target": ["dir"],
+    "category": "public.app-category.utilities",
+    "identity": null
+  },
+  "linux": {
+    "target": ["AppImage"],
+    "category": "Utility"
+  },
+  "win": {
+    "target": ["nsis"]
+  }
+}
