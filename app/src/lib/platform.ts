@@ -40,6 +40,17 @@ export const Platform = {
   },
 
   /**
+   * True on Tauri desktop running the WebKitGTK webview (Linux). That webview
+   * never frees blob: registry entries, even after revokeObjectURL, so the MJPEG
+   * render path uses data: URLs there and relies on the periodic resource-cache
+   * purge in src-tauri/src/lib.rs. macOS (WKWebView) and Windows (WebView2) free
+   * blob: URLs on revoke and have no purge, so they use blob: instead. refs #150
+   */
+  get isTauriLinux() {
+    return this.isTauri && /\blinux\b/i.test(navigator.userAgent);
+  },
+
+  /**
    * True if running on desktop (Tauri) or web browser — i.e., not mobile native.
    * Handles the edge case where Capacitor misdetects Tauri's WKWebView as iOS.
    */

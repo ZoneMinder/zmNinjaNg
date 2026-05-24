@@ -122,6 +122,7 @@ The Advanced section is a single flat section containing the following controls 
 |---------|-------------|
 | **Allow self-signed certificates** | Shown only when the Portal URL uses HTTPS. Enable when your ZoneMinder server uses a self-signed certificate. On native platforms (iOS/Android/desktop) the app pins the certificate fingerprint on first connection; toggling this off and back on lets you re-pin. |
 | **Disable log redaction** | Stop redacting URLs and credentials from logs. Enable only temporarily when sharing logs for troubleshooting. |
+| **Auto-restart** (desktop only) | The desktop app's webview accumulates memory over long sessions that only a restart reclaims, so this is **on by default**: it restarts the app automatically on an interval, in minutes (default 120, minimum 1). Turn it off to disable. A **Restart now** button next to it restarts immediately. The window size and position are preserved across the restart. |
 | **Component Logs** (collapsible) | Sets the global log level (the floor for everything) and per-component overrides. Includes a Reset button to clear all per-component overrides. |
 
 For information about persistent log files, file locations, and the Share / Open / Clear buttons, see {doc}`logs`.

@@ -62,6 +62,13 @@ export const ZM_INTEGRATION = {
 } as const;
 
 /**
+ * Auto-restart (desktop only): periodically relaunch the app to release WebKit's
+ * process-level memory that no in-process flush reclaims. Interval is in minutes.
+ */
+export const AUTO_RESTART_MIN_MINUTES = 1;
+export const AUTO_RESTART_DEFAULT_MINUTES = 120;
+
+/**
  * Grid Layout Constants
  *
  * Used by Dashboard and Montage views for responsive grid layouts.

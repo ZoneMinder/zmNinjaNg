@@ -5,8 +5,35 @@
  */
 
 import type React from 'react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 
-export function SectionHeader({ label }: { label: string }) {
+export function SectionHeader({
+  label,
+  collapsible,
+  expanded,
+  onToggle,
+  testId,
+}: {
+  label: string;
+  collapsible?: boolean;
+  expanded?: boolean;
+  onToggle?: () => void;
+  testId?: string;
+}) {
+  if (collapsible) {
+    return (
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={expanded}
+        data-testid={testId}
+        className="flex w-full items-center gap-1.5 text-sm font-semibold text-primary uppercase tracking-wide mb-2 cursor-pointer"
+      >
+        {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+        {label}
+      </button>
+    );
+  }
   return (
     <h2 className="text-sm font-semibold text-primary uppercase tracking-wide mb-2">
       {label}

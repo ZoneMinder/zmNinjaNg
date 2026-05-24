@@ -15,6 +15,7 @@ import { useProfileStore } from '../../stores/profile';
 import { useAuthStore } from '../../stores/auth';
 import { useSettingsStore, DEFAULT_SETTINGS } from '../../stores/settings';
 import { startMjpegStream, stopMjpegStream } from '../../lib/tauri-mjpeg';
+import { Platform } from '../../lib/platform';
 import type { Profile } from '../../api/types';
 
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: () => true }));
@@ -73,6 +74,7 @@ describe('useMonitorStream: Tauri Rust MJPEG streaming path', () => {
 
   let lastOnFrame: ((bytes: ArrayBuffer) => void) | undefined;
   let lastOnError: ((message: string) => void) | undefined;
+  let isTauriLinuxSpy: ReturnType<typeof vi.spyOn> | undefined;
 
   beforeEach(() => {
     useProfileStore.setState({
@@ -118,6 +120,8 @@ describe('useMonitorStream: Tauri Rust MJPEG streaming path', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    isTauriLinuxSpy?.mockRestore();
+    isTauriLinuxSpy = undefined;
   });
 
   it('starts a Rust MJPEG stream for the streamUrl instead of binding <img src> to it', async () => {
@@ -132,7 +136,8 @@ describe('useMonitorStream: Tauri Rust MJPEG streaming path', () => {
     expect(result.current.imageSrc).not.toBe(result.current.streamUrl);
   });
 
-  it('renders each frame as a data: URL, never a blob URL', async () => {
+  it('Linux desktop: renders each frame as a data: URL, never a blob URL', async () => {
+    isTauriLinuxSpy = vi.spyOn(Platform, 'isTauriLinux', 'get').mockReturnValue(true);
     const { result } = renderHook(() => useMonitorStream({ monitorId: '1' }));
     await waitFor(() => expect(mockStart).toHaveBeenCalled());
 
@@ -147,11 +152,32 @@ describe('useMonitorStream: Tauri Rust MJPEG streaming path', () => {
     expect(revokeObjectURL).not.toHaveBeenCalled();
   });
 
+  it('non-Linux desktop: renders each frame as a blob URL and revokes the previous', async () => {
+    isTauriLinuxSpy = vi.spyOn(Platform, 'isTauriLinux', 'get').mockReturnValue(false);
+    const { result, unmount } = renderHook(() => useMonitorStream({ monitorId: '1' }));
+    await waitFor(() => expect(mockStart).toHaveBeenCalled());
+
+    act(() => lastOnFrame!(new Uint8Array([1, 2, 3]).buffer));
+    await waitFor(() => expect(result.current.imageSrc).toBe('blob:mock-1'));
+    expect(createObjectURL).toHaveBeenCalledTimes(1);
+    expect(revokeObjectURL).not.toHaveBeenCalled();
+
+    act(() => lastOnFrame!(new Uint8Array([4, 5, 6]).buffer));
+    await waitFor(() => expect(result.current.imageSrc).toBe('blob:mock-2'));
+    expect(createObjectURL).toHaveBeenCalledTimes(2);
+    // Replacing a frame revokes the prior one so WKWebView/WebView2 free it.
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock-1');
+
+    // The outstanding URL is revoked on unmount.
+    unmount();
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock-2');
+  });
+
   it('stops the stream on unmount', async () => {
     const { result, unmount } = renderHook(() => useMonitorStream({ monitorId: '1' }));
     await waitFor(() => expect(mockStart).toHaveBeenCalled());
     act(() => lastOnFrame!(new Uint8Array([1, 2, 3]).buffer));
-    await waitFor(() => expect(result.current.imageSrc).toMatch(/^data:/));
+    await waitFor(() => expect(result.current.imageSrc).toBeTruthy());
 
     unmount();
 

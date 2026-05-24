@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const getPlatformMock = vi.fn();
 const isNativePlatformMock = vi.fn();
@@ -70,5 +70,37 @@ describe('Platform.isAndroid', () => {
     isTauriMock.mockReturnValue(false);
     const { Platform } = await import('../platform');
     expect(Platform.isAndroid).toBe(false);
+  });
+});
+
+describe('Platform.isTauriLinux', () => {
+  const ORIGINAL_UA = navigator.userAgent;
+  const setUA = (ua: string) =>
+    Object.defineProperty(navigator, 'userAgent', { value: ua, configurable: true });
+
+  afterEach(() => setUA(ORIGINAL_UA));
+
+  it('is true on Tauri with a Linux (WebKitGTK) user agent', async () => {
+    isTauriMock.mockReturnValue(true);
+    isNativePlatformMock.mockReturnValue(false);
+    setUA('Mozilla/5.0 (X11; Linux aarch64) AppleWebKit/605.1.15 (KHTML, like Gecko)');
+    const { Platform } = await import('../platform');
+    expect(Platform.isTauriLinux).toBe(true);
+  });
+
+  it('is false on Tauri with a macOS (WKWebView) user agent', async () => {
+    isTauriMock.mockReturnValue(true);
+    isNativePlatformMock.mockReturnValue(false);
+    setUA('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko)');
+    const { Platform } = await import('../platform');
+    expect(Platform.isTauriLinux).toBe(false);
+  });
+
+  it('is false in a Linux web browser (not Tauri)', async () => {
+    isTauriMock.mockReturnValue(false);
+    isNativePlatformMock.mockReturnValue(false);
+    setUA('Mozilla/5.0 (X11; Linux x86_64; rv:130.0) Gecko/20100101 Firefox/130.0');
+    const { Platform } = await import('../platform');
+    expect(Platform.isTauriLinux).toBe(false);
   });
 });

@@ -13,7 +13,7 @@
  * - Generates unique connection keys per stream instance
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { getStreamUrl } from '../api/monitors';
 import { useCurrentProfile } from './useCurrentProfile';
 import { useBandwidthSettings } from './useBandwidthSettings';
@@ -118,6 +118,24 @@ export function useMonitorStream({
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [imageSrc, setImageSrc] = useState<string>('');
 
+  // Latest object URL bound to <img src> on the blob path. Held so the previous
+  // one can be revoked when a newer frame replaces it. Stays empty on Linux.
+  const objectUrlRef = useRef<string>('');
+
+  // Convert a raw JPEG frame to an <img>-bindable URL using the representation
+  // the current webview can reclaim. WebKitGTK (Linux) never frees blob: registry
+  // entries, even on revokeObjectURL, so it uses data: URLs that the periodic
+  // resource-cache purge in src-tauri/src/lib.rs reclaims. WKWebView (macOS) and
+  // WebView2 (Windows) free blob: URLs on revoke and have no purge, so they use
+  // blob: and revoke the prior frame to keep memory bounded. refs #150
+  const frameToImageSrc = useCallback((bytes: ArrayBuffer): string => {
+    if (Platform.isTauriLinux) return jpegDataUrl(bytes);
+    const url = URL.createObjectURL(new Blob([bytes], { type: 'image/jpeg' }));
+    if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+    objectUrlRef.current = url;
+    return url;
+  }, []);
+
   // Stream lifecycle: connKey generation, CMD_QUIT on regen/unmount, media abort
   const { connKey, forceRegenerate } = useStreamLifecycle({
     monitorId,
@@ -199,7 +217,7 @@ export function useMonitorStream({
       try {
         const bytes = await fetchMjpegSnapshot(streamUrl);
         if (cancelled) return;
-        setImageSrc(jpegDataUrl(bytes));
+        setImageSrc(frameToImageSrc(bytes));
       } catch (error) {
         // Tauri invoke is not abortable mid-flight; discard stale results via
         // the cancelled flag. Log network failures without crashing.
@@ -215,7 +233,7 @@ export function useMonitorStream({
     return () => {
       cancelled = true;
     };
-  }, [enabled, useDataUrlSnapshots, streamUrl, monitorId]);
+  }, [enabled, useDataUrlSnapshots, streamUrl, monitorId, frameToImageSrc]);
 
   // Tauri desktop + streaming mode: the Rust reader owns the nph-zms socket and
   // pushes JPEG frames over a Channel. Each frame becomes a data: URL. On
@@ -234,7 +252,7 @@ export function useMonitorStream({
     const onFrame = (bytes: ArrayBuffer) => {
       if (cancelled) return;
       reconnectAttemptRef.current = 0;
-      setImageSrc(jpegDataUrl(bytes));
+      setImageSrc(frameToImageSrc(bytes));
     };
 
     const scheduleReconnect = () => {
@@ -298,7 +316,16 @@ export function useMonitorStream({
     // forceRegenerate is a stable-enough callback from useStreamLifecycle; adding
     // it would re-run the effect every render. Mirror the connkey effect's deps.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, useRustStreaming, streamUrl, monitorId]);
+  }, [enabled, useRustStreaming, streamUrl, monitorId, frameToImageSrc]);
+
+  // Revoke the last blob: URL on unmount so WKWebView/WebView2 free it. No-op on
+  // the data: URL path (objectUrlRef stays empty there). refs #150
+  useEffect(() => () => {
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current);
+      objectUrlRef.current = '';
+    }
+  }, []);
 
   // Report which transport loads images so #150 can be diagnosed in the field:
   // 'native HTTP' means frames go through the Rust HTTP client (data: URL),

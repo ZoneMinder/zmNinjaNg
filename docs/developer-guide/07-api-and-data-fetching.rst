@@ -435,40 +435,65 @@ at around 8 concurrent monitors. Refs #155, #150.
 Per-platform transport
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-How each platform fetches MJPEG feeds, and whether the per-origin
-connection cap applies. The view mode (Streaming vs Snapshot) is the
-same setting everywhere; only the transport underneath differs.
+How each platform fetches MJPEG feeds: the frame transport, the default view
+mode, whether the per-origin connection cap applies, and how memory is kept in
+check. The view mode (Streaming vs Snapshot) is the same setting everywhere;
+only the transport and memory handling underneath differ.
 
 .. list-table::
    :header-rows: 1
-   :widths: 30 14 30 26
+   :widths: 20 28 10 16 26
 
    * - Platform
+     - MJPEG frame transport (both modes)
      - Default mode
-     - MJPEG transport (both modes)
-     - Per-origin cap applies?
+     - Per-origin cap?
+     - Memory handling
    * - Web browser (Chromium, Firefox, Safari)
-     - Snapshot
      - ``<img>`` loads ``nph-zms`` directly
-     - Yes, about 6 per origin
+     - Snapshot
+     - Yes (~6 / origin)
+     - Browser-managed
    * - Android (Capacitor WebView)
-     - Snapshot
      - ``<img>`` loads ``nph-zms`` directly
-     - Yes, about 6 per origin
+     - Snapshot
+     - Yes (~6 / origin)
+     - WebView-managed
    * - iOS / iPadOS (WKWebView)
-     - Snapshot
      - ``<img>`` loads ``nph-zms`` directly
-     - Yes, about 6 per origin
-   * - Desktop (Tauri: WebKitGTK, WKWebView, WebView2)
+     - Snapshot
+     - Yes (~6 / origin)
+     - OS-managed
+   * - Desktop Linux (Tauri / WebKitGTK)
+     - Rust reader → ``data:`` URL
      - Streaming
-     - Rust reqwest reader, frames as ``data:`` URLs
-     - No, Rust owns the sockets
+     - No (Rust owns sockets)
+     - ``clear_cache`` purge (120 s) + auto-restart
+   * - Desktop macOS (Tauri / WKWebView)
+     - Rust reader → ``blob:`` URL + revoke
+     - Streaming
+     - No
+     - blob revoke + auto-restart
+   * - Desktop Windows (Tauri / WebView2)
+     - Rust reader → ``blob:`` URL + revoke
+     - Streaming
+     - No
+     - blob revoke + auto-restart
 
-The split is ``Platform.isTauri``: every Tauri build uses the Rust path
-regardless of OS, and every non-Tauri build (web, iOS, Android) binds the
-``<img>`` straight to ``streamUrl``. There is no per-OS branch in the JS
-layer; the only OS-specific code is the Linux cache purge in Rust (see
-"WebKitGTK cache purge" below).
+Go2RTC-enabled monitors take a different path on every platform: native
+WebRTC/MSE/HLS into a ``<video>`` element, always continuous and independent of
+the Streaming Mode setting. The table above is the MJPEG (ZMS) path used when
+Go2RTC is off or unavailable. Memory handling is detailed in "WebKitGTK cache
+purge" and "Desktop memory: auto-restart" below.
+
+The first split is ``Platform.isTauri``: every Tauri build uses the Rust
+path, and every non-Tauri build (web, iOS, Android) binds the ``<img>``
+straight to ``streamUrl``. Within the Rust path a second split,
+``Platform.isTauriLinux`` (Tauri plus a Linux user agent), picks how each
+frame reaches the ``<img>``: ``data:`` URLs on Linux, ``blob:`` URLs
+elsewhere. The reason is in "hook integration" below. The other
+OS-specific code is the Linux cache purge in Rust (see "WebKitGTK cache
+purge" below).
 
 On the webview platforms each streaming tile holds one HTTP connection,
 so a montage hits the per-origin cap after about six simultaneous
@@ -539,12 +564,25 @@ In ``useMonitorStream``:
    const useDataUrlSnapshots = Platform.isTauri && effectiveViewMode === 'snapshot';
    const useRustStreaming    = Platform.isTauri && effectiveViewMode === 'streaming';
 
-In both paths the hook encodes each frame as a ``data:image/jpeg;base64,...``
-URL and sets it as ``imageSrc``. ``data:`` URLs are used rather than ``blob:``
-object URLs because WebKitGTK's network process never frees blob-registry
-entries (not even on ``revokeObjectURL``), so they leak; ``data:`` resources
-land in the resource cache that the periodic purge (see "WebKitGTK cache
-purge" below) clears.
+Both paths convert each frame to an ``<img>``-bindable URL through
+``frameToImageSrc``, which branches on ``Platform.isTauriLinux``:
+
+- **Linux (WebKitGTK):** ``data:image/jpeg;base64,...`` URLs. WebKitGTK's
+  network process never frees blob-registry entries (not even on
+  ``revokeObjectURL``), so ``blob:`` URLs leak there. ``data:`` resources
+  land in the resource cache that the periodic purge (see "WebKitGTK cache
+  purge" below) reclaims.
+- **macOS (WKWebView) and Windows (WebView2):** ``blob:`` URLs. The hook
+  holds the current object URL in a ref and revokes the previous one as each
+  new frame replaces it, and again on unmount, so per-frame URLs do not pile
+  up (a ``data:`` URL per frame accumulated past 1.5 GB for a single monitor
+  before this split). This only fixes the per-frame URL representation,
+  though. WebKit's WebContent process still grows over a long session from
+  decoded-frame and allocator memory that no in-process flush returns to the
+  OS; that is bounded separately by the periodic app restart (see "Desktop
+  memory: auto-restart" below). refs #150
+
+This is the only place the JS layer branches on the desktop OS.
 
 **Streaming reconnect.** When the ``onError`` callback fires (stream
 error or clean server close), the hook schedules a reconnect using
@@ -574,8 +612,36 @@ unbounded (the web and Rust processes stay flat). A Linux-only thread in
 ``WEBKIT_CACHE_PURGE_INTERVAL_SECS`` (120 s) via
 ``webview.with_webview(|w| w.inner().context().clear_cache())``. Measured:
 the network process holds at roughly 50 MB with the purge versus unbounded
-growth (~24 MB/min, to 573 MB) without it. The purge bounds the leak
-regardless of how frames are rendered.
+growth (~24 MB/min, to 573 MB) without it. The purge is Linux-only because it
+uses the ``webkit2gtk`` API and targets a WebKitGTK-specific network-process
+leak. It does not cover the broader WebContent growth (decoded frames,
+allocator high-water) that affects all three webviews over long sessions; that
+is handled by the periodic app restart below.
+
+Desktop memory: auto-restart
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+On every desktop webview the WebContent process trends upward over a long
+session: decoded frames and general allocations are returned to WebKit's
+allocator pools but not to the OS, so RSS only ever climbs (macOS reached
+multiple GB). Nothing in-process reclaims it: a cache purge does not reach
+decoded-image memory, ``location.reload()`` drops the document but reuses the
+same process, and killing the WebContent process via the private WKWebView SPI
+hung the UI. Only a fresh process returns the memory.
+
+So the bound is a full process restart. ``useAutoRestart`` (mounted in
+``AppRoutes``) reads the per-profile ``autoRestartEnabled`` (default true) and
+``autoRestartIntervalMinutes`` (default 120, clamped to a 1-minute floor by
+``AUTO_RESTART_MIN_MINUTES`` so a stray tiny value cannot storm) and, on Tauri
+only, schedules a one-shot ``invoke('restart_app')``. The ``restart_app``
+command calls ``app.restart()``. ``tauri-plugin-window-state`` saves the
+geometry before exit (the command saves it explicitly, since ``app.restart()``
+skips the plugin's exit hook) and restores it on launch, and ``setup()``
+refocuses the window so the relaunch returns to the foreground. Settings ->
+Advanced exposes the toggle, the interval, and a manual **Restart now** button.
+
+This is desktop-only; web, iOS, and Android use the platform's own webview
+network stack for the ``<img>`` and are not affected.
 
 Server state is managed via ``@tanstack/react-query``. See the
 `TanStack Query docs <https://tanstack.com/query/latest>`_ for general

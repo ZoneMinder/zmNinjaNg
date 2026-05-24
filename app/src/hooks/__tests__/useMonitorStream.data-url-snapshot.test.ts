@@ -21,6 +21,7 @@ import { useAuthStore } from '../../stores/auth';
 import { useSettingsStore, DEFAULT_SETTINGS } from '../../stores/settings';
 import { fetchMjpegSnapshot } from '../../lib/tauri-mjpeg';
 import { httpGet } from '../../lib/http';
+import { Platform } from '../../lib/platform';
 import type { Profile } from '../../api/types';
 
 // Force the Tauri code path. Platform.isTauri reads isTauri() lazily, and
@@ -97,6 +98,7 @@ describe('useMonitorStream: Tauri data: URL snapshot path', () => {
   let objectUrlCounter = 0;
   let createObjectURL: ReturnType<typeof vi.fn>;
   let revokeObjectURL: ReturnType<typeof vi.fn>;
+  let isTauriLinuxSpy: ReturnType<typeof vi.spyOn> | undefined;
 
   beforeEach(() => {
     useProfileStore.setState({
@@ -144,10 +146,15 @@ describe('useMonitorStream: Tauri data: URL snapshot path', () => {
     mockFetchMjpegSnapshot.mockResolvedValue(new Uint8Array([1, 2, 3]).buffer);
     // useStreamLifecycle calls httpGet for CMD_QUIT; must return a Promise.
     mockHttpGet.mockResolvedValue({ data: null, status: 200, statusText: 'OK', headers: {} });
+    // These tests cover the Linux/WebKitGTK data: URL path. macOS/Windows use
+    // blob: URLs (covered separately below).
+    isTauriLinuxSpy = vi.spyOn(Platform, 'isTauriLinux', 'get').mockReturnValue(true);
   });
 
   afterEach(() => {
     vi.useRealTimers();
+    isTauriLinuxSpy?.mockRestore();
+    isTauriLinuxSpy = undefined;
   });
 
   it('fetches the frame via the Rust mjpeg_snapshot command and renders a data: URL', async () => {
@@ -241,5 +248,17 @@ describe('useMonitorStream: Tauri data: URL snapshot path', () => {
     });
     expect(result.current.imageSrc).toBe('');
     expect(createObjectURL).not.toHaveBeenCalled();
+  });
+
+  it('non-Linux desktop: renders the snapshot frame as a blob URL', async () => {
+    // macOS (WKWebView) / Windows (WebView2) free blob: URLs on revoke and have
+    // no cache purge, so the snapshot path uses blob: instead of data:.
+    isTauriLinuxSpy!.mockReturnValue(false);
+
+    const { result } = renderHook(() => useMonitorStream({ monitorId: '1' }));
+
+    await waitFor(() => expect(mockFetchMjpegSnapshot).toHaveBeenCalled());
+    await waitFor(() => expect(result.current.imageSrc).toBe('blob:mock-1'));
+    expect(createObjectURL).toHaveBeenCalledTimes(1);
   });
 });
