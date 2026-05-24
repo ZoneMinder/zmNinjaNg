@@ -10,7 +10,7 @@ These are non-negotiable. Every rule applies to all communication: responses, co
    - **Banned hand-wavy claims**: "designed to scale", "built for the modern web", "production-ready". State the specific fact (e.g. "handles 50k events/min on a Pi 4") or cut the claim.
    - **No em-dashes** (—). Use a period, comma, colon, or rephrase. Example: replace "Token refresh runs every 60s — checks expiry and refreshes if within leeway" with "Token refresh runs every 60s. It checks expiry and refreshes if within leeway."
    - First-person honesty is fine ("this was primarily to educate me as I did not have React experience"). Don't sand it off.
-2. **Issues first**: create a GitHub issue before implementing features or fixing bugs. Commit directly to main only for docs-only changes, refactors without behavior change, test additions for existing code, or dependency updates.
+2. **Issues first**: create a GitHub issue before implementing features or fixing bugs. If an issue already exists, refer to it. 
 3. **Test first, verify before commit**: write tests first, run `npm test` + `tsc --noEmit` + `npm run build` + relevant e2e tests before every commit. Build passing is not proof code works. **Always run `npm run build` (not just `tsc --noEmit`) as the final check**: `tsc -b` used by the build catches stricter errors (unused variables, type narrowing) that `tsc --noEmit` misses. Never commit if the build fails.
 4. **Update docs**: update `docs/developer-guide/` in the same session when adding new APIs, components, utilities, or hooks and/or `docs/user-gudie` for changed/updated or new functionality
 5. **i18n all languages**: never hardcode user-facing strings. Update ALL translation files: en, de, es, fr, zh.

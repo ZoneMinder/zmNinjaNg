@@ -3,6 +3,8 @@ import { persist } from 'zustand/middleware';
 import type { Layout, Layouts } from 'react-grid-layout';
 import { LogLevel } from '../lib/log-level';
 import type { BandwidthMode } from '../lib/zmninja-ng-constants';
+import { AUTO_RESTART_DEFAULT_MINUTES } from '../lib/zmninja-ng-constants';
+import { Platform } from '../lib/platform';
 
 export type ViewMode = 'snapshot' | 'streaming';
 export type DisplayMode = 'normal' | 'compact';
@@ -101,6 +103,10 @@ export interface ProfileSettings {
     activeQuickRange: number | null;
   };
   disableLogRedaction: boolean;
+  // Desktop only: periodically restart the app to release WebKit's process-level
+  // memory (decoded frames, allocator high-water) that no in-process flush reclaims.
+  autoRestartEnabled: boolean;
+  autoRestartIntervalMinutes: number;
   lastRoute: string; // Last visited route for this profile
   // Streaming method: 'auto' tries WebRTC/MSE/HLS for Go2RTC-enabled monitors, 'mjpeg' forces MJPEG for all
   streamingMethod: StreamingMethod;
@@ -186,8 +192,10 @@ const getDefaultLogLevel = (): LogLevel => (
   typeof import.meta !== 'undefined' && import.meta.env?.DEV ? LogLevel.DEBUG : LogLevel.INFO
 );
 
+export const getDefaultViewMode = (): ViewMode => (Platform.isTauri ? 'streaming' : 'snapshot');
+
 export const DEFAULT_SETTINGS: ProfileSettings = {
-  viewMode: 'snapshot',
+  viewMode: getDefaultViewMode(),
   displayMode: getDefaultDisplayMode(),
   theme: 'slate',
   logLevel: getDefaultLogLevel(),
@@ -230,6 +238,8 @@ export const DEFAULT_SETTINGS: ProfileSettings = {
     activeQuickRange: null,
   },
   disableLogRedaction: false,
+  autoRestartEnabled: true,
+  autoRestartIntervalMinutes: AUTO_RESTART_DEFAULT_MINUTES,
   lastRoute: '/monitors',
   // Auto mode: use WebRTC/MSE/HLS for Go2RTC-enabled monitors, MJPEG for others
   streamingMethod: 'auto',

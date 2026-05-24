@@ -644,3 +644,46 @@ Then('the zone toggle should be inactive', async ({ page }) => {
   // If there were zones, they should now be hidden
   log.info('E2E: Zone toggle inactive state', { component: 'e2e', overlayHidden: !isOverlayVisible });
 });
+
+// MJPEG streaming regression steps (issue #155, Tauri socket pool)
+
+/**
+ * Verify the MJPEG <img> element has a non-empty src with positive naturalWidth,
+ * confirming the Rust blob-push path delivered at least one frame.
+ */
+async function assertMjpegFrameLoaded(page: import('@playwright/test').Page): Promise<void> {
+  const mjpegImg = page.getByTestId('video-player-mjpeg');
+  await expect(mjpegImg).toBeVisible({ timeout: testConfig.timeouts.pageLoad });
+  // src must be set (blob URL from Rust MJPEG push, or direct URL)
+  const src = await mjpegImg.getAttribute('src');
+  expect(src, 'MJPEG img src must not be empty').toBeTruthy();
+  // naturalWidth > 0 confirms the browser decoded a real image frame
+  const naturalWidth = await mjpegImg.evaluate((el) => (el as HTMLImageElement).naturalWidth);
+  expect(naturalWidth, 'MJPEG img naturalWidth must be > 0 (frame must have loaded)').toBeGreaterThan(0);
+}
+
+When('I cycle through up to {int} monitors using the next arrow and verify each shows a live MJPEG frame', async ({ page }, maxCount: number) => {
+  for (let i = 0; i < maxCount; i++) {
+    await assertMjpegFrameLoaded(page);
+    log.info('E2E: MJPEG frame verified', { component: 'e2e', monitorIndex: i });
+
+    const nextBtn = page.getByTestId('monitor-detail-next');
+    const nextEnabled = await nextBtn.isVisible().catch(() => false)
+      && await nextBtn.isEnabled().catch(() => false);
+
+    if (!nextEnabled) {
+      log.info('E2E: No next monitor available, stopping cycle', { component: 'e2e', stoppedAt: i });
+      break;
+    }
+
+    await nextBtn.click();
+    // Wait for the new monitor URL and player to be ready before verifying the next frame
+    await page.waitForURL(/monitors\/\d+/, { timeout: testConfig.timeouts.transition });
+    await page.getByTestId('video-player').waitFor({ state: 'visible', timeout: testConfig.timeouts.pageLoad });
+  }
+});
+
+Then('the currently open monitor should show a live MJPEG frame', async ({ page }) => {
+  await assertMjpegFrameLoaded(page);
+  log.info('E2E: Final monitor MJPEG frame verified', { component: 'e2e' });
+});

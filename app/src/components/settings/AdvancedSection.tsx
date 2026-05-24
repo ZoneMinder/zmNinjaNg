@@ -14,6 +14,7 @@ import { useToast } from '../../hooks/use-toast';
 import { Switch } from '../ui/switch';
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
+import { Input } from '../ui/input';
 import { CertTrustDialog } from '../CertTrustDialog';
 import { SectionHeader, SettingsCard, SettingsRow, RowLabel } from './SettingsLayout';
 import { Platform } from '../../lib/platform';
@@ -54,6 +55,9 @@ export function AdvancedSection({
 }: AdvancedSectionProps) {
   const { t } = useTranslation();
   const { toast } = useToast();
+
+  // The whole Advanced section collapses (power-user settings; collapsed by default).
+  const [advancedExpanded, setAdvancedExpanded] = useState(false);
 
   // Connection settings state
   const [certDialogOpen, setCertDialogOpen] = useState(false);
@@ -243,10 +247,23 @@ export function AdvancedSection({
     }
   };
 
+  const handleRestartNow = useCallback(async () => {
+    const { invoke } = await import('@tauri-apps/api/core');
+    await invoke('restart_app');
+  }, []);
+
   return (
     <>
       <section>
-        <SectionHeader label={t('settings.section_advanced', 'Advanced')} />
+        <SectionHeader
+          label={t('settings.section_advanced', 'Advanced')}
+          collapsible
+          expanded={advancedExpanded}
+          onToggle={() => setAdvancedExpanded((v) => !v)}
+          testId="settings-advanced-toggle"
+        />
+        {advancedExpanded && (
+        <>
         <SettingsCard>
           {/* Self-signed certs — only relevant for HTTPS */}
           {currentProfile?.portalUrl?.startsWith('https') && (<><SettingsRow>
@@ -320,6 +337,60 @@ export function AdvancedSection({
             />
           </SettingsRow>
 
+          {/* Auto-restart (desktop only) — periodically relaunch to release the
+              WebKit process memory that no in-process flush reclaims. refs #150 */}
+          {Platform.isTauri && (
+            <>
+              <SettingsRow>
+                <RowLabel
+                  label={t('settings.auto_restart')}
+                  desc={t('settings.auto_restart_desc')}
+                />
+                <Switch
+                  id="auto-restart"
+                  checked={settings.autoRestartEnabled}
+                  onCheckedChange={(checked) =>
+                    currentProfile &&
+                    updateSettings(currentProfile.id, { autoRestartEnabled: checked })
+                  }
+                  data-testid="settings-auto-restart-switch"
+                />
+              </SettingsRow>
+              <div className="px-4 py-3 flex flex-wrap items-center gap-3">
+                {settings.autoRestartEnabled && (
+                  <>
+                    <Input
+                      id="auto-restart-interval"
+                      type="number"
+                      min="1"
+                      max="1440"
+                      value={settings.autoRestartIntervalMinutes}
+                      onChange={(e) =>
+                        currentProfile &&
+                        updateSettings(currentProfile.id, {
+                          autoRestartIntervalMinutes: Math.max(1, Number(e.target.value) || 1),
+                        })
+                      }
+                      className="w-20"
+                      data-testid="settings-auto-restart-interval"
+                    />
+                    <span className="text-xs text-muted-foreground">{t('settings.minutes')}</span>
+                  </>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs gap-1.5"
+                  onClick={handleRestartNow}
+                  data-testid="settings-restart-now"
+                >
+                  <RefreshCw className="h-3 w-3" />
+                  {t('settings.restart_now')}
+                </Button>
+              </div>
+            </>
+          )}
+
           {/* Kiosk PIN */}
           <SettingsRow>
             <RowLabel
@@ -352,12 +423,14 @@ export function AdvancedSection({
           </SettingsRow>
         </SettingsCard>
 
-        {/* Component Log Levels */}
+        {/* Component Log Levels — nested inside the Advanced collapsible */}
         <ComponentLogLevels
           settings={settings}
           currentProfile={currentProfile}
           updateSettings={updateSettings}
         />
+        </>
+        )}
       </section>
 
       <CertTrustDialog

@@ -30,6 +30,13 @@ export const ZM_INTEGRATION = {
   // short timeout keeps a stalled request from blocking the next refresh.
   snapshotFrameFetchTimeoutMs: 10000, // 10 seconds
 
+  // Reconnect backoff for the Tauri Rust MJPEG stream when the connection drops
+  // or ends (server restart, network blip). Exponential from base, capped, with
+  // a bounded attempt count before surfacing the stream-error state. Refs #155.
+  mjpegReconnectBaseDelayMs: 1000, // 1 second
+  mjpegReconnectMaxDelayMs: 15000, // 15 seconds
+  mjpegReconnectMaxAttempts: 6,
+
   // Image quality settings
   safeImageQuality: 10, // Safe quality setting for bandwidth-constrained scenarios
   defaultMontageQuality: 50, // Default JPEG quality for montage view
@@ -53,6 +60,13 @@ export const ZM_INTEGRATION = {
   tokenCheckInterval: 60 * 1000, // Check token status every minute
   loginInterval: 1800000, // 30 minutes - re-login interval
 } as const;
+
+/**
+ * Auto-restart (desktop only): periodically relaunch the app to release WebKit's
+ * process-level memory that no in-process flush reclaims. Interval is in minutes.
+ */
+export const AUTO_RESTART_MIN_MINUTES = 1;
+export const AUTO_RESTART_DEFAULT_MINUTES = 120;
 
 /**
  * Grid Layout Constants

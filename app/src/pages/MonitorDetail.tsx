@@ -364,6 +364,7 @@ export default function MonitorDetail() {
             isSliding && 'monitor-slide-in',
             alarmBorderClass
           )}
+          data-testid="monitor-player"
         >
           <div ref={zoomPan.innerRef}>
             <LiveMonitorPlayer
@@ -372,7 +373,6 @@ export default function MonitorDetail() {
               externalMediaRef={mediaRef}
               objectFit={isFullscreen ? 'contain' : settings.monitorDetailFeedFit}
               showControls={true}
-              className="data-[testid=monitor-player]"
               onProtocolChange={setProtocol}
               forceViewMode="streaming"
             />

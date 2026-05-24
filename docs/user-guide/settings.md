@@ -69,6 +69,17 @@ The Streaming Mode toggle picks how live MJPEG feeds are fetched:
 
 Streaming Mode interacts with the streaming protocol layer. When a monitor uses Go2RTC (WebRTC/MSE/HLS), it always delivers continuous video, the Streaming Mode setting is ignored for that monitor. The setting only changes behavior on the MJPEG path: either when Go2RTC is disabled globally, when it is disabled per-monitor, or when Go2RTC fails and the app falls back to MJPEG.
 
+#### Default per device
+
+A new profile picks a default based on the platform:
+
+- **Phone, tablet, and web app**: default is **Snapshot**. The browser or app webview holds only about 6 live connections open to one server at a time, so a montage full of Streaming tiles stalls after the first few. Snapshot mode fetches a still on an interval instead of holding a connection, so every tile keeps updating no matter how many cameras are on screen.
+- **Desktop app**: default is **Streaming**. The desktop app reads each MJPEG feed natively rather than through the webview, so the per-server connection limit does not apply and a montage can stream many cameras at once.
+
+Changing the Streaming Mode toggle overrides the default for that profile.
+
+If your ZoneMinder server sets `ZM_MIN_STREAMING_PORT`, the app loads each monitor from a different port, which also gets around the connection limit on phone, tablet, and web. See [Multi-Server](#multi-server).
+
 #### Where Streaming Mode applies
 
 | View | Affected? | Behavior |
@@ -111,6 +122,7 @@ The Advanced section is a single flat section containing the following controls 
 |---------|-------------|
 | **Allow self-signed certificates** | Shown only when the Portal URL uses HTTPS. Enable when your ZoneMinder server uses a self-signed certificate. On native platforms (iOS/Android/desktop) the app pins the certificate fingerprint on first connection; toggling this off and back on lets you re-pin. |
 | **Disable log redaction** | Stop redacting URLs and credentials from logs. Enable only temporarily when sharing logs for troubleshooting. |
+| **Auto-restart** (desktop only) | The desktop app's webview accumulates memory over long sessions that only a restart reclaims, so this is **on by default**: it restarts the app automatically on an interval, in minutes (default 120, minimum 1). Turn it off to disable. A **Restart now** button next to it restarts immediately. The window size and position are preserved across the restart. |
 | **Component Logs** (collapsible) | Sets the global log level (the floor for everything) and per-component overrides. Includes a Reset button to clear all per-component overrides. |
 
 For information about persistent log files, file locations, and the Share / Open / Clear buttons, see {doc}`logs`.
