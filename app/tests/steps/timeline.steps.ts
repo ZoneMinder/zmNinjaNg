@@ -1,9 +1,20 @@
 import { createBdd } from 'playwright-bdd';
-import { expect } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import { testConfig } from '../helpers/config';
 import { log } from '../../src/lib/logger';
 
 const { Given, When, Then } = createBdd();
+
+// The Timeline filters panel is collapsible. Open it deterministically via the
+// toggle's aria-expanded state so steps don't accidentally collapse an
+// already-open panel (which racing on element visibility can cause).
+async function ensureTimelineFiltersOpen(page: Page) {
+  const toggle = page.getByTestId('timeline-filters-toggle');
+  await expect(toggle).toBeVisible({ timeout: testConfig.timeouts.pageLoad });
+  if ((await toggle.getAttribute('aria-expanded')) === 'false') {
+    await toggle.click();
+  }
+}
 
 
 // Timeline interface elements
@@ -213,11 +224,8 @@ Then("the timeline should show only that monitor's events", async ({ page }) => 
 
 // Cause Filter
 When('I open the timeline filters', async ({ page }) => {
-  const causeFilter = page.getByTestId('timeline-cause-filter');
-  if (!(await causeFilter.isVisible().catch(() => false))) {
-    await page.getByTestId('timeline-filters-toggle').click();
-  }
-  await expect(causeFilter).toBeVisible({ timeout: testConfig.timeouts.element });
+  await ensureTimelineFiltersOpen(page);
+  await expect(page.getByTestId('timeline-cause-filter')).toBeVisible({ timeout: testConfig.timeouts.element });
 });
 
 When('I select the {string} event cause', async ({ page }, label: string) => {

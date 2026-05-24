@@ -520,6 +520,7 @@ export default function Timeline() {
           type="button"
           className="w-full flex items-center justify-between px-6 pt-4 pb-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           onClick={() => setFiltersCollapsed((c) => !c)}
+          aria-expanded={!filtersCollapsed}
           data-testid="timeline-filters-toggle"
         >
           <span className="flex items-center gap-2">
