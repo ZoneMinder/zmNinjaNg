@@ -134,6 +134,7 @@ export interface ProfileSettings {
     startDateTime: string;
     endDateTime: string;
     onlyDetectedObjects: boolean;
+    causeFilter: string;
     activeQuickRange: number | null;
   };
   // Date/time display format
@@ -256,11 +257,12 @@ export const DEFAULT_SETTINGS: ProfileSettings = {
   trustedCertFingerprint: null,
   // Default sidebar order (empty = use hardcoded order)
   sidebarNavOrder: [],
-  timelinePageFilters: {
+ timelinePageFilters: {
     monitorIds: [],
     startDateTime: '',
     endDateTime: '',
     onlyDetectedObjects: false,
+    causeFilter: '',
     activeQuickRange: null,
   },
   dateFormat: 'MMM d',

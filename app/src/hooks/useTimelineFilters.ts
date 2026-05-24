@@ -15,11 +15,13 @@ interface UseTimelineFiltersReturn {
   startDateInput: string;
   endDateInput: string;
   onlyDetectedObjects: boolean;
+  causeFilter: string;
   activeQuickRange: number | null;
   setSelectedMonitorIds: (ids: string[]) => void;
   setStartDateInput: (date: string) => void;
   setEndDateInput: (date: string) => void;
   setOnlyDetectedObjects: (enabled: boolean) => void;
+  setCauseFilter: (cause: string) => void;
   setActiveQuickRange: (hours: number | null) => void;
   clearFilters: () => void;
   activeFilterCount: number;
@@ -40,6 +42,7 @@ export function useTimelineFilters(): UseTimelineFiltersReturn {
   const [startDateInput, _setStartDate] = useState('');
   const [endDateInput, _setEndDate] = useState('');
   const [onlyDetectedObjects, _setOnlyDetected] = useState(false);
+  const [causeFilter, _setCauseFilter] = useState('');
   const [activeQuickRange, _setActiveQuickRange] = useState<number | null>(null);
 
   const profileIdRef = useRef<string | null>(null);
@@ -65,6 +68,11 @@ export function useTimelineFilters(): UseTimelineFiltersReturn {
     if (profileIdRef.current) saveFilterField(profileIdRef.current, 'onlyDetectedObjects', enabled);
   }, []);
 
+  const setCauseFilter = useCallback((cause: string) => {
+    _setCauseFilter(cause);
+    if (profileIdRef.current) saveFilterField(profileIdRef.current, 'causeFilter', cause);
+  }, []);
+
   const setActiveQuickRange = useCallback((hours: number | null) => {
     _setActiveQuickRange(hours);
     if (profileIdRef.current) saveFilterField(profileIdRef.current, 'activeQuickRange', hours);
@@ -83,6 +91,7 @@ export function useTimelineFilters(): UseTimelineFiltersReturn {
     _setStartDate(saved.startDateTime);
     _setEndDate(saved.endDateTime);
     _setOnlyDetected(saved.onlyDetectedObjects);
+    _setCauseFilter(saved.causeFilter ?? '');
     _setActiveQuickRange(saved.activeQuickRange ?? null);
   }, [currentProfile?.id, settings.timelinePageFilters]);
 
@@ -91,18 +100,20 @@ export function useTimelineFilters(): UseTimelineFiltersReturn {
     setStartDateInput('');
     setEndDateInput('');
     setOnlyDetectedObjects(false);
+    setCauseFilter('');
     setActiveQuickRange(null);
-  }, [setSelectedMonitorIds, setStartDateInput, setEndDateInput, setOnlyDetectedObjects, setActiveQuickRange]);
+  }, [setSelectedMonitorIds, setStartDateInput, setEndDateInput, setOnlyDetectedObjects, setCauseFilter, setActiveQuickRange]);
 
   const activeFilterCount =
     (selectedMonitorIds.length > 0 ? 1 : 0) +
     (startDateInput ? 1 : 0) +
     (endDateInput ? 1 : 0) +
-    (onlyDetectedObjects ? 1 : 0);
+    (onlyDetectedObjects ? 1 : 0) +
+    (causeFilter ? 1 : 0);
 
   return {
-    selectedMonitorIds, startDateInput, endDateInput, onlyDetectedObjects, activeQuickRange,
-    setSelectedMonitorIds, setStartDateInput, setEndDateInput, setOnlyDetectedObjects, setActiveQuickRange,
+    selectedMonitorIds, startDateInput, endDateInput, onlyDetectedObjects, causeFilter, activeQuickRange,
+    setSelectedMonitorIds, setStartDateInput, setEndDateInput, setOnlyDetectedObjects, setCauseFilter, setActiveQuickRange,
     clearFilters, activeFilterCount,
   };
 }

@@ -217,6 +217,23 @@ describe('Events API', () => {
     expect(call).toContain('Notes%20REGEXP%3Adetected%3A');
   });
 
+  it('applies cause filter to events endpoint', async () => {
+    mockGet.mockResolvedValue({
+      data: {
+        events: [buildEventData(11)],
+        pagination: {
+          pageCount: 1, page: 1, current: 1, count: 1,
+          prevPage: false, nextPage: false, limit: 100,
+        },
+      },
+    });
+
+    await getEvents({ cause: 'Continuous' });
+
+    const call = mockGet.mock.calls[0][0] as string;
+    expect(call).toContain('Cause%20REGEXP%3AContinuous');
+  });
+
   it('validates responses through api-validator', async () => {
     mockGet.mockResolvedValue({
       data: {

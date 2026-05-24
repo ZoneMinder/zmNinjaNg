@@ -1024,7 +1024,13 @@
       "go_now": "Jump to now",
       "live": "Auto-update on new events"
     },
-    "live": "Live"
+    "live": "Live",
+    "cause_filter": "Event Cause",
+    "cause_all": "All Causes",
+    "cause_motion": "Motion Detected",
+    "cause_continuous": "Continuous",
+    "cause_signal": "Signal",
+    "cause_forced": "Forced"
   },
   "error": {
     "something_went_wrong": "Something went wrong",

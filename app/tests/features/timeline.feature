@@ -32,6 +32,13 @@ Feature: Timeline Visualization
     Then the timeline should show only that monitor's events
 
   @all
+  Scenario: Filter timeline by event cause
+    When I open the timeline filters
+    And I select the "Motion Detected" event cause
+    Then the timeline cause filter should show "Motion Detected"
+    And I should see the timeline visualization or empty state
+
+  @all
   Scenario: Refresh button reloads timeline data
     Then I should see the refresh button
     When I click the refresh button

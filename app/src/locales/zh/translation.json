@@ -1024,7 +1024,13 @@
       "go_now": "跳到现在",
       "live": "新事件时自动更新"
     },
-    "live": "实时"
+    "live": "实时",
+    "cause_filter": "事件原因",
+    "cause_all": "全部原因",
+    "cause_motion": "检测到移动",
+    "cause_continuous": "连续录制",
+    "cause_signal": "信号",
+    "cause_forced": "强制"
   },
   "error": {
     "something_went_wrong": "出错了",

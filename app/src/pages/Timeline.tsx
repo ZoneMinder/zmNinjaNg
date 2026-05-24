@@ -9,11 +9,21 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Switch } from '../components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { RefreshCw, Filter, Clock, ScanSearch, X, Crosshair, ZoomIn, ZoomOut, ChevronDown, SkipForward, RectangleHorizontal, Info, Move, HandMetal, Radio } from 'lucide-react';
 import { PageContainer } from '../components/common/PageContainer';
 import { subDays } from 'date-fns';
 import { filterEnabledMonitors } from '../lib/filters';
 import { formatForServer, formatLocalDateTime } from '../lib/time';
+import { TIMELINE } from '../lib/zmninja-ng-constants';
+import { mapWithConcurrency } from '../lib/async-pool';
+import {
+  CAUSE_ALL,
+  TIMELINE_CAUSE_OPTIONS,
+  causeToEventFilter,
+  isCauseActive,
+  mergeMonitorEvents,
+} from '../lib/timeline-cause-filter';
 import {
   Popover,
   PopoverContent,
@@ -43,8 +53,8 @@ export default function Timeline() {
   const location = useLocation();
   const { t } = useTranslation();
   const {
-    selectedMonitorIds, startDateInput, endDateInput, onlyDetectedObjects, activeQuickRange,
-    setSelectedMonitorIds, setStartDateInput, setEndDateInput, setOnlyDetectedObjects, setActiveQuickRange,
+    selectedMonitorIds, startDateInput, endDateInput, onlyDetectedObjects, causeFilter, activeQuickRange,
+    setSelectedMonitorIds, setStartDateInput, setEndDateInput, setOnlyDetectedObjects, setCauseFilter, setActiveQuickRange,
     clearFilters, activeFilterCount,
   } = useTimelineFilters();
 
@@ -154,19 +164,55 @@ export default function Timeline() {
   // In live mode without notifications, fall back to polling
   const livePolling = liveMode && !notificationsEnabled;
 
+  // When a cause filter is active, fan the query out per monitor so one busy
+  // camera can't consume the entire page budget.
+  const monitorsToQuery = useMemo(() => {
+    if (!isCauseActive(causeFilter)) return [];
+    if (selectedMonitorIds.length > 0) return selectedMonitorIds;
+    return enabledMonitors.map(({ Monitor }) => Monitor.Id);
+  }, [causeFilter, selectedMonitorIds, enabledMonitors]);
+
   const { data, isLoading, error } = useQuery({
-    queryKey: ['timeline-events', startDate, endDate, monitorFilter, onlyDetectedObjects],
-    queryFn: () =>
-      getEvents({
-        startDateTime: formatForServer(new Date(startDate)),
-        // In live mode, always query up to "now" so new events aren't filtered out
-        endDateTime: formatForServer(liveMode ? new Date() : new Date(endDate)),
+    queryKey: ['timeline-events', startDate, endDate, monitorFilter, onlyDetectedObjects, causeFilter],
+    queryFn: async () => {
+      const startDateTime = formatForServer(new Date(startDate));
+      const endDateTime = formatForServer(liveMode ? new Date() : new Date(endDate));
+      const causeFields = causeToEventFilter(causeFilter, onlyDetectedObjects);
+
+      if (isCauseActive(causeFilter) && monitorsToQuery.length > 0) {
+        const perMonitorResults = await mapWithConcurrency(
+          monitorsToQuery,
+          TIMELINE.fanoutConcurrency,
+          (id) =>
+            getEvents({
+              startDateTime,
+              endDateTime,
+              monitorId: id,
+              ...causeFields,
+              sort: 'StartDateTime',
+              direction: 'desc',
+              limit: TIMELINE.perMonitorEventsLimit,
+            }),
+        );
+        const events = mergeMonitorEvents(perMonitorResults.map((r) => r.events));
+        const count = perMonitorResults.reduce(
+          (sum, r) => sum + (r.pagination?.count ?? r.events.length),
+          0,
+        );
+        const base = perMonitorResults[0]?.pagination;
+        return { events, pagination: base ? { ...base, count } : undefined };
+      }
+
+      return getEvents({
+        startDateTime,
+        endDateTime,
         monitorId: monitorFilter,
-        notesRegexp: onlyDetectedObjects ? 'detected:' : undefined,
+        ...causeFields,
         sort: 'StartDateTime',
         direction: 'desc',
-        limit: 2000,
-      }),
+        limit: TIMELINE.eventsLimit,
+      });
+    },
     refetchInterval: livePolling ? bandwidth.timelineHeatmapInterval : false,
   });
 
@@ -529,7 +575,30 @@ export default function Timeline() {
               </Popover>
             </div>
           </div>
-
+          {/* Cause Filter */}
+          <div className="flex items-center justify-between p-3 rounded-md border bg-card">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <Label htmlFor="timeline-cause-filter" className="cursor-pointer">
+                {t('timeline.cause_filter')}
+              </Label>
+            </div>
+            <Select
+              value={causeFilter || CAUSE_ALL}
+              onValueChange={(value) => setCauseFilter(value === CAUSE_ALL ? '' : value)}
+            >
+              <SelectTrigger id="timeline-cause-filter" className="h-8 w-[170px]" data-testid="timeline-cause-filter">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {TIMELINE_CAUSE_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value} data-testid={`timeline-cause-${opt.value}`}>
+                    {t(opt.labelKey)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           {/* Object Detection Filter */}
           <div className="flex items-center justify-between p-3 rounded-md border bg-card">
             <div className="flex items-center gap-2">

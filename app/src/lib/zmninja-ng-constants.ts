@@ -129,6 +129,16 @@ export const TIMELINE = {
 
   // Pulse halo duration (ms) for newly arrived live events
   pulseDurationMs: 5000,
+
+  // Max events for a single (non-fanned-out) timeline query
+  eventsLimit: 2000,
+
+  // Per-monitor cap when a cause filter fans the query out across monitors,
+  // so one busy camera can't consume the whole budget
+  perMonitorEventsLimit: 100,
+
+  // Max monitors queried in parallel during cause-filter fan-out
+  fanoutConcurrency: 6,
 } as const;
 
 /**

@@ -472,7 +472,9 @@ export const log = {
 };
 
 // Dev-only: expose a small global so e2e tests can trigger sample log entries.
-if (import.meta.env.DEV && typeof window !== 'undefined') {
+// Guard import.meta.env: it is undefined when this module is loaded outside Vite
+// (e.g. the playwright-bdd step loader running under plain Node).
+if (typeof import.meta !== 'undefined' && import.meta.env?.DEV && typeof window !== 'undefined') {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (window as any).__zmng_test_log = (component: string) => {
     log.app(`test sample from ${component}`, LogLevel.INFO);

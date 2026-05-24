@@ -211,6 +211,27 @@ Then("the timeline should show only that monitor's events", async ({ page }) => 
   }, { timeout: testConfig.timeouts.pageLoad }).toBeTruthy();
 });
 
+// Cause Filter
+When('I open the timeline filters', async ({ page }) => {
+  const causeFilter = page.getByTestId('timeline-cause-filter');
+  if (!(await causeFilter.isVisible().catch(() => false))) {
+    await page.getByTestId('timeline-filters-toggle').click();
+  }
+  await expect(causeFilter).toBeVisible({ timeout: testConfig.timeouts.element });
+});
+
+When('I select the {string} event cause', async ({ page }, label: string) => {
+  await page.getByTestId('timeline-cause-filter').click();
+  // Radix Select renders options in a portal; match by visible label.
+  await page.getByRole('option', { name: label }).click();
+});
+
+Then('the timeline cause filter should show {string}', async ({ page }, label: string) => {
+  await expect(page.getByTestId('timeline-cause-filter')).toContainText(label, {
+    timeout: testConfig.timeouts.element,
+  });
+});
+
 // Mobile Responsive
 Then('the timeline controls should be accessible', async ({ page }) => {
   // Check for the timeline page controls (filter, reset, date inputs)
