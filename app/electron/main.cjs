@@ -21,6 +21,8 @@ function createWindow() {
     height: 800,
     title: 'zmNinjaNg (Electron)',
     backgroundColor: '#0b0f14',
+    // Avoid a black/blank flash on launch: stay hidden until the first paint.
+    show: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
@@ -29,6 +31,8 @@ function createWindow() {
       webSecurity: false,
     },
   });
+
+  win.once('ready-to-show', () => win.show());
 
   // Open external links (http/https that aren't our app) in the system browser.
   win.webContents.setWindowOpenHandler(({ url }) => {

@@ -76,10 +76,11 @@ export const Platform = {
 
   /**
    * True if should use development proxy server.
-   * Only true in dev mode on web (not native platforms).
+   * Only true in dev mode on web (not native, not the Electron shell, which
+   * talks to the server directly with web security disabled).
    */
   get shouldUseProxy() {
-    return this.isDev && this.isWeb;
+    return this.isDev && this.isWeb && !this.isElectron;
   },
 
   /**
