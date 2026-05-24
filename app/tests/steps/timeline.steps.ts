@@ -168,13 +168,11 @@ Given('there are events on the timeline', async ({ page }) => {
 When('I click on an event in the timeline', async ({ page }) => {
   if (!hasTimelineEvents) return;
 
-  // Wait for canvas timeline to render
-  const canvas = page.locator('[data-testid="timeline-canvas"]');
-  await expect(canvas).toBeVisible({ timeout: testConfig.timeouts.element }).catch(() => {});
-
-  if (await eventItem.count() > 0) {
-    await eventItem.first().click();
-  }
+  // Events on the canvas have no DOM node, but the scrubber renders a clickable
+  // thumbnail per event that navigates straight to the event detail page.
+  const thumb = page.locator('[data-testid^="scrubber-thumb-"]').first();
+  await expect(thumb).toBeVisible({ timeout: testConfig.timeouts.pageLoad });
+  await thumb.click();
 });
 
 Then('I should navigate to the event detail page', async ({ page }) => {
@@ -185,10 +183,13 @@ Then('I should navigate to the event detail page', async ({ page }) => {
 
 // Monitor Filter
 When('I click the monitor filter button', async ({ page }) => {
-  const filterBtn = page.getByTestId('timeline-monitor-filter')
-    .or(page.getByRole('button', { name: /monitors|filter/i }))
-    .or(page.locator('button').filter({ hasText: /monitors|all monitors/i }));
-  await filterBtn.first().click();
+  // Open the (collapsible) filters panel first, then click the monitor filter
+  // trigger precisely. A fuzzy name match would also hit the "Filters" toggle
+  // and collapse the panel.
+  await ensureTimelineFiltersOpen(page);
+  const filterBtn = page.getByTestId('timeline-monitor-filter');
+  await expect(filterBtn).toBeVisible({ timeout: testConfig.timeouts.element });
+  await filterBtn.click();
 });
 
 Then('I should see monitor filter options', async ({ page }) => {

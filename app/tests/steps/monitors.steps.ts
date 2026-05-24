@@ -30,13 +30,12 @@ Then('each monitor card should show a name and status indicator', async ({ page 
 When('I click into the first monitor detail page', async ({ page }) => {
   const currentUrl = page.url();
 
-  // On Montage page: use montage-maximize-btn (which navigates to detail)
+  // On Montage page: click the monitor cell itself (role=button) which navigates to detail
   if (currentUrl.includes('montage')) {
-    // Wait for montage to load
-    const maximizeBtn = page.getByTestId('montage-maximize-btn').first();
-    await expect(maximizeBtn).toBeVisible({ timeout: testConfig.timeouts.pageLoad });
-    await maximizeBtn.click();
-    log.info('E2E: Clicked montage-maximize-btn', { component: 'e2e' });
+    const cell = page.locator('[data-testid^="montage-monitor-"]').first();
+    await expect(cell).toBeVisible({ timeout: testConfig.timeouts.pageLoad });
+    await cell.click();
+    log.info('E2E: Clicked montage monitor cell', { component: 'e2e' });
   } else {
     // On Monitors page: click the monitor thumbnail (monitor-player img)
     // The img is inside a clickable div that navigates to detail
@@ -54,8 +53,11 @@ Then('I should see the monitor grid', async ({ page }) => {
 });
 
 When('I hover the first monitor card', async ({ page }) => {
-  const firstCard = page.getByTestId('monitor-card').first();
-  await firstCard.hover();
+  // The hover-preview anchor is the player, not the whole card. In list view the
+  // card center sits over the info column, so hover the player specifically.
+  const player = page.getByTestId('monitor-player').first();
+  await expect(player).toBeVisible({ timeout: testConfig.timeouts.pageLoad });
+  await player.hover();
 });
 
 Then('I should see the monitor hover preview', async ({ page }) => {
@@ -94,15 +96,13 @@ Then('each montage cell should show a monitor name label', async ({ page }) => {
 });
 
 When('I click the snapshot button on the first montage monitor', async ({ page }) => {
-  // Hover on the first montage monitor to reveal snapshot button
-  const firstMonitor = page.locator('[data-testid="montage-monitor"]')
-    .or(page.locator('.react-grid-item')).first();
+  // Snapshot lives in the montage cell's "more" menu, not a standalone button.
+  const firstMonitor = page.locator('[data-testid^="montage-monitor-"]').first();
+  await expect(firstMonitor).toBeVisible({ timeout: testConfig.timeouts.pageLoad });
   await firstMonitor.hover();
-  await page.waitForTimeout(300);
 
-  // Click the snapshot/download button
-  const snapshotBtn = firstMonitor.getByTestId('snapshot-button')
-    .or(firstMonitor.getByRole('button', { name: /snapshot|download/i }))
-    .or(page.getByTestId('snapshot-button').first());
-  await snapshotBtn.first().click();
+  const moreBtn = firstMonitor.getByTestId('montage-more-btn');
+  await moreBtn.click();
+  // The menu content renders in a portal outside the cell.
+  await page.getByTestId('montage-download-btn').click();
 });
