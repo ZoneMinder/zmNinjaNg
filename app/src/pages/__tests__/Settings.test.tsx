@@ -104,6 +104,12 @@ vi.mock('../../components/NotificationBadge', () => ({
   NotificationBadge: () => null,
 }));
 
+// HiddenMonitorsSection pulls in React Query (useQueryClient/useQuery), which
+// needs a QueryClientProvider. It is not the subject of these tests, so stub it.
+vi.mock('../../components/settings/HiddenMonitorsSection', () => ({
+  HiddenMonitorsSection: () => null,
+}));
+
 describe('Settings Page', () => {
   beforeEach(() => {
     updateProfileSettings.mockClear();

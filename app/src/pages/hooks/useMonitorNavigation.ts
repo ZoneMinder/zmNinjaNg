@@ -39,7 +39,7 @@ export function useMonitorNavigation({
   // Fetch all monitors for navigation
   const { data: monitorsData } = useQuery({
     queryKey: ['monitors'],
-    queryFn: getMonitors,
+    queryFn: () => getMonitors(),
   });
 
   // Get enabled monitors list and find current monitor index

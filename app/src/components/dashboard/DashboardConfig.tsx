@@ -55,7 +55,7 @@ export function DashboardConfig() {
 
     const { data: monitors } = useQuery({
         queryKey: ['monitors'],
-        queryFn: getMonitors,
+        queryFn: () => getMonitors(),
     });
 
     // Filter out deleted monitors

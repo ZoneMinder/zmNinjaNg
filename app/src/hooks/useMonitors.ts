@@ -61,7 +61,7 @@ export function useMonitors(options?: UseMonitorsOptions): UseMonitorsReturn {
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['monitors', currentProfile?.id],
-    queryFn: getMonitors,
+    queryFn: () => getMonitors(),
     enabled: (options?.enabled ?? true) && !!currentProfile?.id && isAuthenticated,
     refetchInterval: options?.refetchInterval ?? bandwidth.monitorStatusInterval,
   });

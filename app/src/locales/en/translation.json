@@ -277,6 +277,14 @@
     "section_live_streaming": "Live Streaming",
     "section_playback": "Playback",
     "section_advanced": "Advanced",
+    "hidden_monitors": {
+      "section": "Hidden Monitors",
+      "desc": "Hide monitors from all views. Their events are also hidden.",
+      "hidden_count": "{{count}} hidden",
+      "empty": "No monitors found.",
+      "loading": "Loading monitors...",
+      "error": "Could not load monitors."
+    },
     "language": "Language",
     "select_language": "Select Language",
     "theme": "Theme",

@@ -58,7 +58,7 @@ export function WidgetEditDialog({ open, onOpenChange, widget, profileId }: Widg
 
     const { data: monitors } = useQuery({
         queryKey: ['monitors'],
-        queryFn: getMonitors,
+        queryFn: () => getMonitors(),
     });
 
     const { availableTags, tagsSupported } = useEventTags();

@@ -65,7 +65,7 @@ export default function NotificationSettings() {
   // Fetch monitors
   const { data: monitorsData } = useQuery({
     queryKey: ['monitors', currentProfile?.id],
-    queryFn: getMonitors,
+    queryFn: () => getMonitors(),
     enabled: !!currentProfile && isAuthenticated,
   });
 

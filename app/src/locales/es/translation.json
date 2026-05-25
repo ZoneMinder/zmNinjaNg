@@ -277,6 +277,14 @@
     "section_live_streaming": "Transmisión en vivo",
     "section_playback": "Reproducción",
     "section_advanced": "Avanzado",
+    "hidden_monitors": {
+      "section": "Monitores ocultos",
+      "desc": "Oculta monitores de todas las vistas. Sus eventos también se ocultan.",
+      "hidden_count": "{{count}} ocultos",
+      "empty": "No se encontraron monitores.",
+      "loading": "Cargando monitores...",
+      "error": "No se pudieron cargar los monitores."
+    },
     "language": "Idioma",
     "select_language": "Seleccionar Idioma",
     "theme": "Tema",
