@@ -40,10 +40,12 @@ jobs:
         run: node scripts/sync-version.js
 
       - name: Build Tauri app (Windows)
+        if: false
         working-directory: ./app
         run: npm run tauri:build
 
       - name: Rename Windows artifacts
+        if: false
         shell: bash
         run: |
           VERSION="${{ github.event.inputs.version || github.ref_name }}"
@@ -65,6 +67,7 @@ jobs:
           done
 
       - name: Upload Windows artifacts
+        if: false
         uses: actions/upload-artifact@v4
         with:
           name: zmNinjaNg-windows-${{ github.event.inputs.version || github.ref_name }}
@@ -73,7 +76,7 @@ jobs:
 
       - name: Upload to Release
         uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/zmNinjaNg-')
+        if: false
         with:
           files: |
             dist/windows/*.msi

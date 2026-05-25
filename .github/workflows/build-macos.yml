@@ -58,6 +58,7 @@ jobs:
           security list-keychain -d user -s $KEYCHAIN_PATH
 
       - name: Build Tauri app (macOS)
+        if: false
         working-directory: ./app
         env:
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
@@ -67,6 +68,7 @@ jobs:
         run: npm run tauri:build
 
       - name: Rename macOS artifacts
+        if: false
         run: |
           VERSION="${{ github.event.inputs.version || github.ref_name }}"
           VERSION="${VERSION#zmNinjaNg-}"
@@ -89,6 +91,7 @@ jobs:
           done
 
       - name: Upload DMG artifact
+        if: false
         uses: actions/upload-artifact@v4
         with:
           name: zmNinjaNg-macos-dmg-${{ github.event.inputs.version || github.ref_name }}
@@ -97,7 +100,7 @@ jobs:
 
       - name: Upload to Release
         uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/zmNinjaNg-')
+        if: false
         with:
             files: |
               dist/macos/*.dmg

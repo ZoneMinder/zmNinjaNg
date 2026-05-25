@@ -113,6 +113,7 @@ jobs:
           security list-keychain -d user -s $KEYCHAIN_PATH
 
       - name: Build Tauri app (macOS)
+        if: false
         working-directory: ./app
         env:
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
@@ -122,6 +123,7 @@ jobs:
         run: npm run tauri:build
 
       - name: Upload DMG artifact
+        if: false
         uses: actions/upload-artifact@v4
         with:
           name: zmNinjaNg-macos-dmg-${{ github.event.inputs.version }}
@@ -170,16 +172,19 @@ jobs:
         run: npm ci
 
       - name: Build Tauri app (Linux amd64)
+        if: false
         working-directory: ./app
         run: npm run tauri:build
 
       - name: Upload AppImage artifact
+        if: false
         uses: actions/upload-artifact@v4
         with:
           name: zmNinjaNg-linux-amd64-appimage-${{ github.event.inputs.version }}
           path: app/src-tauri/target/release/bundle/appimage/*.AppImage
 
       - name: Upload DEB package artifact
+        if: false
         uses: actions/upload-artifact@v4
         with:
           name: zmNinjaNg-linux-amd64-deb-${{ github.event.inputs.version }}
@@ -224,16 +229,19 @@ jobs:
         run: npm ci
 
       - name: Build Tauri app (Windows)
+        if: false
         working-directory: ./app
         run: npm run tauri:build
 
       - name: Upload MSI installer artifact
+        if: false
         uses: actions/upload-artifact@v4
         with:
           name: zmNinjaNg-windows-msi-${{ github.event.inputs.version }}
           path: app/src-tauri/target/release/bundle/msi/*.msi
 
       - name: Upload NSIS installer artifact
+        if: false
         uses: actions/upload-artifact@v4
         with:
           name: zmNinjaNg-windows-nsis-${{ github.event.inputs.version }}

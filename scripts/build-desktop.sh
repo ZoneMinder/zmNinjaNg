@@ -42,10 +42,10 @@ ARCH=$(uname -m)
 [ "$ARCH" = "arm64" ] && ARCH="aarch64"
 BUNDLE_DIR="src-tauri/target/release/bundle"
 APP_BUNDLE="$BUNDLE_DIR/macos/$PRODUCT.app"
-# Per-toolchain release output. The Tauri DMG uses the plain name; the Electron
-# build writes "_e_" DMGs into ../electron. Both live under desktop_release_builds/.
+# Per-toolchain release output. The Tauri DMG uses the "_t_" marker; the Electron
+# build writes plain-named DMGs into ../electron. Both live under desktop_release_builds/.
 OUTPUT_DIR="$ROOT_DIR/desktop_release_builds/tauri"
-DMG_OUTPUT="$OUTPUT_DIR/${PRODUCT}_${VERSION}_${ARCH}.dmg"
+DMG_OUTPUT="$OUTPUT_DIR/${PRODUCT}_t_${VERSION}_${ARCH}.dmg"
 VOLICON="$BUNDLE_DIR/dmg/icon.icns"
 
 echo "=== Building $PRODUCT v$VERSION for $ARCH ==="
