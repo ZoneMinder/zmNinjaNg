@@ -252,6 +252,12 @@ export function LiveMonitorPlayer({
   const lastFreezeAtRef = useRef(0);
   const monitorId = monitor.Id;
 
+  // Keep the latest go2rtc stream handle in a ref so the watchdog interval reads
+  // current methods/state without re-subscribing every render (the hook returns
+  // a new object each render, which would otherwise reset the freeze timer).
+  const go2rtcStreamRef = useRef(go2rtcStream);
+  go2rtcStreamRef.current = go2rtcStream;
+
   useEffect(() => {
     if (effectiveStreamingMethod !== 'webrtc' || !hasVideoFrames || go2rtcFailed) {
       return;
@@ -287,18 +293,18 @@ export function LiveMonitorPlayer({
       });
       // Show the placeholder/connecting badge again while the stream reconnects.
       setHasVideoFrames(false);
-      go2rtcStream.retry();
+      go2rtcStreamRef.current.retry();
     };
 
     const interval = setInterval(() => {
       // A silent WebSocket stall surfaces as the hook's 'disconnected' state
       // after frames were already flowing. Treat it as a freeze immediately.
-      if (go2rtcStream.state === 'disconnected') {
-        handleFreeze('disconnected', { state: go2rtcStream.state });
+      if (go2rtcStreamRef.current.state === 'disconnected') {
+        handleFreeze('disconnected', { state: go2rtcStreamRef.current.state });
         return;
       }
 
-      const video = go2rtcStream.getVideoElement();
+      const video = go2rtcStreamRef.current.getVideoElement();
       if (!video) return;
 
       const now = Date.now();
@@ -332,7 +338,7 @@ export function LiveMonitorPlayer({
     }, GO2RTC_LIVENESS_CHECK_MS);
 
     return () => clearInterval(interval);
-  }, [effectiveStreamingMethod, hasVideoFrames, go2rtcFailed, go2rtcStream, monitorId]);
+  }, [effectiveStreamingMethod, hasVideoFrames, go2rtcFailed, monitorId]);
 
   // Reset failure state when monitor changes (check cache for new monitor)
   useEffect(() => {
