@@ -1005,6 +1005,46 @@ re-trigger the animation.
 
 Added to all page headers (Dashboard, Events, Monitors, etc.).
 
+Settings Components
+-------------------
+
+Section components in ``src/components/settings/`` each render one block of
+the Settings page. They take the current profile, its settings, and an
+``updateSettings`` callback, and write changes through
+``updateProfileSettings`` so the value is profile-scoped.
+
+HiddenMonitorsSection
+~~~~~~~~~~~~~~~~~~~~~~
+
+**Location**: ``src/components/settings/HiddenMonitorsSection.tsx``
+
+Per-profile control to hide and restore monitors. Hidden monitors are
+dropped from monitor lists, events, montage, and timeline for the active
+profile. The setting lives in ``excludedMonitorIds`` on the profile's
+settings.
+
+The section lists every monitor, including the hidden ones, so a hidden
+monitor can be restored from here. It fetches the full list with
+``getMonitors({ includeExcluded: true })`` under a distinct query key so the
+unfiltered result never overwrites the filtered ``['monitors', ...]`` cache
+the rest of the app reads.
+
+.. code:: tsx
+
+   const { data } = useQuery({
+     queryKey: ['monitors', 'all-including-excluded', currentProfile?.id],
+     queryFn: () => getMonitors({ includeExcluded: true }),
+     enabled: !!currentProfile && isAuthenticated,
+   });
+
+Toggling a row updates ``excludedMonitorIds`` and invalidates the
+``monitors``, ``events``, ``consoleEvents``, ``timeline-events``, and
+``event-montage`` query caches so every dependent view refetches with the
+new exclusion applied.
+
+**Key test IDs:** ``hidden-monitors-list``, ``hidden-monitors-count``,
+``hidden-monitor-row-<id>``, ``hidden-monitor-toggle-<id>``.
+
 Kiosk Mode
 ----------
 

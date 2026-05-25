@@ -40,6 +40,14 @@ Hover preview enlarges a feed or event in place when you hover over it on deskto
 
 The **playback speed** control (0.5x, 1x, 1.5x, 2x, 4x) sets how fast an event preview plays. Live monitor previews open a fresh stream while the preview is on screen and close it when you move away.
 
+## Hidden Monitors
+
+Hide monitors you do not want to see in this profile. A hidden monitor is removed from the Monitors list, Montage, Dashboard, the Events list, and the Timeline, and its events are hidden too. The setting is per profile, so hiding a monitor in one profile does not affect another.
+
+The **Hidden Monitors** section lists every monitor on the server, including ones you have already hidden, each with a toggle. Turn a toggle on to hide that monitor; turn it off to restore it. The count at the top of the section shows how many monitors are currently hidden.
+
+Hiding a monitor does not change anything on the ZoneMinder server. It only controls what this app shows for the current profile.
+
 ## Bandwidth Settings
 
 Control how often the app fetches data. Useful on mobile data or slow connections.

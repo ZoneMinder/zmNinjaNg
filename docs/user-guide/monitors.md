@@ -20,6 +20,8 @@ On desktop, hovering a monitor card for a moment opens a larger (400px wide) liv
 
 Use the **Groups** selector at the top of the screen to filter by ZoneMinder monitor group. The selection persists across navigation within the same session.
 
+To remove a monitor from this list (and from the Events and Timeline views) for the current profile, hide it from the **Hidden Monitors** section in {doc}`settings`.
+
 ## Monitor Detail
 
 The detail view for a single monitor includes:

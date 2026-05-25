@@ -127,7 +127,7 @@ function MonitorCardComponent({
         </div>
         <div className="p-2 space-y-1.5">
           <div className="flex items-center gap-1.5">
-            <div className="text-xs font-semibold truncate flex-1 min-w-0" title={monitor.Name}>{monitor.Name}</div>
+            <div className="text-xs font-semibold truncate flex-1 min-w-0" title={monitor.Name} data-testid="monitor-name">{monitor.Name}</div>
             {isRTC && (
               <button
                 type="button"
