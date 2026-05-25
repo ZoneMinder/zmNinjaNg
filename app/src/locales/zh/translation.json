@@ -277,6 +277,14 @@
     "section_live_streaming": "实时流",
     "section_playback": "播放",
     "section_advanced": "高级",
+    "hidden_monitors": {
+      "section": "隐藏的监视器",
+      "desc": "在所有视图中隐藏监视器。其事件也会被隐藏。",
+      "hidden_count": "已隐藏 {{count}} 个",
+      "empty": "未找到监视器。",
+      "loading": "正在加载监视器...",
+      "error": "无法加载监视器。"
+    },
     "language": "语言",
     "select_language": "选择语言",
     "theme": "主题",

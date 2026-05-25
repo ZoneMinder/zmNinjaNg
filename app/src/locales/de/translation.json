@@ -277,6 +277,14 @@
     "section_live_streaming": "Live-Streaming",
     "section_playback": "Wiedergabe",
     "section_advanced": "Erweitert",
+    "hidden_monitors": {
+      "section": "Versteckte Monitore",
+      "desc": "Monitore aus allen Ansichten ausblenden. Ihre Ereignisse werden ebenfalls ausgeblendet.",
+      "hidden_count": "{{count}} versteckt",
+      "empty": "Keine Monitore gefunden.",
+      "loading": "Monitore werden geladen...",
+      "error": "Monitore konnten nicht geladen werden."
+    },
     "language": "Sprache",
     "select_language": "Sprache auswählen",
     "theme": "Thema",

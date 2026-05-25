@@ -118,6 +118,9 @@ export interface ProfileSettings {
   bandwidthMode: BandwidthMode;
   // Selected group ID for filtering monitors (null = show all monitors)
   selectedGroupId: string | null;
+  // Monitor IDs excluded from this profile. Excluded monitors and their events
+  // are dropped at the API boundary so they behave as if they don't exist.
+  excludedMonitorIds: string[];
   // Allow self-signed HTTPS certificates for this profile's server
   allowSelfSignedCerts: boolean;
   // SHA-256 fingerprint of the trusted TLS certificate (TOFU pinning)
@@ -252,6 +255,8 @@ export const DEFAULT_SETTINGS: ProfileSettings = {
   bandwidthMode: 'normal',
   // No group filter by default (show all monitors)
   selectedGroupId: null,
+  // No monitors excluded by default
+  excludedMonitorIds: [],
   // Self-signed certs disabled by default (secure default)
   allowSelfSignedCerts: false,
   // No pinned certificate by default

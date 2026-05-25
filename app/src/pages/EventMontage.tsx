@@ -46,7 +46,7 @@ export default function EventMontage() {
   // Fetch monitors for filter
   const { data: monitorsData } = useQuery({
     queryKey: ['monitors'],
-    queryFn: getMonitors,
+    queryFn: () => getMonitors(),
   });
 
   const monitors = monitorsData?.monitors ? filterEnabledMonitors(monitorsData.monitors) : [];

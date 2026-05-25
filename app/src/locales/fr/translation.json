@@ -277,6 +277,14 @@
     "section_live_streaming": "Diffusion en direct",
     "section_playback": "Lecture",
     "section_advanced": "Avancé",
+    "hidden_monitors": {
+      "section": "Moniteurs masqués",
+      "desc": "Masque les moniteurs de toutes les vues. Leurs événements sont aussi masqués.",
+      "hidden_count": "{{count}} masqués",
+      "empty": "Aucun moniteur trouvé.",
+      "loading": "Chargement des moniteurs...",
+      "error": "Impossible de charger les moniteurs."
+    },
     "language": "Langue",
     "select_language": "Sélectionner la langue",
     "theme": "Thème",

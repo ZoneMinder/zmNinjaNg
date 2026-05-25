@@ -15,6 +15,7 @@ import {
 import { getApiClient } from '../client';
 import { validateApiResponse } from '../../lib/api-validator';
 import { getMonitorStreamUrl } from '../../lib/url-builder';
+import { getExcludedMonitorIds } from '../../lib/profile-settings';
 import type { ApiClient } from '../client';
 
 const mockGet = vi.fn();
@@ -26,6 +27,10 @@ vi.mock('../client', () => ({
 
 vi.mock('../../lib/api-validator', () => ({
   validateApiResponse: vi.fn((_, data) => data),
+}));
+
+vi.mock('../../lib/profile-settings', () => ({
+  getExcludedMonitorIds: vi.fn(() => []),
 }));
 
 vi.mock('../../lib/url-builder', () => ({
@@ -42,6 +47,7 @@ vi.mock('../../lib/platform', () => ({
 describe('Monitors API', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(getExcludedMonitorIds).mockReturnValue([]);
     vi.mocked(getApiClient).mockReturnValue({
       get: mockGet,
       post: mockPost,
@@ -55,6 +61,56 @@ describe('Monitors API', () => {
 
     expect(mockGet).toHaveBeenCalledWith('/monitors.json', expect.objectContaining({ intent: expect.any(String) }));
     expect(response.monitors).toHaveLength(1);
+  });
+
+  it('drops excluded monitors at the API boundary', async () => {
+    vi.mocked(getExcludedMonitorIds).mockReturnValue(['2']);
+    mockGet.mockResolvedValue({
+      data: {
+        monitors: [
+          { Monitor: { Id: '1' } },
+          { Monitor: { Id: '2' } },
+          { Monitor: { Id: '3' } },
+        ],
+      },
+    });
+
+    const response = await getMonitors();
+
+    expect(response.monitors.map((m) => m.Monitor.Id)).toEqual(['1', '3']);
+  });
+
+  it('keeps excluded monitors when includeExcluded is true', async () => {
+    vi.mocked(getExcludedMonitorIds).mockReturnValue(['2']);
+    mockGet.mockResolvedValue({
+      data: {
+        monitors: [
+          { Monitor: { Id: '1' } },
+          { Monitor: { Id: '2' } },
+          { Monitor: { Id: '3' } },
+        ],
+      },
+    });
+
+    const response = await getMonitors({ includeExcluded: true });
+
+    expect(response.monitors.map((m) => m.Monitor.Id)).toEqual(['1', '2', '3']);
+  });
+
+  it('always drops deleted monitors even with includeExcluded', async () => {
+    vi.mocked(getExcludedMonitorIds).mockReturnValue([]);
+    mockGet.mockResolvedValue({
+      data: {
+        monitors: [
+          { Monitor: { Id: '1', Deleted: false } },
+          { Monitor: { Id: '2', Deleted: true } },
+        ],
+      },
+    });
+
+    const response = await getMonitors({ includeExcluded: true });
+
+    expect(response.monitors.map((m) => m.Monitor.Id)).toEqual(['1']);
   });
 
   it('fetches a monitor and validates response', async () => {

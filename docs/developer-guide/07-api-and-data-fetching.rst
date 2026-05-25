@@ -1671,6 +1671,40 @@ When ``hls`` is true, ``getEventVideoUrl`` checks the event's
 ``DefaultVideo`` field to determine whether the video is an HLS playlist
 or an MP4 file and returns the appropriate URL.
 
+Monitor Exclusion
+-----------------
+
+Each profile can hide monitors. The hidden IDs live in
+``excludedMonitorIds`` on the profile's settings, and the exclusion is
+applied at the API boundary so hidden monitors never enter the rest of the
+app.
+
+``getMonitors`` (``src/api/monitors.ts``) drops excluded monitors by
+default. Callers that need the full list, such as the Settings UI that
+restores monitors, pass ``includeExcluded``:
+
+.. code:: typescript
+
+   export async function getMonitors(
+     options?: { includeExcluded?: boolean }
+   ): Promise<MonitorsResponse>
+
+   // Default: excluded monitors removed
+   const visible = await getMonitors();
+
+   // Full list, including excluded monitors
+   const all = await getMonitors({ includeExcluded: true });
+
+Deleted monitors are always dropped. The per-profile exclusion is applied
+afterwards via ``filterExcludedMonitors`` (see
+:doc:`12-shared-services-and-components`) using IDs from
+``getExcludedMonitorIds``.
+
+The events API (``src/api/events.ts``) filters the same way. After fetching
+and deduplicating events, it removes any event whose ``MonitorId`` is in the
+excluded set, so events for hidden monitors do not show in event lists, the
+console, montage, or the timeline.
+
 Monitor Groups API
 ------------------
 

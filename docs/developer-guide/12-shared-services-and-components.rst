@@ -847,6 +847,64 @@ Shared helpers for event and monitor grid calculations.
 
 --------------
 
+Monitor Filters (``lib/filters.ts``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Pure functions that filter monitor lists. They take and return plain
+arrays, so they are easy to unit test.
+
+**Key Functions:**
+
+- ``filterEnabledMonitors(monitors)``: Drop deleted monitors
+- ``filterExcludedMonitors(monitors, excludedIds)``: Drop monitors whose
+  ``Id`` is in ``excludedIds``. Returns the input unchanged when the list is
+  empty.
+- ``filterMonitorsByGroup(monitors, groupMonitorIds)``: Keep only monitors
+  in the given group
+
+**Usage:**
+
+.. code:: typescript
+
+   import { filterExcludedMonitors } from '../lib/filters';
+
+   const visible = filterExcludedMonitors(monitors, ['3', '7']);
+
+**Used By:** ``getMonitors`` in ``api/monitors.ts`` (per-profile monitor
+exclusion).
+
+--------------
+
+Profile Settings Accessor (``lib/profile-settings.ts``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Non-React accessors for the current profile's settings. API modules and
+other services run outside React and cannot use hooks, so these read the
+profile-scoped settings through the Zustand ``getState()`` pattern.
+
+**Key Functions:**
+
+- ``getExcludedMonitorIds()``: Returns the ``excludedMonitorIds`` array for
+  the current profile, or an empty array when there is no current profile or
+  the stores are not yet initialized.
+
+**Usage:**
+
+.. code:: typescript
+
+   import { getExcludedMonitorIds } from '../lib/profile-settings';
+
+   const excluded = getExcludedMonitorIds();
+
+The ``excludedMonitorIds`` setting itself is defined on ``ProfileSettings``
+in ``stores/settings.ts`` and written via ``updateProfileSettings``. It
+defaults to an empty array.
+
+**Used By:** ``api/monitors.ts`` and ``api/events.ts`` to apply the
+per-profile exclusion at the API boundary.
+
+--------------
+
 Stream Lifecycle (``hooks/useStreamLifecycle.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

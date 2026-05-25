@@ -137,7 +137,7 @@ export default function Timeline() {
   // Fetch monitors
   const { data: monitorsData } = useQuery({
     queryKey: ['monitors'],
-    queryFn: getMonitors,
+    queryFn: () => getMonitors(),
   });
 
   // Get enabled monitors

@@ -16,6 +16,7 @@ import {
   getEventZmsUrl as buildEventZmsUrl,
 } from '../lib/url-builder';
 import { wrapWithImageProxy } from '../lib/proxy-utils';
+import { getExcludedMonitorIds } from '../lib/profile-settings';
 
 export interface EventFilters {
   monitorId?: string;
@@ -125,8 +126,14 @@ export async function getEvents(filters: EventFilters = {}): Promise<EventsRespo
     new Map(allEvents.map(event => [event.Event.Id, event])).values()
   );
 
+  // Drop events belonging to per-profile excluded monitors at the API boundary
+  const excludedIds = new Set(getExcludedMonitorIds());
+  const visibleEvents = excludedIds.size === 0
+    ? uniqueEvents
+    : uniqueEvents.filter(event => !excludedIds.has(event.Event.MonitorId));
+
   // Return only the requested number of events
-  const finalEvents = uniqueEvents.slice(0, desiredLimit);
+  const finalEvents = visibleEvents.slice(0, desiredLimit);
 
   // Warn if we hit the max pages limit
   if (currentPage > maxPages && allEvents.length < desiredLimit) {
@@ -205,9 +212,12 @@ export async function getAdjacentEvent(
   const filterPath = filterSegments.join('');
   const url = `/events/index${filterPath}.json`;
 
+  // Fetch a small batch (not just 1) so we can skip over excluded monitors
+  // and still land on the nearest visible adjacent event.
+  const excludedIds = new Set(getExcludedMonitorIds());
   const params: Record<string, string | number> = {
     page: 1,
-    limit: 1,
+    limit: excludedIds.size === 0 ? 1 : 25,
     sort: 'StartDateTime',
     direction: direction === 'next' ? 'asc' : 'desc',
   };
@@ -218,7 +228,10 @@ export async function getAdjacentEvent(
       endpoint: url,
       method: 'GET',
     });
-    return validated.events[0] || null;
+    const visible = excludedIds.size === 0
+      ? validated.events
+      : validated.events.filter(event => !excludedIds.has(event.Event.MonitorId));
+    return visible[0] || null;
   } catch (err) {
     log.api('Failed to fetch adjacent event', LogLevel.ERROR, { direction, error: err });
     return null;
@@ -307,7 +320,16 @@ export async function getConsoleEvents(interval: string = '1 hour'): Promise<Rec
     return {};
   }
 
-  return validated.results || {};
+  const results = validated.results || {};
+
+  // Drop counts for per-profile excluded monitors
+  const excludedIds = new Set(getExcludedMonitorIds());
+  if (excludedIds.size === 0) {
+    return results;
+  }
+  return Object.fromEntries(
+    Object.entries(results).filter(([monitorId]) => !excludedIds.has(monitorId))
+  );
 }
 
 /**

@@ -56,7 +56,7 @@ export default function Montage() {
 
   const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ['monitors'],
-    queryFn: getMonitors,
+    queryFn: () => getMonitors(),
     enabled: !!currentProfile && isAuthenticated,
     refetchInterval: bandwidth.monitorStatusInterval,
   });
