@@ -6,8 +6,46 @@
 // as a plain web page (no Tauri/Capacitor runtime), so it uses the browser
 // <img src> streaming path. no Rust reader, no cache purge, no auto-restart.
 
-const { app, BrowserWindow, Menu, nativeImage, shell } = require('electron');
+const { app, BrowserWindow, Menu, nativeImage, net, ipcMain, session, shell } = require('electron');
 const path = require('node:path');
+
+// Native HTTP from the main process, bridged to the renderer over IPC (see
+// electron/preload.cjs). This mirrors the Tauri build, which performs requests
+// in its Rust core: running outside the renderer avoids CORS, and the cert
+// handling in app.whenReady lets self-signed ZoneMinder servers work.
+ipcMain.handle('http:request', async (_event, req) => {
+  const { url, method, headers, body, responseType, timeoutMs } = req;
+  const controller = new AbortController();
+  const timer = timeoutMs ? setTimeout(() => controller.abort(), timeoutMs) : null;
+  try {
+    const response = await net.fetch(url, {
+      method,
+      headers,
+      body: body ?? undefined,
+      signal: controller.signal,
+    });
+    const responseHeaders = {};
+    response.headers.forEach((value, key) => { responseHeaders[key] = value; });
+    const isBinary =
+      responseType === 'blob' || responseType === 'arraybuffer' || responseType === 'base64';
+    let bodyText;
+    let bodyBase64;
+    if (isBinary) {
+      bodyBase64 = Buffer.from(await response.arrayBuffer()).toString('base64');
+    } else {
+      bodyText = await response.text();
+    }
+    return {
+      status: response.status,
+      statusText: response.statusText,
+      headers: responseHeaders,
+      bodyText,
+      bodyBase64,
+    };
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+});
 
 // Reuse the Tauri-generated app icons so the desktop shell shows the zmNinjaNg
 // logo instead of the default Electron logo (window, taskbar, and macOS dock).
@@ -92,6 +130,12 @@ app.on('certificate-error', (event, _webContents, _url, _error, _cert, callback)
 });
 
 app.whenReady().then(() => {
+  // Trust self-signed certs for main-process net requests too. The
+  // certificate-error handler above only covers renderer loads; net.fetch (used
+  // by the http:request bridge) is verified via the session, so accept here so
+  // self-signed ZoneMinder servers work the same way they do in the renderer.
+  session.defaultSession.setCertificateVerifyProc((_request, callback) => callback(0));
+
   // macOS dock shows the default Electron icon when launched via the electron
   // binary (dev/start). Packaged builds get the icon from electron-builder.
   if (process.platform === 'darwin' && app.dock) {

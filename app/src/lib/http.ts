@@ -15,6 +15,30 @@
 import { Platform } from './platform';
 import { log, LogLevel } from './logger';
 
+// Result shape returned by the Electron main-process HTTP bridge (preload.cjs).
+interface ElectronHttpResult {
+  status: number;
+  statusText: string;
+  headers: Record<string, string>;
+  bodyText?: string;
+  bodyBase64?: string;
+}
+
+declare global {
+  interface Window {
+    electronHttp?: {
+      request(req: {
+        url: string;
+        method: string;
+        headers: Record<string, string>;
+        body?: string;
+        responseType: string;
+        timeoutMs?: number;
+      }): Promise<ElectronHttpResult>;
+    };
+  }
+}
+
 // Monotonically increasing request ID counter for correlation
 let requestIdCounter = 0;
 
@@ -117,6 +141,15 @@ function bytesToBase64(bytes: Uint8Array): string {
     binary += String.fromCharCode(bytes[i]);
   }
   return btoa(binary);
+}
+
+function base64ToBytes(base64: string): Uint8Array {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
 }
 
 async function readResponseBytes(
@@ -326,7 +359,13 @@ export async function httpRequest<T = unknown>(
 
   // Generate monotonically increasing request ID for correlation
   const requestId = ++requestIdCounter;
-  const platform = Platform.isNative ? 'Native' : Platform.isTauri ? 'Tauri' : 'Web';
+  const platform = Platform.isNative
+    ? 'Native'
+    : Platform.isTauri
+      ? 'Tauri'
+      : Platform.isElectron && typeof window !== 'undefined' && window.electronHttp
+        ? 'Electron'
+        : 'Web';
   const startTime = performance.now();
   const corrTag = correlationPrefix(requestId, correlationId);
   const path = shortPath(fullUrl);
@@ -356,6 +395,18 @@ export async function httpRequest<T = unknown>(
         responseType,
         timeoutSignal,
         onDownloadProgress
+      );
+      cleanup();
+    } else if (Platform.isElectron && typeof window !== 'undefined' && window.electronHttp) {
+      const { signal: timeoutSignal, cleanup } = withTimeoutSignal(timeoutMs ?? timeout, signal);
+      response = await electronHttpRequest<T>(
+        requestUrl,
+        method,
+        requestHeaders,
+        body,
+        responseType,
+        timeoutSignal,
+        timeoutMs ?? timeout
       );
       cleanup();
     } else {
@@ -515,6 +566,81 @@ async function tauriHttpRequest<T>(
     status: response.status,
     statusText: response.statusText,
     headers: responseHeaders,
+  };
+}
+
+/**
+ * Electron HTTP request implementation.
+ *
+ * Mirrors the Tauri transport: the request runs in the privileged process
+ * (Electron's main process, via the net module) rather than the sandboxed
+ * renderer, bridged over IPC by electron/preload.cjs. This avoids renderer CORS,
+ * and self-signed certs are handled in main.cjs. Binary responses come back as
+ * base64 over IPC (no streaming progress, like the Capacitor path).
+ */
+async function electronHttpRequest<T>(
+  url: string,
+  method: string,
+  headers: Record<string, string>,
+  body: unknown,
+  responseType: string,
+  signal?: AbortSignal,
+  timeoutMs?: number
+): Promise<HttpResponse<T>> {
+  const requestBody = serializeRequestBody(body);
+  const invocation = window.electronHttp!.request({
+    url,
+    method,
+    headers,
+    body: requestBody,
+    responseType,
+    timeoutMs,
+  });
+
+  let result: ElectronHttpResult;
+  if (signal) {
+    result = await Promise.race([
+      invocation,
+      new Promise<never>((_resolve, reject) => {
+        const abort = () => reject(new DOMException('The operation was aborted.', 'AbortError'));
+        if (signal.aborted) abort();
+        else signal.addEventListener('abort', abort, { once: true });
+      }),
+    ]);
+  } else {
+    result = await invocation;
+  }
+
+  let data: T;
+  if (responseType === 'blob' || responseType === 'arraybuffer' || responseType === 'base64') {
+    const base64 = result.bodyBase64 ?? '';
+    if (responseType === 'base64') {
+      data = base64 as T;
+    } else if (responseType === 'arraybuffer') {
+      data = base64ToBytes(base64).buffer as T;
+    } else {
+      const contentType =
+        result.headers['content-type'] || result.headers['Content-Type'] || 'application/octet-stream';
+      const bytes = base64ToBytes(base64);
+      const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+      data = new Blob([buffer], { type: contentType }) as T;
+    }
+  } else if (responseType === 'text') {
+    data = (result.bodyText ?? '') as T;
+  } else {
+    const text = result.bodyText ?? '';
+    try {
+      data = JSON.parse(text) as T;
+    } catch {
+      data = text as T;
+    }
+  }
+
+  return {
+    data,
+    status: result.status,
+    statusText: result.statusText,
+    headers: result.headers,
   };
 }
 

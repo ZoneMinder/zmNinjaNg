@@ -1,6 +1,10 @@
-// Minimal preload. The React app runs as a normal web page under Electron, so
-// nothing needs to be bridged for basic operation. A flag is exposed only so
-// the app can detect the Electron shell if it ever needs to.
-const { contextBridge } = require('electron');
+// Preload for the Electron shell. Exposes a detection flag and a native HTTP
+// bridge so the renderer can route requests through the main process (Chromium's
+// net stack), mirroring how the Tauri build routes HTTP through its Rust core.
+const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('__ZMNINJA_ELECTRON__', true);
+
+contextBridge.exposeInMainWorld('electronHttp', {
+  request: (req) => ipcRenderer.invoke('http:request', req),
+});
