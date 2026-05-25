@@ -127,6 +127,22 @@ jobs:
           name: zmNinjaNg-macos-dmg-${{ github.event.inputs.version }}
           path: app/src-tauri/target/release/bundle/dmg/*.dmg
 
+      - name: Build Electron app (macOS, signed + notarized)
+        working-directory: ./app
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          npm run build
+          npx electron-builder --config electron-builder.json -c.mac.notarize=true
+
+      - name: Upload Electron DMG artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: zmNinjaNg-macos-electron-dmg-${{ github.event.inputs.version }}
+          path: desktop_release_builds/electron/*.dmg
+
   build-linux-amd64:
     if: contains(github.event.inputs.platforms, 'linux')
     runs-on: ubuntu-latest
@@ -169,6 +185,20 @@ jobs:
           name: zmNinjaNg-linux-amd64-deb-${{ github.event.inputs.version }}
           path: app/src-tauri/target/release/bundle/deb/*.deb
 
+      - name: Build Electron app (Linux amd64, unsigned)
+        working-directory: ./app
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: |
+          npm run build
+          npx electron-builder --config electron-builder.json
+
+      - name: Upload Electron AppImage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: zmNinjaNg-linux-amd64-electron-${{ github.event.inputs.version }}
+          path: desktop_release_builds/electron/*.AppImage
+
   build-windows:
     if: contains(github.event.inputs.platforms, 'windows')
     runs-on: windows-latest
@@ -206,3 +236,17 @@ jobs:
           name: zmNinjaNg-windows-nsis-${{ github.event.inputs.version }}
           path: app/src-tauri/target/release/bundle/nsis/*.exe
           if-no-files-found: ignore
+
+      - name: Build Electron app (Windows, unsigned)
+        working-directory: ./app
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: |
+          npm run build
+          npx electron-builder --config electron-builder.json
+
+      - name: Upload Electron installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: zmNinjaNg-windows-electron-${{ github.event.inputs.version }}
+          path: desktop_release_builds/electron/*.exe
