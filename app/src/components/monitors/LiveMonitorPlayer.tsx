@@ -15,11 +15,9 @@ import { useSettingsStore } from '../../stores/settings';
 import { useGo2RTCStream } from '../../hooks/useGo2RTCStream';
 import { useMonitorStream } from '../../hooks/useMonitorStream';
 import { log, LogLevel } from '../../lib/logger';
+import { GO2RTC_VIDEO_TIMEOUT_S, GO2RTC_FRAME_POLL_MS } from '../../lib/zmninja-ng-constants';
 import { Button } from '../ui/button';
 import { VideoOff } from 'lucide-react';
-
-/** Seconds to wait for video frames after Go2RTC reports "connected" */
-const GO2RTC_VIDEO_TIMEOUT_S = 8;
 
 /** Minutes before retrying Go2RTC on a monitor that previously failed */
 const GO2RTC_RETRY_INTERVAL_MIN = 5;
@@ -59,6 +57,11 @@ export interface LiveMonitorPlayerProps {
    * to periodic snapshots.
    */
   forceViewMode?: 'streaming' | 'snapshot';
+  /**
+   * Grid position in montage, used to stagger Go2RTC connection starts.
+   * Defaults to 0 (no stagger) for single-monitor callers.
+   */
+  staggerIndex?: number;
 }
 
 export function LiveMonitorPlayer({
@@ -72,6 +75,7 @@ export function LiveMonitorPlayer({
   onLoad,
   onProtocolChange,
   forceViewMode,
+  staggerIndex = 0,
 }: LiveMonitorPlayerProps) {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -126,6 +130,13 @@ export function LiveMonitorPlayer({
 
   const effectiveStreamingMethod = go2rtcFailed ? 'mjpeg' : streamingMethod;
 
+  // MJPEG-first: while the go2rtc/MSE stream is still establishing (selected,
+  // not yet failed, no decoded frames yet), show the MJPEG stream immediately as
+  // a placeholder so the tile isn't blank. Once MSE produces frames we swap to
+  // the <video>; if MSE times out/fails, effectiveStreamingMethod flips to
+  // 'mjpeg' and MJPEG becomes the real stream.
+  const showMjpegPlaceholder = effectiveStreamingMethod === 'webrtc' && !hasVideoFrames;
+
   const go2rtcStream = useGo2RTCStream({
     go2rtcUrl: profile?.go2rtcUrl || '',
     monitorId: monitor.Id,
@@ -135,6 +146,7 @@ export function LiveMonitorPlayer({
     enabled: streamingMethod === 'webrtc' && !!profile?.go2rtcUrl && !go2rtcFailed,
     muted,
     controls: showControls,
+    staggerIndex,
   });
 
   // Fall back to MJPEG when Go2RTC reports error state
@@ -202,6 +214,26 @@ export function LiveMonitorPlayer({
     return clearVideoTimeout;
   }, [streamingMethod, go2rtcFailed, go2rtcStream.state, hasVideoFrames, go2rtcStream, monitor.Id, clearVideoTimeout]);
 
+  // Swap from the MJPEG-first placeholder to the MSE <video> as soon as decoded
+  // frames are available, rather than waiting for the timeout deadline. Polls
+  // videoWidth/videoHeight while connected and not yet showing frames.
+  useEffect(() => {
+    if (streamingMethod !== 'webrtc' || go2rtcFailed || hasVideoFrames) return;
+    if (go2rtcStream.state !== 'connected') return;
+
+    const poll = setInterval(() => {
+      const video = go2rtcStream.getVideoElement();
+      if (video && video.videoWidth > 0 && video.videoHeight > 0) {
+        if (video.paused) {
+          video.play().catch(() => { /* still has frames; treat as success */ });
+        }
+        setHasVideoFrames(true);
+      }
+    }, GO2RTC_FRAME_POLL_MS);
+
+    return () => clearInterval(poll);
+  }, [streamingMethod, go2rtcFailed, hasVideoFrames, go2rtcStream.state, go2rtcStream]);
+
   // Reset failure state when monitor changes (check cache for new monitor)
   useEffect(() => {
     setGo2rtcFailed(isGo2rtcCachedFailure(monitor.Id));
@@ -215,17 +247,17 @@ export function LiveMonitorPlayer({
       maxfps: rawSettings?.streamMaxFps,
       scale: rawSettings?.streamScale,
     },
-    enabled: effectiveStreamingMethod === 'mjpeg',
+    enabled: effectiveStreamingMethod === 'mjpeg' || showMjpegPlaceholder,
     viewModeOverride: forceViewMode,
   });
 
   // Track MJPEG image error state
   const [mjpegError, setMjpegError] = useState(false);
   useEffect(() => {
-    if (effectiveStreamingMethod === 'mjpeg') {
+    if (effectiveStreamingMethod === 'mjpeg' || showMjpegPlaceholder) {
       setMjpegError(false);
     }
-  }, [effectiveStreamingMethod, monitor.Id]);
+  }, [effectiveStreamingMethod, showMjpegPlaceholder, monitor.Id]);
 
   const handleMjpegLoad = useCallback(() => {
     setMjpegError(false);
@@ -297,15 +329,26 @@ export function LiveMonitorPlayer({
     }
   }, [isWebRTC, status.state, hasVideoFrames, onLoad]);
 
+  // The MJPEG <img> is rendered both when MJPEG is the real stream and as the
+  // MJPEG-first placeholder while MSE connects. It has a frame to show whenever
+  // the stream is configured and not errored.
+  const hasMjpegFrame = !!mjpegStream.streamUrl && !!mjpegStream.imageSrc && !mjpegError;
+  const showMjpeg = !isWebRTC || showMjpegPlaceholder;
+
+  // The MSE "connecting" badge shows while we display the MJPEG placeholder and
+  // the go2rtc stream is still establishing (not yet failed/errored). Once MSE
+  // has frames we swap to <video> and showMjpegPlaceholder is false; if MSE
+  // fails, effectiveStreamingMethod flips to 'mjpeg' so isWebRTC is false.
+  const showConnectingBadge = isWebRTC && showMjpegPlaceholder && status.state !== 'error';
+
   // Whether we're in a "waiting for video" state
   // Show VideoOff placeholder only when truly no video:
-  // - Go2RTC connecting (not yet connected)
+  // - Go2RTC connecting and the MJPEG placeholder has no frame yet either
   // - MJPEG with no stream configured, no frame yet, or an error.
   //   imageSrc is empty during the Tauri-snapshot first-frame gap (the frame is
   //   being fetched through the Rust HTTP client); for every other case imageSrc
   //   equals streamUrl, so this matches the previous behavior.
-  // Don't show during isWaitingForVideo — Go2RTC container may already be rendering
-  const showNoVideo = (isWebRTC && status.state === 'connecting') ||
+  const showNoVideo = (isWebRTC && !hasVideoFrames && !hasMjpegFrame) ||
     (!isWebRTC && (!mjpegStream.streamUrl || !mjpegStream.imageSrc || mjpegError));
 
   return (
@@ -326,17 +369,32 @@ export function LiveMonitorPlayer({
         />
       )}
 
-      {!isWebRTC && mjpegStream.streamUrl && mjpegStream.imageSrc && (
+      {showMjpeg && hasMjpegFrame && (
         <img
           ref={imgRef}
           className={`w-full h-full ${className}`}
-          style={{ objectFit, ...(mjpegError ? { display: 'none' } : {}) }}
+          style={
+            showMjpegPlaceholder
+              ? { objectFit, position: 'absolute', inset: 0, zIndex: 1 }
+              : { objectFit }
+          }
           data-testid="video-player-mjpeg"
           src={mjpegStream.imageSrc}
           alt={monitor.Name}
           onLoad={handleMjpegLoad}
           onError={handleMjpegError}
         />
+      )}
+
+      {/* MSE-connecting badge — blinking dots while MJPEG placeholder is shown */}
+      {showConnectingBadge && (
+        <div
+          className="absolute top-1.5 right-1.5 z-20 px-1.5 py-0.5 rounded bg-black/50 text-white/90 text-xs font-bold leading-none animate-pulse pointer-events-none"
+          data-testid="mse-connecting-badge"
+          aria-hidden="true"
+        >
+          …
+        </div>
       )}
 
       {/* Error overlay */}

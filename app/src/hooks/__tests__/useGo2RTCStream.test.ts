@@ -234,6 +234,57 @@ describe('useGo2RTCStream', () => {
     });
   });
 
+  describe('Staggered connection', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('delays connect by staggerIndex * 100ms on top of the base delay', async () => {
+      vi.useFakeTimers();
+      const containerRef = { current: containerElement };
+      renderHook(() =>
+        useGo2RTCStream({
+          go2rtcUrl: 'http://localhost:1984',
+          monitorId: '1',
+          containerRef,
+          enabled: true,
+          staggerIndex: 2,
+        })
+      );
+
+      // Base delay (100ms) + 2 * 100ms stagger = 300ms total.
+      // At 250ms nothing should have connected yet.
+      act(() => {
+        vi.advanceTimersByTime(250);
+      });
+      expect(VideoRTC).not.toHaveBeenCalled();
+
+      // After the full 300ms the connection should start.
+      act(() => {
+        vi.advanceTimersByTime(60);
+      });
+      expect(VideoRTC).toHaveBeenCalled();
+    });
+
+    it('connects after the base delay when staggerIndex is 0 (single view)', async () => {
+      vi.useFakeTimers();
+      const containerRef = { current: containerElement };
+      renderHook(() =>
+        useGo2RTCStream({
+          go2rtcUrl: 'http://localhost:1984',
+          monitorId: '1',
+          containerRef,
+          enabled: true,
+        })
+      );
+
+      act(() => {
+        vi.advanceTimersByTime(150);
+      });
+      expect(VideoRTC).toHaveBeenCalled();
+    });
+  });
+
   describe('Error handling', () => {
     it('sets error state when WebSocket fails to connect', async () => {
       const containerRef = { current: containerElement };

@@ -50,6 +50,8 @@ interface MontageMonitorProps {
   onPinToggle?: () => void;
   objectFit?: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down';
   showOverlay?: boolean;
+  /** Grid index, used to stagger Go2RTC connection starts across tiles. */
+  staggerIndex?: number;
 }
 
 function MontageMonitorComponent({
@@ -64,6 +66,7 @@ function MontageMonitorComponent({
   onPinToggle,
   objectFit,
   showOverlay = false,
+  staggerIndex = 0,
 }: MontageMonitorProps) {
   const { t } = useTranslation();
   const zmVersion = useAuthStore((s) => s.version);
@@ -278,6 +281,7 @@ function MontageMonitorComponent({
           muted={isMuted}
           className="w-full h-full"
           onProtocolChange={setProtocol}
+          staggerIndex={staggerIndex}
         />
         {settings.montageShowToolbar && settings.showProtocolLabel && (
           <span className="absolute bottom-1.5 right-1.5 z-30 text-[10px] px-1.5 py-0.5 rounded bg-black/50 text-white/90 font-medium pointer-events-none">

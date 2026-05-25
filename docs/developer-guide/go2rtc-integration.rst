@@ -265,10 +265,24 @@ The full fallback sequence:
 
 1. Go2RTC connects via WebSocket signaling
 2. Negotiates WebRTC, MSE, or HLS (in that order)
-3. **8-second video frame timeout**: after reaching "connected" state,
+3. **15-second video frame timeout**: after reaching "connected" state,
    checks ``videoWidth``/``videoHeight``: falls back to MJPEG if no
-   frames arrived
+   frames arrived. The value is ``GO2RTC_VIDEO_TIMEOUT_S`` in
+   ``lib/zmninja-ng-constants.ts``.
 4. MJPEG fallback as last resort
+
+**MJPEG-first placeholder:** while the go2rtc stream is still establishing
+(selected, no decoded frames yet, not failed), ``LiveMonitorPlayer`` shows
+the MJPEG stream immediately as the visible image with a blinking "…" badge
+(``data-testid="mse-connecting-badge"``). When MSE produces frames
+(``videoWidth > 0``) it swaps to the ``<video>`` and removes the badge. If
+MSE times out, MJPEG stays as the real stream and the badge is removed.
+
+**Staggered connects:** in montage every tile mounts at once. Each tile
+passes its grid index as ``staggerIndex`` down to ``useGo2RTCStream``, which
+offsets the connect by ``staggerIndex * GO2RTC_MONTAGE_STAGGER_MS`` (100 ms)
+on top of the base ``GO2RTC_CONNECT_DELAY_MS``. Index 0 gets no extra delay,
+so single-monitor view is unaffected.
 
 **Failure cache:** Monitors that fail Go2RTC are cached and skipped for
 5 minutes. This prevents repeated connection attempts in montage views

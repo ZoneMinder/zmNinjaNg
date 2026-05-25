@@ -336,6 +336,36 @@ export const MONTAGE_GRID = {
 } as const;
 
 /**
+ * Go2RTC Live Streaming Constants
+ *
+ * Timing for the go2rtc (MSE/WebRTC) live stream path used by the live monitor
+ * player and montage tiles.
+ */
+
+/**
+ * Seconds to wait for decoded video frames after go2rtc reports "connected"
+ * before giving up and falling back to MJPEG. In montage every tile connects
+ * around the same time, so this is generous enough for the last staggered streams.
+ */
+export const GO2RTC_VIDEO_TIMEOUT_S = 15;
+
+/**
+ * Per-tile stagger added to the connect delay in montage, multiplied by the
+ * tile's grid index (index 0 gets no extra delay, so single view is unaffected).
+ */
+export const GO2RTC_MONTAGE_STAGGER_MS = 100;
+
+/** Base delay before connecting, to survive React Strict Mode double-invoke (ms) */
+export const GO2RTC_CONNECT_DELAY_MS = 100;
+
+/**
+ * How often to poll the go2rtc <video> for decoded frames while the MJPEG-first
+ * placeholder is showing, so the player swaps to MSE as soon as frames arrive
+ * instead of waiting for the full GO2RTC_VIDEO_TIMEOUT_S deadline.
+ */
+export const GO2RTC_FRAME_POLL_MS = 250;
+
+/**
  * Discovery Timeouts
  *
  * Network discovery retries and platform permission delays.
