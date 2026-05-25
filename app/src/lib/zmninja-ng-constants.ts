@@ -365,6 +365,18 @@ export const GO2RTC_CONNECT_DELAY_MS = 100;
  */
 export const GO2RTC_FRAME_POLL_MS = 250;
 
+/** How often to check a playing MSE stream for freeze after the first frame (ms) */
+export const GO2RTC_LIVENESS_CHECK_MS = 3000;
+
+/** Seconds of no video.currentTime advance (or stuck readyState) before treating an MSE stream as frozen */
+export const GO2RTC_FREEZE_THRESHOLD_S = 7;
+
+/** Freeze recoveries (retries) per monitor before giving up on MSE and falling back to MJPEG */
+export const GO2RTC_MAX_FREEZE_RETRIES = 2;
+
+/** Seconds an MSE stream must advance healthily before the freeze-retry counter resets */
+export const GO2RTC_FREEZE_RESET_S = 60;
+
 /**
  * Discovery Timeouts
  *

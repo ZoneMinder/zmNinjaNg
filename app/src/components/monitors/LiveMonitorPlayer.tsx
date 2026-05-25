@@ -15,7 +15,14 @@ import { useSettingsStore } from '../../stores/settings';
 import { useGo2RTCStream } from '../../hooks/useGo2RTCStream';
 import { useMonitorStream } from '../../hooks/useMonitorStream';
 import { log, LogLevel } from '../../lib/logger';
-import { GO2RTC_VIDEO_TIMEOUT_S, GO2RTC_FRAME_POLL_MS } from '../../lib/zmninja-ng-constants';
+import {
+  GO2RTC_VIDEO_TIMEOUT_S,
+  GO2RTC_FRAME_POLL_MS,
+  GO2RTC_LIVENESS_CHECK_MS,
+  GO2RTC_FREEZE_THRESHOLD_S,
+  GO2RTC_MAX_FREEZE_RETRIES,
+  GO2RTC_FREEZE_RESET_S,
+} from '../../lib/zmninja-ng-constants';
 import { Button } from '../ui/button';
 import { VideoOff } from 'lucide-react';
 
@@ -234,10 +241,105 @@ export function LiveMonitorPlayer({
     return () => clearInterval(poll);
   }, [streamingMethod, go2rtcFailed, hasVideoFrames, go2rtcStream.state, go2rtcStream]);
 
+  // Post-first-frame liveness watchdog. The pre-frame timeout/poll effects above
+  // only run until the first decoded frame. Once MSE is playing they bail, so a
+  // stream that freezes afterwards (source hiccup, MSE buffer underrun, missing
+  // keyframe, silent WebSocket stall) would sit frozen forever. This effect runs
+  // only while MSE is actually playing and detects that case.
+  const freezeRetryCountRef = useRef(0);
+  const lastVideoTimeRef = useRef(-1);
+  const lastAdvanceAtRef = useRef(0);
+  const lastFreezeAtRef = useRef(0);
+  const monitorId = monitor.Id;
+
+  useEffect(() => {
+    if (effectiveStreamingMethod !== 'webrtc' || !hasVideoFrames || go2rtcFailed) {
+      return;
+    }
+
+    // Seed the freeze tracker on (re)entry so the first tick has a baseline.
+    const now0 = Date.now();
+    lastVideoTimeRef.current = -1;
+    lastAdvanceAtRef.current = now0;
+
+    const handleFreeze = (reason: string, detail: Record<string, unknown>) => {
+      freezeRetryCountRef.current += 1;
+      lastFreezeAtRef.current = Date.now();
+      const retries = freezeRetryCountRef.current;
+
+      if (retries > GO2RTC_MAX_FREEZE_RETRIES) {
+        log.videoPlayer('Go2RTC stream frozen, max retries reached, falling back to MJPEG', LogLevel.WARN, {
+          monitorId,
+          reason,
+          retries,
+          ...detail,
+        });
+        markGo2rtcFailed(monitorId);
+        setGo2rtcFailed(true);
+        return;
+      }
+
+      log.videoPlayer('Go2RTC stream frozen, retrying connection', LogLevel.WARN, {
+        monitorId,
+        reason,
+        retries,
+        ...detail,
+      });
+      // Show the placeholder/connecting badge again while the stream reconnects.
+      setHasVideoFrames(false);
+      go2rtcStream.retry();
+    };
+
+    const interval = setInterval(() => {
+      // A silent WebSocket stall surfaces as the hook's 'disconnected' state
+      // after frames were already flowing. Treat it as a freeze immediately.
+      if (go2rtcStream.state === 'disconnected') {
+        handleFreeze('disconnected', { state: go2rtcStream.state });
+        return;
+      }
+
+      const video = go2rtcStream.getVideoElement();
+      if (!video) return;
+
+      const now = Date.now();
+      const stalledReadyState = video.readyState < 3; // < HAVE_FUTURE_DATA
+      const advanced = !video.ended && !stalledReadyState && video.currentTime > lastVideoTimeRef.current;
+
+      if (advanced) {
+        lastVideoTimeRef.current = video.currentTime;
+        lastAdvanceAtRef.current = now;
+        // Once the stream has been advancing healthily for long enough after the
+        // last freeze, forget earlier hiccups so an occasional freeze hours apart
+        // doesn't permanently demote the stream to MJPEG.
+        if (
+          freezeRetryCountRef.current > 0 &&
+          now - lastFreezeAtRef.current >= GO2RTC_FREEZE_RESET_S * 1000
+        ) {
+          freezeRetryCountRef.current = 0;
+        }
+        return;
+      }
+
+      const frozenForMs = now - lastAdvanceAtRef.current;
+      if (frozenForMs >= GO2RTC_FREEZE_THRESHOLD_S * 1000) {
+        handleFreeze(video.ended ? 'ended' : stalledReadyState ? 'readyState' : 'no-advance', {
+          currentTime: video.currentTime,
+          readyState: video.readyState,
+          ended: video.ended,
+          frozenForMs,
+        });
+      }
+    }, GO2RTC_LIVENESS_CHECK_MS);
+
+    return () => clearInterval(interval);
+  }, [effectiveStreamingMethod, hasVideoFrames, go2rtcFailed, go2rtcStream, monitorId]);
+
   // Reset failure state when monitor changes (check cache for new monitor)
   useEffect(() => {
     setGo2rtcFailed(isGo2rtcCachedFailure(monitor.Id));
     setHasVideoFrames(false);
+    freezeRetryCountRef.current = 0;
+    lastFreezeAtRef.current = 0;
   }, [monitor.Id]);
 
   const mjpegStream = useMonitorStream({
