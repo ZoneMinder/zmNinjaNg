@@ -94,22 +94,38 @@ git clone https://github.com/ZoneMinder/zmNinjaNg
 cd zmNinjaNg/app
 npm install
 
-# Desktop development (Tauri - native app)
-npm run tauri:dev
+# Desktop development
+npm run tauri:dev      # Tauri shell (system WebView)
+npm run electron:dev   # Electron shell (Chromium)
 ```
 
 ### Desktop Production Builds
 
-#### Desktop production build (Tauri): Recommended
+Two desktop shells are supported. Tauri uses the system WebView (DMG ~20 MB). Electron bundles its own Chromium (DMG ~110 MB, experimental).
+
+General Tauri build (all platforms):
 ```bash
-npm run tauri:build    # Output: src-tauri/target/release/bundle/
+npm run tauri:build            # Output: app/src-tauri/target/release/bundle/
 ```
+
+macOS signed DMG, written to `desktop_release_builds/`:
+```bash
+npm run tauri:build:dmg        # -> desktop_release_builds/tauri/
+npm run electron:build         # -> desktop_release_builds/electron/
+```
+Both sign with the Developer ID and notarize when `APPLE_ID`, `APPLE_PASSWORD`, and `APPLE_TEAM_ID` are set in the environment. Append `:nosign` for an unsigned build:
+```bash
+npm run tauri:build:dmg:nosign
+npm run electron:build:nosign
+```
+The target folder is wiped at the start of each build.
+
 #### Web production build
 ```bash
-npm run build          # Output: dist/
-npm run preview        # Preview production build
+npm run build          # Output: app/dist/
+npm run preview        # Preview the production build
 ```
-Deploy web build (`dist/`) to: Netlify, Vercel, GitHub Pages, AWS S3, etc.
+Deploy the web build (`app/dist/`) to Netlify, Vercel, GitHub Pages, AWS S3, etc.
 
 ### Mobile Builds
 

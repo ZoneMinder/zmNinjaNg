@@ -192,7 +192,8 @@ const getDefaultLogLevel = (): LogLevel => (
   typeof import.meta !== 'undefined' && import.meta.env?.DEV ? LogLevel.DEBUG : LogLevel.INFO
 );
 
-export const getDefaultViewMode = (): ViewMode => (Platform.isTauri ? 'streaming' : 'snapshot');
+export const getDefaultViewMode = (): ViewMode =>
+  (Platform.isTauri || Platform.isElectron) ? 'streaming' : 'snapshot';
 
 export const DEFAULT_SETTINGS: ProfileSettings = {
   viewMode: getDefaultViewMode(),

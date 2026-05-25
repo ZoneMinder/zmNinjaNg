@@ -1,14 +1,38 @@
 #!/bin/bash
 set -euo pipefail
 
-# Build signed + notarized .app via Tauri, then create DMG manually.
-# Tauri's built-in DMG step fails on macOS 26 (Tahoe) because
-# com.apple.provenance blocks writes to /Volumes mounts.
-# Workaround: mount the writable DMG to /tmp instead.
+# Build the .app via Tauri, then create the DMG manually. Tauri's built-in DMG
+# step fails on macOS 26 (Tahoe) because com.apple.provenance blocks writes to
+# /Volumes mounts. Workaround: mount the writable DMG to /tmp instead.
+#
+# Signing: by default the .app is signed with the Developer ID and notarized when
+# APPLE_ID/APPLE_PASSWORD/APPLE_TEAM_ID are present. Pass --nosign for an unsigned
+# build. The Electron build (build-desktop-electron.sh) signs the same way using
+# the same identity and env vars.
+
+NOSIGN=0
+[ "${1:-}" = "--nosign" ] && NOSIGN=1
+[ "${NOSIGN_BUILD:-0}" = "1" ] && NOSIGN=1
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 APP_DIR="$(cd "$SCRIPT_DIR/../app" && pwd)"
 cd "$APP_DIR"
+
+# Shared default signing identity (overridable via APPLE_SIGNING_IDENTITY).
+DEFAULT_IDENTITY="Developer ID Application: ZoneMinder Inc (P97TSUFFDX)"
+if [ "$NOSIGN" = "1" ]; then
+  echo "=== nosign: unsigned build (no codesign, no notarization) ==="
+  unset APPLE_SIGNING_IDENTITY APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID
+else
+  export APPLE_SIGNING_IDENTITY="${APPLE_SIGNING_IDENTITY:-$DEFAULT_IDENTITY}"
+  echo "=== signing identity: $APPLE_SIGNING_IDENTITY ==="
+  if [ -n "${APPLE_ID:-}" ] && [ -n "${APPLE_PASSWORD:-}" ] && [ -n "${APPLE_TEAM_ID:-}" ]; then
+    echo "    notarization: enabled"
+  else
+    echo "    notarization: skipped (set APPLE_ID, APPLE_PASSWORD, APPLE_TEAM_ID to enable)"
+  fi
+fi
 
 # Read version from tauri.conf.json
 VERSION=$(grep '"version"' src-tauri/tauri.conf.json | head -1 | sed 's/.*: *"\(.*\)".*/\1/')
@@ -18,12 +42,20 @@ ARCH=$(uname -m)
 [ "$ARCH" = "arm64" ] && ARCH="aarch64"
 BUNDLE_DIR="src-tauri/target/release/bundle"
 APP_BUNDLE="$BUNDLE_DIR/macos/$PRODUCT.app"
-DMG_OUTPUT="$BUNDLE_DIR/dmg/${PRODUCT}_${VERSION}_${ARCH}.dmg"
+# Per-toolchain release output. The Tauri DMG uses the plain name; the Electron
+# build writes "_e_" DMGs into ../electron. Both live under desktop_release_builds/.
+OUTPUT_DIR="$ROOT_DIR/desktop_release_builds/tauri"
+DMG_OUTPUT="$OUTPUT_DIR/${PRODUCT}_${VERSION}_${ARCH}.dmg"
 VOLICON="$BUNDLE_DIR/dmg/icon.icns"
 
 echo "=== Building $PRODUCT v$VERSION for $ARCH ==="
 
-# Step 1: Build .app bundle only (signed + notarized + stapled by Tauri)
+# Clean the output dir before the build starts (keep the tracked .gitkeep).
+rm -rf "$OUTPUT_DIR"
+mkdir -p "$OUTPUT_DIR"
+touch "$OUTPUT_DIR/.gitkeep"
+
+# Step 1: Build .app bundle only (Tauri signs + notarizes from the APPLE_* env)
 echo ""
 echo "--- Building .app bundle ---"
 npx tauri build --bundles app
@@ -37,7 +69,7 @@ echo "--- .app bundle ready: $APP_BUNDLE ---"
 # Step 2: Create DMG
 echo ""
 echo "--- Creating DMG ---"
-mkdir -p "$BUNDLE_DIR/dmg"
+mkdir -p "$OUTPUT_DIR"
 
 DMG_TEMP="/tmp/dmg_temp_$$.dmg"
 MOUNT_POINT=$(mktemp -d)

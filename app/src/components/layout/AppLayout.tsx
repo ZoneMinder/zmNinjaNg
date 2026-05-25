@@ -7,6 +7,7 @@
  */
 
 import { Outlet, useLocation, Navigate } from 'react-router-dom';
+import logoUrl from '../../../assets/logo.png';
 import { useCurrentProfile } from '../../hooks/useCurrentProfile';
 import { useProfileStore } from '../../stores/profile';
 import { useSettingsStore } from '../../stores/settings';
@@ -198,7 +199,7 @@ export default function AppLayout() {
       {!isLocked && (
       <div className="md:hidden fixed top-0 left-0 right-0 h-[calc(3rem+var(--sai-top,env(safe-area-inset-top)))] pt-[var(--sai-top,env(safe-area-inset-top))] border-b bg-background z-30 flex items-center px-3 justify-between">
         <div className="flex items-center gap-2">
-          <img src="/logo.png" alt={t('app.logo_alt')} className="h-8 w-8 rounded-lg" />
+          <img src={logoUrl} alt={t('app.logo_alt')} className="h-8 w-8 rounded-lg" />
           <span className="font-bold">{t('app.name')}</span>
           <LanguageSwitcher />
         </div>

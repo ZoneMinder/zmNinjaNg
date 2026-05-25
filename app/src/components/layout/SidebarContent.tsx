@@ -4,6 +4,7 @@
  */
 
 import { Link, useLocation } from 'react-router-dom';
+import logoUrl from '../../../assets/logo.png';
 import { useProfileStore } from '../../stores/profile';
 import { useNotificationStore } from '../../stores/notifications';
 import { useSettingsStore } from '../../stores/settings';
@@ -202,7 +203,7 @@ export function SidebarContent({ onMobileClose, isCollapsed }: SidebarContentPro
         isCollapsed ? "p-2 flex flex-col items-center" : isMobileDrawer ? "px-3 py-2" : "p-6"
       )}>
         <div className={cn("flex items-center gap-2 mb-1", isCollapsed && "flex-col mb-2")}>
-          <img src="/logo.png" alt={t('app.logo_alt')} className={cn("rounded-lg", isMobileDrawer ? "h-6 w-6" : "h-8 w-8")} />
+          <img src={logoUrl} alt={t('app.logo_alt')} className={cn("rounded-lg", isMobileDrawer ? "h-6 w-6" : "h-8 w-8")} />
           {!isCollapsed && (
             <>
               <h1 className="text-base font-bold tracking-tight whitespace-nowrap">{t('app.name')}</h1>

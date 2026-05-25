@@ -1,0 +1,41 @@
+{
+  "appId": "org.zoneminder.zmninjang.electron",
+  "productName": "zmNinjaNg",
+  "extraMetadata": {
+    "homepage": "https://github.com/ZoneMinder/zmNinjaNg",
+    "description": "ZoneMinder client",
+    "license": "Apache-2.0"
+  },
+  "directories": {
+    "output": "../desktop_release_builds/electron"
+  },
+  "files": [
+    "dist/**/*",
+    "!dist/**/*.map",
+    "electron/**/*",
+    "package.json",
+    "src-tauri/icons/icon.png",
+    "!node_modules/**/*"
+  ],
+  "npmRebuild": false,
+  "mac": {
+    "target": ["dmg"],
+    "category": "public.app-category.utilities",
+    "hardenedRuntime": true,
+    "notarize": false,
+    "icon": "src-tauri/icons/icon.icns",
+    "artifactName": "${productName}_e_${version}_aarch64.${ext}"
+  },
+  "linux": {
+    "target": ["AppImage", "deb", "rpm"],
+    "maintainer": "ZoneMinder <noreply@zoneminder.com>",
+    "category": "Utility",
+    "icon": "src-tauri/icons/icon.png",
+    "artifactName": "${productName}_e_${version}_${arch}.${ext}"
+  },
+  "win": {
+    "target": ["nsis"],
+    "icon": "src-tauri/icons/icon.ico",
+    "artifactName": "${productName}_e_${version}_${arch}.${ext}"
+  }
+}

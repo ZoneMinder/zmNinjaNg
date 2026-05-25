@@ -40,6 +40,15 @@ export const Platform = {
   },
 
   /**
+   * True if running inside an Electron desktop shell. Electron sets a UA that
+   * includes "Electron/<version>". Detected as a regular web page otherwise
+   * (no Tauri/Capacitor runtime), so it uses the browser <img> streaming path.
+   */
+  get isElectron() {
+    return typeof navigator !== 'undefined' && /\belectron\b/i.test(navigator.userAgent);
+  },
+
+  /**
    * True on Tauri desktop running the WebKitGTK webview (Linux). That webview
    * never frees blob: registry entries, even after revokeObjectURL, so the MJPEG
    * render path uses data: URLs there and relies on the periodic resource-cache
@@ -67,10 +76,11 @@ export const Platform = {
 
   /**
    * True if should use development proxy server.
-   * Only true in dev mode on web (not native platforms).
+   * Only true in dev mode on web (not native, not the Electron shell, which
+   * talks to the server directly with web security disabled).
    */
   get shouldUseProxy() {
-    return this.isDev && this.isWeb;
+    return this.isDev && this.isWeb && !this.isElectron;
   },
 
   /**
