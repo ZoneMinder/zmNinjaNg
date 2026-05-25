@@ -8,3 +8,7 @@ contextBridge.exposeInMainWorld('__ZMNINJA_ELECTRON__', true);
 contextBridge.exposeInMainWorld('electronHttp', {
   request: (req) => ipcRenderer.invoke('http:request', req),
 });
+
+contextBridge.exposeInMainWorld('electronSsl', {
+  setTrustSelfSigned: (enabled) => ipcRenderer.invoke('ssl:set-trust', enabled),
+});

@@ -78,6 +78,28 @@ describe('applySSLTrustSetting', () => {
     expect(isTauriSslTrustEnabled()).toBe(false);
   });
 
+  it('should call electronSsl.setTrustSelfSigned with the enabled flag on Electron', async () => {
+    vi.doMock('../platform', () => ({
+      Platform: { isNative: false, isTauri: false, isElectron: true },
+    }));
+
+    const setTrustSelfSigned = vi.fn().mockResolvedValue(true);
+    vi.stubGlobal('window', { electronSsl: { setTrustSelfSigned } });
+
+    const { applySSLTrustSetting } = await import('../ssl-trust');
+
+    await applySSLTrustSetting(true);
+    expect(setTrustSelfSigned).toHaveBeenCalledWith(true);
+
+    await applySSLTrustSetting(false);
+    expect(setTrustSelfSigned).toHaveBeenCalledWith(false);
+
+    expect(mockEnable).not.toHaveBeenCalled();
+    expect(mockDisable).not.toHaveBeenCalled();
+
+    vi.unstubAllGlobals();
+  });
+
   it('should be a no-op on web platforms', async () => {
     vi.doMock('../platform', () => ({
       Platform: { isNative: false, isTauri: false },

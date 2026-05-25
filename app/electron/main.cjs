@@ -9,6 +9,11 @@
 const { app, BrowserWindow, Menu, nativeImage, net, ipcMain, session, shell } = require('electron');
 const path = require('node:path');
 
+// Whether to trust self-signed/invalid TLS certificates. Secure default: reject
+// until the renderer enables it during bootstrap, gated on the per-profile
+// allowSelfSignedCerts setting (see src/lib/ssl-trust.ts applySSLTrustSetting).
+let trustSelfSigned = false;
+
 // Native HTTP from the main process, bridged to the renderer over IPC (see
 // electron/preload.cjs). This mirrors the Tauri build, which performs requests
 // in its Rust core: running outside the renderer avoids CORS, and the cert
@@ -45,6 +50,12 @@ ipcMain.handle('http:request', async (_event, req) => {
   } finally {
     if (timer) clearTimeout(timer);
   }
+});
+
+// Renderer toggles self-signed cert trust to match the per-profile setting.
+ipcMain.handle('ssl:set-trust', (_event, enabled) => {
+  trustSelfSigned = !!enabled;
+  return true;
 });
 
 // Reuse the Tauri-generated app icons so the desktop shell shows the zmNinjaNg
@@ -123,18 +134,24 @@ function createWindow() {
   }
 }
 
-// Accept self-signed certificates (ZoneMinder servers commonly use them).
+// Accept self-signed certificates only when the active profile allows it.
 app.on('certificate-error', (event, _webContents, _url, _error, _cert, callback) => {
-  event.preventDefault();
-  callback(true);
+  if (trustSelfSigned) {
+    event.preventDefault();
+    callback(true);
+  }
+  // else: do NOT preventDefault -> Chromium rejects the invalid cert (default).
 });
 
 app.whenReady().then(() => {
   // Trust self-signed certs for main-process net requests too. The
   // certificate-error handler above only covers renderer loads; net.fetch (used
-  // by the http:request bridge) is verified via the session, so accept here so
-  // self-signed ZoneMinder servers work the same way they do in the renderer.
-  session.defaultSession.setCertificateVerifyProc((_request, callback) => callback(0));
+  // by the http:request bridge) is verified via the session, so gate it on the
+  // same flag so self-signed ZoneMinder servers work like they do in the renderer.
+  session.defaultSession.setCertificateVerifyProc((_request, callback) => {
+    // 0 = force-trust; -3 = use Chromium's default verification (rejects self-signed).
+    callback(trustSelfSigned ? 0 : -3);
+  });
 
   // macOS dock shows the default Electron icon when launched via the electron
   // binary (dev/start). Packaged builds get the icon from electron-builder.

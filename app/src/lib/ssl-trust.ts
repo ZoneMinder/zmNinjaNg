@@ -2,6 +2,12 @@ import { Platform } from './platform';
 import { log, LogLevel } from './logger';
 import type { CertInfo } from '../plugins/ssl-trust/definitions';
 
+declare global {
+  interface Window {
+    electronSsl?: { setTrustSelfSigned(enabled: boolean): Promise<boolean> };
+  }
+}
+
 /**
  * Global flag for Tauri SSL trust state.
  * Checked by tauriHttpRequest in http.ts to pass danger options.
@@ -42,6 +48,18 @@ export async function applySSLTrustSetting(enabled: boolean, fingerprint?: strin
       enabled ? 'Tauri SSL trust override enabled' : 'Tauri SSL trust override disabled',
       enabled ? LogLevel.INFO : LogLevel.DEBUG
     );
+  } else if (Platform.isElectron) {
+    try {
+      if (typeof window !== 'undefined' && window.electronSsl) {
+        await window.electronSsl.setTrustSelfSigned(enabled);
+        log.sslTrust(
+          enabled ? 'Electron SSL trust override enabled' : 'Electron SSL trust override disabled',
+          enabled ? LogLevel.INFO : LogLevel.DEBUG
+        );
+      }
+    } catch (error) {
+      log.sslTrust('Failed to apply Electron SSL trust setting', LogLevel.ERROR, { error });
+    }
   } else {
     log.sslTrust('SSL trust override not applicable on web', LogLevel.DEBUG);
   }
