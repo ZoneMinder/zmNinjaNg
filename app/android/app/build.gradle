@@ -6,10 +6,16 @@ android {
 
     signingConfigs {
         release {
-            storeFile file(System.getenv("ZMNINJA_KEYSTORE_PATH") ?: '')
-            storePassword System.getenv("ZMNINJA_KEYSTORE_PASSWORD") ?: ''
-            keyAlias System.getenv("ZMNINJA_KEY_ALIAS") ?: ''
-            keyPassword System.getenv("ZMNINJA_KEY_PASSWORD") ?: ''
+            // Only configure the keystore when it is provided (release builds via
+            // CI secrets). Debug builds (e.g. assembleDebug in build-all) don't set
+            // it; calling file('') here throws "path may not be null or empty".
+            def keystorePath = System.getenv("ZMNINJA_KEYSTORE_PATH")
+            if (keystorePath) {
+                storeFile file(keystorePath)
+                storePassword System.getenv("ZMNINJA_KEYSTORE_PASSWORD") ?: ''
+                keyAlias System.getenv("ZMNINJA_KEY_ALIAS") ?: ''
+                keyPassword System.getenv("ZMNINJA_KEY_PASSWORD") ?: ''
+            }
         }
     }
 
