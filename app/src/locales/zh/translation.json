@@ -283,7 +283,8 @@
       "hidden_count": "已隐藏 {{count}} 个",
       "empty": "未找到监视器。",
       "loading": "正在加载监视器...",
-      "error": "无法加载监视器。"
+      "error": "无法加载监视器。",
+      "select": "选择监视器"
     },
     "language": "语言",
     "select_language": "选择语言",

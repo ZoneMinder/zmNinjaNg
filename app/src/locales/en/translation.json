@@ -283,7 +283,8 @@
       "hidden_count": "{{count}} hidden",
       "empty": "No monitors found.",
       "loading": "Loading monitors...",
-      "error": "Could not load monitors."
+      "error": "Could not load monitors.",
+      "select": "Select monitors"
     },
     "language": "Language",
     "select_language": "Select Language",

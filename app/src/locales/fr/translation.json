@@ -283,7 +283,8 @@
       "hidden_count": "{{count}} masqués",
       "empty": "Aucun moniteur trouvé.",
       "loading": "Chargement des moniteurs...",
-      "error": "Impossible de charger les moniteurs."
+      "error": "Impossible de charger les moniteurs.",
+      "select": "Choisir moniteurs"
     },
     "language": "Langue",
     "select_language": "Sélectionner la langue",

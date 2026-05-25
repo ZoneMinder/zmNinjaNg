@@ -18,26 +18,44 @@ When('I note the name of the first monitor', async ({ page }) => {
 });
 
 Then('I should see the hidden monitors list', async ({ page }) => {
+  // The list now lives inside a popover. Open the dropdown, assert the list
+  // renders, then dismiss the popover so the page returns to its compact state.
+  const trigger = page.getByTestId('hidden-monitors-dropdown');
+  await expect(trigger).toBeVisible({ timeout: testConfig.timeouts.pageLoad });
+  await trigger.click();
+
   const list = page.getByTestId('hidden-monitors-list');
   await expect(list).toBeVisible({ timeout: testConfig.timeouts.pageLoad });
+
+  await page.keyboard.press('Escape');
+  await expect(list).toBeHidden({ timeout: testConfig.timeouts.element });
 });
 
-// Toggle the Switch in the row whose monitor name matches the noted name.
-// The Switch's aria-label is set to the monitor name (see HiddenMonitorsSection),
-// so we scope the search by name rather than relying on a known monitor id.
+// Toggle the checkbox in the popover whose monitor name matches the noted name.
+// The dropdown must be opened first; the checkbox's aria-label is set to the
+// monitor name (see HiddenMonitorsSection), so we scope the search by name
+// rather than relying on a known monitor id. The popover is dismissed after.
 async function setNotedMonitorHidden(page: import('@playwright/test').Page, hidden: boolean) {
+  const trigger = page.getByTestId('hidden-monitors-dropdown');
+  await expect(trigger).toBeVisible({ timeout: testConfig.timeouts.pageLoad });
+  await trigger.click();
+
   const list = page.getByTestId('hidden-monitors-list');
   await expect(list).toBeVisible({ timeout: testConfig.timeouts.pageLoad });
 
-  const toggle = list.getByRole('switch', { name: notedMonitorName, exact: true });
-  await expect(toggle).toBeVisible({ timeout: testConfig.timeouts.element });
+  const checkbox = list.getByRole('checkbox', { name: notedMonitorName, exact: true });
+  await expect(checkbox).toBeVisible({ timeout: testConfig.timeouts.element });
 
-  const isChecked = (await toggle.getAttribute('data-state')) === 'checked';
+  const isChecked = (await checkbox.getAttribute('data-state')) === 'checked';
   if (isChecked !== hidden) {
-    await toggle.click();
+    await checkbox.click();
     await page.waitForTimeout(300);
   }
-  await expect(toggle).toHaveAttribute('data-state', hidden ? 'checked' : 'unchecked');
+  await expect(checkbox).toHaveAttribute('data-state', hidden ? 'checked' : 'unchecked');
+
+  // Dismiss the popover so subsequent navigation/assertions act on the page.
+  await page.keyboard.press('Escape');
+  await expect(list).toBeHidden({ timeout: testConfig.timeouts.element });
 }
 
 When('I hide the noted monitor', async ({ page }) => {

@@ -283,7 +283,8 @@
       "hidden_count": "{{count}} ocultos",
       "empty": "No se encontraron monitores.",
       "loading": "Cargando monitores...",
-      "error": "No se pudieron cargar los monitores."
+      "error": "No se pudieron cargar los monitores.",
+      "select": "Elegir monitores"
     },
     "language": "Idioma",
     "select_language": "Seleccionar Idioma",
