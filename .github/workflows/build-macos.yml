@@ -117,11 +117,20 @@ jobs:
           npm run build
           npx electron-builder --config electron-builder.json -c.mac.notarize=true
 
+      - name: Rename macOS Electron artifact
+        run: |
+          VERSION="${{ github.event.inputs.version || github.ref_name }}"
+          VERSION="${VERSION#zmNinjaNg-}"
+          mkdir -p dist/macos
+          for f in desktop_release_builds/electron/*.dmg; do
+            [ -f "$f" ] && cp "$f" "dist/macos/zmNinjaNg-${VERSION}-macos-aarch64.dmg"
+          done
+
       - name: Upload Electron DMG artifact
         uses: actions/upload-artifact@v4
         with:
           name: zmNinjaNg-macos-electron-dmg-${{ github.event.inputs.version || github.ref_name }}
-          path: desktop_release_builds/electron/*.dmg
+          path: dist/macos/*.dmg
           retention-days: 30
 
       - name: Upload Electron to Release
@@ -129,7 +138,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/zmNinjaNg-')
         with:
           files: |
-            desktop_release_builds/electron/*.dmg
+            dist/macos/*.dmg
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

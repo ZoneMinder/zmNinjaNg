@@ -107,14 +107,23 @@ jobs:
           npm run build
           npx electron-builder --config electron-builder.json
 
+      - name: Rename Linux AMD64 Electron artifacts
+        run: |
+          VERSION="${{ github.event.inputs.version || github.ref_name }}"
+          VERSION="${VERSION#zmNinjaNg-}"
+          mkdir -p dist/linux-amd64
+          for f in desktop_release_builds/electron/*.AppImage; do [ -f "$f" ] && cp "$f" "dist/linux-amd64/zmNinjaNg-${VERSION}-linux-amd64.AppImage"; done
+          for f in desktop_release_builds/electron/*.deb; do [ -f "$f" ] && cp "$f" "dist/linux-amd64/zmNinjaNg-${VERSION}-linux-amd64.deb"; done
+          for f in desktop_release_builds/electron/*.rpm; do [ -f "$f" ] && cp "$f" "dist/linux-amd64/zmNinjaNg-${VERSION}-linux-amd64.rpm"; done
+
       - name: Upload Linux AMD64 Electron artifacts
         uses: actions/upload-artifact@v4
         with:
           name: zmNinjaNg-linux-amd64-electron-${{ github.event.inputs.version || github.ref_name }}
           path: |
-            desktop_release_builds/electron/*.AppImage
-            desktop_release_builds/electron/*.deb
-            desktop_release_builds/electron/*.rpm
+            dist/linux-amd64/*.AppImage
+            dist/linux-amd64/*.deb
+            dist/linux-amd64/*.rpm
           retention-days: 30
 
       - name: Upload Electron to Release
@@ -122,8 +131,8 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/zmNinjaNg-')
         with:
           files: |
-            desktop_release_builds/electron/*.AppImage
-            desktop_release_builds/electron/*.deb
-            desktop_release_builds/electron/*.rpm
+            dist/linux-amd64/*.AppImage
+            dist/linux-amd64/*.deb
+            dist/linux-amd64/*.rpm
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
