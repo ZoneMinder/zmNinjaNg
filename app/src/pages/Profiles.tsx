@@ -8,11 +8,13 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProfileStore } from '../stores/profile';
+import { useSettingsStore } from '../stores/settings';
 import { useCurrentProfile } from '../hooks/useCurrentProfile';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Label } from '../components/ui/label';
 import { Input } from '../components/ui/input';
+import { Switch } from '../components/ui/switch';
 import {
   Dialog,
   DialogContent,
@@ -68,6 +70,7 @@ export default function Profiles() {
     cgiUrl: '',
     username: '',
     password: '',
+    allowSelfSignedCerts: false,
   });
 
   const [showPassword, setShowPassword] = useState(false);
@@ -85,6 +88,8 @@ export default function Profiles() {
       decryptedPassword = profile.password || '';
     }
 
+    const profileSettings = useSettingsStore.getState().getProfileSettings(profile.id);
+
     setFormData({
       name: profile.name,
       portalUrl: profile.portalUrl,
@@ -92,6 +97,7 @@ export default function Profiles() {
       cgiUrl: profile.cgiUrl,
       username: profile.username || '',
       password: decryptedPassword,
+      allowSelfSignedCerts: profileSettings.allowSelfSignedCerts,
     });
     setShowPassword(false);
     setIsEditDialogOpen(true);
@@ -126,6 +132,10 @@ export default function Profiles() {
 
     setIsSaving(true);
     try {
+      // Apply SSL trust before discovery so it works against a self-signed server.
+      const { applySSLTrustSetting } = await import('../lib/ssl-trust');
+      await applySSLTrustSetting(formData.allowSelfSignedCerts);
+
       let portalUrl = formData.portalUrl.replace(/\/$/, '');
 
       // If URLs were manually edited, use them; otherwise discover from portal URL
@@ -165,6 +175,10 @@ export default function Profiles() {
       };
 
       await updateProfile(selectedProfile.id, updates);
+
+      useSettingsStore.getState().updateProfileSettings(selectedProfile.id, {
+        allowSelfSignedCerts: formData.allowSelfSignedCerts,
+      });
 
       toast({
         title: t('common.success'),
@@ -536,6 +550,17 @@ export default function Profiles() {
               <p className="text-xs text-muted-foreground">
                 {t('profiles.password_hint')}
               </p>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <Label htmlFor="edit-self-signed-certs" className="text-sm text-muted-foreground cursor-pointer">
+                {t('settings.allow_self_signed_certs')}
+              </Label>
+              <Switch
+                id="edit-self-signed-certs"
+                checked={formData.allowSelfSignedCerts}
+                onCheckedChange={(checked) => setFormData({ ...formData, allowSelfSignedCerts: checked })}
+                data-testid="profile-edit-self-signed-certs-switch"
+              />
             </div>
           </div>
           <DialogFooter>
