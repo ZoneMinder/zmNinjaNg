@@ -21,12 +21,14 @@
     "artifactName": "${productName}_e_${version}_aarch64.${ext}"
   },
   "linux": {
-    "target": ["AppImage"],
+    "target": ["AppImage", "deb", "rpm"],
     "category": "Utility",
-    "icon": "src-tauri/icons/icon.png"
+    "icon": "src-tauri/icons/icon.png",
+    "artifactName": "${productName}_e_${version}_${arch}.${ext}"
   },
   "win": {
     "target": ["nsis"],
-    "icon": "src-tauri/icons/icon.ico"
+    "icon": "src-tauri/icons/icon.ico",
+    "artifactName": "${productName}_e_${version}_${arch}.${ext}"
   }
 }

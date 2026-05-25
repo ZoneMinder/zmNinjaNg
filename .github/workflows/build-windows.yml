@@ -89,23 +89,11 @@ jobs:
           npm run build
           npx electron-builder --config electron-builder.json
 
-      - name: Rename Windows Electron artifacts
-        shell: bash
-        run: |
-          VERSION="${{ github.event.inputs.version || github.ref_name }}"
-          VERSION="${VERSION#zmNinjaNg-}"
-          mkdir -p dist/windows
-          for exe in desktop_release_builds/electron/*.exe; do
-            if [ -f "$exe" ]; then
-              cp "$exe" "dist/windows/zmNinjaNg-${VERSION}-windows-x64-electron-setup.exe"
-            fi
-          done
-
       - name: Upload Windows Electron artifact
         uses: actions/upload-artifact@v4
         with:
           name: zmNinjaNg-windows-electron-${{ github.event.inputs.version || github.ref_name }}
-          path: dist/windows/*-electron-setup.exe
+          path: desktop_release_builds/electron/*.exe
           retention-days: 30
 
       - name: Upload Electron to Release
@@ -113,6 +101,6 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/zmNinjaNg-')
         with:
           files: |
-            dist/windows/*-electron-setup.exe
+            desktop_release_builds/electron/*.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

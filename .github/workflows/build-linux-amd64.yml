@@ -34,7 +34,7 @@ jobs:
       - name: Install Linux dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf rpm
 
       - name: Install dependencies
         working-directory: ./app
@@ -103,22 +103,14 @@ jobs:
           npm run build
           npx electron-builder --config electron-builder.json
 
-      - name: Rename Linux AMD64 Electron artifacts
-        run: |
-          VERSION="${{ github.event.inputs.version || github.ref_name }}"
-          VERSION="${VERSION#zmNinjaNg-}"
-          mkdir -p dist/linux-amd64
-          for appimage in desktop_release_builds/electron/*.AppImage; do
-            if [ -f "$appimage" ]; then
-              cp "$appimage" "dist/linux-amd64/zmNinjaNg-${VERSION}-linux-amd64-electron.AppImage"
-            fi
-          done
-
-      - name: Upload Linux AMD64 Electron artifact
+      - name: Upload Linux AMD64 Electron artifacts
         uses: actions/upload-artifact@v4
         with:
           name: zmNinjaNg-linux-amd64-electron-${{ github.event.inputs.version || github.ref_name }}
-          path: dist/linux-amd64/*-electron.AppImage
+          path: |
+            desktop_release_builds/electron/*.AppImage
+            desktop_release_builds/electron/*.deb
+            desktop_release_builds/electron/*.rpm
           retention-days: 30
 
       - name: Upload Electron to Release
@@ -126,6 +118,8 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/zmNinjaNg-')
         with:
           files: |
-            dist/linux-amd64/*-electron.AppImage
+            desktop_release_builds/electron/*.AppImage
+            desktop_release_builds/electron/*.deb
+            desktop_release_builds/electron/*.rpm
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
