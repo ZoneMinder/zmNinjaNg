@@ -233,14 +233,14 @@ describe('getEventVideoUrl', () => {
 
   it('generates MP4 video URL with default h264 format', () => {
     const result = getEventVideoUrl(portalUrl, eventId);
-    expect(result).toBe('https://zm.com/index.php?mode=mpeg&format=h264&eid=9&view=view_video');
+    expect(result).toBe('https://zm.com/index.php?mode=mp4&format=h264&eid=9&view=view_video');
   });
 
   it('includes token parameter', () => {
     const result = getEventVideoUrl(portalUrl, eventId, {
       token: 'mytoken123',
     });
-    expect(result).toBe('https://zm.com/index.php?mode=mpeg&format=h264&eid=9&view=view_video&token=mytoken123');
+    expect(result).toBe('https://zm.com/index.php?mode=mp4&format=h264&eid=9&view=view_video&token=mytoken123');
   });
 
   it('supports h265 format', () => {
@@ -251,9 +251,9 @@ describe('getEventVideoUrl', () => {
     expect(result).toContain('format=h265');
   });
 
-  it('uses mode=mpeg for MP4 playback', () => {
+  it('uses mode=mp4 for MP4 playback', () => {
     const result = getEventVideoUrl(portalUrl, eventId);
-    expect(result).toContain('mode=mpeg');
+    expect(result).toContain('mode=mp4');
   });
 
   it('uses view=view_video', () => {
