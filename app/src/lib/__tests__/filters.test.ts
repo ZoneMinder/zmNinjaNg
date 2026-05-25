@@ -5,6 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   filterEnabledMonitors,
+  filterExcludedMonitors,
   getEnabledMonitorIds,
   isMonitorEnabled,
   filterMonitorsByGroup,
@@ -177,6 +178,62 @@ describe('filterEnabledMonitors', () => {
     expect(result[0].Monitor.Id).toBe('5');
     expect(result[1].Monitor.Id).toBe('9');
     expect(result[2].Monitor.Id).toBe('1');
+  });
+});
+
+describe('filterExcludedMonitors', () => {
+  const monitors = [
+    createMockMonitor('1'),
+    createMockMonitor('2'),
+    createMockMonitor('3'),
+    createMockMonitor('4'),
+  ];
+
+  it('returns all monitors when excluded list is empty', () => {
+    const result = filterExcludedMonitors(monitors, []);
+
+    expect(result).toHaveLength(4);
+    expect(result).toEqual(monitors);
+  });
+
+  it('drops monitors whose Id is in the excluded list', () => {
+    const result = filterExcludedMonitors(monitors, ['2', '4']);
+
+    expect(result).toHaveLength(2);
+    expect(result[0].Monitor.Id).toBe('1');
+    expect(result[1].Monitor.Id).toBe('3');
+  });
+
+  it('returns empty array when all monitors are excluded', () => {
+    const result = filterExcludedMonitors(monitors, ['1', '2', '3', '4']);
+
+    expect(result).toHaveLength(0);
+  });
+
+  it('ignores excluded IDs that do not match any monitor', () => {
+    const result = filterExcludedMonitors(monitors, ['999']);
+
+    expect(result).toHaveLength(4);
+    expect(result).toEqual(monitors);
+  });
+
+  it('preserves monitor order', () => {
+    const ordered = [
+      createMockMonitor('5'),
+      createMockMonitor('2'),
+      createMockMonitor('9'),
+      createMockMonitor('1'),
+    ];
+
+    const result = filterExcludedMonitors(ordered, ['2']);
+
+    expect(result.map((m) => m.Monitor.Id)).toEqual(['5', '9', '1']);
+  });
+
+  it('handles empty monitors array', () => {
+    const result = filterExcludedMonitors([], ['1', '2']);
+
+    expect(result).toHaveLength(0);
   });
 });
 

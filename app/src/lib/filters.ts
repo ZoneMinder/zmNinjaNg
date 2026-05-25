@@ -21,6 +21,24 @@ export function filterEnabledMonitors(monitors: MonitorData[]): MonitorData[] {
 }
 
 /**
+ * Filter out monitors whose Id is in the excluded list.
+ *
+ * @param monitors - List of monitor data objects
+ * @param excludedIds - Monitor IDs marked as excluded for the current profile
+ * @returns Filtered list with excluded monitors removed
+ */
+export function filterExcludedMonitors(
+  monitors: MonitorData[],
+  excludedIds: string[]
+): MonitorData[] {
+  if (excludedIds.length === 0) {
+    return monitors;
+  }
+  const idSet = new Set(excludedIds);
+  return monitors.filter(({ Monitor }) => !idSet.has(Monitor.Id));
+}
+
+/**
  * Get IDs of enabled monitors.
  * 
  * @param monitors - List of monitor data objects

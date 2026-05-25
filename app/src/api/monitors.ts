@@ -15,15 +15,22 @@ import {
 } from '../lib/url-builder';
 import { log, LogLevel } from '../lib/logger';
 import { wrapWithImageProxy } from '../lib/proxy-utils';
+import { filterExcludedMonitors } from '../lib/filters';
+import { getExcludedMonitorIds } from '../lib/profile-settings';
 
 /**
  * Get all monitors.
- * 
+ *
  * Fetches the list of all monitors from /monitors.json.
- * 
+ *
+ * @param options.includeExcluded - When true, skip the per-profile exclusion
+ *   filter so callers (e.g. the exclusion Settings UI) can still list excluded
+ *   monitors. Deleted monitors are always dropped.
  * @returns Promise resolving to MonitorsResponse containing array of monitors
  */
-export async function getMonitors(): Promise<MonitorsResponse> {
+export async function getMonitors(
+  options?: { includeExcluded?: boolean }
+): Promise<MonitorsResponse> {
   const client = getApiClient();
   const response = await client.get<MonitorsResponse>('/monitors.json', {
     intent: 'Fetch monitors list',
@@ -39,6 +46,11 @@ export async function getMonitors(): Promise<MonitorsResponse> {
   validated.monitors = validated.monitors.filter(
     ({ Monitor }) => Monitor.Deleted !== true
   );
+
+  // Drop per-profile excluded monitors unless the caller opts out
+  if (!options?.includeExcluded) {
+    validated.monitors = filterExcludedMonitors(validated.monitors, getExcludedMonitorIds());
+  }
 
   return validated;
 }

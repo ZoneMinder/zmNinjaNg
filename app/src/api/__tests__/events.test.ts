@@ -8,6 +8,7 @@ import {
 } from '../events';
 import { getApiClient } from '../client';
 import { validateApiResponse } from '../../lib/api-validator';
+import { getExcludedMonitorIds } from '../../lib/profile-settings';
 import type { ApiClient } from '../client';
 
 const mockGet = vi.fn();
@@ -20,6 +21,10 @@ vi.mock('../client', () => ({
 
 vi.mock('../../lib/api-validator', () => ({
   validateApiResponse: vi.fn((_, data) => data),
+}));
+
+vi.mock('../../lib/profile-settings', () => ({
+  getExcludedMonitorIds: vi.fn(() => []),
 }));
 
 vi.mock('../../lib/logger', () => ({
@@ -36,10 +41,10 @@ vi.mock('../../lib/logger', () => ({
   },
 }));
 
-const buildEventData = (id: number) => ({
+const buildEventData = (id: number, monitorId = '1') => ({
   Event: {
     Id: String(id),
-    MonitorId: '1',
+    MonitorId: monitorId,
     StorageId: null,
     SecondaryStorageId: null,
     Name: `Event ${id}`,
@@ -75,6 +80,7 @@ const buildEventData = (id: number) => ({
 describe('Events API', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(getExcludedMonitorIds).mockReturnValue([]);
     vi.mocked(getApiClient).mockReturnValue({
       get: mockGet,
       put: mockPut,
@@ -119,6 +125,40 @@ describe('Events API', () => {
     expect(mockGet).toHaveBeenCalledWith('/events/index.json', expect.objectContaining({ params: { page: 2, limit: 100 } }));
     expect(response.events).toHaveLength(3);
     expect(response.events.map((event) => event.Event.Id)).toEqual(['1', '2', '3']);
+  });
+
+  it('drops events belonging to excluded monitors', async () => {
+    vi.mocked(getExcludedMonitorIds).mockReturnValue(['2']);
+    mockGet.mockResolvedValue({
+      data: {
+        events: [
+          buildEventData(1, '1'),
+          buildEventData(2, '2'),
+          buildEventData(3, '3'),
+          buildEventData(4, '2'),
+        ],
+        pagination: {
+          pageCount: 1, page: 1, current: 1, count: 4,
+          prevPage: false, nextPage: false, limit: 100,
+        },
+      },
+    });
+
+    const response = await getEvents({ limit: 10 });
+
+    expect(response.events.map((e) => e.Event.Id)).toEqual(['1', '3']);
+    expect(response.events.every((e) => e.Event.MonitorId !== '2')).toBe(true);
+  });
+
+  it('drops console event counts for excluded monitors', async () => {
+    vi.mocked(getExcludedMonitorIds).mockReturnValue(['2']);
+    mockGet.mockResolvedValue({
+      data: { results: { '1': 3, '2': 5, '3': 1 } },
+    });
+
+    const results = await getConsoleEvents('1 hour');
+
+    expect(results).toEqual({ '1': 3, '3': 1 });
   });
 
   it('applies filters to the events endpoint', async () => {
