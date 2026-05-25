@@ -37,7 +37,21 @@ function createWindow() {
     },
   });
 
-  win.once('ready-to-show', () => win.show());
+  // Reveal once content is ready. ready-to-show can fail to fire on some
+  // Wayland/GPU setups, leaving the window hidden even though the app loaded,
+  // so also reveal on did-finish-load and a timeout fallback.
+  const reveal = () => { if (!win.isDestroyed() && !win.isVisible()) win.show(); };
+  win.once('ready-to-show', reveal);
+  win.webContents.once('did-finish-load', reveal);
+  setTimeout(reveal, 4000);
+
+  win.webContents.on('did-fail-load', (_event, code, desc, url) => {
+    console.error(`did-fail-load ${code} ${desc} ${url}`);
+    reveal();
+  });
+  win.webContents.on('render-process-gone', (_event, details) => {
+    console.error(`render-process-gone ${JSON.stringify(details)}`);
+  });
 
   // Right-click context menu with Inspect Element (DevTools no longer opens
   // automatically; this is how you reach it on demand).
