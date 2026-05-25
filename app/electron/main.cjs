@@ -6,8 +6,12 @@
 // as a plain web page (no Tauri/Capacitor runtime), so it uses the browser
 // <img src> streaming path. no Rust reader, no cache purge, no auto-restart.
 
-const { app, BrowserWindow, shell } = require('electron');
+const { app, BrowserWindow, Menu, nativeImage, shell } = require('electron');
 const path = require('node:path');
+
+// Reuse the Tauri-generated app icons so the desktop shell shows the zmNinjaNg
+// logo instead of the default Electron logo (window, taskbar, and macOS dock).
+const ICON_PATH = path.join(__dirname, '..', 'src-tauri', 'icons', 'icon.png');
 
 // The renderer fetches the user's ZoneMinder server, which generally does not
 // send CORS headers, so same-origin enforcement is disabled (this is a desktop
@@ -19,7 +23,8 @@ function createWindow() {
   const win = new BrowserWindow({
     width: 1280,
     height: 800,
-    title: 'zmNinjaNg (Electron)',
+    title: 'zmNinjaNg',
+    icon: ICON_PATH,
     backgroundColor: '#0b0f14',
     // Avoid a black/blank flash on launch: stay hidden until the first paint.
     show: false,
@@ -34,6 +39,22 @@ function createWindow() {
 
   win.once('ready-to-show', () => win.show());
 
+  // Right-click context menu with Inspect Element (DevTools no longer opens
+  // automatically; this is how you reach it on demand).
+  win.webContents.on('context-menu', (_event, params) => {
+    Menu.buildFromTemplate([
+      { role: 'cut', enabled: params.editFlags.canCut },
+      { role: 'copy', enabled: params.editFlags.canCopy },
+      { role: 'paste', enabled: params.editFlags.canPaste },
+      { type: 'separator' },
+      { role: 'reload' },
+      {
+        label: 'Inspect Element',
+        click: () => win.webContents.inspectElement(params.x, params.y),
+      },
+    ]).popup({ window: win });
+  });
+
   // Open external links (http/https that aren't our app) in the system browser.
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (/^https?:/i.test(url)) {
@@ -45,7 +66,6 @@ function createWindow() {
 
   if (DEV_SERVER_URL) {
     win.loadURL(DEV_SERVER_URL);
-    win.webContents.openDevTools({ mode: 'detach' });
   } else {
     win.loadFile(path.join(__dirname, '..', 'dist', 'index.html'));
   }
@@ -58,6 +78,12 @@ app.on('certificate-error', (event, _webContents, _url, _error, _cert, callback)
 });
 
 app.whenReady().then(() => {
+  // macOS dock shows the default Electron icon when launched via the electron
+  // binary (dev/start). Packaged builds get the icon from electron-builder.
+  if (process.platform === 'darwin' && app.dock) {
+    const dockIcon = nativeImage.createFromPath(ICON_PATH);
+    if (!dockIcon.isEmpty()) app.dock.setIcon(dockIcon);
+  }
   createWindow();
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

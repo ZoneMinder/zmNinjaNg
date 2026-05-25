@@ -1,25 +1,32 @@
 {
   "appId": "org.zoneminder.zmninjang.electron",
-  "productName": "zmNinjaNg Electron",
+  "productName": "zmNinjaNg",
   "directories": {
-    "output": "release-electron"
+    "output": "../desktop_release_builds/electron"
   },
   "files": [
     "dist/**/*",
+    "!dist/**/*.map",
     "electron/**/*",
-    "package.json"
+    "package.json",
+    "!node_modules/**/*"
   ],
   "npmRebuild": false,
   "mac": {
-    "target": ["dir"],
+    "target": ["dmg"],
     "category": "public.app-category.utilities",
-    "identity": null
+    "hardenedRuntime": true,
+    "notarize": false,
+    "icon": "src-tauri/icons/icon.icns",
+    "artifactName": "${productName}_e_${version}_aarch64.${ext}"
   },
   "linux": {
     "target": ["AppImage"],
-    "category": "Utility"
+    "category": "Utility",
+    "icon": "src-tauri/icons/icon.png"
   },
   "win": {
-    "target": ["nsis"]
+    "target": ["nsis"],
+    "icon": "src-tauri/icons/icon.ico"
   }
 }

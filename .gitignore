@@ -43,6 +43,15 @@ android/keystore.properties
 *.jks
 *.keystore
 
+# Desktop release build outputs (Tauri "_t_" and Electron "_e_" DMGs)
+/desktop_release_builds/*
+!/desktop_release_builds/electron
+!/desktop_release_builds/tauri
+/desktop_release_builds/electron/*
+!/desktop_release_builds/electron/.gitkeep
+/desktop_release_builds/tauri/*
+!/desktop_release_builds/tauri/.gitkeep
+
 # Sphinx docs build
 docs/_build/
 
