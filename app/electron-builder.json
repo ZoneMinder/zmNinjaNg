@@ -1,6 +1,11 @@
 {
   "appId": "org.zoneminder.zmninjang.electron",
   "productName": "zmNinjaNg",
+  "extraMetadata": {
+    "homepage": "https://github.com/ZoneMinder/zmNinjaNg",
+    "description": "ZoneMinder client",
+    "license": "Apache-2.0"
+  },
   "directories": {
     "output": "../desktop_release_builds/electron"
   },
@@ -22,6 +27,7 @@
   },
   "linux": {
     "target": ["AppImage", "deb", "rpm"],
+    "maintainer": "ZoneMinder <noreply@zoneminder.com>",
     "category": "Utility",
     "icon": "src-tauri/icons/icon.png",
     "artifactName": "${productName}_e_${version}_${arch}.${ext}"
