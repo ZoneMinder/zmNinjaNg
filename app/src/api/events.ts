@@ -366,7 +366,7 @@ export function getEventImageUrl(
 /**
  * Construct event video URL.
  *
- * Supports both MP4 (mode=mpeg) and HLS (mode=hls) depending on the
+ * Supports both MP4 (mode=mp4) and HLS (mode=hls) depending on the
  * event's DefaultVideo field. HLS events use view_event_hls.
  *
  * @param portalUrl - Base portal URL
