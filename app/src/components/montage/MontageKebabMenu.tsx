@@ -74,7 +74,7 @@ export function MontageKebabMenu({
               <DropdownMenuSubTrigger data-testid="montage-kebab-visibility">
                 {t('montage.menu_show_monitors')}
               </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent className="max-h-[60vh] overflow-y-auto">
+              <DropdownMenuSubContent className="max-h-[min(60vh,24rem)] overflow-y-auto">
                 {sortedMonitors.map((m) => {
                   const visible = !hiddenSet.has(m.Id);
                   return (
