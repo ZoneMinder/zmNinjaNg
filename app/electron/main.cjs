@@ -9,6 +9,12 @@
 const { app, BrowserWindow, Menu, nativeImage, net, ipcMain, session, shell } = require('electron');
 const path = require('node:path');
 
+// Lift Chromium's default 6-connection-per-origin cap so Montage views with
+// many MJPEG tiles aren't bottlenecked. Each MJPEG stream holds an HTTP/1.1
+// connection open for as long as the tile is on screen; 6 monitors saturates
+// the pool and starves the rest of the app. Must be set before app.whenReady().
+app.commandLine.appendSwitch('max-connections-per-host', '32');
+
 // Whether to trust self-signed/invalid TLS certificates. Secure default: reject
 // until the renderer enables it during bootstrap, gated on the per-profile
 // allowSelfSignedCerts setting (see src/lib/ssl-trust.ts applySSLTrustSetting).
