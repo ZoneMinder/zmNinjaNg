@@ -121,6 +121,10 @@ export interface ProfileSettings {
   // Monitor IDs excluded from this profile. Excluded monitors and their events
   // are dropped at the API boundary so they behave as if they don't exist.
   excludedMonitorIds: string[];
+  // Monitor IDs hidden from the Montage view only. Profile-scoped. AND-combined
+  // with the group filter on the Montage page. Does not affect dashboard,
+  // monitor list, or monitor detail.
+  montageHiddenMonitorIds: number[];
   // Allow self-signed HTTPS certificates for this profile's server
   allowSelfSignedCerts: boolean;
   // SHA-256 fingerprint of the trusted TLS certificate (TOFU pinning)
@@ -257,6 +261,7 @@ export const DEFAULT_SETTINGS: ProfileSettings = {
   selectedGroupId: null,
   // No monitors excluded by default
   excludedMonitorIds: [],
+  montageHiddenMonitorIds: [],
   // Self-signed certs disabled by default (secure default)
   allowSelfSignedCerts: false,
   // No pinned certificate by default
