@@ -35,3 +35,19 @@ Feature: Montage Live Grid
   Scenario: Tablet shows wider montage grid
     Then I should see at least 1 monitor in montage grid
     And the page should match the visual baseline
+
+  @all
+  Scenario: Hide a monitor from the montage view via the kebab menu
+    Then I should see at least 1 monitor in montage grid
+    When I capture the first montage monitor id
+    And I open the montage kebab menu
+    And I open the montage show-monitors submenu
+    And I uncheck the visibility for the captured monitor
+    Then the captured monitor tile should not be present in the montage grid
+    When I reload the current page
+    Then I should see at least 1 monitor in montage grid
+    And the captured monitor tile should not be present in the montage grid
+    When I open the montage kebab menu
+    And I open the montage show-monitors submenu
+    And I check the visibility for the captured monitor
+    Then the captured monitor tile should be present in the montage grid
