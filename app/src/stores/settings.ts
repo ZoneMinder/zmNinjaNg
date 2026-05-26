@@ -124,7 +124,7 @@ export interface ProfileSettings {
   // Monitor IDs hidden from the Montage view only. Profile-scoped. AND-combined
   // with the group filter on the Montage page. Does not affect dashboard,
   // monitor list, or monitor detail.
-  montageHiddenMonitorIds: number[];
+  montageHiddenMonitorIds: string[];
   // Allow self-signed HTTPS certificates for this profile's server
   allowSelfSignedCerts: boolean;
   // SHA-256 fingerprint of the trusted TLS certificate (TOFU pinning)
