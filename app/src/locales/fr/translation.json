@@ -657,7 +657,10 @@
     "layout_deleted": "Disposition \"{{name}}\" supprimée",
     "fit_crop": "Rogner",
     "fit_fit": "Ajuster",
-    "fit_flex": "Flex"
+    "fit_flex": "Flex",
+    "menu_more": "Plus",
+    "menu_refresh": "Actualiser",
+    "menu_show_monitors": "Moniteurs"
   },
   "notification_history": {
     "title": "Notifications",

@@ -38,6 +38,7 @@ import 'react-resizable/css/styles.css';
 import {
   GridLayoutControls,
   FullscreenControls,
+  MontageKebabMenu,
   useMontageGrid,
   useContainerResize,
   useFullscreenMode,
@@ -81,10 +82,17 @@ export default function Montage() {
     [data]
   );
 
+  const hiddenSet = useMemo(
+    () => new Set(settings.montageHiddenMonitorIds ?? []),
+    [settings.montageHiddenMonitorIds]
+  );
+
   const monitors = useMemo(() => {
-    if (!isFilterActive) return enabledMonitors;
-    return filterMonitorsByGroup(enabledMonitors, filteredMonitorIds);
-  }, [enabledMonitors, isFilterActive, filteredMonitorIds]);
+    let list = enabledMonitors;
+    if (isFilterActive) list = filterMonitorsByGroup(list, filteredMonitorIds);
+    if (hiddenSet.size > 0) list = list.filter((m) => !hiddenSet.has(m.Monitor.Id));
+    return list;
+  }, [enabledMonitors, isFilterActive, filteredMonitorIds, hiddenSet]);
 
   // Edit mode state lifted to page level
   const [isEditMode, setIsEditMode] = useState(false);
@@ -237,6 +245,18 @@ export default function Montage() {
     updateSettings(currentProfile.id, { montageSavedLayouts: saved });
   };
 
+  const handleToggleMonitorVisibility = useCallback(
+    (id: string) => {
+      if (!currentProfile) return;
+      const current = settings.montageHiddenMonitorIds ?? [];
+      const next = current.includes(id)
+        ? current.filter((x) => x !== id)
+        : [...current, id];
+      updateSettings(currentProfile.id, { montageHiddenMonitorIds: next });
+    },
+    [currentProfile, settings.montageHiddenMonitorIds, updateSettings]
+  );
+
   const handleEditModeToggle = () => {
     setIsEditMode((prev) => !prev);
   };
@@ -329,14 +349,6 @@ export default function Montage() {
                   </SelectItem>
                 </SelectContent>
               </Select>
-              <RefreshButton
-                size="sm"
-                onRefresh={() => refetch()}
-                isLoading={isFetching}
-                showLabel="sm-and-up"
-                className="h-8 sm:h-9"
-                data-testid="montage-refresh-button"
-              />
               <Button
                 onClick={handleEditModeToggle}
                 variant={isEditMode ? 'default' : 'outline'}
@@ -374,6 +386,13 @@ export default function Montage() {
                 <Maximize className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">{t('montage.fullscreen')}</span>
               </Button>
+              <MontageKebabMenu
+                monitors={enabledMonitors.map((m) => m.Monitor)}
+                hiddenMonitorIds={settings.montageHiddenMonitorIds ?? []}
+                isRefreshing={isFetching}
+                onRefresh={() => refetch()}
+                onToggleVisibility={handleToggleMonitorVisibility}
+              />
               <NotificationBadge />
             </div>
           )}

@@ -124,3 +124,33 @@ describe('Settings Store', () => {
     });
   });
 });
+
+describe('montageHiddenMonitorIds setting', () => {
+  beforeEach(() => {
+    useSettingsStore.setState({ profileSettings: {} });
+  });
+
+  it('defaults to an empty array', () => {
+    const settings = useSettingsStore.getState().getProfileSettings('profile-a');
+    expect(settings.montageHiddenMonitorIds).toEqual([]);
+  });
+
+  it('persists updates via updateProfileSettings', () => {
+    const store = useSettingsStore.getState();
+    store.updateProfileSettings('profile-a', { montageHiddenMonitorIds: ['3', '7'] });
+    const settings = useSettingsStore.getState().getProfileSettings('profile-a');
+    expect(settings.montageHiddenMonitorIds).toEqual(['3', '7']);
+  });
+
+  it('is profile-scoped (does not leak across profiles)', () => {
+    const store = useSettingsStore.getState();
+    store.updateProfileSettings('profile-a', { montageHiddenMonitorIds: ['1'] });
+    store.updateProfileSettings('profile-b', { montageHiddenMonitorIds: ['2'] });
+    expect(
+      useSettingsStore.getState().getProfileSettings('profile-a').montageHiddenMonitorIds
+    ).toEqual(['1']);
+    expect(
+      useSettingsStore.getState().getProfileSettings('profile-b').montageHiddenMonitorIds
+    ).toEqual(['2']);
+  });
+});
