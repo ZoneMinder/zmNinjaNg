@@ -657,7 +657,10 @@
     "layout_deleted": "Layout \"{{name}}\" gelöscht",
     "fit_crop": "Zuschn.",
     "fit_fit": "Einpass.",
-    "fit_flex": "Flex"
+    "fit_flex": "Flex",
+    "menu_more": "Mehr",
+    "menu_refresh": "Aktualisieren",
+    "menu_show_monitors": "Monitore"
   },
   "notification_history": {
     "title": "Benachrichtigungen",

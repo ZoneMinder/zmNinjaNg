@@ -657,7 +657,10 @@
     "layout_deleted": "Layout \"{{name}}\" deleted",
     "fit_crop": "Crop",
     "fit_fit": "Fit",
-    "fit_flex": "Flex"
+    "fit_flex": "Flex",
+    "menu_more": "More",
+    "menu_refresh": "Refresh",
+    "menu_show_monitors": "Show monitors"
   },
   "notification_history": {
     "title": "Notifications",

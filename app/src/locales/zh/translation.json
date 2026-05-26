@@ -657,7 +657,10 @@
     "layout_deleted": "布局 \"{{name}}\" 已删除",
     "fit_crop": "裁剪",
     "fit_fit": "适应",
-    "fit_flex": "弹性"
+    "fit_flex": "弹性",
+    "menu_more": "更多",
+    "menu_refresh": "刷新",
+    "menu_show_monitors": "显示监视器"
   },
   "notification_history": {
     "title": "通知",
