@@ -16,15 +16,15 @@ afterEach(() => {
 describe('log.groupCollapsed', () => {
   it('emits a console group containing the body and ends it', () => {
     const groupSpy = vi.spyOn(console, 'groupCollapsed').mockImplementation(() => {});
-    const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     const endSpy = vi.spyOn(console, 'groupEnd').mockImplementation(() => {});
 
     log.groupCollapsed('HTTP', 'headline', LogLevel.DEBUG, { request: { x: 1 } });
 
     expect(groupSpy).toHaveBeenCalledTimes(1);
     expect(groupSpy.mock.calls[0][1]).toBe('headline');
-    expect(debugSpy).toHaveBeenCalledTimes(1);
-    expect(debugSpy.mock.calls[0][0]).toEqual({ request: { x: 1 } });
+    expect(logSpy).toHaveBeenCalledTimes(1);
+    expect(logSpy.mock.calls[0][0]).toEqual({ request: { x: 1 } });
     expect(endSpy).toHaveBeenCalledTimes(1);
   });
 
@@ -50,15 +50,15 @@ describe('log.groupCollapsed', () => {
     const original = console.groupCollapsed;
     // @ts-expect-error simulating an environment without group support
     console.groupCollapsed = undefined;
-    const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
     try {
       log.groupCollapsed('HTTP', 'flat fallback', LogLevel.DEBUG, { foo: 1 });
-      expect(debugSpy).toHaveBeenCalledTimes(1);
+      expect(logSpy).toHaveBeenCalledTimes(1);
       // Flat emit takes prefix + message + body as 3 args
-      expect(debugSpy.mock.calls[0]).toHaveLength(3);
-      expect(debugSpy.mock.calls[0][1]).toBe('flat fallback');
-      expect(debugSpy.mock.calls[0][2]).toEqual({ foo: 1 });
+      expect(logSpy.mock.calls[0]).toHaveLength(3);
+      expect(logSpy.mock.calls[0][1]).toBe('flat fallback');
+      expect(logSpy.mock.calls[0][2]).toEqual({ foo: 1 });
     } finally {
       console.groupCollapsed = original;
     }

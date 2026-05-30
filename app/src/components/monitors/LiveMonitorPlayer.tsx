@@ -14,6 +14,7 @@ import type { Monitor, Profile } from '../../api/types';
 import { useSettingsStore } from '../../stores/settings';
 import { useGo2RTCStream } from '../../hooks/useGo2RTCStream';
 import { useMonitorStream } from '../../hooks/useMonitorStream';
+import { useVisibilityResume } from '../../hooks/useVisibilityResume';
 import { log, LogLevel } from '../../lib/logger';
 import {
   GO2RTC_VIDEO_TIMEOUT_S,
@@ -347,6 +348,32 @@ export function LiveMonitorPlayer({
     freezeRetryCountRef.current = 0;
     lastFreezeAtRef.current = 0;
   }, [monitor.Id]);
+
+  // When the page returns from background, the freeze watchdog may have
+  // exhausted its retry budget while the browser was suspending the player.
+  // Reset the freeze counters, clear any latched permanent MJPEG fallback,
+  // and nudge the WebRTC stream to retry. The MJPEG visibility resume is
+  // handled inside useMonitorStream. refs #150
+  const go2rtcRetry = go2rtcStream.retry;
+  useVisibilityResume(() => {
+    if (streamingMethod !== 'webrtc') return;
+    log.videoPlayer('Resuming WebRTC stream after visibility return', LogLevel.INFO, {
+      monitorId: monitor.Id,
+      go2rtcFailed,
+      go2rtcState: go2rtcStream.state,
+      freezeRetries: freezeRetryCountRef.current,
+    });
+    freezeRetryCountRef.current = 0;
+    lastFreezeAtRef.current = 0;
+    if (go2rtcFailed) {
+      go2rtcFailureCache.delete(monitor.Id);
+      setGo2rtcFailed(false);
+      setHasVideoFrames(false);
+    }
+    if (go2rtcStream.state === 'error' || go2rtcStream.state === 'disconnected') {
+      go2rtcRetry();
+    }
+  });
 
   const mjpegStream = useMonitorStream({
     monitorId: monitor.Id,

@@ -48,10 +48,13 @@ export interface UseStreamLifecycleReturn {
   /** The current connection key. 0 means no key has been generated yet. */
   connKey: number;
   /**
-   * Force-regenerate the connKey without sending CMD_QUIT for the old one.
-   * Used for error-recovery scenarios where the stream is already dead.
+   * Force-regenerate the connKey. By default skips CMD_QUIT (used for error
+   * recovery where the stream is already dead). Pass `killPrevious: true`
+   * when the previous stream may still be alive on the server (e.g. on
+   * visibility resume) so its nph-zms process is closed before a new one
+   * is started.
    */
-  forceRegenerate: () => number;
+  forceRegenerate: (options?: { killPrevious?: boolean }) => number;
 }
 
 /**
@@ -200,12 +203,39 @@ export function useStreamLifecycle({
     };
   }, []); // Empty deps = only run on unmount
 
-  // Force-regenerate without CMD_QUIT (for error recovery when stream is dead)
-  const forceRegenerate = (): number => {
+  // Force-regenerate. Optionally sends CMD_QUIT for the previous connkey
+  // first when `killPrevious` is true — used by the visibility-resume path
+  // where the old stream may still be alive on the server. Without it, each
+  // resume would orphan a connkey on ZM and the nph-zms process would only
+  // exit after its own idle timeout, leaking sockets in CLOSE_WAIT.
+  // Dedupes the log line across all monitors in the same 3s window so a
+  // visibility-resume burst surfaces as one line, not one per tile. refs #150
+  const forceRegenerate = ({ killPrevious = false }: { killPrevious?: boolean } = {}): number => {
     if (!monitorId) return 0;
+
+    if (
+      killPrevious &&
+      prevConnKeyRef.current !== 0 &&
+      viewMode === 'streaming' &&
+      portalUrl
+    ) {
+      const controlUrl = getZmsControlUrl(
+        portalUrl,
+        ZMS_COMMANDS.cmdQuit,
+        prevConnKeyRef.current.toString(),
+        { token: accessToken || undefined, minStreamingPort, monitorId },
+      );
+      httpGet(controlUrl).catch(() => {
+        // Silently ignore - server connection may already be closed
+      });
+    }
+
     const newKey = regenerateConnKey(monitorId);
     setConnKey(newKey);
     prevConnKeyRef.current = newKey;
+    log.dedupe('connkey-force-regen', 3000, (suffix) =>
+      logFn(`Force-regenerated connkey${suffix}`, LogLevel.INFO, { monitorId, newKey, killPrevious }),
+    );
     return newKey;
   };
 

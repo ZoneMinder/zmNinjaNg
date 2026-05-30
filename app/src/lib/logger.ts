@@ -200,11 +200,14 @@ class Logger {
     const canGroup =
       typeof console.groupCollapsed === 'function' &&
       typeof console.groupEnd === 'function';
+    // Chromium DevTools classifies console.debug as "Verbose" and hides it by
+    // default, which made expanded group bodies appear empty. Use console.log
+    // for the inner body regardless of level so it always renders; the level
+    // is already conveyed by the headline prefix.
     const innerEmit =
       level === LogLevel.ERROR ? console.error :
       level === LogLevel.WARN ? console.warn :
-      level === LogLevel.DEBUG ? console.debug :
-      console.info;
+      console.log;
     if (canGroup) {
       // Use the level-matched method for the group label too so DevTools
       // colors the headline (Safari respects this; Chrome only honors
