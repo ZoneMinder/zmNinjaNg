@@ -64,13 +64,13 @@ ipcMain.handle('ssl:set-trust', (_event, enabled) => {
   return true;
 });
 
-// Reuse the Tauri-generated app icons so the desktop shell shows the zmNinjaNg
-// logo instead of the default Electron logo (window, taskbar, and macOS dock).
-const ICON_PATH = path.join(__dirname, '..', 'src-tauri', 'icons', 'icon.png');
+// App icon so the desktop shell shows the zmNinjaNg logo instead of the
+// default Electron logo (window, taskbar, and macOS dock).
+const ICON_PATH = path.join(__dirname, 'icons', 'icon.png');
 
 // The renderer fetches the user's ZoneMinder server, which generally does not
 // send CORS headers, so same-origin enforcement is disabled (this is a desktop
-// client hitting a user-configured server, like the Tauri/Capacitor builds).
+// client hitting a user-configured server, like the Capacitor builds).
 // This is an experiment shell, not a hardened production build.
 const DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL;
 

@@ -11,7 +11,6 @@ export default defineConfig([
     'android',
     'ios',
     'coverage',
-    'src-tauri/target',
     'node_modules',
   ]),
   {

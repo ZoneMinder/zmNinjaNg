@@ -14,7 +14,6 @@
     "!dist/**/*.map",
     "electron/**/*",
     "package.json",
-    "src-tauri/icons/icon.png",
     "!node_modules/**/*"
   ],
   "npmRebuild": false,
@@ -23,19 +22,19 @@
     "category": "public.app-category.utilities",
     "hardenedRuntime": true,
     "notarize": false,
-    "icon": "src-tauri/icons/icon.icns",
+    "icon": "electron/icons/icon.icns",
     "artifactName": "${productName}_${version}_aarch64.${ext}"
   },
   "linux": {
     "target": ["AppImage", "deb", "rpm"],
     "maintainer": "ZoneMinder <noreply@zoneminder.com>",
     "category": "Utility",
-    "icon": "src-tauri/icons/icon.png",
+    "icon": "electron/icons/icon.png",
     "artifactName": "${productName}_${version}_${arch}.${ext}"
   },
   "win": {
     "target": ["nsis"],
-    "icon": "src-tauri/icons/icon.ico",
+    "icon": "electron/icons/icon.ico",
     "artifactName": "${productName}_${version}_${arch}.${ext}"
   }
 }
