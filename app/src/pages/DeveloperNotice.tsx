@@ -112,7 +112,7 @@ function NoticeRow({ notice }: { notice: DeveloperNoticeView }) {
         </button>
       </div>
       {expanded && (
-        <div className="px-3 pb-3 pl-10">
+        <div className="px-3 pb-3 pl-10 pt-2 border-t border-border/40 mt-1">
           <Markdown source={notice.body} />
           {notice.link && (
             <a
