@@ -8,7 +8,6 @@ Prerequisites
 -------------
 
 - Node.js ^20.19.0 or >=22.12.0 and npm
-- For desktop builds: Rust toolchain (for Tauri)
 - For Android: Android Studio, JDK 17+
 - For iOS: Xcode, macOS, Apple Developer account
 
@@ -27,22 +26,22 @@ The simplest target. Produces static files you can host anywhere.
 Deploy the ``dist/`` folder to Netlify, Vercel, GitHub Pages, AWS S3, or
 any static host.
 
-Desktop Build (Tauri)
----------------------
+Desktop Build (Electron)
+------------------------
 
-Produces a native desktop app via Tauri.
+Produces a native desktop app via Electron.
 
 .. code-block:: bash
 
    cd app
    npm install
-   npm run tauri:dev     # Development with HMR
-   npm run tauri:build   # Production build -> src-tauri/target/release/bundle/
+   npm run electron:dev     # Development with HMR
+   npm run electron:build   # Production build -> desktop_release_builds/electron/
 
 macOS Code Signing: Avoiding Keychain Prompts
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When running ``npm run tauri:build`` on macOS, you may be prompted for your
+When running ``npm run electron:build`` on macOS, you may be prompted for your
 keychain password multiple times (once per binary that needs signing). To
 avoid this:
 

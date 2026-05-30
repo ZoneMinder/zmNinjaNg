@@ -65,4 +65,4 @@ If you clear the PIN, the next time you tap the lock icon the app will prompt yo
 
 ## Platform Support
 
-Kiosk mode works on iOS, Android, macOS (Tauri desktop app), and the web browser.
+Kiosk mode works on iOS, Android, macOS (Electron desktop app), and the web browser.

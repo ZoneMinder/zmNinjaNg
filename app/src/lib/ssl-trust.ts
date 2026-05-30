@@ -9,20 +9,10 @@ declare global {
 }
 
 /**
- * Global flag for Tauri SSL trust state.
- * Checked by tauriHttpRequest in http.ts to pass danger options.
- */
-let tauriSslTrustEnabled = false;
-
-export function isTauriSslTrustEnabled(): boolean {
-  return tauriSslTrustEnabled;
-}
-
-/**
  * Apply the SSL trust override setting.
  * - Native (iOS/Android): enables/disables via SSLTrust Capacitor plugin,
  *   and passes the trusted fingerprint for TOFU validation
- * - Tauri (Desktop): sets a flag checked by tauriHttpRequest to pass danger options
+ * - Electron: forwards to the main-process net stack via window.electronSsl
  * - Web: no-op
  */
 export async function applySSLTrustSetting(enabled: boolean, fingerprint?: string | null): Promise<void> {
@@ -42,12 +32,6 @@ export async function applySSLTrustSetting(enabled: boolean, fingerprint?: strin
     } catch (error) {
       log.sslTrust('Failed to apply SSL trust setting', LogLevel.ERROR, { error });
     }
-  } else if (Platform.isTauri) {
-    tauriSslTrustEnabled = enabled;
-    log.sslTrust(
-      enabled ? 'Tauri SSL trust override enabled' : 'Tauri SSL trust override disabled',
-      enabled ? LogLevel.INFO : LogLevel.DEBUG
-    );
   } else if (Platform.isElectron) {
     try {
       if (typeof window !== 'undefined' && window.electronSsl) {
@@ -68,7 +52,7 @@ export async function applySSLTrustSetting(enabled: boolean, fingerprint?: strin
 /**
  * Fetch the server's TLS certificate fingerprint.
  * Only works on native platforms (iOS/Android).
- * Returns null on web/Tauri.
+ * Returns null on web and Electron.
  */
 export async function getServerCertFingerprint(url: string): Promise<CertInfo | null> {
   if (!Platform.isNative) return null;

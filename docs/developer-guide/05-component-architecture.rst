@@ -206,11 +206,10 @@ props change.
 - Returns a ref to the ``<img>`` element for snapshot downloads
 - Builds URLs via ``src/lib/url-builder.ts``
 - Exposes ``imageSrc``, the value to bind to ``<img src>``. It equals
-  ``streamUrl`` in every case except Tauri desktop snapshot mode, where it is a
-  ``blob:`` object URL fetched through the Rust HTTP client (see below)
+  ``streamUrl`` on every platform.
 
-See :doc:`07-api-and-data-fetching` for cache busting (``_t``),
-multi-port streaming, and the Tauri snapshot blob fetch.
+See :doc:`07-api-and-data-fetching` for cache busting (``_t``) and
+multi-port streaming.
 
 MontageMonitor
 ~~~~~~~~~~~~~~
@@ -672,8 +671,8 @@ The branch in ``src/pages/EventDetail.tsx`` reduces to:
 
 ``hasVideo`` is ``event.Event.DefaultVideo || event.Event.Videoed === '1'``.
 ``hasJPEGs`` is true when ``event.Event.SaveJPEGs`` is set and nonzero.
-``useZmsFallback`` defaults to ``true`` in TV mode and on Tauri, and is
-toggleable from the EventDetail header.
+``useZmsFallback`` defaults to ``true`` in TV mode, and is toggleable
+from the EventDetail header.
 
 Filter Components
 -----------------
@@ -1181,13 +1180,10 @@ useBiometricAuth
 Platform-aware biometric authentication. Exports two async functions (not a
 React hook) that support multiple backends:
 
-- **Tauri (macOS)**: calls a native Rust command that invokes LAContext for
-  Touch ID. The Tauri environment is detected via ``@tauri-apps/api/core``
-  (``isTauri()``).
 - **Capacitor (iOS/Android)**: uses ``@aparajita/capacitor-biometric-auth``
   (Touch ID, Face ID).
-- **Web**: not supported, falls back gracefully (returns ``false`` /
-  ``{ success: false }``).
+- **Electron and Web**: not supported, falls back gracefully (returns
+  ``false`` / ``{ success: false }``).
 
 Falls back gracefully when biometrics are unavailable on any platform.
 

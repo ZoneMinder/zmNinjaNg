@@ -8,7 +8,7 @@ function makeFakeStore(): LogFileStore & { appended: unknown[] } {
   const appended: unknown[] = [];
   return {
     appended,
-    capabilities: { share: false, reveal: false, available: true },
+    capabilities: { share: false, available: true },
     initialize: vi.fn().mockResolvedValue(undefined),
     append: vi.fn((entry) => { appended.push(entry); }),
     flush: vi.fn().mockResolvedValue(undefined),
@@ -16,7 +16,6 @@ function makeFakeStore(): LogFileStore & { appended: unknown[] } {
     truncate: vi.fn().mockResolvedValue(undefined),
     getDisplayPath: vi.fn().mockResolvedValue('/mock/file.log'),
     getFileUri: vi.fn().mockResolvedValue(null),
-    revealLocation: vi.fn().mockResolvedValue(undefined),
   };
 }
 

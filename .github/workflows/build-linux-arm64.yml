@@ -28,13 +28,10 @@ jobs:
           cache: 'npm'
           cache-dependency-path: app/package-lock.json
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install Linux dependencies
+      - name: Install Linux packaging dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf xdg-utils rpm
+          sudo apt-get install -y rpm
 
       - name: Install dependencies
         working-directory: ./app
@@ -42,62 +39,6 @@ jobs:
 
       - name: Sync version from package.json
         run: node scripts/sync-version.js
-
-      - name: Build Tauri app (Linux arm64)
-        if: false
-        working-directory: ./app
-        run: npm run tauri:build
-
-      - name: Strip bundled Wayland libs from AppImage (refs #151)
-        if: false
-        run: bash scripts/strip-appimage-libs.sh
-
-      - name: Rename Linux ARM64 artifacts
-        if: false
-        run: |
-          VERSION="${{ github.event.inputs.version || github.ref_name }}"
-          VERSION="${VERSION#zmNinjaNg-}"
-          mkdir -p dist/linux-arm64
-
-          # Rename AppImage
-          for appimage in app/src-tauri/target/release/bundle/appimage/*.AppImage; do
-            if [ -f "$appimage" ]; then
-              cp "$appimage" "dist/linux-arm64/zmNinjaNg-${VERSION}-linux-arm64.AppImage"
-            fi
-          done
-
-          # Rename DEB
-          for deb in app/src-tauri/target/release/bundle/deb/*.deb; do
-            if [ -f "$deb" ]; then
-              cp "$deb" "dist/linux-arm64/zmNinjaNg-${VERSION}-linux-arm64.deb"
-            fi
-          done
-
-          # Rename RPM
-          for rpm in app/src-tauri/target/release/bundle/rpm/*.rpm; do
-            if [ -f "$rpm" ]; then
-              cp "$rpm" "dist/linux-arm64/zmNinjaNg-${VERSION}-linux-arm64.rpm"
-            fi
-          done
-
-      - name: Upload Linux ARM64 artifacts
-        if: false
-        uses: actions/upload-artifact@v4
-        with:
-          name: zmNinjaNg-linux-arm64-${{ github.event.inputs.version || github.ref_name }}
-          path: dist/linux-arm64/*
-          retention-days: 30
-
-      - name: Upload to Release
-        uses: softprops/action-gh-release@v1
-        if: false
-        with:
-            files: |
-              dist/linux-arm64/*.AppImage
-              dist/linux-arm64/*.deb
-              dist/linux-arm64/*.rpm
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Electron app (Linux arm64, unsigned)
         working-directory: ./app
@@ -130,9 +71,9 @@ jobs:
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/zmNinjaNg-')
         with:
-            files: |
-              dist/linux-arm64/*.AppImage
-              dist/linux-arm64/*.deb
-              dist/linux-arm64/*.rpm
+          files: |
+            dist/linux-arm64/*.AppImage
+            dist/linux-arm64/*.deb
+            dist/linux-arm64/*.rpm
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -124,21 +124,8 @@ try {
   fail('Cannot check Appium drivers', 'ensure Appium is installed: npm install -g appium');
 }
 
-// 11. tauri-driver installed
-try {
-  const tauriDriverVersion = run('tauri-driver --version');
-  pass('tauri-driver installed', tauriDriverVersion);
-} catch {
-  try {
-    const which = run('which tauri-driver');
-    pass('tauri-driver installed', `found at ${which}`);
-  } catch {
-    fail('tauri-driver not found', 'install with: cargo install tauri-driver');
-  }
-}
-
-// 12. Ports 4723, 4444, 9222 available
-const ports = [4723, 4444, 9222];
+// 11. Ports 4723, 9222 available
+const ports = [4723, 9222];
 for (const port of ports) {
   try {
     // Use lsof to check if port is in use (avoids async)

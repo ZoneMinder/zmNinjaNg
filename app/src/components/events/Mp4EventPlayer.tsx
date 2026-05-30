@@ -187,12 +187,12 @@ export function Mp4EventPlayer({
 
     // preferFullWindow:true puts Video.js into CSS-fullscreen instead of the real
     // Fullscreen API. Required on iOS because iOS native fullscreen shows the page
-    // URL banner ("capacitor://...") which is unstyleable. On Android/web/Tauri the
+    // URL banner ("capacitor://...") which is unstyleable. On Android/web/Electron the
     // real Fullscreen API works correctly and gives a better immersive experience.
     const isIOS = Platform.isIOS;
     // overrideNative:true forces hls.js / MediaSource everywhere. On iOS WKWebView
     // native HLS via <video> is more battery-efficient and avoids MSE quirks. Keep
-    // override on for other platforms (web/Android/Tauri) where native HLS support
+    // override on for other platforms (web/Android/Electron) where native HLS support
     // varies.
     const overrideNativeHls = !isIOS;
 
@@ -278,7 +278,7 @@ export function Mp4EventPlayer({
   // cached layout dimensions are stale relative to the new container box.
   // Listens to the native SafeArea plugin first (fires after iOS rotation completes
   // with correct insets), with screen.orientation.change and window resize as
-  // fallbacks for Android / web / Tauri.
+  // fallbacks for Android / web / Electron.
   useEffect(() => {
     const wake = () => {
       const player = playerRef.current;

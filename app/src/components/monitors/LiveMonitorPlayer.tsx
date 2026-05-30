@@ -480,9 +480,7 @@ export function LiveMonitorPlayer({
   // Show VideoOff placeholder only when truly no video:
   // - Go2RTC connecting and the MJPEG placeholder has no frame yet either
   // - MJPEG with no stream configured, no frame yet, or an error.
-  //   imageSrc is empty during the Tauri-snapshot first-frame gap (the frame is
-  //   being fetched through the Rust HTTP client); for every other case imageSrc
-  //   equals streamUrl, so this matches the previous behavior.
+  //   imageSrc equals streamUrl once a connkey has been minted.
   const showNoVideo = (isWebRTC && !hasVideoFrames && !hasMjpegFrame) ||
     (!isWebRTC && (!mjpegStream.streamUrl || !mjpegStream.imageSrc || mjpegError));
 

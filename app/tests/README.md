@@ -1,6 +1,6 @@
 # Cross-Platform Test Setup
 
-This guide covers setting up and running the full cross-platform test suite, which drives the actual app on Android Emulator, iOS Simulator (iPhone and iPad), Tauri desktop, and web browser.
+This guide covers setting up and running the full cross-platform test suite, which drives the actual app on Android Emulator, iOS Simulator (iPhone and iPad), and web browser.
 
 ---
 
@@ -12,7 +12,6 @@ Install these tools before running any platform tests:
 |---|---|---|
 | Xcode | 15+ | Required for iOS simulators and `xcrun simctl` |
 | Android Studio | Latest | Required for AVD manager and Android SDK |
-| Rust + Cargo | Latest stable | Required for `tauri-driver` |
 | Node.js | 20+ | Required for all npm scripts |
 | Appium | 2.x | Global install; manages iOS and Android drivers |
 
@@ -59,17 +58,6 @@ appium --version        # should be 2.x
 appium driver list      # should show xcuitest and uiautomator2 as installed
 ```
 
-### Tauri
-
-```bash
-cargo install tauri-driver
-```
-
-Verify:
-```bash
-tauri-driver --version
-```
-
 ### Verify All Setup
 
 From the `app/` directory:
@@ -78,7 +66,7 @@ From the `app/` directory:
 npm run test:platform:setup
 ```
 
-This checks Xcode, iOS runtime, simulators, Android SDK, AVD, adb, Appium drivers, tauri-driver, and port availability. Any failing check includes a fix instruction.
+This checks Xcode, iOS runtime, simulators, Android SDK, AVD, adb, Appium drivers, and port availability. Any failing check includes a fix instruction.
 
 ---
 
@@ -93,7 +81,6 @@ This checks Xcode, iOS runtime, simulators, Android SDK, AVD, adb, Appium driver
 - iOS phone simulator: `iPhone 15` (iOS 17.5)
 - iOS tablet simulator: `iPad Air 11-inch (M2)` (iOS 17.5)
 - Appium port: `4723`
-- Tauri driver port: `4444`
 - App launch timeout: `30000` ms
 - WebView switch timeout: `10000` ms
 
@@ -107,7 +94,7 @@ cp app/tests/platforms.config.defaults.ts app/tests/platforms.config.local.ts
 
 The `*.local` gitignore pattern already covers this file, so it will not be committed.
 
-Edit `platforms.config.local.ts` with your values. The config loader merges local over defaults at startup — you only need to set the fields you want to change.
+Edit `platforms.config.local.ts` with your values. The config loader merges local over defaults at startup. You only need to set the fields you want to change.
 
 ### Finding Your Simulator Names
 
@@ -158,8 +145,7 @@ Device tests are run via shell scripts from the repo root. Each script handles b
 | `bash scripts/test-android.sh` | Build APK, boot emulator, forward CDP port, run Playwright |
 | `bash scripts/test-ios.sh phone` | Build iOS app, boot iPhone 15 sim, start Appium, run WebDriverIO |
 | `bash scripts/test-ios.sh tablet` | Build iOS app, boot iPad Air sim, start Appium, run WebDriverIO |
-| `bash scripts/test-tauri.sh` | Start tauri-driver, run WebDriverIO against Tauri app |
-| `bash scripts/test-all-platforms.sh` | Run all 5 platforms sequentially (web → Android → iOS phone → iOS tablet → Tauri) |
+| `bash scripts/test-all-platforms.sh` | Run all platforms sequentially (web, Android, iOS phone, iOS tablet) |
 
 ### Running Device Tests Step by Step
 
@@ -169,7 +155,7 @@ Device tests are run via shell scripts from the repo root. Each script handles b
 # 1. Build and sync the Capacitor app to Android
 cd app && npm run android:sync
 
-# 2. Run the test script — it builds the APK, boots the emulator,
+# 2. Run the test script. It builds the APK, boots the emulator,
 #    installs the app, forwards the CDP port, and runs Playwright
 #    against the Android WebView.
 bash scripts/test-android.sh
@@ -186,7 +172,7 @@ bash scripts/test-android.sh tests/features/dashboard.feature
 # 1. Build and sync the Capacitor app to iOS
 cd app && npm run ios:sync
 
-# 2. Run the test script — it builds the app via xcodebuild for the
+# 2. Run the test script. It builds the app via xcodebuild for the
 #    simulator, boots iPhone 15, starts Appium with XCUITest driver,
 #    launches the app, switches to the WebView context, and runs
 #    WebDriverIO tests.
@@ -204,23 +190,13 @@ bash scripts/test-ios.sh tablet
 
 Same flow as iPhone, but targets `iPad Air 11-inch (M2)`.
 
-#### Tauri Desktop
-
-```bash
-# Run the test script — it starts tauri-driver on port 4444 and runs
-# WebDriverIO against the Tauri app's WKWebView.
-bash scripts/test-tauri.sh
-```
-
-**How it works:** `tauri-driver` implements the WebDriver protocol and connects to the Tauri app's WKWebView. WebDriverIO drives the app through this bridge.
-
 #### All Platforms
 
 ```bash
 bash scripts/test-all-platforms.sh
 ```
 
-Runs in order: web → Android → iOS phone → iOS tablet → Tauri.
+Runs in order: web, Android, iOS phone, iOS tablet.
 
 ### Device Screenshot Capture
 
@@ -245,7 +221,6 @@ Scenarios are tagged to control which platforms run them:
 | `@ios` | iPhone + iPad simulators |
 | `@ios-phone` | iPhone simulator only |
 | `@ios-tablet` | iPad simulator only |
-| `@tauri` | Tauri desktop only |
 | `@web` | Web browser only |
 | `@visual` | Triggers screenshot comparison |
 | `@native` | Appium native suite only |
@@ -263,8 +238,7 @@ tests/screenshots/
 ├── web-chromium/
 ├── android-phone/
 ├── ios-phone/
-├── ios-tablet/
-└── desktop-tauri/
+└── ios-tablet/
 ```
 
 Baselines are checked into git so every developer and CI run compares against the same reference images.
@@ -302,15 +276,15 @@ Tests use two browser automation drivers:
 | Driver | Platforms | Why |
 |---|---|---|
 | **Playwright** | Web, Android | Connects to Chromium-based WebViews via CDP |
-| **WebDriverIO + Appium** | iOS, Tauri | Drives WKWebView (WebKit) via XCUITest or tauri-driver |
+| **WebDriverIO + Appium** | iOS | Drives WKWebView (WebKit) via XCUITest |
 
 ### TestActions Abstraction
 
-Step definitions never call Playwright or WebDriverIO APIs directly. They use a shared `TestActions` interface (`tests/actions/types.ts`) so the same `.feature` files and step definitions work across all 5 platforms.
+Step definitions never call Playwright or WebDriverIO APIs directly. They use a shared `TestActions` interface (`tests/actions/types.ts`) so the same `.feature` files and step definitions work across all platforms.
 
 Implementations:
-- `PlaywrightActions` (`tests/actions/playwright-actions.ts`) — for web and Android
-- `WebDriverIOActions` — for iOS and Tauri
+- `PlaywrightActions` (`tests/actions/playwright-actions.ts`): for web and Android
+- `WebDriverIOActions`: for iOS
 
 ### Config Loader
 
@@ -332,7 +306,7 @@ See the **"Extending Tests for New Features"** section in `AGENTS.md` for the fu
 
 Summary:
 
-1. Write a human test plan — what would a QA tester check on each device?
+1. Write a human test plan. What would a QA tester check on each device?
 2. Add Gherkin scenarios to the appropriate `tests/features/<screen>.feature` file. Tag with `@all`, `@ios-phone`, etc. as needed.
 3. Add step definitions to `tests/steps/<screen>.steps.ts`. Use `TestActions` interface methods (not raw Playwright or WebDriverIO APIs) so steps work across all drivers.
 4. If the feature uses a native plugin (haptics, filesystem, camera, etc.), add a test to `tests/native/specs/`.
@@ -369,7 +343,6 @@ A previous test run left a process holding the port. Find and kill it:
 
 ```bash
 lsof -ti :4723 | xargs kill   # Appium port
-lsof -ti :4444 | xargs kill   # tauri-driver port
 lsof -ti :9222 | xargs kill   # Android CDP port
 ```
 

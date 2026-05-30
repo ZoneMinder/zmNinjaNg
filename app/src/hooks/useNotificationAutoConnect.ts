@@ -93,7 +93,7 @@ export function useNotificationAutoConnect({
 
     if (mode === 'direct') {
       if (Platform.isDesktopOrWeb) {
-        // Desktop (Tauri) or web browser: start event poller.
+        // Desktop (Electron) or web browser: start event poller.
         // The poller's start() emits its own "Starting event poller" log,
         // so we don't duplicate it here.
         hasAttemptedAutoConnect.current = true;

@@ -6,7 +6,7 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { ScrollText, Trash2, Download, Share2, ChevronDown, ChevronUp, Server, Smartphone, FolderOpen } from 'lucide-react';
+import { ScrollText, Trash2, Download, Share2, ChevronDown, ChevronUp, Server, Smartphone } from 'lucide-react';
 import { PageContainer } from '../components/common/PageContainer';
 import { cn } from '../lib/utils';
 import { Platform } from '../lib/platform';
@@ -81,7 +81,6 @@ export default function Logs() {
     const { t } = useTranslation();
     const isNative = Platform.isNative;
     const logFile = getLogFile();
-    const showOpenLocation = logFile.capabilities.reveal;  // Tauri only
     const showShareFile = logFile.capabilities.share;      // Capacitor only
     const { currentProfile, settings } = useCurrentProfile();
     const { logLevel, componentLogLevels } = settings;
@@ -91,7 +90,6 @@ export default function Logs() {
     const [logSource, setLogSource] = useState<LogSource>('zmng');
     const [zmLogs, setZmLogs] = useState<ZMLog[]>([]);
     const [isLoadingZmLogs, setIsLoadingZmLogs] = useState(false);
-    const [persistedPath, setPersistedPath] = useState<string | null>(null);
     const unassignedComponentValue = 'unassigned';
 
     // Use the appropriate component filter based on log source
@@ -122,13 +120,6 @@ export default function Logs() {
         // Refetch only when the source changes; `t` and `toast` would cause refetches on language change.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [logSource]);
-
-    // Resolve persisted log file path
-    useEffect(() => {
-        const lf = getLogFile();
-        if (!lf.capabilities.available) return;
-        void lf.getDisplayPath().then(setPersistedPath);
-    }, []);
 
     const handleLevelChange = (value: string) => {
         const level = parseInt(value, 10) as LogLevel;
@@ -308,20 +299,6 @@ export default function Logs() {
     };
 
     const handleShareLogs = async () => {
-        // Tauri desktop: open the file's enclosing folder in the system file manager.
-        if (showOpenLocation) {
-            try {
-                await logFile.revealLocation();
-            } catch (err) {
-                toast({
-                    variant: 'destructive',
-                    title: t('logs.share_failed'),
-                    description: err instanceof Error ? err.message : String(err),
-                });
-            }
-            return;
-        }
-
         // Capacitor mobile: share the rendered .log as a file attachment.
         if (showShareFile) {
             try {
@@ -496,7 +473,7 @@ export default function Logs() {
                             </PopoverContent>
                         </Popover>
                     </div>
-                    {(isNative || showOpenLocation) ? (
+                    {isNative ? (
                         <Button
                             variant="outline"
                             size="sm"
@@ -504,17 +481,8 @@ export default function Logs() {
                             disabled={filteredLogs.length === 0}
                             data-testid="logs-share-button"
                         >
-                            {showOpenLocation ? (
-                                <>
-                                    <FolderOpen className="h-4 w-4 mr-2" />
-                                    {t('logs.open_location')}
-                                </>
-                            ) : (
-                                <>
-                                    <Share2 className="h-4 w-4 mr-2" />
-                                    {t('logs.share')}
-                                </>
-                            )}
+                            <Share2 className="h-4 w-4 mr-2" />
+                            {t('logs.share')}
                         </Button>
                     ) : (
                         <Button
@@ -562,14 +530,6 @@ export default function Logs() {
                     className="text-xs text-muted-foreground px-1 py-1 flex flex-col gap-0.5 shrink-0"
                     data-testid="logs-status-line"
                 >
-                    {/* File path is only useful where the user can navigate to it
-                        (Tauri reveals in Finder/Explorer). On mobile the path is a
-                        sandboxed app-data URI the user can't open, so hide it. */}
-                    {showOpenLocation && persistedPath && (
-                        <span className="truncate min-w-0" title={persistedPath}>
-                            {t('logs.persisted_to')} <span className="font-mono">{persistedPath}</span>
-                        </span>
-                    )}
                     <span>
                         {t('logs.entries_count', {
                             current: logs.length.toLocaleString(),

@@ -225,7 +225,7 @@ describe('useMonitorStream', () => {
 
     // Web/native snapshot is unchanged: the <img> loads streamUrl directly.
     expect(result.current.imageSrc).toBe(result.current.streamUrl);
-    // No per-frame fetch happens off the Tauri path.
+    // No per-frame fetch happens for the <img> path.
     expect(mockHttpGet).not.toHaveBeenCalled();
   });
 

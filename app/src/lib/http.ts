@@ -5,7 +5,7 @@
  * Handles CORS, proxying, and platform-specific implementations automatically.
  *
  * Features:
- * - Automatic platform detection (Native/Tauri/Web/Proxy)
+ * - Automatic platform detection (Native/Electron/Web/Proxy)
  * - CORS handling via native HTTP or proxy
  * - Token injection for authenticated requests
  * - Response type handling (json, blob, arraybuffer, text, base64)
@@ -361,11 +361,9 @@ export async function httpRequest<T = unknown>(
   const requestId = ++requestIdCounter;
   const platform = Platform.isNative
     ? 'Native'
-    : Platform.isTauri
-      ? 'Tauri'
-      : Platform.isElectron && typeof window !== 'undefined' && window.electronHttp
-        ? 'Electron'
-        : 'Web';
+    : Platform.isElectron && typeof window !== 'undefined' && window.electronHttp
+      ? 'Electron'
+      : 'Web';
   const startTime = performance.now();
   const corrTag = correlationPrefix(requestId, correlationId);
   const path = shortPath(fullUrl);
@@ -385,18 +383,6 @@ export async function httpRequest<T = unknown>(
     let response: HttpResponse<T>;
     if (Platform.isNative) {
       response = await nativeHttpRequest<T>(requestUrl, method, requestHeaders, body, responseType);
-    } else if (Platform.isTauri) {
-      const { signal: timeoutSignal, cleanup } = withTimeoutSignal(timeoutMs ?? timeout, signal);
-      response = await tauriHttpRequest<T>(
-        requestUrl,
-        method,
-        requestHeaders,
-        body,
-        responseType,
-        timeoutSignal,
-        onDownloadProgress
-      );
-      cleanup();
     } else if (Platform.isElectron && typeof window !== 'undefined' && window.electronHttp) {
       const { signal: timeoutSignal, cleanup } = withTimeoutSignal(timeoutMs ?? timeout, signal);
       response = await electronHttpRequest<T>(
@@ -531,52 +517,13 @@ async function nativeHttpRequest<T>(
 }
 
 /**
- * Tauri HTTP request implementation
- */
-async function tauriHttpRequest<T>(
-  url: string,
-  method: string,
-  headers: Record<string, string>,
-  body: unknown,
-  responseType: string,
-  signal?: AbortSignal,
-  onDownloadProgress?: (progress: HttpProgress) => void
-): Promise<HttpResponse<T>> {
-  const requestBody = serializeRequestBody(body);
-
-  // Check if self-signed cert support is enabled for Tauri
-  const { isTauriSslTrustEnabled } = await import('./ssl-trust');
-  const dangerOpts = isTauriSslTrustEnabled()
-    ? { danger: { acceptInvalidCerts: true, acceptInvalidHostnames: true } }
-    : {};
-
-  const { fetch: tauriFetch } = await import('@tauri-apps/plugin-http');
-  const response = await tauriFetch(url, {
-    method,
-    headers,
-    body: requestBody,
-    signal,
-    ...dangerOpts,
-  });
-
-  const { data, headers: responseHeaders } = await parseFetchResponse<T>(response, responseType, onDownloadProgress);
-
-  return {
-    data,
-    status: response.status,
-    statusText: response.statusText,
-    headers: responseHeaders,
-  };
-}
-
-/**
  * Electron HTTP request implementation.
  *
- * Mirrors the Tauri transport: the request runs in the privileged process
- * (Electron's main process, via the net module) rather than the sandboxed
- * renderer, bridged over IPC by electron/preload.cjs. This avoids renderer CORS,
- * and self-signed certs are handled in main.cjs. Binary responses come back as
- * base64 over IPC (no streaming progress, like the Capacitor path).
+ * The request runs in the privileged process (Electron's main process, via the
+ * net module) rather than the sandboxed renderer, bridged over IPC by
+ * electron/preload.cjs. This avoids renderer CORS, and self-signed certs are
+ * handled in main.cjs. Binary responses come back as base64 over IPC (no
+ * streaming progress, like the Capacitor path).
  */
 async function electronHttpRequest<T>(
   url: string,

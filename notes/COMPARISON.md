@@ -70,7 +70,7 @@ zmNinjaNg represents a complete ground-up rewrite of zmNinja using modern web te
 | **Framework** | React | 19.2.0 | ✅ Latest with Concurrent features |
 | **Build Tool** | Vite | 7.2.4 | ✅ Lightning-fast HMR (<50ms) |
 | **Mobile Runtime** | Capacitor | 7.4.4 | ✅ 8 minimal plugins |
-| **Desktop** | Tauri | 2.9.4 | ✅ lighter than Electron |
+| **Desktop** | Electron | 42.x | Linux/macOS/Windows (switched from Tauri in 1.1.14 over WebKitGTK leaks; refs #150) |
 | **Language** | TypeScript | 5.9.3 | ✅ 100% type-safe |
 | **State** | Zustand + TanStack Query | 5.x | ✅ Optimized, persistent |
 | **Styling** | Tailwind CSS + shadcn/ui | 3.4.18 | ✅ Utility-first, responsive |
@@ -96,7 +96,7 @@ npm run dev              # Instant HMR development
 npm run build            # Production build (30-60s)
 npm run android:release  # Build APK (auto-signed)
 npm run ios              # Build iOS app
-npm run tauri:build      # Build desktop app
+npm run electron:build   # Build desktop app
 ```
 
 **Key Technology Advantages:**
@@ -333,13 +333,12 @@ app/src/
 - ✅ Android (Capacitor)
 - ✅ iOS (Capacitor)
 - ✅ Web (Progressive Web App)
-- ✅ Desktop (Tauri - Windows, macOS, Linux)
+- ✅ Desktop (Electron - Windows, macOS, Linux)
 
 **Advantages:**
 - PWA installable on any platform
 - Single codebase for all platforms
-- Lighter desktop builds with Tauri vs Electron
-- Modern build pipeline
+- Electron desktop shell (switched from Tauri after WebKitGTK memory leaks, refs #150)
 
 ---
 
@@ -814,7 +813,7 @@ State & Data:
 
 Mobile & Desktop:
 - @capacitor/* (8 packages)
-- @tauri-apps/* (2 packages)
+- electron / electron-builder (desktop shell)
 
 Forms & Validation:
 - react-hook-form@7.66.1

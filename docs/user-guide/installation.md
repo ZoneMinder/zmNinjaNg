@@ -79,10 +79,10 @@ server {
 git clone https://github.com/ZoneMinder/zmNinjaNg
 cd zmNinjaNg/app
 npm install
-npm run tauri:build
+npm run electron:build
 ```
 
-The built application will be in `app/src-tauri/target/release/bundle/`.
+The built application will be in `desktop_release_builds/electron/`.
 
 See {doc}`../building/index` for detailed platform-specific instructions.
 

@@ -31,7 +31,7 @@ describe('applySSLTrustSetting', () => {
 
   it('should call SSLTrust.enable() when enabled on native', async () => {
     vi.doMock('../platform', () => ({
-      Platform: { isNative: true, isTauri: false },
+      Platform: { isNative: true },
     }));
 
     const { applySSLTrustSetting } = await import('../ssl-trust');
@@ -43,7 +43,7 @@ describe('applySSLTrustSetting', () => {
 
   it('should call SSLTrust.disable() when disabled on native', async () => {
     vi.doMock('../platform', () => ({
-      Platform: { isNative: true, isTauri: false },
+      Platform: { isNative: true },
     }));
 
     const { applySSLTrustSetting } = await import('../ssl-trust');
@@ -53,34 +53,9 @@ describe('applySSLTrustSetting', () => {
     expect(mockEnable).not.toHaveBeenCalled();
   });
 
-  it('should set tauri flag when on Tauri platform', async () => {
-    vi.doMock('../platform', () => ({
-      Platform: { isNative: false, isTauri: true },
-    }));
-
-    const { applySSLTrustSetting, isTauriSslTrustEnabled } = await import('../ssl-trust');
-    await applySSLTrustSetting(true);
-
-    expect(isTauriSslTrustEnabled()).toBe(true);
-    expect(mockEnable).not.toHaveBeenCalled();
-  });
-
-  it('should clear tauri flag when disabled', async () => {
-    vi.doMock('../platform', () => ({
-      Platform: { isNative: false, isTauri: true },
-    }));
-
-    const { applySSLTrustSetting, isTauriSslTrustEnabled } = await import('../ssl-trust');
-    await applySSLTrustSetting(true);
-    expect(isTauriSslTrustEnabled()).toBe(true);
-
-    await applySSLTrustSetting(false);
-    expect(isTauriSslTrustEnabled()).toBe(false);
-  });
-
   it('should call electronSsl.setTrustSelfSigned with the enabled flag on Electron', async () => {
     vi.doMock('../platform', () => ({
-      Platform: { isNative: false, isTauri: false, isElectron: true },
+      Platform: { isNative: false, isElectron: true },
     }));
 
     const setTrustSelfSigned = vi.fn().mockResolvedValue(true);
@@ -102,14 +77,13 @@ describe('applySSLTrustSetting', () => {
 
   it('should be a no-op on web platforms', async () => {
     vi.doMock('../platform', () => ({
-      Platform: { isNative: false, isTauri: false },
+      Platform: { isNative: false, isElectron: false },
     }));
 
-    const { applySSLTrustSetting, isTauriSslTrustEnabled } = await import('../ssl-trust');
+    const { applySSLTrustSetting } = await import('../ssl-trust');
     await applySSLTrustSetting(true);
 
     expect(mockEnable).not.toHaveBeenCalled();
     expect(mockDisable).not.toHaveBeenCalled();
-    expect(isTauriSslTrustEnabled()).toBe(false);
   });
 });

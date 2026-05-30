@@ -40,15 +40,6 @@ import { useDeveloperNotices } from '../../hooks/useDeveloperNotices';
 const HELP_DOCS_URL = 'https://zmninjang.readthedocs.io/en/latest/';
 
 async function openHelpDocs(): Promise<void> {
-  if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
-    try {
-      const { openUrl } = await import('@tauri-apps/plugin-opener');
-      await openUrl(HELP_DOCS_URL);
-      return;
-    } catch {
-      // Fall through to window.open
-    }
-  }
   if (typeof window !== 'undefined') {
     window.open(HELP_DOCS_URL, '_blank', 'noopener,noreferrer');
   }

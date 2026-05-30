@@ -21,10 +21,6 @@ export interface PlatformTestConfig {
     appPath: string;
     appiumPort: number;
   };
-  tauri: {
-    driverPort: number;
-    binaryPath?: string;
-  };
   web: {
     baseUrl: string;
   };
@@ -41,8 +37,7 @@ export type PlatformProfile =
   | 'web-chromium'
   | 'android-phone'
   | 'ios-phone'
-  | 'ios-tablet'
-  | 'desktop-tauri';
+  | 'ios-tablet';
 
 export const defaults: PlatformTestConfig = {
   android: {
@@ -65,9 +60,6 @@ export const defaults: PlatformTestConfig = {
     appBundleId: 'com.zoneminder.zmNinjaNG',
     appPath: 'ios/App/DerivedData/Build/Products/Debug-iphonesimulator/App.app',
     appiumPort: 4723,
-  },
-  tauri: {
-    driverPort: 4444,
   },
   web: {
     baseUrl: 'http://localhost:5173',

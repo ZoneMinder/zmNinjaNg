@@ -8,9 +8,9 @@ The file is named `zmninja-ng.log` and lives in the per-app log directory chosen
 
 | Platform | Path |
 |----------|------|
-| **macOS** (Tauri) | `~/Library/Logs/com.zoneminder.zmNinjaNG/zmninja-ng.log` |
-| **Windows** (Tauri) | `%LOCALAPPDATA%\com.zoneminder.zmNinjaNG\logs\zmninja-ng.log` |
-| **Linux** (Tauri) | `~/.local/share/com.zoneminder.zmNinjaNG/logs/zmninja-ng.log` |
+| **macOS** (Electron) | `~/Library/Logs/com.zoneminder.zmNinjaNG/zmninja-ng.log` |
+| **Windows** (Electron) | `%LOCALAPPDATA%\com.zoneminder.zmNinjaNG\logs\zmninja-ng.log` |
+| **Linux** (Electron) | `~/.local/share/com.zoneminder.zmNinjaNG/logs/zmninja-ng.log` |
 | **iOS** | App sandbox (`Application Support` directory). Not directly accessible via Files app, use **Share** to extract it. |
 | **Android** | App-private data directory (`/data/data/com.zoneminder.zmNinjaNG/`). Not browsable without root, use **Share**. |
 | **Web** (browser dev only) | No persistence. |

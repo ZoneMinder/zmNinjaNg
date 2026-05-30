@@ -9,7 +9,7 @@ vi.mock('../../hooks/useCurrentProfile', () => ({
 }));
 
 vi.mock('../../lib/platform', () => ({
-  Platform: { isNative: false, isTauri: false },
+  Platform: { isNative: false },
 }));
 
 describe('useTvMode', () => {

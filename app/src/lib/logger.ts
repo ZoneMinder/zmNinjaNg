@@ -3,8 +3,8 @@
  *
  * Provides a structured logging system with support for log levels, context, and sanitization.
  * Each accepted entry is sent to the console, the in-memory `useLogStore` (for the
- * Logs view), and a platform-specific `LogFileStore` (Capacitor on mobile, Tauri on
- * desktop, no-op on web) for persistent disk logging.
+ * Logs view), and a platform-specific `LogFileStore` (Capacitor on mobile,
+ * no-op on web and Electron) for persistent disk logging.
  *
  * Features:
  * - Log levels (DEBUG, INFO, WARN, ERROR)

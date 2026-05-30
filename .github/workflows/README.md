@@ -2,10 +2,9 @@
 
 This directory contains automated build workflows for zmNinjaNg across multiple platforms.
 
-## ⚠️ Quick Fix: macOS "Damaged App" Error
+## Quick Fix: macOS "Damaged App" Error
 
-If you downloaded a macOS build and get a "damaged" error, that is not because the app is damaged. It is because MacOS blocks you.
-In more recent versions this has become painful. I couldn't get `xcattr` variants to work. Anyway, simple answer: use [sentinel](https://github.com/alienator88/Sentinel)
+If you downloaded a macOS build and get a "damaged" error, that is not because the app is damaged. It is because macOS blocks unsigned binaries. In more recent versions this has become painful. Simple answer: use [Sentinel](https://github.com/alienator88/Sentinel).
 
 ## Available Workflows
 
@@ -13,14 +12,14 @@ In more recent versions this has become painful. I couldn't get `xcattr` variant
 
 Each platform has its own dedicated workflow that can be triggered manually or on git tags:
 
-- **`build-android.yml`** - Builds Android APK and AAB
-- **`build-macos.yml`** - Builds macOS DMG installer
-- **`build-linux.yml`** - Builds Linux AppImage and DEB packages
-- **`build-windows.yml`** - Builds Windows MSI and NSIS installers
+- **`build-android.yml`** — Builds Android APK and AAB
+- **`build-macos.yml`** — Builds the macOS Electron DMG
+- **`build-linux-amd64.yml`**, **`build-linux-arm64.yml`** — Builds Linux Electron AppImage, DEB, and RPM
+- **`build-windows.yml`** — Builds the Windows Electron installer (.exe)
 
 ### Combined Build Workflow
 
-- **`build-all.yml`** - Build multiple platforms in parallel (configurable)
+- **`build-all.yml`** — Builds multiple platforms in parallel (configurable)
 
 ## How to Trigger Builds
 
@@ -57,8 +56,6 @@ This script will:
 
 ### Manual Tag Push (Alternative)
 
-You can also manually push a tag to trigger builds:
-
 ```bash
 # Tag format must be: zmNinjaNg-{version}
 git tag zmNinjaNg-1.0.0
@@ -68,11 +65,9 @@ git push origin zmNinjaNg-1.0.0
 To move an existing tag to a new commit:
 
 ```bash
-# Delete old tag
 git tag -d zmNinjaNg-1.0.0
 git push origin --delete zmNinjaNg-1.0.0
 
-# Create new tag and push
 git tag zmNinjaNg-1.0.0
 git push origin zmNinjaNg-1.0.0 --force
 ```
@@ -86,21 +81,19 @@ This will:
 After a successful build, artifacts are available for download:
 
 ### Android
-- `zmNinjaNg-android-debug-{version}.apk` - Debug-signed APK for sideloading
-- `zmNinjaNg-android-debug-{version}.aab` - Debug-signed App Bundle for testing
+- `zmNinjaNg-android-debug-{version}.apk` — Debug-signed APK for sideloading
+- `zmNinjaNg-android-debug-{version}.aab` — Debug-signed App Bundle for testing
 
 ### macOS
-- `zmNinjaNg.dmg` - DMG installer
-- `zmNinjaNg.app` - Application bundle
+- `zmNinjaNg-{version}-macos-aarch64.dmg` — Electron DMG (signed + notarized when secrets are set)
 
 ### Linux
-- `zmNinjaNg.AppImage` - Universal AppImage
-- `zmNinjaNg.deb` - Debian package
-- `zmNinjaNg.rpm` - RPM package
+- `zmNinjaNg-{version}-linux-{arch}.AppImage` — Universal AppImage
+- `zmNinjaNg-{version}-linux-{arch}.deb` — Debian package
+- `zmNinjaNg-{version}-linux-{arch}.rpm` — RPM package
 
 ### Windows
-- `zmNinjaNg.msi` - MSI installer
-- `zmNinjaNg.exe` - NSIS installer (if configured)
+- `zmNinjaNg-{version}-windows-x64-setup.exe` — Electron NSIS installer
 
 ## Customizing Release Notes
 
@@ -132,20 +125,15 @@ Without this, you'll get 403 errors when trying to create releases.
 - For release signing, configure signing in `app/android/app/build.gradle`
 
 ### Desktop Platforms (macOS, Linux, Windows)
-- Uses Tauri for desktop builds
+- Uses Electron + electron-builder for desktop builds
 - **All builds are unsigned by default** (no secrets required)
-- Linux builds work without issues
-- macOS/Windows builds will require users to bypass security warnings (see below)
-- **Optional macOS Code Signing** (to avoid "damaged" error):
-  - `APPLE_CERTIFICATE` - Base64-encoded .p12 certificate
-  - `APPLE_CERTIFICATE_PASSWORD` - Certificate password
-  - `APPLE_SIGNING_IDENTITY` - Developer ID (e.g., "Developer ID Application: Your Name (TEAM_ID)")
-  - `APPLE_ID` - Apple ID email
-  - `APPLE_PASSWORD` - App-specific password
-  - `APPLE_TEAM_ID` - Team ID from Apple Developer account
-- **Optional Tauri updater signing**:
-  - `TAURI_SIGNING_PRIVATE_KEY`
-  - `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`
+- macOS will require users to bypass security warnings unless signed (see below)
+- **Optional macOS code signing + notarization** (to avoid the "damaged" error):
+  - `APPLE_CERTIFICATE` — Base64-encoded .p12 certificate
+  - `APPLE_CERTIFICATE_PASSWORD` — Certificate password
+  - `APPLE_ID` — Apple ID email
+  - `APPLE_PASSWORD` — App-specific password
+  - `APPLE_TEAM_ID` — Team ID from Apple Developer account
 
 ## Firebase Configuration
 
@@ -158,22 +146,17 @@ See `ANDROID_BUILD.md` for Firebase setup instructions.
 ### Changing Build Settings
 
 - **Android**: Edit `app/android/app/build.gradle`
-- **Desktop**: Edit `app/src-tauri/tauri.conf.json`
+- **Desktop**: Edit `app/electron-builder.json` and the Electron main process at `app/electron/`
 
 ### Adding Code Signing
 
-For production releases, you should configure code signing:
-
 **Android**: Add signing configuration to gradle
-**macOS**: Set up Apple Developer certificates
-**Windows**: Configure code signing certificate
-
-See Tauri documentation for details: https://tauri.app/v1/guides/distribution/sign-your-application
+**macOS**: Set up Apple Developer certificates (see the macOS section below)
+**Windows**: Configure code signing certificate via electron-builder
 
 ## macOS "Damaged" App Error
 
-If you get a **"zmNinjaNg.app is damaged and can't be opened. You should move it to the Trash"** error, this is because the app is not signed/notarized. You have two options:
-
+If you get a **"zmNinjaNg.app is damaged and can't be opened"** error, this is because the app is not signed/notarized. You have two options:
 
 ### Option 1: Bypass Security
 Use [Sentinel](https://github.com/alienator88/Sentinel)
@@ -191,8 +174,7 @@ To produce properly signed and notarized builds:
 
 3. **Export Certificate**:
    ```bash
-   # Export from Keychain as .p12
-   # Then convert to base64
+   # Export from Keychain as .p12, then convert to base64
    base64 -i certificate.p12 | pbcopy
    ```
 
@@ -206,12 +188,11 @@ To produce properly signed and notarized builds:
    - Add the following secrets:
      - `APPLE_CERTIFICATE`: Paste base64 certificate
      - `APPLE_CERTIFICATE_PASSWORD`: Certificate password
-     - `APPLE_SIGNING_IDENTITY`: "Developer ID Application: Your Name (TEAM_ID)"
      - `APPLE_ID`: Your Apple ID email
      - `APPLE_PASSWORD`: App-specific password
      - `APPLE_TEAM_ID`: Team ID from developer portal
 
-6. **Re-run Workflow** - The app will now be signed and notarized
+6. **Re-run Workflow** — The app will now be signed and notarized
 
 ## Troubleshooting
 
@@ -219,9 +200,9 @@ To produce properly signed and notarized builds:
 
 Check the Actions tab for detailed error logs. Common issues:
 
-- **Missing dependencies**: Check Node.js/Rust versions
+- **Missing dependencies**: Check the Node.js version
 - **Build errors**: Ensure local builds work first
-- **Artifact upload fails**: Check file paths match your build output
+- **Artifact upload fails**: Check file paths match the build output
 
 ### Android Build Issues
 
@@ -231,9 +212,9 @@ Check the Actions tab for detailed error logs. Common issues:
 
 ### Desktop Build Issues
 
-- Ensure Rust toolchain is properly installed
-- Check Tauri configuration in `tauri.conf.json`
-- Verify all platform-specific dependencies are installed
+- Confirm Electron and electron-builder versions in `app/package.json`
+- Check `app/electron-builder.json` for the target platform
+- Verify all platform-specific dependencies are installed (e.g., `rpm` on Linux runners for RPM packaging)
 
 ## Local Testing
 
@@ -244,13 +225,13 @@ Before pushing, test builds locally:
 cd app
 npm run android:release
 
-# Desktop (macOS/Linux/Windows)
+# Desktop (macOS / Linux / Windows)
 cd app
-npm run tauri:build
+npm run electron:build
 ```
 
 ## More Information
 
 - [Capacitor Android Documentation](https://capacitorjs.com/docs/android)
-- [Tauri Build Documentation](https://tauri.app/v1/guides/building/)
+- [electron-builder Documentation](https://www.electron.build/)
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)

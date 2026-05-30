@@ -29,9 +29,6 @@ jobs:
           cache: 'npm'
           cache-dependency-path: app/package-lock.json
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
       - name: Install dependencies
         working-directory: ./app
         run: npm ci
@@ -56,56 +53,6 @@ jobs:
           security import $CERTIFICATE_PATH -P "$APPLE_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
           security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
           security list-keychain -d user -s $KEYCHAIN_PATH
-
-      - name: Build Tauri app (macOS)
-        if: false
-        working-directory: ./app
-        env:
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: npm run tauri:build
-
-      - name: Rename macOS artifacts
-        if: false
-        run: |
-          VERSION="${{ github.event.inputs.version || github.ref_name }}"
-          VERSION="${VERSION#zmNinjaNg-}"
-          mkdir -p dist/macos
-
-          # Tauri creates files like zmNinjaNG_0.0.2_aarch64.dmg or zmNinjaNG_0.0.2_x64.dmg
-          for dmg in app/src-tauri/target/release/bundle/dmg/*.dmg; do
-            if [ -f "$dmg" ]; then
-              filename=$(basename "$dmg")
-              # Extract architecture from filename
-              if [[ "$filename" =~ aarch64 ]]; then
-                arch="aarch64"
-              elif [[ "$filename" =~ x64 ]]; then
-                arch="x64"
-              else
-                arch="universal"
-              fi
-              cp "$dmg" "dist/macos/zmNinjaNg-${VERSION}-macos-${arch}.dmg"
-            fi
-          done
-
-      - name: Upload DMG artifact
-        if: false
-        uses: actions/upload-artifact@v4
-        with:
-          name: zmNinjaNg-macos-dmg-${{ github.event.inputs.version || github.ref_name }}
-          path: dist/macos/*.dmg
-          retention-days: 30
-
-      - name: Upload to Release
-        uses: softprops/action-gh-release@v1
-        if: false
-        with:
-            files: |
-              dist/macos/*.dmg
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Electron app (macOS, signed + notarized)
         working-directory: ./app

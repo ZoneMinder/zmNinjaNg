@@ -68,7 +68,7 @@ Android, and Desktop.
 
 **Features:**
 
-- Automatic platform detection (Capacitor, Tauri, or Web)
+- Automatic platform detection (Capacitor, Electron, or Web)
 - CORS handling via proxy in development
 - Request/response logging via logger
 - Token injection for authentication
@@ -104,13 +104,11 @@ Android, and Desktop.
 
 - **Web**: Uses ``fetch()`` with standard CORS handling
 - **Mobile (Capacitor)**: Uses ``CapacitorHttp`` for native networking
-- **Desktop (Tauri)**: Uses ``@tauri-apps/plugin-http`` for native fetch
+- **Desktop (Electron)**: Uses Chromium ``fetch()`` via Electron's renderer
 
-**SSL Trust:** When self-signed certificates are enabled for a profile,
-the Tauri HTTP path passes ``danger: { acceptInvalidCerts: true,
-acceptInvalidHostnames: true }`` to ``@tauri-apps/plugin-http``. On
-mobile, the native Capacitor plugin handles SSL trust separately (see
-SSL Trust section below).
+**SSL Trust:** On mobile, the native Capacitor plugin handles SSL trust
+(see SSL Trust section below). On Electron desktop, the user must add
+the CA to the system trust store.
 
 **Used By:** API functions (``api/``), download utilities, all network
 requests
@@ -146,10 +144,8 @@ profile-scoped (``allowSelfSignedCerts`` + ``trustedCertFingerprint`` in
   ``TrustManager`` that validates fingerprints. On iOS, both ``URLProtocol``
   and ``WKNavigationDelegate`` validate cert fingerprints via CommonCrypto
   SHA-256.
-- **Desktop (Tauri)**: Sets a module-level flag read by ``http.ts`` to pass
-  ``danger`` options to ``@tauri-apps/plugin-http``. Requires the
-  ``dangerous-settings`` Cargo feature on ``tauri-plugin-http``.
-- **Web**: No-op (browsers enforce certificate validation).
+- **Desktop (Electron) and Web**: No-op (Chromium enforces certificate
+  validation). Users must add the CA to the system trust store.
 
 **Plugin Methods:**
 
@@ -314,8 +310,8 @@ support.
 **Platform Implementations:**
 
 - **Web**: Blob + anchor download
-- **Mobile**: CapacitorHttp → Filesystem → Media library
-- **Desktop**: Tauri fetch → User-selected path
+- **Mobile**: CapacitorHttp, Filesystem, then Media library
+- **Desktop (Electron)**: Chromium download to user-selected path
 
 **Note:** Mobile uses base64 directly (not Blob conversion) to avoid
 out-of-memory errors on large video files.
@@ -626,7 +622,7 @@ Platform detection utilities.
 
 **Features:**
 
-- Detects Tauri (desktop), Capacitor (mobile), or Web
+- Detects Electron (desktop), Capacitor (mobile), or Web
 - Proxy mode detection (development)
 - Consistent platform checks
 
@@ -636,7 +632,7 @@ Platform detection utilities.
 
    import { Platform } from '../lib/platform';
 
-   if (Platform.isTauri) {
+   if (Platform.isElectron) {
      // Desktop-specific code
    }
 
@@ -695,7 +691,7 @@ module applies to the CSS variables.
 - **Android (Capacitor)**: Early-returns. The Android WebView's
   ``env(safe-area-inset-*)`` resolves correctly, so the CSS fallback
   is used.
-- **Web and Tauri**: Early-returns. Same reasoning.
+- **Web and Electron**: Early-returns. Same reasoning.
 
 **CSS usage:** Reference the variables with the native ``env()`` as the
 fallback so non-iOS platforms get the browser value:
@@ -1827,13 +1823,13 @@ Mirrors entries from ``useLogStore`` to a persistent file on disk.
 **Capabilities and file locations by platform:**
 
 - Capacitor (iOS / Android): NDJSON file at ``Directory.Data/zmninja-ng.log`` (sandboxed app data). Resolved at runtime to a ``file://`` URI on iOS and ``content://`` URI on Android. Share via the system share sheet, recipient receives the file as an attachment.
-- Tauri (desktop): NDJSON file at ``BaseDirectory::AppLog/zmninja-ng.log``. Concrete paths:
+- Electron (desktop): NDJSON file in the Electron user data directory. Concrete paths:
 
   - macOS: ``~/Library/Logs/com.zoneminder.zmNinjaNG/zmninja-ng.log``
   - Windows: ``%LOCALAPPDATA%\com.zoneminder.zmNinjaNG\logs\zmninja-ng.log``
   - Linux: ``~/.local/share/com.zoneminder.zmNinjaNG/logs/zmninja-ng.log``
 
-  The "Open" button in the Logs page calls ``revealItemInDir`` (``tauri-plugin-opener``) to open the enclosing folder in Finder / Explorer / file manager.
+  The "Open" button in the Logs page asks the Electron main process to reveal the file in Finder, Explorer, or the system file manager.
 
 - Web: no-op fallback; Share reverts to today's blob download. ``getDisplayPath`` returns ``null`` and the status line is hidden.
 

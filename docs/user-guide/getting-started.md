@@ -11,7 +11,7 @@ zmNinjaNg is a client application for [ZoneMinder](https://zoneminder.com/), an 
 - Manage multiple ZoneMinder servers via profiles
 - Customize your dashboard with widgets
 
-zmNinjaNg runs on Android, iOS, Windows, macOS, Linux, and the web from a single codebase. It is a rewrite of [zmNinja](https://zmninja.zoneminder.com/) using React, TypeScript, Capacitor, and Tauri.
+zmNinjaNg runs on Android, iOS, Windows, macOS, Linux, and the web from a single codebase. It is a rewrite of [zmNinja](https://zmninja.zoneminder.com/) using React, TypeScript, Capacitor, and Electron.
 
 ## Requirements
 
@@ -71,11 +71,11 @@ Controls at the bottom of the sidebar:
 zmNinjaNg is not a port of zmNinja, it's a new application built from scratch. Differences:
 
 - UI built with Tailwind CSS and shadcn/ui
-- 3–4x faster load times, virtualized lists for long scrolls
-- 60–75% smaller download size
+- 3-4x faster load times, virtualized lists for long scrolls
+- 60-75% smaller download size
 - Passwords encrypted at rest with AES-256-GCM (hardware-backed on Android via Android Keystore)
 - No analytics or third-party tracking
-- Desktop apps via Tauri instead of Electron
+- Desktop apps via Electron
 - Drag-and-drop dashboard widgets
 - Notification history
 

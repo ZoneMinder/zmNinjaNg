@@ -16,7 +16,4 @@ echo "--- iOS Phone ---"
 echo "--- iOS Tablet ---"
 "$SCRIPT_DIR/test-ios.sh" tablet
 
-echo "--- Tauri Desktop ---"
-"$SCRIPT_DIR/test-tauri.sh"
-
 echo "=== All Platform Tests Complete ==="
