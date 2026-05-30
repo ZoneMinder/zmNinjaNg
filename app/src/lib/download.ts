@@ -1,13 +1,13 @@
 /**
  * Download Utilities
- * 
+ *
  * Provides cross-platform file download capabilities for snapshots and videos.
- * Handles platform-specific logic for Web, iOS, Android, and Desktop (Tauri).
- * 
+ * Handles platform-specific logic for Web, iOS, Android, and Electron desktop.
+ *
  * Features:
- * - Web: Uses standard browser download (Blob/Anchor)
+ * - Web / Electron: Uses standard browser download (Blob/Anchor) — Electron's
+ *   renderer behaves like a regular browser here
  * - Mobile: Uses Capacitor Filesystem and Media plugins with chunked streaming to avoid OOM
- * - Desktop (Tauri): Uses native File System and Dialog plugins
  * - Handles CORS issues via native HTTP or proxy
  * - Automatically saves media to device Photo/Video library on mobile
  */
@@ -84,7 +84,6 @@ type DataUrlSnapshotHandler = (dataUrl: string, filename: string) => Promise<voi
  * Get the appropriate download handler for the current platform
  */
 function getDownloadHandler(): DownloadHandler {
-  if (Platform.isTauri) return downloadFileTauri;
   if (Platform.isNative) return downloadFileNative;
   return downloadFileWeb;
 }
@@ -93,7 +92,6 @@ function getDownloadHandler(): DownloadHandler {
  * Get the appropriate data URL snapshot handler for the current platform
  */
 function getDataUrlSnapshotHandler(): DataUrlSnapshotHandler {
-  if (Platform.isTauri) return downloadDataUrlTauri;
   if (Platform.isNative) return downloadDataUrlNative;
   return downloadFromDataUrlWeb;
 }
@@ -117,53 +115,6 @@ export async function downloadFile(url: string, filename: string, options?: Down
     log.download('[Download] Failed to download file', LogLevel.ERROR, { url, error });
     throw error;
   }
-}
-
-/**
- * Tauri Implementation
- */
-async function downloadFileTauri(url: string, filename: string, options?: DownloadOptions): Promise<void> {
-  log.download('[Download] Initiating native desktop download', LogLevel.INFO, { url, filename });
-
-  const { save } = await import('@tauri-apps/plugin-dialog');
-  const { writeFile } = await import('@tauri-apps/plugin-fs');
-
-  // 1. Prompt user for save location
-  const savePath = await save({
-    defaultPath: filename,
-    filters: [
-      {
-        name: 'Media',
-        extensions: ['mp4', 'jpg', 'png', 'avi', 'mov']
-      }
-    ]
-  });
-
-  if (!savePath) {
-    log.download('[Download] User cancelled save dialog', LogLevel.INFO);
-    return;
-  }
-
-  // 2. Fetch the file using unified HTTP
-  log.download('[Download] Fetching file', LogLevel.INFO, { url });
-
-  const onDownloadProgress = options?.onProgress
-    ? (progress: HttpProgress) => {
-        options.onProgress?.(progress);
-      }
-    : undefined;
-
-  const response = await httpRequest<ArrayBuffer>(url, {
-    method: 'GET',
-    responseType: 'arraybuffer',
-    signal: options?.signal,
-    onDownloadProgress,
-  });
-
-  // 3. Write to disk
-  const bytes = new Uint8Array(response.data);
-  await writeFile(savePath, bytes);
-  log.download('[Download] File saved successfully', LogLevel.INFO, { path: savePath });
 }
 
 /**
@@ -348,31 +299,6 @@ export async function downloadSnapshotFromElement(
   } catch (error) {
     log.download('[Download] Failed to capture snapshot', LogLevel.ERROR, error);
     throw error;
-  }
-}
-
-/**
- * Desktop (Tauri) data URL download implementation
- */
-async function downloadDataUrlTauri(dataUrl: string, filename: string): Promise<void> {
-  const { save } = await import('@tauri-apps/plugin-dialog');
-  const { writeFile } = await import('@tauri-apps/plugin-fs');
-
-  const savePath = await save({
-    defaultPath: filename,
-    filters: [{ name: 'Image', extensions: ['jpg', 'png'] }]
-  });
-
-  if (savePath) {
-    const base64 = dataUrl.split(',')[1];
-    // Decode base64 to Uint8Array
-    const binaryString = atob(base64);
-    const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
-    }
-    await writeFile(savePath, bytes);
-    log.download('[Download] Snapshot saved via native dialog', LogLevel.INFO, { path: savePath });
   }
 }
 

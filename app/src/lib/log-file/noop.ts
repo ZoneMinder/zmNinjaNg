@@ -1,7 +1,7 @@
 import type { LogFileStore, LogFileCapabilities } from './types';
 
 export class NoopLogFileStore implements LogFileStore {
-  capabilities: LogFileCapabilities = { share: false, reveal: false, available: false };
+  capabilities: LogFileCapabilities = { share: false, available: false };
 
   async initialize(): Promise<void> {}
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -11,5 +11,4 @@ export class NoopLogFileStore implements LogFileStore {
   async truncate(): Promise<void> {}
   async getDisplayPath() { return null; }
   async getFileUri() { return null; }
-  async revealLocation(): Promise<void> {}
 }

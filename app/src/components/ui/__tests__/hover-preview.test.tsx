@@ -10,10 +10,6 @@ vi.mock('@capacitor/core', () => ({
   },
 }));
 
-vi.mock('@tauri-apps/api/core', () => ({
-  isTauri: () => false,
-}));
-
 function renderNative() {
   return render(
     <HoverPreview aspectRatio={16 / 9} renderPreview={() => <div>preview</div>}>

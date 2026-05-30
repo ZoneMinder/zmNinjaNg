@@ -5,7 +5,7 @@ Three tiers:
 
 1. **Unit tests**: logic and components, in isolation
 2. **Web E2E**: user journeys in a browser against a real ZoneMinder server
-3. **Device E2E**: the same journeys on Android emulator, iOS simulator, and Tauri desktop
+3. **Device E2E**: the same journeys on Android emulator and iOS simulator
 
 Every test verifies what a human would verify: can I do the task, does
 it look right, does the data make sense.
@@ -13,7 +13,7 @@ it look right, does the data make sense.
 Cross-Platform Architecture
 ---------------------------
 
-Tests run on 5 platform profiles using two drivers:
+Tests run on 4 platform profiles using two drivers:
 
 .. list-table::
    :header-rows: 1
@@ -38,13 +38,9 @@ Tests run on 5 platform profiles using two drivers:
      - iPad Air simulator
      - WebDriverIO + Appium XCUITest
      - WebView context switch
-   * - ``desktop-tauri``
-     - Tauri macOS app
-     - WebDriverIO + tauri-driver
-     - WebDriver protocol
 
-Playwright connects to Chromium WebViews via CDP. iOS and Tauri use
-WKWebView (WebKit), which requires WebDriverIO + Appium or tauri-driver.
+Playwright connects to Chromium WebViews via CDP. iOS uses WKWebView
+(WebKit), which requires WebDriverIO + Appium.
 
 TestActions Abstraction
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -72,7 +68,7 @@ Two implementations exist:
 
 - ``PlaywrightActions`` (``tests/actions/playwright-actions.ts``), for
   web and Android
-- ``WebDriverIOActions``: for iOS and Tauri
+- ``WebDriverIOActions``: for iOS
 
 Unit Tests
 ----------
@@ -235,7 +231,7 @@ Technology Stack
 ~~~~~~~~~~~~~~~~
 
 - **Playwright**: Browser automation (web + Android)
-- **WebDriverIO + Appium**: Device automation (iOS + Tauri)
+- **WebDriverIO + Appium**: Device automation (iOS)
 - **playwright-bdd**: Gherkin/Cucumber integration for Playwright
 - **Real ZoneMinder server**: Tests connect to an actual server
 
@@ -274,8 +270,7 @@ File Organization
    │   ├── web-chromium/
    │   ├── android-phone/
    │   ├── ios-phone/
-   │   ├── ios-tablet/
-   │   └── desktop-tauri/
+   │   └── ios-tablet/
    ├── device-screenshots/     # Device screenshot capture specs
    │   └── specs/
    ├── platforms.config.defaults.ts  # Default simulator names, ports, timeouts
@@ -303,8 +298,6 @@ scenario:
      - iPhone simulator only
    * - ``@ios-tablet``
      - iPad simulator only
-   * - ``@tauri``
-     - Tauri desktop only
    * - ``@web``
      - Web browser only
    * - ``@visual``
@@ -403,8 +396,6 @@ Device E2E tests are run via shell scripts in ``scripts/``:
      - iPhone simulator (WebDriverIO + Appium)
    * - ``npm run test:e2e:ios-tablet``
      - iPad simulator (WebDriverIO + Appium)
-   * - ``npm run test:e2e:tauri``
-     - Tauri desktop (WebDriverIO + tauri-driver)
    * - ``npm run test:e2e:all-platforms``
      - All platforms sequentially
 
@@ -439,21 +430,13 @@ Running Device Tests Step by Step
    npm run test:e2e:ios-phone     # iPhone 15
    npm run test:e2e:ios-tablet    # iPad Air
 
-**Tauri desktop:**
-
-.. code:: bash
-
-   # The npm script starts tauri-driver and runs WebDriverIO
-   # against the Tauri app's WKWebView.
-   npm run test:e2e:tauri
-
 **All platforms sequentially:**
 
 .. code:: bash
 
    npm run test:e2e:all-platforms
 
-This runs: web → Android → iOS phone → iOS tablet → Tauri, in order.
+This runs: web, Android, iOS phone, iOS tablet, in order.
 
 Device Screenshot Capture
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -491,9 +474,6 @@ Prerequisites
    * - Android Studio
      - Latest
      - AVD manager and Android SDK
-   * - Rust + Cargo
-     - Latest stable
-     - ``tauri-driver``
    * - Node.js
      - 20+
      - All npm scripts
@@ -544,14 +524,6 @@ Appium Setup
    appium --version        # should be 2.x
    appium driver list      # should show xcuitest and uiautomator2
 
-Tauri Setup
-^^^^^^^^^^^
-
-.. code:: bash
-
-   cargo install tauri-driver
-   tauri-driver --version
-
 Verify All Setup
 ^^^^^^^^^^^^^^^^
 
@@ -561,8 +533,8 @@ Verify All Setup
    npm run test:platform:setup
 
 This checks Xcode, iOS runtime, simulators, Android SDK, AVD, adb,
-Appium drivers, tauri-driver, and port availability. Failing checks
-include fix instructions.
+Appium drivers, and port availability. Failing checks include fix
+instructions.
 
 Platform Config
 ~~~~~~~~~~~~~~~
@@ -574,7 +546,6 @@ Platform Config
 - iOS phone: ``iPhone 15`` (iOS 17.5)
 - iOS tablet: ``iPad Air 11-inch (M2)`` (iOS 17.5)
 - Appium port: ``4723``
-- Tauri driver port: ``4444``
 - App launch timeout: ``30000`` ms
 - WebView switch timeout: ``10000`` ms
 
@@ -756,7 +727,6 @@ A previous test run left a process holding the port:
 .. code:: bash
 
    lsof -ti :4723 | xargs kill   # Appium port
-   lsof -ti :4444 | xargs kill   # tauri-driver port
    lsof -ti :9222 | xargs kill   # Android CDP port
 
 Or change the port in ``platforms.config.local.ts``.

@@ -1,11 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
-# Build the Electron desktop DMG, signed the same way as the Tauri build
-# (build-desktop.sh): same Developer ID identity and the same APPLE_* env vars.
-# By default the app is signed with the Developer ID and notarized when
-# APPLE_ID/APPLE_PASSWORD/APPLE_TEAM_ID are present. Pass --nosign for an
-# unsigned build.
+# Build the Electron desktop DMG. By default the app is signed with the
+# Developer ID and notarized when APPLE_ID/APPLE_PASSWORD/APPLE_TEAM_ID are
+# present. Pass --nosign for an unsigned build.
 
 NOSIGN=0
 [ "${1:-}" = "--nosign" ] && NOSIGN=1
@@ -27,7 +25,7 @@ if [ "$NOSIGN" = "1" ]; then
 else
   IDENTITY="${APPLE_SIGNING_IDENTITY:-$DEFAULT_IDENTITY}"
   # electron-builder's CSC_NAME wants the bare certificate name, without the
-  # "Developer ID Application:" prefix that Tauri's APPLE_SIGNING_IDENTITY uses.
+  # "Developer ID Application:" prefix that APPLE_SIGNING_IDENTITY carries.
   export CSC_NAME="${IDENTITY#Developer ID Application: }"
   echo "=== signing identity: $IDENTITY ==="
   if [ -n "${APPLE_ID:-}" ] && [ -n "${APPLE_PASSWORD:-}" ] && [ -n "${APPLE_TEAM_ID:-}" ]; then

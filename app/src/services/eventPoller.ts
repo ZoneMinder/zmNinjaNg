@@ -1,7 +1,7 @@
 /**
  * Event Poller Service
  *
- * Polls the ZM events API for new events in Direct notification mode on desktop (Tauri).
+ * Polls the ZM events API for new events in Direct notification mode on desktop (Electron) and web.
  * New events are fed into the notification store, which triggers the existing
  * sonner toast display via NotificationHandler.
  */

@@ -64,7 +64,7 @@ Yes. Desktop apps show in-app toast notifications while the app is open:
 - **ES mode**: Events arrive in real time via WebSocket.
 - **Direct mode**: zmNinjaNg polls the ZM events API at a configurable interval.
 
-Background/push notifications (via FCM) are only available on mobile (iOS/Android). Desktop apps (Tauri) do not support FCM.
+Background/push notifications (via FCM) are only available on mobile (iOS/Android). Desktop apps (Electron) do not support FCM.
 
 ## Performance
 
@@ -97,7 +97,7 @@ The pre-built binaries are built for specific distributions. Check the [GitHub A
 
 ### How do I open the developer console on the desktop app?
 
-The Tauri desktop app includes a WebView inspector, similar to Chrome or Firefox DevTools.
+The Electron desktop app uses Chromium DevTools.
 
 **To open it:**
 
@@ -106,33 +106,7 @@ The Tauri desktop app includes a WebView inspector, similar to Chrome or Firefox
   - **Linux / Windows**: `Ctrl + Shift + I`
   - **macOS**: `Cmd + Option + I`
 
-The inspector is platform-specific: **webkit2gtk WebInspector** on Linux, **Safari's inspector** on macOS, **Microsoft Edge DevTools** on Windows.
-
-:::{note}
-The inspector is only available in debug builds by default. If you installed a release build, either:
-
-- Build with `tauri build --debug` to create a debug build with the inspector enabled
-- Or enable the `devtools` Cargo feature in `src-tauri/Cargo.toml` to include the inspector in production builds (this prevents App Store submission on macOS)
-:::
-
-For full details, see the [Tauri debugging guide](https://v2.tauri.app/develop/debug/#webview-console).
-
 For logs that survive across app restarts (and are easier to attach to a bug report), see {doc}`logs`: the in-app Logs page persists everything to a shareable file.
-
-## Linux Desktop Issues
-
-### Blank/white window on some linux distros
-
-The app loads (logs reach `React app initialized` / `Splash screen hidden`) but the window paints blank. This is a webkit2gtk DMABUF rendering issue on newer kernels/GPU drivers. Try, in order:
-
-1. `WEBKIT_DISABLE_DMABUF_RENDERER=1 ./zmninja-ng`
-2. `WEBKIT_DISABLE_COMPOSITING_MODE=1 ./zmninja-ng`
-3. On Wayland: `GDK_BACKEND=x11 ./zmninja-ng`
-4. AppImage on Wayland, if the options above still produce a blank window or a crash: preload the host's `libwayland-client` so the AppImage's bundled copy is not used. The path varies by distro:
-   - Debian/Ubuntu: `LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libwayland-client.so.0 ./zmninja-ng`
-   - Arch/CachyOS: `LD_PRELOAD=/usr/lib/libwayland-client.so ./zmninja-ng`
-
-   Find your path with `find /usr/lib -name 'libwayland-client.so*'`.
 
 ## Data & Privacy
 

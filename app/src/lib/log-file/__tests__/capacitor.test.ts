@@ -24,7 +24,7 @@ afterEach(() => {
 describe('CapacitorLogFileStore', () => {
   it('declares share capability and availability', () => {
     const store = new CapacitorLogFileStore();
-    expect(store.capabilities).toEqual({ share: true, reveal: false, available: true });
+    expect(store.capabilities).toEqual({ share: true, available: true });
   });
 
   it('append + flush writes NDJSON via appendFile', async () => {

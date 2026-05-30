@@ -2,11 +2,10 @@
  * Platform Detection Utilities
  *
  * Centralized platform detection for consistent environment checks across the app.
- * Handles detection of development mode, native platforms (iOS/Android), Tauri desktop, and web.
+ * Supported platforms: web (browser), Electron desktop, and Capacitor native (iOS/Android).
  */
 
 import { Capacitor } from '@capacitor/core';
-import { isTauri } from '@tauri-apps/api/core';
 
 /**
  * Platform detection utilities.
@@ -24,7 +23,7 @@ export const Platform = {
     return Capacitor.isNativePlatform();
   },
 
-  /** True if running on iOS via Capacitor (not Tauri WKWebView on macOS). */
+  /** True if running on iOS via Capacitor. */
   get isIOS() {
     return Capacitor.getPlatform() === 'ios' && Capacitor.isNativePlatform();
   },
@@ -34,53 +33,35 @@ export const Platform = {
     return Capacitor.getPlatform() === 'android' && Capacitor.isNativePlatform();
   },
 
-  /** True if running in Tauri desktop app */
-  get isTauri() {
-    return isTauri();
-  },
-
   /**
    * True if running inside an Electron desktop shell. Electron sets a UA that
-   * includes "Electron/<version>". Detected as a regular web page otherwise
-   * (no Tauri/Capacitor runtime), so it uses the browser <img> streaming path.
+   * includes "Electron/<version>".
    */
   get isElectron() {
     return typeof navigator !== 'undefined' && /\belectron\b/i.test(navigator.userAgent);
   },
 
   /**
-   * True on Tauri desktop running the WebKitGTK webview (Linux). That webview
-   * never frees blob: registry entries, even after revokeObjectURL, so the MJPEG
-   * render path uses data: URLs there and relies on the periodic resource-cache
-   * purge in src-tauri/src/lib.rs. macOS (WKWebView) and Windows (WebView2) free
-   * blob: URLs on revoke and have no purge, so they use blob: instead. refs #150
-   */
-  get isTauriLinux() {
-    return this.isTauri && /\blinux\b/i.test(navigator.userAgent);
-  },
-
-  /**
-   * True if running on desktop (Tauri) or web browser — i.e., not mobile native.
-   * Handles the edge case where Capacitor misdetects Tauri's WKWebView as iOS.
+   * True if running on desktop or web (i.e., not mobile native).
    */
   get isDesktopOrWeb() {
-    return !this.isNative || this.isTauri;
+    return !this.isNative;
   },
 
   /**
-   * True if running in web browser (not native or Tauri).
+   * True if running in a regular web browser (not Capacitor, not Electron).
    */
   get isWeb() {
-    return !this.isNative && !this.isTauri;
+    return !this.isNative && !this.isElectron;
   },
 
   /**
-   * True if should use development proxy server.
-   * Only true in dev mode on web (not native, not the Electron shell, which
-   * talks to the server directly with web security disabled).
+   * True if should use development proxy server. Only true in dev mode on the
+   * web, where CORS would otherwise block direct ZM portal requests. Electron
+   * and Capacitor talk to the server directly through their native HTTP paths.
    */
   get shouldUseProxy() {
-    return this.isDev && this.isWeb && !this.isElectron;
+    return this.isDev && this.isWeb;
   },
 
   /**

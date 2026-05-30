@@ -17,14 +17,11 @@ get_version() {
   fi
 }
 
-# --- Update version in package.json, then sync to tauri files ---
+# --- Update version in package.json, then sync to platform configs ---
 set_version() {
     local new_ver="$1"
     sed -i '' "s/\"version\": \"[^\"]*\"/\"version\": \"${new_ver}\"/" "$PKG_JSON"
     node "$SYNC_SCRIPT"
-    # Regenerate Cargo.lock
-    echo "  Updating Cargo.lock..."
-    (cd app/src-tauri && cargo generate-lockfile 2>/dev/null) || true
 }
 
 VERSION=$(get_version)
@@ -73,7 +70,7 @@ if [ "$TAG_EXISTS" = true ]; then
             set_version "$BUMPED"
             VERSION="$BUMPED"
             TAG="zmNinjaNg-$VERSION"
-            git add "$PKG_JSON" app/src-tauri/tauri.conf.json app/src-tauri/Cargo.toml app/src-tauri/Cargo.lock app/ios/App/App.xcodeproj/project.pbxproj app/android/app/build.gradle
+            git add "$PKG_JSON" app/ios/App/App.xcodeproj/project.pbxproj app/android/app/build.gradle
             git commit -m "chore: bump version to $VERSION"
             git push origin "$CURRENT_BRANCH"
             echo "✅ Version bumped to $VERSION, committed and pushed"
@@ -125,15 +122,6 @@ fi
 
 echo "✅ Working directory is clean"
 echo "✅ All commits are pushed to origin"
-echo ""
-
-# --- Check Tauri plugin version alignment ---
-echo "Checking Tauri plugin versions..."
-if ! node "$SCRIPT_DIR/check-tauri-versions.js"; then
-    echo ""
-    echo "Please fix the version mismatches before releasing."
-    exit 1
-fi
 echo ""
 
 # --- Confirm before proceeding ---

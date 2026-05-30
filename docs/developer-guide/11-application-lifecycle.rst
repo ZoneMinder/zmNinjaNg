@@ -8,7 +8,7 @@ How the app runs from launch to shutdown, a runtime map of zmNinjaNg.
 
 Everything starts at ``app/index.html``, the container for the React app.
 
-1. **Load**: The browser, Tauri WKWebView (desktop), or Capacitor
+1. **Load**: The browser, Electron Chromium (desktop), or Capacitor
    WebView (mobile) loads ``index.html``.
 2. **Script**: It loads ``src/main.tsx`` (the TypeScript entry point).
 3. **Mount**: ``main.tsx`` finds the ``<div id="root">`` element and
@@ -34,11 +34,11 @@ Data Hydration
 
 The ``useProfileStore`` attempts to read saved profiles and the last
 active user from browser ``localStorage`` (the default Zustand
-``persist`` storage; this is what runs on web, Tauri, and the
+``persist`` storage; this is what runs on web, Electron, and the
 Capacitor webviews). Sensitive values like the encrypted password go
 through ``lib/secureStorage.ts``, which delegates to the Capacitor
 secure-storage plugin on iOS/Android and to encrypted localStorage on
-web/Tauri.
+web/Electron.
 
 - **State**: ``isInitialized`` starts as ``false``.
 - **Visual**: User sees ``<RouteLoadingFallback />`` (a spinner).

@@ -25,14 +25,9 @@ export const ZM_INTEGRATION = {
   maxFps: 30, // Maximum FPS allowed
   streamMaxFps: 10, // Max FPS for live monitor streams (to reduce bandwidth)
 
-  // Timeout for a single snapshot frame fetched via the Rust HTTP client on
-  // Tauri desktop (WebKitGTK socket-leak workaround). One frame is small, so a
-  // short timeout keeps a stalled request from blocking the next refresh.
-  snapshotFrameFetchTimeoutMs: 10000, // 10 seconds
-
-  // Reconnect backoff for the Tauri Rust MJPEG stream when the connection drops
-  // or ends (server restart, network blip). Exponential from base, capped, with
-  // a bounded attempt count before surfacing the stream-error state. Refs #155.
+  // Reconnect backoff for the MJPEG stream when the connection drops or ends
+  // (server restart, network blip). Exponential from base, capped, with a
+  // bounded attempt count before surfacing the stream-error state.
   mjpegReconnectBaseDelayMs: 1000, // 1 second
   mjpegReconnectMaxDelayMs: 15000, // 15 seconds
   mjpegReconnectMaxAttempts: 6,
@@ -65,8 +60,6 @@ export const ZM_INTEGRATION = {
  * Auto-restart (desktop only): periodically relaunch the app to release WebKit's
  * process-level memory that no in-process flush reclaims. Interval is in minutes.
  */
-export const AUTO_RESTART_MIN_MINUTES = 1;
-export const AUTO_RESTART_DEFAULT_MINUTES = 120;
 
 /**
  * Grid Layout Constants

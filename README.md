@@ -12,7 +12,7 @@
 
 **[Documentation](https://zmninjang.readthedocs.io/en/latest/)**
 
-A web and mobile application for ZoneMinder for viewing live camera feeds, reviewing events, and managing multiple server profiles. It is a rewrite of the original [zmNinja](https://zmninja.zoneminder.com/) application, built on React, TypeScript, Capacitor, and Tauri. 
+A web and mobile application for ZoneMinder for viewing live camera feeds, reviewing events, and managing multiple server profiles. It is a rewrite of the original [zmNinja](https://zmninja.zoneminder.com/) application, built on React, TypeScript, Capacitor, and Electron. 
 
 ### Demo
 
@@ -72,7 +72,6 @@ I am happy to accept PRs, but I don't want [AI slop](https://en.wikipedia.org/wi
 
 ### Prerequisites
 - Node.js ^20.19.0 || >=22.12.0 and npm ([download](https://nodejs.org/en/download))
-- For desktop builds: Rust toolchain (for Tauri builds)
 
 ### GitHub Actions Setup (For Automated Releases)
 
@@ -95,27 +94,18 @@ cd zmNinjaNg/app
 npm install
 
 # Desktop development
-npm run tauri:dev      # Tauri shell (system WebView)
 npm run electron:dev   # Electron shell (Chromium)
 ```
 
 ### Desktop Production Builds
 
-Two desktop shells are supported. Tauri uses the system WebView (DMG ~20 MB). Electron bundles its own Chromium (DMG ~110 MB, experimental).
+Desktop builds use Electron (bundles its own Chromium).
 
-General Tauri build (all platforms):
 ```bash
-npm run tauri:build            # Output: app/src-tauri/target/release/bundle/
-```
-
-macOS signed DMG, written to `desktop_release_builds/`:
-```bash
-npm run tauri:build:dmg        # -> desktop_release_builds/tauri/
 npm run electron:build         # -> desktop_release_builds/electron/
 ```
-Both sign with the Developer ID and notarize when `APPLE_ID`, `APPLE_PASSWORD`, and `APPLE_TEAM_ID` are set in the environment. Append `:nosign` for an unsigned build:
+Signs with the Developer ID and notarizes when `APPLE_ID`, `APPLE_PASSWORD`, and `APPLE_TEAM_ID` are set in the environment. Append `:nosign` for an unsigned build:
 ```bash
-npm run tauri:build:dmg:nosign
 npm run electron:build:nosign
 ```
 The target folder is wiped at the start of each build.
@@ -158,14 +148,13 @@ npm run test:all                                      # Unit + web E2E
 
 ### Device E2E Tests
 
-Tests run on real devices: Android emulator, iOS simulator (phone + tablet), and Tauri desktop. Each platform uses shell scripts that handle building, booting, and running tests.
+Tests run on real devices: Android emulator and iOS simulator (phone + tablet). Each platform uses shell scripts that handle building, booting, and running tests.
 
 ```bash
 bash scripts/test-android.sh          # Android emulator (Playwright via CDP)
 bash scripts/test-ios.sh phone        # iPhone simulator (WebDriverIO + Appium)
 bash scripts/test-ios.sh tablet       # iPad simulator (WebDriverIO + Appium)
-bash scripts/test-tauri.sh            # Tauri desktop (WebDriverIO + tauri-driver)
-bash scripts/test-all-platforms.sh    # All 5 platforms sequentially
+bash scripts/test-all-platforms.sh    # All platforms sequentially
 ```
 
 Device tests require one-time setup (Xcode, Android Studio, Appium, etc.). Run `npm run test:platform:setup` to verify your machine is ready. See [app/tests/README.md](app/tests/README.md) for setup instructions and [docs/developer-guide/06-testing-strategy.rst](docs/developer-guide/06-testing-strategy.rst) for the full testing guide.
@@ -178,6 +167,6 @@ pip install -r docs/requirements.txt sphinx-autobuild && cd docs && make clean &
 
 ### Making releases
 - See `scripts/make_release.sh` [here](scripts/make_release.sh). This automatically tags the current state and triggers release builds
-- `app/package.json` is the source of truth for the version number. `scripts/sync-version.js` propagates it to `app/src-tauri/tauri.conf.json` and `app/src-tauri/Cargo.toml` during builds and releases
+- `app/package.json` is the source of truth for the version number
 
 

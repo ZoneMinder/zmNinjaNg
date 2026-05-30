@@ -422,226 +422,48 @@ the per-origin limit doesn't apply.
   frame rate.
 
 In snapshot mode, ``useMonitorStream`` exposes ``imageSrc`` for the
-``<img>`` to bind to. On web and iOS/Android native this equals
-``streamUrl``, so the browser loads each ``mode=single`` URL directly as
-the cache buster changes.
-
-On Tauri desktop, both modes route image data through a Rust reqwest
-client so WebKitGTK's network process never opens a socket to ZoneMinder
-directly. WebKitGTK leaks the TCP sockets it opens for ``nph-zms``
-responses in ``CLOSE_WAIT``, which exhausts the per-host connection pool
-at around 8 concurrent monitors. Refs #155, #150.
+``<img>`` to bind to on every platform; this equals ``streamUrl``, so
+the WebView or browser loads each ``mode=single`` URL directly as the
+cache buster changes.
 
 Per-platform transport
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-How each platform fetches MJPEG feeds: the frame transport, the default view
-mode, whether the per-origin connection cap applies, and how memory is kept in
-check. The view mode (Streaming vs Snapshot) is the same setting everywhere;
-only the transport and memory handling underneath differ.
+Every platform fetches MJPEG feeds the same way: the ``<img>`` element
+loads ``nph-zms`` directly through the WebView or browser's network
+stack. The default view mode is Snapshot. The browser per-origin
+connection cap (~6 / origin) applies, mitigated by Snapshot mode and
+multi-port streaming.
 
 .. list-table::
    :header-rows: 1
-   :widths: 20 28 10 16 26
+   :widths: 28 28 14 30
 
    * - Platform
-     - MJPEG frame transport (both modes)
+     - MJPEG frame transport
      - Default mode
-     - Per-origin cap?
-     - Memory handling
+     - Notes
    * - Web browser (Chromium, Firefox, Safari)
      - ``<img>`` loads ``nph-zms`` directly
      - Snapshot
-     - Yes (~6 / origin)
-     - Browser-managed
+     - Browser-managed memory
    * - Android (Capacitor WebView)
      - ``<img>`` loads ``nph-zms`` directly
      - Snapshot
-     - Yes (~6 / origin)
-     - WebView-managed
+     - WebView-managed memory
    * - iOS / iPadOS (WKWebView)
      - ``<img>`` loads ``nph-zms`` directly
      - Snapshot
-     - Yes (~6 / origin)
-     - OS-managed
-   * - Desktop Linux (Tauri / WebKitGTK)
-     - Rust reader → ``data:`` URL
-     - Streaming
-     - No (Rust owns sockets)
-     - ``clear_cache`` purge (120 s) + auto-restart
-   * - Desktop macOS (Tauri / WKWebView)
-     - Rust reader → ``blob:`` URL + revoke
-     - Streaming
-     - No
-     - blob revoke + auto-restart
-   * - Desktop Windows (Tauri / WebView2)
-     - Rust reader → ``blob:`` URL + revoke
-     - Streaming
-     - No
-     - blob revoke + auto-restart
+     - OS-managed memory
+   * - Desktop (Electron / Chromium)
+     - ``<img>`` loads ``nph-zms`` directly
+     - Snapshot
+     - Chromium-managed memory
 
 Go2RTC-enabled monitors take a different path on every platform: native
-WebRTC/MSE/HLS into a ``<video>`` element, always continuous and independent of
-the Streaming Mode setting. The table above is the MJPEG (ZMS) path used when
-Go2RTC is off or unavailable. Memory handling is detailed in "WebKitGTK cache
-purge" and "Desktop memory: auto-restart" below.
-
-The first split is ``Platform.isTauri``: every Tauri build uses the Rust
-path, and every non-Tauri build (web, iOS, Android) binds the ``<img>``
-straight to ``streamUrl``. Within the Rust path a second split,
-``Platform.isTauriLinux`` (Tauri plus a Linux user agent), picks how each
-frame reaches the ``<img>``: ``data:`` URLs on Linux, ``blob:`` URLs
-elsewhere. The reason is in "hook integration" below. The other
-OS-specific code is the Linux cache purge in Rust (see "WebKitGTK cache
-purge" below).
-
-On the webview platforms each streaming tile holds one HTTP connection,
-so a montage hits the per-origin cap after about six simultaneous
-streams. Two mitigations: Snapshot mode (the default there) issues short
-single-frame requests instead of holding a connection, and multi-port
-streaming (see above) spreads tiles across ports so they count as
-separate origins. On Tauri desktop the Rust reader owns the sockets, so
-the webview never opens an ``nph-zms`` connection and the cap does not
-apply. That is why desktop defaults to Streaming.
-
-Default view mode on Tauri desktop
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-``getDefaultViewMode()`` in ``app/src/stores/settings.ts`` returns
-``'streaming'`` when ``Platform.isTauri`` is true and ``'snapshot'``
-otherwise. ``DEFAULT_SETTINGS.viewMode`` calls this function, so a fresh
-Tauri profile starts in streaming mode. Profiles with an explicit saved
-``viewMode`` keep their stored value.
-
-Tauri desktop: Rust MJPEG streaming (refs #155)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Rust source: ``app/src-tauri/src/mjpeg.rs``, registered in
-``app/src-tauri/src/lib.rs``.
-
-JS wrapper: ``app/src/lib/tauri-mjpeg.ts``.
-
-**``mjpeg_start(url, accept_invalid_certs, on_frame: Channel)``** opens
-the ``multipart/x-mixed-replace`` MJPEG stream with reqwest, then spawns
-an async task that reads response chunks and passes them to
-``MjpegParser``. The parser scans for SOI (``0xFF 0xD8``) and EOI
-(``0xFF 0xD9``) markers to extract complete JPEG frames across arbitrary
-chunk boundaries. Each complete frame is sent to the webview as raw bytes
-on the ``Channel``. The command returns a ``u64`` stream id on success,
-or an error string for immediate failures (bad URL, TLS, connect refused,
-non-2xx status). Stream errors and clean server closes after the stream
-starts arrive on the channel as a JSON ``{"type":"error","message":"..."}``
-object.
-
-**``mjpeg_stop(stream_id)``** cancels the running task via a
-``CancellationToken``, which drops the reqwest response and closes the
-socket. It is a no-op for unknown ids.
-
-**``mjpeg_snapshot(url, accept_invalid_certs, timeout_ms)``** fetches a
-single frame for snapshot mode and returns its bytes as a
-``tauri::ipc::Response``. Timeout is set from
-``ZM_INTEGRATION.snapshotFrameFetchTimeoutMs`` (10000 ms).
-
-JS wrapper exports:
-
-- ``startMjpegStream(url, onFrame, onError): Promise<number>`` builds a
-  ``Channel``, routes raw ``ArrayBuffer`` (or typed-array view, normalized
-  to the exact backing slice) messages to ``onFrame``, and JSON error
-  objects to ``onError``. Passes the self-signed-cert flag from
-  ``isTauriSslTrustEnabled()``.
-- ``stopMjpegStream(streamId): Promise<void>`` calls ``mjpeg_stop``.
-- ``fetchMjpegSnapshot(url): Promise<ArrayBuffer>`` calls
-  ``mjpeg_snapshot`` with ``isTauriSslTrustEnabled()`` and
-  ``ZM_INTEGRATION.snapshotFrameFetchTimeoutMs``.
-
-Tauri desktop: hook integration
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-In ``useMonitorStream``:
-
-.. code-block:: typescript
-
-   const useDataUrlSnapshots = Platform.isTauri && effectiveViewMode === 'snapshot';
-   const useRustStreaming    = Platform.isTauri && effectiveViewMode === 'streaming';
-
-Both paths convert each frame to an ``<img>``-bindable URL through
-``frameToImageSrc``, which branches on ``Platform.isTauriLinux``:
-
-- **Linux (WebKitGTK):** ``data:image/jpeg;base64,...`` URLs. WebKitGTK's
-  network process never frees blob-registry entries (not even on
-  ``revokeObjectURL``), so ``blob:`` URLs leak there. ``data:`` resources
-  land in the resource cache that the periodic purge (see "WebKitGTK cache
-  purge" below) reclaims.
-- **macOS (WKWebView) and Windows (WebView2):** ``blob:`` URLs. The hook
-  holds the current object URL in a ref and revokes the previous one as each
-  new frame replaces it, and again on unmount, so per-frame URLs do not pile
-  up (a ``data:`` URL per frame accumulated past 1.5 GB for a single monitor
-  before this split). This only fixes the per-frame URL representation,
-  though. WebKit's WebContent process still grows over a long session from
-  decoded-frame and allocator memory that no in-process flush returns to the
-  OS; that is bounded separately by the periodic app restart (see "Desktop
-  memory: auto-restart" below). refs #150
-
-This is the only place the JS layer branches on the desktop OS.
-
-**Streaming reconnect.** When the ``onError`` callback fires (stream
-error or clean server close), the hook schedules a reconnect using
-exponential backoff:
-
-- Base delay: ``ZM_INTEGRATION.mjpegReconnectBaseDelayMs`` (1000 ms)
-- Max delay: ``ZM_INTEGRATION.mjpegReconnectMaxDelayMs`` (15000 ms)
-- Max attempts: ``ZM_INTEGRATION.mjpegReconnectMaxAttempts`` (6)
-
-A reconnect calls ``forceRegenerate()`` from ``useStreamLifecycle``,
-which mints a fresh ``connKey``. The changed ``connKey`` causes the
-streaming effect to re-run: it calls ``stopMjpegStream`` on the old id
-and starts a new ``mjpeg_start``. ``stopMjpegStream`` is also called on
-unmount.
-
-**Web, iOS, and Android are unchanged.** Those platforms set
-``imageSrc`` directly from ``streamUrl`` so the ``<img>`` tag loads each
-URL via the platform's own network stack.
-
-Tauri desktop: WebKitGTK cache purge
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-WebKitGTK's network process does not release the per-frame image resources
-loaded while streaming, even after the streams stop, so its RSS grows
-unbounded (the web and Rust processes stay flat). A Linux-only thread in
-``app/src-tauri/src/lib.rs`` clears the WebKitGTK resource cache every
-``WEBKIT_CACHE_PURGE_INTERVAL_SECS`` (120 s) via
-``webview.with_webview(|w| w.inner().context().clear_cache())``. Measured:
-the network process holds at roughly 50 MB with the purge versus unbounded
-growth (~24 MB/min, to 573 MB) without it. The purge is Linux-only because it
-uses the ``webkit2gtk`` API and targets a WebKitGTK-specific network-process
-leak. It does not cover the broader WebContent growth (decoded frames,
-allocator high-water) that affects all three webviews over long sessions; that
-is handled by the periodic app restart below.
-
-Desktop memory: auto-restart
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-On every desktop webview the WebContent process trends upward over a long
-session: decoded frames and general allocations are returned to WebKit's
-allocator pools but not to the OS, so RSS only ever climbs (macOS reached
-multiple GB). Nothing in-process reclaims it: a cache purge does not reach
-decoded-image memory, ``location.reload()`` drops the document but reuses the
-same process, and killing the WebContent process via the private WKWebView SPI
-hung the UI. Only a fresh process returns the memory.
-
-So the bound is a full process restart. ``useAutoRestart`` (mounted in
-``AppRoutes``) reads the per-profile ``autoRestartEnabled`` (default true) and
-``autoRestartIntervalMinutes`` (default 120, clamped to a 1-minute floor by
-``AUTO_RESTART_MIN_MINUTES`` so a stray tiny value cannot storm) and, on Tauri
-only, schedules a one-shot ``invoke('restart_app')``. The ``restart_app``
-command calls ``app.restart()``. ``tauri-plugin-window-state`` saves the
-geometry before exit (the command saves it explicitly, since ``app.restart()``
-skips the plugin's exit hook) and restores it on launch, and ``setup()``
-refocuses the window so the relaunch returns to the foreground. Settings ->
-Advanced exposes the toggle, the interval, and a manual **Restart now** button.
-
-This is desktop-only; web, iOS, and Android use the platform's own webview
-network stack for the ``<img>`` and are not affected.
+WebRTC/MSE/HLS into a ``<video>`` element, always continuous and
+independent of the Streaming Mode setting. The table above is the MJPEG
+(ZMS) path used when Go2RTC is off or unavailable.
 
 Server state is managed via ``@tanstack/react-query``. See the
 `TanStack Query docs <https://tanstack.com/query/latest>`_ for general
@@ -1217,9 +1039,9 @@ Overview
 
 The application uses a **unified HTTP client** (``src/lib/http.ts``)
 that provides platform-agnostic HTTP requests across Web, iOS, Android,
-and Desktop (Tauri). This architecture provides:
+and Desktop (Electron). This architecture provides:
 
-- Automatic platform detection (Native/Tauri/Web/Proxy)
+- Automatic platform detection (Native/Electron/Web/Proxy)
 - CORS handling via native HTTP or development proxy
 - Token injection for authenticated requests
 - Response type handling (json, blob, arraybuffer, text, base64)
@@ -1267,8 +1089,7 @@ based on platform:
 |                     |                                | uses native    |
 |                     |                                | networking     |
 +---------------------+--------------------------------+----------------+
-| Desktop (Tauri)     | Tauri fetch plugin             | Native         |
-|                     |                                | performance    |
+| Desktop (Electron)  | Chromium fetch                 | Same as web    |
 +---------------------+--------------------------------+----------------+
 | Web (dev)           | fetch + proxy                  | Routes through |
 |                     |                                | localhost:3001 |
@@ -1378,31 +1199,7 @@ Bypasses CORS, uses the native networking stack, handles TLS
 natively, and supports self-signed certificates via the ``SSLTrust``
 Capacitor plugin (see ``lib/ssl-trust.ts``).
 
-**Tauri (Desktop) - Tauri Fetch Plugin:**
-
-.. code:: tsx
-
-   // Automatically used when Platform.isTauri is true
-   import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
-
-   // When self-signed certs are enabled, danger options are added
-   const { isTauriSslTrustEnabled } = await import('./ssl-trust');
-   const dangerOpts = isTauriSslTrustEnabled()
-     ? { danger: { acceptInvalidCerts: true, acceptInvalidHostnames: true } }
-     : {};
-
-   const response = await tauriFetch(url, {
-     method,
-     headers,
-     body: JSON.stringify(body),
-     signal,
-     ...dangerOpts,
-   });
-
-Note: The ``danger`` option requires the ``dangerous-settings`` Cargo feature
-on ``tauri-plugin-http`` in ``src-tauri/Cargo.toml``.
-
-**Web (Browser) - Standard Fetch:**
+**Electron (Desktop) and Web (Browser) - Standard Fetch:**
 
 .. code:: tsx
 
@@ -1868,9 +1665,9 @@ Event Poller Service
 --------------------
 
 The event poller (``src/services/eventPoller.ts``) polls the ZM events API
-for new events in Direct notification mode on desktop (Tauri). New events
-are fed into the notification store, which triggers toast display via
-``NotificationHandler``.
+for new events in Direct notification mode on desktop (Electron) and web.
+New events are fed into the notification store, which triggers toast
+display via ``NotificationHandler``.
 
 **Usage:** The poller is started automatically by ``NotificationHandler``
 when ``notificationMode === ‘direct’`` on desktop/web (``Platform.isDesktopOrWeb``).
@@ -1925,7 +1722,7 @@ End-to-end Flow: Viewing Monitors
    ``httpGet('/api/monitors.json', { token })``.
 3. ``lib/http.ts`` injects the token, assigns a correlation ID, and
    dispatches via the platform implementation: ``fetch`` on web (with
-   dev proxy), Capacitor HTTP on iOS/Android, Tauri fetch on desktop.
+   dev proxy), Capacitor HTTP on iOS/Android, Chromium fetch on Electron desktop.
 4. Response and duration are logged with the same correlation ID, then
    stored under the query key.
 5. ``MonitorGrid`` renders ``MonitorCard`` per monitor; each card calls

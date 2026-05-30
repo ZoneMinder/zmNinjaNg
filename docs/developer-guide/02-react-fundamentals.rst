@@ -4,7 +4,7 @@ React Fundamentals
 A primer for backend or systems programmers picking up React for the
 first time. Written in roughly the order you need to know things.
 
-zmNinjaNg renders to the DOM on every platform (web, Tauri desktop,
+zmNinjaNg renders to the DOM on every platform (web, Electron desktop,
 Capacitor mobile webview). Examples below use plain HTML tags.
 
 The mental shift

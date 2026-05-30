@@ -18,7 +18,6 @@ vi.mock('../logger', () => ({
 vi.mock('../platform', () => ({
     Platform: {
         isNative: true,
-        isTauri: false,
         isWeb: false,
     },
 }));
@@ -55,7 +54,6 @@ describe('Mobile Download Logic', () => {
         vi.clearAllMocks();
         // Reset platform to native
         (Platform as any).isNative = true;
-        (Platform as any).isTauri = false;
     });
 
     it('should download file using unified HTTP on mobile', async () => {

@@ -193,7 +193,7 @@ Persistence
 -----------
 
 The ``persist`` middleware writes to ``localStorage`` automatically.
-zmNinjaNg runs on web, Tauri, and Capacitor, all expose
+zmNinjaNg runs on web, Electron, and Capacitor, all expose
 ``localStorage``: so no custom storage adapter is needed:
 
 .. code:: tsx

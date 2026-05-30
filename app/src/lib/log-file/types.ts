@@ -2,11 +2,9 @@
 import type { LogEntry } from '../../stores/logs';
 
 export interface LogFileCapabilities {
-  /** True on Capacitor (mobile) — system share sheet available. */
+  /** True on Capacitor (mobile). System share sheet available. */
   share: boolean;
-  /** True on Tauri (desktop) — can reveal file in Finder/Explorer. */
-  reveal: boolean;
-  /** True when persistence is available at all. False on web. */
+  /** True when persistence is available at all. False on web/Electron. */
   available: boolean;
 }
 
@@ -30,9 +28,6 @@ export interface LogFileStore {
 
   /** Platform-native URI suitable for Capacitor Share. Null if unavailable. */
   getFileUri(): Promise<string | null>;
-
-  /** Reveal the file in Finder/Explorer (Tauri only). No-op elsewhere. */
-  revealLocation(): Promise<void>;
 
   capabilities: LogFileCapabilities;
 }

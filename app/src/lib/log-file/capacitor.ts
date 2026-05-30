@@ -8,7 +8,7 @@ import {
 } from './types';
 
 export class CapacitorLogFileStore implements LogFileStore {
-  capabilities: LogFileCapabilities = { share: true, reveal: false, available: true };
+  capabilities: LogFileCapabilities = { share: true, available: true };
 
   private buffer: LogEntry[] = [];
   private flushTimer: ReturnType<typeof setTimeout> | null = null;
@@ -130,9 +130,5 @@ export class CapacitorLogFileStore implements LogFileStore {
 
   async getFileUri(): Promise<string | null> {
     return this.getDisplayPath();
-  }
-
-  async revealLocation(): Promise<void> {
-    // Not supported on Capacitor (no file manager exposure).
   }
 }

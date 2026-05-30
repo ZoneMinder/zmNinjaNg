@@ -905,45 +905,7 @@ non-interactive.
 Platform-Specific Pitfalls
 --------------------------
 
-24. Tauri HTTP Scope Doesn’t Allow Non-Standard Ports
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-**Problem:**
-
-.. code:: json
-
-   // src-tauri/capabilities/default.json
-   {
-     "identifier": "http:default",
-     "allow": [
-       { "url": "https://**" }  // ❌ Only allows port 443
-     ]
-   }
-
-**Why it’s wrong:**
-
-- ``https://**`` only matches the default HTTPS port (443)
-- ZoneMinder servers often run on non-standard ports (e.g., 30005,
-  30014)
-- Requests to ``https://server.com:30005/...`` fail with “url not
-  allowed on the configured scope”
-- Works in development (web) but fails in Tauri production builds
-
-**Solution:**
-
-.. code:: json
-
-   {
-     "identifier": "http:default",
-     "allow": [
-       { "url": "http://*:*/*" },   // ✅ Any HTTP URL, any port
-       { "url": "https://*:*/*" }   // ✅ Any HTTPS URL, any port
-     ]
-   }
-
-Use ``*:*`` in Tauri HTTP scope patterns to allow any port.
-
-25. ZMS Streaming URLs Hang Forever When Downloading Snapshots
+24. ZMS Streaming URLs Hang Forever When Downloading Snapshots
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Problem:**
@@ -1066,5 +1028,4 @@ Before submitting a PR, check for these pitfalls:
 - ☐ Invisible overlays have ``pointer-events-none`` (iOS touch fix)
 - ☐ No sensitive data in logs
 - ☐ Sensitive data stored encrypted
-- ☐ Tauri HTTP scope uses ``*:*`` pattern for non-standard ports
 - ☐ ZMS streaming URLs normalized to ``mode=single`` before download

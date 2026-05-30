@@ -2,15 +2,11 @@ import { Platform } from '../platform';
 import { useLogStore } from '../../stores/logs';
 import { NoopLogFileStore } from './noop';
 import { CapacitorLogFileStore } from './capacitor';
-import { TauriLogFileStore } from './tauri';
 import type { LogFileStore } from './types';
 
 let instance: LogFileStore | null = null;
 
 function detect(): LogFileStore {
-  if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
-    return new TauriLogFileStore();
-  }
   if (Platform.isNative) {
     return new CapacitorLogFileStore();
   }

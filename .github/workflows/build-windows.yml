@@ -29,60 +29,12 @@ jobs:
           cache: 'npm'
           cache-dependency-path: app/package-lock.json
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
       - name: Install dependencies
         working-directory: ./app
         run: npm ci
 
       - name: Sync version from package.json
         run: node scripts/sync-version.js
-
-      - name: Build Tauri app (Windows)
-        if: false
-        working-directory: ./app
-        run: npm run tauri:build
-
-      - name: Rename Windows artifacts
-        if: false
-        shell: bash
-        run: |
-          VERSION="${{ github.event.inputs.version || github.ref_name }}"
-          VERSION="${VERSION#zmNinjaNg-}"
-          mkdir -p dist/windows
-
-          # Rename MSI files
-          for msi in app/src-tauri/target/release/bundle/msi/*.msi; do
-            if [ -f "$msi" ]; then
-              cp "$msi" "dist/windows/zmNinjaNg-${VERSION}-windows-x64.msi"
-            fi
-          done
-
-          # Rename NSIS installers
-          for exe in app/src-tauri/target/release/bundle/nsis/*.exe; do
-            if [ -f "$exe" ]; then
-              cp "$exe" "dist/windows/zmNinjaNg-${VERSION}-windows-x64-setup.exe"
-            fi
-          done
-
-      - name: Upload Windows artifacts
-        if: false
-        uses: actions/upload-artifact@v4
-        with:
-          name: zmNinjaNg-windows-${{ github.event.inputs.version || github.ref_name }}
-          path: dist/windows/*
-          retention-days: 30
-
-      - name: Upload to Release
-        uses: softprops/action-gh-release@v1
-        if: false
-        with:
-          files: |
-            dist/windows/*.msi
-            dist/windows/*.exe
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Electron app (Windows, unsigned)
         working-directory: ./app

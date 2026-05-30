@@ -17,7 +17,6 @@ import { ThemeProvider } from './components/theme-provider';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { RouteErrorBoundary } from './components/RouteErrorBoundary';
 import { useTokenRefresh } from './hooks/useTokenRefresh';
-import { useAutoRestart } from './hooks/useAutoRestart';
 import AppLayout from './components/layout/AppLayout';
 import { NotificationHandler } from './components/NotificationHandler';
 import { Button } from './components/ui/button';
@@ -78,9 +77,6 @@ function AppRoutes() {
 
   // Enable automatic token refresh
   useTokenRefresh();
-
-  // Desktop only: periodically restart to release WebKit memory, if enabled.
-  useAutoRestart();
 
   // Initialize persistent log file and hydrate store from prior-session entries.
   // Registered first so the file is open before other effects emit logs.

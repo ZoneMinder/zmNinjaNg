@@ -185,7 +185,7 @@ export default function NotificationSettings() {
       updateProfileSettings(currentProfile.id, { notificationMode: 'direct' });
 
       if (Platform.isDesktopOrWeb) {
-        // Desktop (Tauri) or web browser: start event poller
+        // Desktop (Electron) or web browser: start event poller
         log.notificationSettings('Starting event poller from mode switch', LogLevel.INFO);
         const poller = getEventPoller();
         poller.start(currentProfile.id);

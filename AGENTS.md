@@ -14,7 +14,7 @@ These are non-negotiable. Every rule applies to all communication: responses, co
 3. **Test first, verify before commit**: write tests first, run `npm test` + `tsc --noEmit` + `npm run build` + relevant e2e tests before every commit. Build passing is not proof code works. **Always run `npm run build` (not just `tsc --noEmit`) as the final check**: `tsc -b` used by the build catches stricter errors (unused variables, type narrowing) that `tsc --noEmit` misses. Never commit if the build fails.
 4. **Update docs**: update `docs/developer-guide/` in the same session when adding new APIs, components, utilities, or hooks and/or `docs/user-gudie` for changed/updated or new functionality
 5. **i18n all languages**: never hardcode user-facing strings. Update ALL translation files: en, de, es, fr, zh.
-6. **Cross-platform**: test on iOS, Android, Desktop, phone portrait + landscape. Device e2e tests (`ios-phone`, `android`, etc.) are manual-invoke-only. Only `npm run test:e2e` (web) runs in the automated workflow.
+6. **Cross-platform**: test on iOS, Android, Electron desktop, phone portrait + landscape. Device e2e tests (`ios-phone`, `android`, etc.) are manual-invoke-only. Only `npm run test:e2e` (web) runs in the automated workflow.
 7. **Profile-scoped settings**: read/write via `getProfileSettings`/`updateProfileSettings`. Never use global singletons.
 8. **Bandwidth settings**: all polling/refresh features must use `useBandwidthSettings()` (or `getBandwidthSettings()` outside React). Never hardcode polling intervals.
 9. **Logging**: use `log.*` component helpers with explicit LogLevel, never `console.*`. See `lib/logger.ts` for available helpers.
@@ -24,17 +24,16 @@ These are non-negotiable. Every rule applies to all communication: responses, co
 13. **`data-testid`**: add `data-testid="kebab-case-name"` to all interactive elements. Required for e2e tests.
 14. **Capacitor plugins**: dynamic imports only with platform checks. Never static imports. Match `@capacitor/core` major version. Add mock to `tests/setup.ts`.
 15. **Mobile downloads**: use CapacitorHttp base64 directly. Never convert to Blob on mobile (OOM risk).
-16. **Tauri packages**: JS `@tauri-apps/*` and Rust `tauri-plugin-*` versions must match. Update `package.json` and `Cargo.toml` together.
-17. **No plan files in git**: delete `.md` plan files once the feature is complete.
-18. **Complete features fully**: don't leave features half-implemented.
-19. **User approval before merge**: never merge to main without user approval.
-20. **One logical change per commit**: use conventional format: `feat:`, `fix:`, `docs:`, `test:`, `chore:`, `refactor:`. Reference issues with `refs #<id>` or `fixes #<id>`.
-21. **Don't batch unrelated changes**: split into separate commits.
-22. **Analyze test failures**: read error output and fix systematically. Don't retry blindly.
-23. **Concise i18n labels**: button, tab, and action labels must be short across all languages. Prefer single-word synonyms (ES: "Ajustes" not "Configuración", DE: "Speichern" not "Änderungen speichern", FR: "Enregistrer" not "Enregistrer les modifications"). Test translations fit on a 320px-wide phone screen. Add `min-w-0` + `truncate` to flex containers with translated button text as a safety net.
-24. **Date/time formatting**: all user-facing date/time display must use `useDateTimeFormat()` hook (or `formatAppDate`/`formatAppTime`/`formatAppDateTime` from `lib/format-date-time.ts` outside React). Never hardcode date-fns `format()` with literal patterns for user-visible output. This includes canvas rendering, tooltips, labels, and scrubber overlays.
-25. **Self-updating rules**: when the user gives guidance that establishes a general pattern (e.g., "all X should use Y"), check whether it belongs as a persistent rule in this file. If so, add it here so future sessions follow it automatically.
-26. **Centralized constants**: every named constant (timeouts, thresholds, storage keys, animation durations, magic numbers with semantic meaning) lives in `lib/zmninja-ng-constants.ts` (app-level) or `lib/zm-constants.ts` (ZoneMinder protocol-level). Import from there; do not redeclare per file. CSS pixel values inline in JSX/styles are fine; ad-hoc numbers used once with no semantic name are fine.
+16. **No plan files in git**: delete `.md` plan files once the feature is complete.
+17. **Complete features fully**: don't leave features half-implemented.
+18. **User approval before merge**: never merge to main without user approval.
+19. **One logical change per commit**: use conventional format: `feat:`, `fix:`, `docs:`, `test:`, `chore:`, `refactor:`. Reference issues with `refs #<id>` or `fixes #<id>`.
+20. **Don't batch unrelated changes**: split into separate commits.
+21. **Analyze test failures**: read error output and fix systematically. Don't retry blindly.
+22. **Concise i18n labels**: button, tab, and action labels must be short across all languages. Prefer single-word synonyms (ES: "Ajustes" not "Configuración", DE: "Speichern" not "Änderungen speichern", FR: "Enregistrer" not "Enregistrer les modifications"). Test translations fit on a 320px-wide phone screen. Add `min-w-0` + `truncate` to flex containers with translated button text as a safety net.
+23. **Date/time formatting**: all user-facing date/time display must use `useDateTimeFormat()` hook (or `formatAppDate`/`formatAppTime`/`formatAppDateTime` from `lib/format-date-time.ts` outside React). Never hardcode date-fns `format()` with literal patterns for user-visible output. This includes canvas rendering, tooltips, labels, and scrubber overlays.
+24. **Self-updating rules**: when the user gives guidance that establishes a general pattern (e.g., "all X should use Y"), check whether it belongs as a persistent rule in this file. If so, add it here so future sessions follow it automatically.
+25. **Centralized constants**: every named constant (timeouts, thresholds, storage keys, animation durations, magic numbers with semantic meaning) lives in `lib/zmninja-ng-constants.ts` (app-level) or `lib/zm-constants.ts` (ZoneMinder protocol-level). Import from there; do not redeclare per file. CSS pixel values inline in JSX/styles are fine; ad-hoc numbers used once with no semantic name are fine.
 
 ---
 
@@ -87,20 +86,19 @@ Every test must verify what a real human would verify: "Can I accomplish this ta
 **Run**: `npm run test:e2e -- <feature>.feature`
 
 ### Cross-Platform E2E Tests
-Tests run on 5 platform profiles using two drivers. Playwright drives Chromium-based platforms (web, Android) via CDP. WebDriverIO + Appium drives WebKit-based platforms (iOS, Tauri) via native drivers. A shared `TestActions` abstraction keeps step definitions driver-agnostic.
+Tests run on 4 platform profiles using two drivers. Playwright drives Chromium-based platforms (web, Android) via CDP. WebDriverIO + Appium drives WebKit-based iOS platforms via XCUITest. A shared `TestActions` abstraction keeps step definitions driver-agnostic.
 
 | Profile | Device | Driver | Connection |
 |---|---|---|---|
 | `web-chromium` | Desktop browser | Playwright | Direct launch |
-| `android-phone` | Pixel 7 Emulator | Playwright | ADB port-forward → CDP |
+| `android-phone` | Pixel 7 Emulator | Playwright | ADB port-forward to CDP |
 | `ios-phone` | iPhone 15 Simulator | WebDriverIO + Appium XCUITest | WebView context switch |
 | `ios-tablet` | iPad Air Simulator | WebDriverIO + Appium XCUITest | WebView context switch |
-| `desktop-tauri` | Tauri macOS app | WebDriverIO + tauri-driver | WebDriver protocol |
 
 ### Platform Tags
 - `@all`: every platform | `@android`: Android only | `@ios`: iPhone + iPad
 - `@ios-phone` / `@ios-tablet`: specific iOS form factor
-- `@tauri`: Tauri desktop | `@web`: browser only
+- `@web`: browser only
 - `@visual`: comparison screenshots | `@native`: requires Appium
 
 ### Test Commands
@@ -118,7 +116,6 @@ npm run test:e2e -- --headed            # See browser
 npm run test:e2e:android                # Android emulator
 npm run test:e2e:ios-phone              # iPhone simulator
 npm run test:e2e:ios-tablet             # iPad simulator
-npm run test:e2e:tauri                  # Tauri desktop
 npm run test:e2e:all-platforms          # All platforms sequentially
 
 # Visual regression
@@ -167,7 +164,7 @@ Scenario: Create and verify a new widget
 ```
 
 - One scenario per user goal, not per element
-- Add `@ios-phone @android` for phone layout, `@ios-tablet` for tablet, `@tauri` for desktop
+- Add `@ios-phone @android` for phone layout, `@ios-tablet` for tablet
 - Step definitions in `app/tests/steps/<screen>.steps.ts` using `TestActions` (not raw Playwright/WebDriverIO)
 - Run `--update-snapshots` on each platform for visual baselines
 
@@ -317,9 +314,8 @@ Settings must be profile-scoped via `getProfileSettings`/`updateProfileSettings`
 ### Adding Dependencies
 1. Check compatibility: `npm info <package> peerDependencies`
 2. For Capacitor plugins: match `@capacitor/core` major version
-3. For Tauri plugins: match JS and Rust package versions
-4. Update test mocks in `app/src/tests/setup.ts` if needed
-5. Verify: `npm test && npm run build`
+3. Update test mocks in `app/src/tests/setup.ts` if needed
+4. Verify: `npm test && npm run build`
 
 ---
 

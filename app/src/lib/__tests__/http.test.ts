@@ -2,7 +2,7 @@
  * Unit tests for HTTP client (security-critical)
  *
  * Tests for the unified HTTP client including:
- * - Platform detection (Native/Tauri/Web/Proxy)
+ * - Platform detection (Native/Electron/Web/Proxy)
  * - Token injection via HttpOptions
  * - Error handling and HttpError creation
  * - Blob handling on native platforms
@@ -10,7 +10,6 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import {
   httpRequest,
   httpGet,
@@ -28,14 +27,10 @@ vi.mock('@capacitor/core', () => ({
   },
 }));
 
-vi.mock('@tauri-apps/plugin-http', () => ({
-  fetch: vi.fn(),
-}));
-
 vi.mock('../platform', () => ({
   Platform: {
     isNative: false,
-    isTauri: false,
+    isElectron: false,
     isWeb: true,
     isDev: false,
     shouldUseProxy: false,
@@ -659,64 +654,6 @@ describe('HTTP Client - Native Platform', () => {
     } catch (error) {
       const httpError = error as HttpError;
       expect(httpError.status).toBe(404);
-    }
-  });
-});
-
-describe('HTTP Client - Tauri Platform', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    Object.defineProperty(Platform, 'isTauri', { value: true, writable: true });
-    Object.defineProperty(Platform, 'isNative', { value: false, writable: true });
-    Object.defineProperty(Platform, 'isWeb', { value: false, writable: true });
-  });
-
-  afterEach(() => {
-    Object.defineProperty(Platform, 'isTauri', { value: false, writable: true });
-    Object.defineProperty(Platform, 'isWeb', { value: true, writable: true });
-  });
-
-  it('uses tauriFetch for Tauri requests', async () => {
-    const mockResponse = {
-      ok: true,
-      status: 200,
-      statusText: 'OK',
-      headers: new Headers({ 'content-type': 'application/json' }),
-      text: vi.fn().mockResolvedValue('{"data":"tauri"}'),
-    };
-
-    vi.mocked(tauriFetch).mockResolvedValue(mockResponse as any);
-
-    const result = await httpRequest('https://example.com/api/data');
-
-    expect(tauriFetch).toHaveBeenCalledWith(
-      'https://example.com/api/data',
-      expect.objectContaining({
-        method: 'GET',
-        headers: {},
-      })
-    );
-    expect(result.data).toEqual({ data: 'tauri' });
-  });
-
-  it('throws HttpError for failed Tauri request', async () => {
-    const mockResponse = {
-      ok: false,
-      status: 500,
-      statusText: 'Internal Server Error',
-      headers: new Headers(),
-      text: vi.fn().mockResolvedValue('{}'),
-    };
-
-    vi.mocked(tauriFetch).mockResolvedValue(mockResponse as any);
-
-    try {
-      await httpRequest('https://example.com/api/error');
-      expect.fail('Should have thrown error');
-    } catch (error) {
-      const httpError = error as HttpError;
-      expect(httpError.status).toBe(500);
-      expect(httpError.statusText).toBe('Internal Server Error');
     }
   });
 });
