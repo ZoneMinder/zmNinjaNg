@@ -20,6 +20,8 @@ import { useBandwidthSettings } from './useBandwidthSettings';
 import { useStreamLifecycle } from './useStreamLifecycle';
 import { useFreshAccessToken } from './useFreshAccessToken';
 import { useServerUrls } from './useServerUrls';
+import { useVisibilityResume } from './useVisibilityResume';
+import { useAuthStore } from '../stores/auth';
 import { log, LogLevel } from '../lib/logger';
 import { Platform } from '../lib/platform';
 import { startMjpegStream, stopMjpegStream, fetchMjpegSnapshot } from '../lib/tauri-mjpeg';
@@ -359,6 +361,28 @@ export function useMonitorStream({
     forceRegenerate();
     setCacheBuster(Date.now());
   };
+
+  // When the page returns from background, MJPEG streams may have exhausted
+  // their reconnect budget while the browser was throttling timers. The token
+  // may also have lapsed mid-suspension. Reset the retry counter, refresh the
+  // token defensively, then mint a fresh connkey so the stream reconnects.
+  // Snapshot mode self-heals on its next interval tick, so the resume is
+  // streaming-only. refs #150
+  useVisibilityResume(() => {
+    if (!enabled || effectiveViewMode !== 'streaming') return;
+    log.monitor(`Resuming stream after visibility return for monitor ${monitorId}`, LogLevel.INFO, {
+      monitorId,
+      reconnectAttempts: reconnectAttemptRef.current,
+    });
+    reconnectAttemptRef.current = 0;
+    if (reconnectTimerRef.current) {
+      clearTimeout(reconnectTimerRef.current);
+      reconnectTimerRef.current = null;
+    }
+    void useAuthStore.getState().getFreshAccessToken().finally(() => {
+      forceRegenerate();
+    });
+  }, { enabled: enabled && effectiveViewMode === 'streaming' });
 
   return {
     streamUrl,
