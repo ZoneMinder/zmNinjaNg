@@ -251,6 +251,32 @@ export const STORAGE_KEYS = {
 
   // Web crypto fallback salt (versioned — bump suffix to invalidate)
   cryptoSalt: 'zmng_crypto_salt_v1',
+
+  // Developer Notice: per-device list of read notice IDs (versioned)
+  developerNoticeRead: 'zmng_developer_notice_read_v1',
+
+  // Developer Notice: per-device dismissed-critical-banner ids
+  developerNoticeBannerDismissed: 'zmng_developer_notice_banner_dismissed_v1',
+} as const;
+
+/**
+ * Developer Notice Feed
+ *
+ * One-way broadcast channel from the maintainer to all users. The app fetches
+ * a static JSON feed from the repo (no backend, no telemetry). New notices
+ * surface as a slow-pulsing dot in the sidebar and, when severity is
+ * "critical", as a global dismissible banner. Per-device read state lives in
+ * localStorage under STORAGE_KEYS.developerNoticeRead.
+ */
+export const DEVELOPER_NOTICES = {
+  // Public raw URL of the notice feed (GitHub serves with ~5min CDN TTL)
+  feedUrl: 'https://raw.githubusercontent.com/ZoneMinder/zmNinjaNg/main/docs/notices.json',
+
+  // Foreground refetch interval. React Query handles the actual polling.
+  pollIntervalMs: 30 * 60 * 1000,
+
+  // How long fetched data stays "fresh" before a refetch is allowed
+  staleTimeMs: 10 * 60 * 1000,
 } as const;
 
 /**

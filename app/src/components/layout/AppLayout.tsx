@@ -34,6 +34,7 @@ import { useKioskStore } from '../../stores/kioskStore';
 import { KioskOverlay } from '../kiosk/KioskOverlay';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { SidebarContent } from './SidebarContent';
+import { DeveloperNoticeBanner } from './DeveloperNoticeBanner';
 
 
 /**
@@ -244,6 +245,7 @@ export default function AppLayout() {
         {/* Background gradient blob for visual interest */}
         <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-primary/5 to-transparent -z-10 pointer-events-none" />
 
+        <DeveloperNoticeBanner />
         <Outlet />
       </main>
 

@@ -893,9 +893,21 @@
     "notifications": "Notifications",
     "profiles": "Profiles",
     "logs": "Logs",
+    "developer_notice": "Developer Notice",
     "help": "Help",
     "switch_language": "Switch Language",
     "tv_mode": "TV Mode"
+  },
+  "developer_notice": {
+    "page_title": "Developer Notice",
+    "page_subtitle": "Announcements from the developer. Click a notice to mark it read.",
+    "unread": "Unread",
+    "empty_state": "No notices yet.",
+    "loading": "Loading notices...",
+    "fetch_failed_title": "Couldn't reach notice feed",
+    "fetch_failed_generic": "The notice feed could not be loaded.",
+    "open_link": "Open link",
+    "critical_label": "Important"
   },
   "server": {
     "title": "Server",

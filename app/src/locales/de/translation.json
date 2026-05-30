@@ -893,9 +893,21 @@
     "notifications": "Benachrichtigungen",
     "profiles": "Profile",
     "logs": "Protokolle",
+    "developer_notice": "Entwicklerhinweise",
     "help": "Hilfe",
     "switch_language": "Sprache wechseln",
     "tv_mode": "TV-Modus"
+  },
+  "developer_notice": {
+    "page_title": "Entwicklerhinweise",
+    "page_subtitle": "Mitteilungen vom Entwickler. Hinweis anklicken, um ihn als gelesen zu markieren.",
+    "unread": "Ungelesen",
+    "empty_state": "Noch keine Hinweise.",
+    "loading": "Hinweise werden geladen...",
+    "fetch_failed_title": "Hinweis-Feed nicht erreichbar",
+    "fetch_failed_generic": "Der Hinweis-Feed konnte nicht geladen werden.",
+    "open_link": "Link öffnen",
+    "critical_label": "Wichtig"
   },
   "server": {
     "title": "Server",

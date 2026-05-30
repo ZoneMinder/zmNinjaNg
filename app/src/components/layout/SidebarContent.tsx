@@ -33,7 +33,9 @@ import {
   Lock,
   LockOpen,
   HelpCircle,
+  Megaphone,
 } from 'lucide-react';
+import { useDeveloperNotices } from '../../hooks/useDeveloperNotices';
 
 const HELP_DOCS_URL = 'https://zmninjang.readthedocs.io/en/latest/';
 
@@ -70,6 +72,7 @@ export function SidebarContent({ onMobileClose, isCollapsed }: SidebarContentPro
   const location = useLocation();
   const isMobileDrawer = !!onMobileClose;
   const { isTvMode } = useTvMode();
+  const { unreadCount: developerNoticeUnread } = useDeveloperNotices();
   const currentProfile = useProfileStore(
     useShallow((state) => {
       const { profiles, currentProfileId } = state;
@@ -123,6 +126,7 @@ export function SidebarContent({ onMobileClose, isCollapsed }: SidebarContentPro
     { path: '/settings', label: t('sidebar.settings'), icon: Settings },
     { path: '/server', label: t('sidebar.server'), icon: Server },
     { path: '/logs', label: t('sidebar.logs'), icon: FileText },
+    { path: '/developer-notice', label: t('sidebar.developer_notice'), icon: Megaphone },
   ];
 
   const savedOrder = profileSettings?.sidebarNavOrder;
@@ -296,7 +300,17 @@ export function SidebarContent({ onMobileClose, isCollapsed }: SidebarContentPro
                 title={isCollapsed ? item.label : undefined}
                 data-testid={`nav-item-${item.path.replace('/', '')}`}
               >
-                <Icon className={cn("h-4 w-4 transition-transform group-hover:scale-110 flex-shrink-0", isActive && "text-primary-foreground")} />
+                <span className="relative flex-shrink-0">
+                  <Icon className={cn("h-4 w-4 transition-transform group-hover:scale-110", isActive && "text-primary-foreground")} />
+                  {item.path === '/developer-notice' && developerNoticeUnread > 0 && (
+                    <span
+                      className="absolute -top-0.5 -right-1 h-2 w-2 rounded-full bg-amber-500 animate-pulse"
+                      style={{ animationDuration: '2s' }}
+                      aria-label={t('developer_notice.unread')}
+                      data-testid="developer-notice-unread-dot"
+                    />
+                  )}
+                </span>
                 {!isCollapsed && (
                   <>
                     <span className="truncate">{item.label}</span>

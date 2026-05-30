@@ -893,9 +893,21 @@
     "notifications": "Notificaciones",
     "profiles": "Perfiles",
     "logs": "Registros",
+    "developer_notice": "Aviso del desarrollador",
     "help": "Ayuda",
     "switch_language": "Cambiar Idioma",
     "tv_mode": "Modo TV"
+  },
+  "developer_notice": {
+    "page_title": "Aviso del desarrollador",
+    "page_subtitle": "Anuncios del desarrollador. Haz clic en un aviso para marcarlo como leído.",
+    "unread": "No leído",
+    "empty_state": "Aún no hay avisos.",
+    "loading": "Cargando avisos...",
+    "fetch_failed_title": "No se pudo acceder al feed",
+    "fetch_failed_generic": "No se pudo cargar el feed de avisos.",
+    "open_link": "Abrir enlace",
+    "critical_label": "Importante"
   },
   "server": {
     "title": "Servidor",
