@@ -367,7 +367,10 @@ export function useMonitorStream({
 
   const regenerateConnection = () => {
     log.monitor(`Manually regenerating connection for monitor ${monitorId}`, LogLevel.WARN);
-    forceRegenerate();
+    // killPrevious: the user clicked Retry but the old stream may still be
+    // running on ZM (they might click Retry preemptively, not after an error).
+    // Close it so we don't orphan a connkey.
+    forceRegenerate({ killPrevious: true });
     setCacheBuster(Date.now());
   };
 
