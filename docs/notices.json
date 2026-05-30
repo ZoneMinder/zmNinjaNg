@@ -1,0 +1,9 @@
+[
+  {
+    "id": "2026-05-30-welcome",
+    "title": "Developer Notice channel is live",
+    "body": "Hi! This is the new in-app channel for short notes from the developer. You'll see a pulsing dot in the sidebar next to **Developer Notice** when there's something new. Click the row to read; the dot goes away once you do.\n\nFeatures supported in notice bodies:\n\n- **Bold**, *italic*, and `inline code`\n- Bullet lists\n- [Links](https://github.com/ZoneMinder/zmNinjaNg) that open in a new tab\n\nCritical notices (security advisories, urgent action) also surface as a banner at the top of the app until dismissed.",
+    "publishedAt": "2026-05-30T18:00:00Z",
+    "severity": "info"
+  }
+]

@@ -893,9 +893,21 @@
     "notifications": "Notifications",
     "profiles": "Profils",
     "logs": "Journaux",
+    "developer_notice": "Avis du développeur",
     "help": "Aide",
     "switch_language": "Changer de Langue",
     "tv_mode": "Mode TV"
+  },
+  "developer_notice": {
+    "page_title": "Avis du développeur",
+    "page_subtitle": "Annonces du développeur. Cliquez sur un avis pour le marquer comme lu.",
+    "unread": "Non lu",
+    "empty_state": "Aucun avis pour l'instant.",
+    "loading": "Chargement des avis...",
+    "fetch_failed_title": "Flux d'avis inaccessible",
+    "fetch_failed_generic": "Le flux d'avis n'a pas pu être chargé.",
+    "open_link": "Ouvrir le lien",
+    "critical_label": "Important"
   },
   "server": {
     "title": "Serveur",

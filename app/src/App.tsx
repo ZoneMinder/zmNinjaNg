@@ -43,6 +43,7 @@ const Server = lazy(() => import('./pages/Server'));
 const NotificationSettings = lazy(() => import('./pages/NotificationSettings'));
 const NotificationHistory = lazy(() => import('./pages/NotificationHistory'));
 const Logs = lazy(() => import('./pages/Logs'));
+const DeveloperNotice = lazy(() => import('./pages/DeveloperNotice'));
 
 // Loading fallback component
 function RouteLoadingFallback() {
@@ -323,6 +324,14 @@ function AppRoutes() {
             element={
               <RouteErrorBoundary routePath="/logs">
                 <Logs />
+              </RouteErrorBoundary>
+            }
+          />
+          <Route
+            path="/developer-notice"
+            element={
+              <RouteErrorBoundary routePath="/developer-notice">
+                <DeveloperNotice />
               </RouteErrorBoundary>
             }
           />

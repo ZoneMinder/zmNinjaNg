@@ -893,9 +893,21 @@
     "notifications": "通知",
     "profiles": "配置",
     "logs": "日志",
+    "developer_notice": "开发者通知",
     "help": "帮助",
     "switch_language": "切换语言",
     "tv_mode": "TV模式"
+  },
+  "developer_notice": {
+    "page_title": "开发者通知",
+    "page_subtitle": "来自开发者的公告。点击通知以标记为已读。",
+    "unread": "未读",
+    "empty_state": "暂无通知。",
+    "loading": "正在加载通知...",
+    "fetch_failed_title": "无法访问通知源",
+    "fetch_failed_generic": "无法加载通知源。",
+    "open_link": "打开链接",
+    "critical_label": "重要"
   },
   "server": {
     "title": "服务器",
