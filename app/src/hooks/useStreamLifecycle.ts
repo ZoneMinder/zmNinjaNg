@@ -200,12 +200,17 @@ export function useStreamLifecycle({
     };
   }, []); // Empty deps = only run on unmount
 
-  // Force-regenerate without CMD_QUIT (for error recovery when stream is dead)
+  // Force-regenerate without CMD_QUIT (for error recovery when stream is dead).
+  // Dedupes the log line across all monitors in the same 3s window so a
+  // visibility-resume burst surfaces as one line, not one per tile.
   const forceRegenerate = (): number => {
     if (!monitorId) return 0;
     const newKey = regenerateConnKey(monitorId);
     setConnKey(newKey);
     prevConnKeyRef.current = newKey;
+    log.dedupe('connkey-force-regen', 3000, (suffix) =>
+      logFn(`Force-regenerated connkey${suffix}`, LogLevel.INFO, { monitorId, newKey }),
+    );
     return newKey;
   };
 

@@ -379,10 +379,12 @@ export function useMonitorStream({
   // streaming-only. refs #150
   useVisibilityResume(() => {
     if (!enabled || effectiveViewMode !== 'streaming') return;
-    log.monitor(`Resuming stream after visibility return for monitor ${monitorId}`, LogLevel.INFO, {
-      monitorId,
-      reconnectAttempts: reconnectAttemptRef.current,
-    });
+    log.dedupe('stream-visibility-resume', 3000, (suffix) =>
+      log.monitor(`Resuming streams after visibility return${suffix}`, LogLevel.INFO, {
+        monitorId,
+        reconnectAttempts: reconnectAttemptRef.current,
+      }),
+    );
     reconnectAttemptRef.current = 0;
     if (reconnectTimerRef.current) {
       clearTimeout(reconnectTimerRef.current);
