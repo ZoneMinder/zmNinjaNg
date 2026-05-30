@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
-import { Megaphone, AlertTriangle, AlertCircle, Info, ChevronDown, ChevronUp, ExternalLink, RefreshCw } from 'lucide-react';
+import { Megaphone, AlertTriangle, AlertCircle, Info, ChevronDown, ChevronUp, ExternalLink, RefreshCw, Eye, EyeOff, CheckCheck, Mail } from 'lucide-react';
 import { useDeveloperNotices, type DeveloperNoticeView } from '../hooks/useDeveloperNotices';
 import { useDeveloperNoticeStore } from '../stores/developerNotices';
 import { useDateTimeFormat } from '../hooks/useDateTimeFormat';
@@ -37,6 +37,7 @@ function NoticeRow({ notice }: { notice: DeveloperNoticeView }) {
   const { t } = useTranslation();
   const { fmtDateTime } = useDateTimeFormat();
   const markRead = useDeveloperNoticeStore((s) => s.markRead);
+  const markUnread = useDeveloperNoticeStore((s) => s.markUnread);
   const [expanded, setExpanded] = useState(!notice.isRead);
   const Icon = severityIcon(notice.severity);
 
@@ -44,6 +45,15 @@ function NoticeRow({ notice }: { notice: DeveloperNoticeView }) {
     const next = !expanded;
     setExpanded(next);
     if (next && !notice.isRead) {
+      markRead(notice.id);
+    }
+  };
+
+  const handleReadToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (notice.isRead) {
+      markUnread(notice.id);
+    } else {
       markRead(notice.id);
     }
   };
@@ -56,31 +66,51 @@ function NoticeRow({ notice }: { notice: DeveloperNoticeView }) {
       )}
       data-testid={`developer-notice-${notice.id}`}
     >
-      <button
-        type="button"
-        onClick={handleToggle}
-        className="w-full flex items-start gap-3 px-3 py-2 text-left"
-        data-testid={`developer-notice-toggle-${notice.id}`}
-        aria-expanded={expanded}
-      >
-        <Icon className={cn('h-4 w-4 mt-1 flex-shrink-0', severityClass(notice.severity))} />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className={cn('text-sm', !notice.isRead ? 'font-semibold text-foreground' : 'text-muted-foreground')}>
-              {notice.title}
-            </span>
-            {!notice.isRead && (
-              <Badge variant="default" className="text-[10px] h-4 px-1.5">
-                {t('developer_notice.unread')}
-              </Badge>
-            )}
+      <div className="flex items-start gap-3 px-3 py-2">
+        <button
+          type="button"
+          onClick={handleToggle}
+          className="flex flex-1 items-start gap-3 text-left min-w-0"
+          data-testid={`developer-notice-toggle-${notice.id}`}
+          aria-expanded={expanded}
+        >
+          <Icon className={cn('h-4 w-4 mt-1 flex-shrink-0', severityClass(notice.severity))} />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className={cn('text-sm', !notice.isRead ? 'font-semibold text-foreground' : 'text-muted-foreground')}>
+                {notice.title}
+              </span>
+              {!notice.isRead && (
+                <Badge variant="default" className="text-[10px] h-4 px-1.5">
+                  {t('developer_notice.unread')}
+                </Badge>
+              )}
+            </div>
+            <div className="text-[11px] text-muted-foreground mt-0.5">
+              {fmtDateTime(new Date(notice.publishedAt))}
+            </div>
           </div>
-          <div className="text-[11px] text-muted-foreground mt-0.5">
-            {fmtDateTime(new Date(notice.publishedAt))}
-          </div>
-        </div>
-        {expanded ? <ChevronUp className="h-4 w-4 mt-1" /> : <ChevronDown className="h-4 w-4 mt-1" />}
-      </button>
+        </button>
+        <button
+          type="button"
+          onClick={handleReadToggle}
+          className="mt-0.5 p-1 rounded hover:bg-accent text-muted-foreground flex-shrink-0"
+          title={notice.isRead ? t('developer_notice.mark_unread') : t('developer_notice.mark_read')}
+          aria-label={notice.isRead ? t('developer_notice.mark_unread') : t('developer_notice.mark_read')}
+          data-testid={`developer-notice-read-toggle-${notice.id}`}
+        >
+          {notice.isRead ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+        </button>
+        <button
+          type="button"
+          onClick={handleToggle}
+          className="mt-0.5 p-1 rounded hover:bg-accent text-muted-foreground flex-shrink-0"
+          aria-label={expanded ? t('common.close') : t('common.view')}
+          data-testid={`developer-notice-chevron-${notice.id}`}
+        >
+          {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </button>
+      </div>
       {expanded && (
         <div className="px-3 pb-3 pl-10">
           <Markdown source={notice.body} />
@@ -105,6 +135,11 @@ function NoticeRow({ notice }: { notice: DeveloperNoticeView }) {
 export default function DeveloperNotice() {
   const { t } = useTranslation();
   const { notices, isLoading, isError, error, refetch } = useDeveloperNotices();
+  const markAllRead = useDeveloperNoticeStore((s) => s.markAllRead);
+  const markAllUnread = useDeveloperNoticeStore((s) => s.markAllUnread);
+
+  const unreadIds = notices.filter((n) => !n.isRead).map((n) => n.id);
+  const readIds = notices.filter((n) => n.isRead).map((n) => n.id);
 
   return (
     <div className="max-w-3xl mx-auto p-3 sm:p-6 space-y-4">
@@ -152,11 +187,35 @@ export default function DeveloperNotice() {
       )}
 
       {notices.length > 0 && (
-        <div className="space-y-2" data-testid="developer-notice-list">
-          {notices.map((n) => (
-            <NoticeRow key={n.id} notice={n} />
-          ))}
-        </div>
+        <>
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => markAllRead(unreadIds)}
+              disabled={unreadIds.length === 0}
+              data-testid="developer-notice-mark-all-read"
+            >
+              <CheckCheck className="h-3.5 w-3.5 mr-1" />
+              {t('developer_notice.mark_all_read')}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => markAllUnread(readIds)}
+              disabled={readIds.length === 0}
+              data-testid="developer-notice-mark-all-unread"
+            >
+              <Mail className="h-3.5 w-3.5 mr-1" />
+              {t('developer_notice.mark_all_unread')}
+            </Button>
+          </div>
+          <div className="space-y-2" data-testid="developer-notice-list">
+            {notices.map((n) => (
+              <NoticeRow key={n.id} notice={n} />
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

@@ -907,7 +907,11 @@
     "fetch_failed_title": "无法访问通知源",
     "fetch_failed_generic": "无法加载通知源。",
     "open_link": "打开链接",
-    "critical_label": "重要"
+    "critical_label": "重要",
+    "mark_read": "标记为已读",
+    "mark_unread": "标记为未读",
+    "mark_all_read": "全部标记已读",
+    "mark_all_unread": "全部标记未读"
   },
   "server": {
     "title": "服务器",

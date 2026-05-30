@@ -907,7 +907,11 @@
     "fetch_failed_title": "Couldn't reach notice feed",
     "fetch_failed_generic": "The notice feed could not be loaded.",
     "open_link": "Open link",
-    "critical_label": "Important"
+    "critical_label": "Important",
+    "mark_read": "Mark as read",
+    "mark_unread": "Mark as unread",
+    "mark_all_read": "Mark all read",
+    "mark_all_unread": "Mark all unread"
   },
   "server": {
     "title": "Server",

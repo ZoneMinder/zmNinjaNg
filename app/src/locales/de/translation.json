@@ -907,7 +907,11 @@
     "fetch_failed_title": "Hinweis-Feed nicht erreichbar",
     "fetch_failed_generic": "Der Hinweis-Feed konnte nicht geladen werden.",
     "open_link": "Link öffnen",
-    "critical_label": "Wichtig"
+    "critical_label": "Wichtig",
+    "mark_read": "Als gelesen markieren",
+    "mark_unread": "Als ungelesen markieren",
+    "mark_all_read": "Alle gelesen",
+    "mark_all_unread": "Alle ungelesen"
   },
   "server": {
     "title": "Server",
