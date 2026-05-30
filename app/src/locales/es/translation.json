@@ -911,7 +911,8 @@
     "mark_read": "Marcar como leído",
     "mark_unread": "Marcar como no leído",
     "mark_all_read": "Marcar todos leídos",
-    "mark_all_unread": "Marcar todos no leídos"
+    "mark_all_unread": "Marcar todos no leídos",
+    "reload": "Recargar"
   },
   "server": {
     "title": "Servidor",

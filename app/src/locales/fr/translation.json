@@ -911,7 +911,8 @@
     "mark_read": "Marquer comme lu",
     "mark_unread": "Marquer comme non lu",
     "mark_all_read": "Tout marquer lu",
-    "mark_all_unread": "Tout marquer non lu"
+    "mark_all_unread": "Tout marquer non lu",
+    "reload": "Recharger"
   },
   "server": {
     "title": "Serveur",

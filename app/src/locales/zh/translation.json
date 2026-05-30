@@ -911,7 +911,8 @@
     "mark_read": "标记为已读",
     "mark_unread": "标记为未读",
     "mark_all_read": "全部标记已读",
-    "mark_all_unread": "全部标记未读"
+    "mark_all_unread": "全部标记未读",
+    "reload": "重新加载"
   },
   "server": {
     "title": "服务器",

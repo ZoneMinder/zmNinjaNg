@@ -911,7 +911,8 @@
     "mark_read": "Mark as read",
     "mark_unread": "Mark as unread",
     "mark_all_read": "Mark all read",
-    "mark_all_unread": "Mark all unread"
+    "mark_all_unread": "Mark all unread",
+    "reload": "Reload"
   },
   "server": {
     "title": "Server",

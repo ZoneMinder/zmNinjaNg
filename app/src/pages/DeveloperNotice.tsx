@@ -191,6 +191,17 @@ export default function DeveloperNotice() {
           <div className="flex items-center justify-end gap-2">
             <Button
               variant="outline"
+              size="icon"
+              onClick={() => refetch()}
+              title={t('developer_notice.reload')}
+              aria-label={t('developer_notice.reload')}
+              data-testid="developer-notice-reload"
+              className="h-9 w-9"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="outline"
               size="sm"
               onClick={() => markAllRead(unreadIds)}
               disabled={unreadIds.length === 0}

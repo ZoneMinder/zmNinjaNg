@@ -911,7 +911,8 @@
     "mark_read": "Als gelesen markieren",
     "mark_unread": "Als ungelesen markieren",
     "mark_all_read": "Alle gelesen",
-    "mark_all_unread": "Alle ungelesen"
+    "mark_all_unread": "Alle ungelesen",
+    "reload": "Neu laden"
   },
   "server": {
     "title": "Server",
