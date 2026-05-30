@@ -17,7 +17,9 @@ interface DeveloperNoticeState {
 
   isRead: (id: string) => boolean;
   markRead: (id: string) => void;
+  markUnread: (id: string) => void;
   markAllRead: (ids: string[]) => void;
+  markAllUnread: (ids: string[]) => void;
 
   isBannerDismissed: (id: string) => boolean;
   dismissBanner: (id: string) => void;
@@ -41,6 +43,18 @@ export const useDeveloperNoticeStore = create<DeveloperNoticeState>()(
           const merged = new Set(state.readIds);
           ids.forEach((id) => merged.add(id));
           return { ...state, readIds: Array.from(merged) };
+        });
+      },
+      markUnread: (id) => {
+        set((state) => {
+          if (!state.readIds.includes(id)) return state;
+          return { ...state, readIds: state.readIds.filter((rid) => rid !== id) };
+        });
+      },
+      markAllUnread: (ids) => {
+        set((state) => {
+          const drop = new Set(ids);
+          return { ...state, readIds: state.readIds.filter((rid) => !drop.has(rid)) };
         });
       },
 

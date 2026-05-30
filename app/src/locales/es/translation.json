@@ -907,7 +907,12 @@
     "fetch_failed_title": "No se pudo acceder al feed",
     "fetch_failed_generic": "No se pudo cargar el feed de avisos.",
     "open_link": "Abrir enlace",
-    "critical_label": "Importante"
+    "critical_label": "Importante",
+    "mark_read": "Marcar como leído",
+    "mark_unread": "Marcar como no leído",
+    "mark_all_read": "Marcar todos leídos",
+    "mark_all_unread": "Marcar todos no leídos",
+    "reload": "Recargar"
   },
   "server": {
     "title": "Servidor",

@@ -907,7 +907,12 @@
     "fetch_failed_title": "Flux d'avis inaccessible",
     "fetch_failed_generic": "Le flux d'avis n'a pas pu être chargé.",
     "open_link": "Ouvrir le lien",
-    "critical_label": "Important"
+    "critical_label": "Important",
+    "mark_read": "Marquer comme lu",
+    "mark_unread": "Marquer comme non lu",
+    "mark_all_read": "Tout marquer lu",
+    "mark_all_unread": "Tout marquer non lu",
+    "reload": "Recharger"
   },
   "server": {
     "title": "Serveur",
