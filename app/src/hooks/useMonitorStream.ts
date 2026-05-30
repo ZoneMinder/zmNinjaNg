@@ -391,7 +391,10 @@ export function useMonitorStream({
       reconnectTimerRef.current = null;
     }
     void useAuthStore.getState().getFreshAccessToken().finally(() => {
-      forceRegenerate();
+      // killPrevious closes the old nph-zms process on ZM. The server side
+      // may still be alive (just throttled with us during the suspend), so
+      // without this each resume would orphan a connkey.
+      forceRegenerate({ killPrevious: true });
     });
   }, { enabled: enabled && effectiveViewMode === 'streaming' });
 
