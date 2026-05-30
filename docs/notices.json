@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-05-30-desktop-electron-switch",
+    "title": "Desktop app 1.1.14: switched from Tauri to Electron",
+    "body": "The 1.1.14 desktop builds (Linux, macOS, Windows) moved from Tauri to Electron. Tauri's WebKit backend had memory leaks I couldn't work around — they slowly drained RAM until live streams stopped working.\n\n**Action needed**: your existing server profiles do not carry over to the Electron build. Please add your ZoneMinder server again from the **Profiles** page.\n\nSorry for the inconvenience. Web, iOS, and Android builds are unaffected.\n\nFor background see [#150](https://github.com/ZoneMinder/zmNinjaNg/issues/150).",
+    "publishedAt": "2026-05-30T21:30:00Z",
+    "severity": "warning",
+    "minAppVersion": "1.1.14"
+  },
+  {
     "id": "2026-05-30-welcome",
     "title": "Developer Notice channel is live",
     "body": "Hi! This is the new in-app channel for short notes from the developer. You'll see a pulsing dot in the sidebar next to **Developer Notice** when there's something new. Click the row to read; the dot goes away once you do.\n\nFeatures supported in notice bodies:\n\n- **Bold**, *italic*, and `inline code`\n- Bullet lists\n- [Links](https://github.com/ZoneMinder/zmNinjaNg) that open in a new tab\n\nCritical notices (security advisories, urgent action) also surface as a banner at the top of the app until dismissed.",
