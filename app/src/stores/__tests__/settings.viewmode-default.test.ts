@@ -1,27 +1,16 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
-import { Platform } from '../../lib/platform';
+import { describe, it, expect } from 'vitest';
 import { getDefaultViewMode, DEFAULT_SETTINGS, useSettingsStore } from '../settings';
 
-describe('default view mode by platform', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  it('returns streaming on Tauri desktop', () => {
-    vi.spyOn(Platform, 'isTauri', 'get').mockReturnValue(true);
-    expect(getDefaultViewMode()).toBe('streaming');
-  });
-
-  it('returns snapshot off Tauri (web/mobile)', () => {
-    vi.spyOn(Platform, 'isTauri', 'get').mockReturnValue(false);
+describe('default view mode', () => {
+  it('returns snapshot on every platform', () => {
     expect(getDefaultViewMode()).toBe('snapshot');
   });
 
-  it('preserves an explicitly stored viewMode regardless of platform default', () => {
+  it('preserves an explicitly stored viewMode', () => {
     useSettingsStore.setState({
-      profileSettings: { p1: { ...DEFAULT_SETTINGS, viewMode: 'snapshot' } },
+      profileSettings: { p1: { ...DEFAULT_SETTINGS, viewMode: 'streaming' } },
     });
     const resolved = useSettingsStore.getState().getProfileSettings('p1');
-    expect(resolved.viewMode).toBe('snapshot');
+    expect(resolved.viewMode).toBe('streaming');
   });
 });

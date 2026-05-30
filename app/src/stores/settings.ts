@@ -4,7 +4,6 @@ import type { Layout, Layouts } from 'react-grid-layout';
 import { LogLevel } from '../lib/log-level';
 import type { BandwidthMode } from '../lib/zmninja-ng-constants';
 import { AUTO_RESTART_DEFAULT_MINUTES } from '../lib/zmninja-ng-constants';
-import { Platform } from '../lib/platform';
 
 export type ViewMode = 'snapshot' | 'streaming';
 export type DisplayMode = 'normal' | 'compact';
@@ -199,8 +198,7 @@ const getDefaultLogLevel = (): LogLevel => (
   typeof import.meta !== 'undefined' && import.meta.env?.DEV ? LogLevel.DEBUG : LogLevel.INFO
 );
 
-export const getDefaultViewMode = (): ViewMode =>
-  (Platform.isTauri || Platform.isElectron) ? 'streaming' : 'snapshot';
+export const getDefaultViewMode = (): ViewMode => 'snapshot';
 
 export const DEFAULT_SETTINGS: ProfileSettings = {
   viewMode: getDefaultViewMode(),
