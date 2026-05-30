@@ -202,7 +202,7 @@ export function useStreamLifecycle({
 
   // Force-regenerate without CMD_QUIT (for error recovery when stream is dead).
   // Dedupes the log line across all monitors in the same 3s window so a
-  // visibility-resume burst surfaces as one line, not one per tile.
+  // visibility-resume burst surfaces as one line, not one per tile. refs #150
   const forceRegenerate = (): number => {
     if (!monitorId) return 0;
     const newKey = regenerateConnKey(monitorId);

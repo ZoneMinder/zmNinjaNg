@@ -5,6 +5,11 @@
  * a brief blur does not trigger a reconnect storm. The minimum hidden
  * duration before a return is considered worth acting on is
  * `minHiddenMs` (default 1500ms).
+ *
+ * Used to recover live streams after the OS/browser suspends the page:
+ * Wake Lock keeps the display on but does not prevent background tab
+ * throttling, so MJPEG/WebRTC streams can exhaust their retry budgets
+ * while the window has no focus. refs #150
  */
 
 import { useEffect, useRef } from 'react';
