@@ -118,6 +118,10 @@ export function useMonitorStream({
   const streamIdRef = useRef<number | null>(null);
   const reconnectAttemptRef = useRef(0);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Mirror settings.insomnia into a ref so the scheduleReconnect closure
+  // reads the latest value without re-running its effect.
+  const insomniaRef = useRef(settings.insomnia);
+  insomniaRef.current = settings.insomnia;
   const [imageSrc, setImageSrc] = useState<string>('');
 
   // Latest object URL bound to <img src> on the blob path. Held so the previous
@@ -263,7 +267,12 @@ export function useMonitorStream({
         reconnectTimerRef.current = null;
       }
       const attempt = reconnectAttemptRef.current;
-      if (attempt >= ZM_INTEGRATION.mjpegReconnectMaxAttempts) {
+      // When insomnia is on, the user has explicitly asked the app to keep
+      // running (typically a wall-mounted kiosk). Don't give up: keep
+      // retrying at the max backoff so the stream self-heals whenever the
+      // server or network recovers. refs #150
+      const insomniaOn = insomniaRef.current;
+      if (!insomniaOn && attempt >= ZM_INTEGRATION.mjpegReconnectMaxAttempts) {
         log.monitor(
           `MJPEG stream gave up after ${attempt} reconnect attempts for monitor ${monitorId}`,
           LogLevel.ERROR,
