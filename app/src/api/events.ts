@@ -270,23 +270,17 @@ export async function deleteEvent(eventId: string): Promise<void> {
 /**
  * Archive or unarchive an event.
  *
- * @param eventId - The ID of the event
- * @param archived - True to archive, false to unarchive
- * @returns Promise resolving to updated EventData
+ * ZM's CakePHP API expects form-encoded PUT bodies (`Event[Archived]=1`)
+ * and responds with `{"message":"Saved"}` on success, not the updated event.
+ * Callers should invalidate the event/events queries to refresh state.
  */
-export async function setEventArchived(eventId: string, archived: boolean): Promise<EventData> {
+export async function setEventArchived(eventId: string, archived: boolean): Promise<void> {
   const client = getApiClient();
-  const response = await client.put(`/events/${eventId}.json`, {
-    'Event[Archived]': archived ? '1' : '0',
+  const body = new URLSearchParams();
+  body.set('Event[Archived]', archived ? '1' : '0');
+  await client.put(`/events/${eventId}.json`, body, {
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
   });
-
-  // Validate response with Zod
-  const validated = validateApiResponse(EventResponseSchema, response.data, {
-    endpoint: `/events/${eventId}.json`,
-    method: 'PUT',
-  });
-
-  return validated.event;
 }
 
 /**

@@ -47,6 +47,21 @@ Feature: Event Browsing and Management
     Then I should see the event not marked as favorited if action was taken
 
   @all
+  Scenario: Archive and unarchive an event from the list
+    When I archive the first event if events exist
+    Then I should see the event marked as archived if action was taken
+    When I unarchive the first event if it was archived
+    Then I should see the event not marked as archived if action was taken
+
+  @all
+  Scenario: Archive an event from the detail page
+    When I click into the first event if events exist
+    And I archive the event from detail page if on detail page
+    Then I should see the detail archive button active if action was taken
+    When I archive the event from detail page if on detail page
+    Then I should see the detail archive button inactive if action was taken
+
+  @all
   Scenario: Filter to show only favorited events
     When I favorite the first event if events exist
     And I open the events filter panel

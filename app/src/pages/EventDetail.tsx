@@ -6,8 +6,8 @@
  */
 
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { getEvent, getEventVideoUrl, getEventImageUrl } from '../api/events';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { getEvent, getEventVideoUrl, getEventImageUrl, setEventArchived } from '../api/events';
 import { resolveFallbackFids } from '../lib/thumbnail-chain';
 import { getMonitor } from '../api/monitors';
 import { useCurrentProfile } from '../hooks/useCurrentProfile';
@@ -58,6 +58,7 @@ export default function EventDetail() {
     if (isTvMode) setUseZmsFallback(true);
   }, [isTvMode]);
 
+  const queryClient = useQueryClient();
   const { data: event, isLoading, error } = useQuery({
     queryKey: ['event', id],
     queryFn: () => getEvent(id!),
@@ -105,6 +106,27 @@ export default function EventDetail() {
       );
     }
   }, [currentProfile, event, toggleFavorite, isFav, t]);
+
+  const isArchived = event?.Event.Archived === '1';
+  const [isArchiving, setIsArchiving] = useState(false);
+  const handleArchiveToggle = useCallback(async () => {
+    if (!event || isArchiving) return;
+    const next = !isArchived;
+    setIsArchiving(true);
+    try {
+      await setEventArchived(event.Event.Id, next);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['event', event.Event.Id] }),
+        queryClient.invalidateQueries({ queryKey: ['events'] }),
+      ]);
+      toast.success(next ? t('events.archived_success') : t('events.unarchived_success'));
+    } catch (err) {
+      log.eventDetail('Archive toggle failed', LogLevel.ERROR, { eventId: event.Event.Id, next, error: err });
+      toast.error(t('events.archive_failed'));
+    } finally {
+      setIsArchiving(false);
+    }
+  }, [event, isArchived, isArchiving, queryClient, t]);
 
   // Generate video markers for alarm frames
   // NOTE: This hook must be called before any conditional returns
@@ -317,9 +339,17 @@ export default function EventDetail() {
             <Clock className="h-4 w-4" />
             <span className="hidden sm:inline">{t('event_detail.all_events')}</span>
           </Button>
-          <Button variant="outline" size="sm" className="gap-2 h-8 sm:h-9" title={t('event_detail.archive')} data-testid="event-detail-archive">
-            <Archive className="h-4 w-4" />
-            <span className="hidden sm:inline">{t('event_detail.archive')}</span>
+          <Button
+            variant={isArchived ? "default" : "outline"}
+            size="sm"
+            className="gap-2 h-8 sm:h-9"
+            onClick={handleArchiveToggle}
+            disabled={isArchiving}
+            title={isArchived ? t('event_detail.unarchive') : t('event_detail.archive')}
+            data-testid="event-detail-archive"
+          >
+            <Archive className={isArchived ? "h-4 w-4 fill-current" : "h-4 w-4"} />
+            <span className="hidden sm:inline">{isArchived ? t('event_detail.unarchive') : t('event_detail.archive')}</span>
           </Button>
           {hasVideo && (
             <Button

@@ -208,17 +208,26 @@ describe('Events API', () => {
     expect(event.Event.Id).toBe('42');
   });
 
-  it('archives an event', async () => {
-    mockPut.mockResolvedValue({
-      data: {
-        event: buildEventData(5),
-      },
-    });
+  it('archives an event using form-encoded body', async () => {
+    mockPut.mockResolvedValue({ data: { message: 'Saved' } });
 
-    const event = await setEventArchived('5', true);
+    await setEventArchived('5', true);
 
-    expect(mockPut).toHaveBeenCalledWith('/events/5.json', { 'Event[Archived]': '1' });
-    expect(event.Event.Id).toBe('5');
+    expect(mockPut).toHaveBeenCalledTimes(1);
+    const [url, body, config] = mockPut.mock.calls[0];
+    expect(url).toBe('/events/5.json');
+    expect(body).toBeInstanceOf(URLSearchParams);
+    expect((body as URLSearchParams).get('Event[Archived]')).toBe('1');
+    expect(config?.headers?.['Content-Type']).toBe('application/x-www-form-urlencoded');
+  });
+
+  it('unarchives an event using form-encoded body', async () => {
+    mockPut.mockResolvedValue({ data: { message: 'Saved' } });
+
+    await setEventArchived('9', false);
+
+    const [, body] = mockPut.mock.calls[0];
+    expect((body as URLSearchParams).get('Event[Archived]')).toBe('0');
   });
 
   it('deletes an event', async () => {

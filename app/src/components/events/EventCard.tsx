@@ -6,14 +6,16 @@
  * It is used in event lists and grids.
  */
 
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { useDateTimeFormat } from '../../hooks/useDateTimeFormat';
 import { Card } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { EventThumbnail } from './EventThumbnail';
 import { EventThumbnailHoverPreview } from './EventThumbnailHoverPreview';
-import { Video, Calendar, Clock, Star } from 'lucide-react';
+import { Video, Calendar, Clock, Star, Archive } from 'lucide-react';
 import { getEventCauseIcon } from '../../lib/event-icons';
 import { getObjectClassIconFromList } from '../../lib/object-class-icons';
 import type { EventCardProps } from '../../api/types';
@@ -21,6 +23,8 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/utils';
 import { useEventFavoritesStore } from '../../stores/eventFavorites';
 import { useCurrentProfile } from '../../hooks/useCurrentProfile';
+import { setEventArchived } from '../../api/events';
+import { log, LogLevel } from '../../lib/logger';
 import { TagChipList } from './TagChip';
 
 /**
@@ -37,6 +41,7 @@ function EventCardComponent({ event, monitorName, thumbnailUrls, largeThumbnailU
   const { t } = useTranslation();
   const { fmtDate, fmtTime } = useDateTimeFormat();
   const { currentProfile, settings } = useCurrentProfile();
+  const queryClient = useQueryClient();
   const showHover = settings.hoverPreview.eventsList;
   const toggleFavorite = useEventFavoritesStore((state) => state.toggleFavorite);
 
@@ -45,6 +50,9 @@ function EventCardComponent({ event, monitorName, thumbnailUrls, largeThumbnailU
   const isFav = useEventFavoritesStore((state) =>
     currentProfile ? state.isFavorited(currentProfile.id, event.Id) : false
   );
+
+  const isArchived = event.Archived === '1';
+  const [isArchiving, setIsArchiving] = useState(false);
 
   const startTime = new Date(event.StartDateTime.replace(' ', 'T'));
 
@@ -56,6 +64,26 @@ function EventCardComponent({ event, monitorName, thumbnailUrls, largeThumbnailU
     e.stopPropagation(); // Prevent card navigation
     if (currentProfile) {
       toggleFavorite(currentProfile.id, event.Id);
+    }
+  };
+
+  const handleArchiveClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isArchiving) return;
+    const next = !isArchived;
+    setIsArchiving(true);
+    try {
+      await setEventArchived(event.Id, next);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['events'] }),
+        queryClient.invalidateQueries({ queryKey: ['event', event.Id] }),
+      ]);
+      toast.success(next ? t('events.archived_success') : t('events.unarchived_success'));
+    } catch (err) {
+      log.eventCard('Archive toggle failed', LogLevel.ERROR, { eventId: event.Id, next, error: err });
+      toast.error(t('events.archive_failed'));
+    } finally {
+      setIsArchiving(false);
     }
   };
 
@@ -143,6 +171,27 @@ function EventCardComponent({ event, monitorName, thumbnailUrls, largeThumbnailU
                       isFav
                         ? "fill-yellow-500 stroke-yellow-500"
                         : "stroke-muted-foreground hover:stroke-yellow-500"
+                    )}
+                  />
+                </button>
+                <button
+                  onClick={handleArchiveClick}
+                  disabled={isArchiving}
+                  className={cn(
+                    "p-1 rounded-full hover:bg-accent transition-colors",
+                    "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+                    "disabled:opacity-50 disabled:cursor-not-allowed"
+                  )}
+                  aria-label={isArchived ? t('events.unarchive') : t('events.archive')}
+                  title={isArchived ? t('events.unarchive') : t('events.archive')}
+                  data-testid="event-archive-button"
+                >
+                  <Archive
+                    className={cn(
+                      "h-4 w-4 sm:h-5 sm:w-5 transition-colors",
+                      isArchived
+                        ? "fill-primary stroke-primary"
+                        : "stroke-muted-foreground hover:stroke-primary"
                     )}
                   />
                 </button>

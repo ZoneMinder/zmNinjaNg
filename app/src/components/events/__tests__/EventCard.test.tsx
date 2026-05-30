@@ -1,8 +1,15 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ReactElement } from 'react';
 import { EventCard } from '../EventCard';
 
 const navigate = vi.fn();
+
+function renderWithClient(ui: ReactElement) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+}
 
 vi.mock('react-router-dom', () => ({
   useNavigate: () => navigate,
@@ -39,7 +46,7 @@ describe('EventCard', () => {
   });
 
   it('renders event details and thumbnail', () => {
-    render(
+    renderWithClient(
       <EventCard
         event={{
           Id: '101',
@@ -87,7 +94,7 @@ describe('EventCard', () => {
   });
 
   it('navigates to event details on click', () => {
-    render(
+    renderWithClient(
       <EventCard
         event={{
           Id: '202',

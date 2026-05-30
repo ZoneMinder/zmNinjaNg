@@ -8,6 +8,8 @@ const { When, Then } = createBdd();
 // Shared state for event steps
 let hasEvents = false;
 let favoriteToggled = false;
+let archiveToggled = false;
+let detailArchiveToggled = false;
 let downloadClicked = false;
 let hoverPerformed = false;
 
@@ -223,6 +225,108 @@ Then('I should see the event not marked as favorited if action was taken', async
 
   // Star should not have fill-yellow-500 class when not favorited
   await expect(starIcon).not.toHaveClass(/fill-yellow-500/);
+});
+
+// Event Archive Steps
+When('I archive the first event if events exist', async ({ page }) => {
+  archiveToggled = false;
+  if (!hasEvents) {
+    log.info('E2E: Skipping archive - no events exist', { component: 'e2e' });
+    return;
+  }
+
+  try {
+    const firstEventCard = page.getByTestId('event-card').first();
+    await firstEventCard.waitFor({ state: 'visible', timeout: testConfig.timeouts.element });
+
+    const archiveButton = firstEventCard.getByTestId('event-archive-button');
+    await archiveButton.waitFor({ state: 'visible', timeout: testConfig.timeouts.element });
+    await archiveButton.click();
+    archiveToggled = true;
+    // Wait for toast (also confirms API completed)
+    await expect(page.getByText(/archived|archivé|archiviert|archivad/i).first())
+      .toBeVisible({ timeout: testConfig.timeouts.transition });
+    await page.waitForTimeout(500);
+  } catch (error) {
+    log.info('E2E: Could not archive event', { component: 'e2e', error });
+    archiveToggled = false;
+  }
+});
+
+When('I unarchive the first event if it was archived', async ({ page }) => {
+  if (!archiveToggled) {
+    log.info('E2E: Skipping unarchive - event was not archived', { component: 'e2e' });
+    return;
+  }
+
+  try {
+    const firstEventCard = page.getByTestId('event-card').first();
+    const archiveButton = firstEventCard.getByTestId('event-archive-button');
+    await archiveButton.click();
+    archiveToggled = false;
+    await page.waitForTimeout(500);
+  } catch (error) {
+    log.info('E2E: Could not unarchive event', { component: 'e2e', error });
+  }
+});
+
+Then('I should see the event marked as archived if action was taken', async ({ page }) => {
+  if (!archiveToggled) {
+    log.info('E2E: Skipping archived check - no archive action was taken', { component: 'e2e' });
+    return;
+  }
+
+  const firstEventCard = page.getByTestId('event-card').first();
+  const archiveButton = firstEventCard.getByTestId('event-archive-button');
+  const archiveIcon = archiveButton.locator('svg');
+
+  await expect(archiveIcon).toHaveClass(/fill-primary/);
+});
+
+Then('I should see the event not marked as archived if action was taken', async ({ page }) => {
+  if (!hasEvents) {
+    log.info('E2E: Skipping not-archived check - no events exist', { component: 'e2e' });
+    return;
+  }
+
+  const firstEventCard = page.getByTestId('event-card').first();
+  const archiveButton = firstEventCard.getByTestId('event-archive-button');
+  const archiveIcon = archiveButton.locator('svg');
+
+  await expect(archiveIcon).not.toHaveClass(/fill-primary/);
+});
+
+When('I archive the event from detail page if on detail page', async ({ page }) => {
+  if (!hasEvents) {
+    log.info('E2E: Skipping archive from detail - no events exist', { component: 'e2e' });
+    return;
+  }
+
+  try {
+    const archiveBtn = page.getByTestId('event-detail-archive');
+    const visible = await archiveBtn.isVisible({ timeout: testConfig.timeouts.element });
+    if (visible) {
+      await archiveBtn.click();
+      detailArchiveToggled = true;
+      await page.waitForTimeout(700);
+    }
+  } catch (error) {
+    log.info('E2E: Could not archive from detail page', { component: 'e2e', error });
+  }
+});
+
+Then('I should see the detail archive button active if action was taken', async ({ page }) => {
+  if (!detailArchiveToggled) return;
+  const archiveBtn = page.getByTestId('event-detail-archive');
+  const icon = archiveBtn.locator('svg').first();
+  await expect(icon).toHaveClass(/fill-current/);
+});
+
+Then('I should see the detail archive button inactive if action was taken', async ({ page }) => {
+  if (!detailArchiveToggled) return;
+  const archiveBtn = page.getByTestId('event-detail-archive');
+  const icon = archiveBtn.locator('svg').first();
+  await expect(icon).not.toHaveClass(/fill-current/);
 });
 
 When('I enable favorites only filter', async ({ page }) => {
