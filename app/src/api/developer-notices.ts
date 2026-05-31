@@ -32,8 +32,12 @@ export const DeveloperNoticeFeedSchema = z.array(DeveloperNoticeSchema);
 
 /**
  * Fetch the notice feed. Uses httpGet directly (not the api client) so the
- * request bypasses auth, cookies, and the ZM baseURL — this URL is a public
+ * request bypasses auth, cookies, and the ZM baseURL. This URL is a public
  * raw GitHub file. Validation strips malformed entries upstream of the UI.
+ *
+ * GitHub raw serves the file with Content-Type: text/plain, so on iOS/Android
+ * CapacitorHttp returns the body as a string instead of a parsed object.
+ * Parse defensively before handing to Zod.
  */
 export async function fetchDeveloperNotices(): Promise<DeveloperNotice[]> {
   const response = await httpGet<unknown>(DEVELOPER_NOTICES.feedUrl, {
@@ -41,7 +45,8 @@ export async function fetchDeveloperNotices(): Promise<DeveloperNotice[]> {
     timeoutMs: 10_000,
     intent: 'Fetch developer notices',
   });
-  return validateApiResponse(DeveloperNoticeFeedSchema, response.data, {
+  const data = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
+  return validateApiResponse(DeveloperNoticeFeedSchema, data, {
     endpoint: DEVELOPER_NOTICES.feedUrl,
     method: 'GET',
   });
