@@ -111,7 +111,7 @@ export default function MonitorDetail() {
   // without new branching (refs #337).
   const { profile: ownerProfile, settings } = useProfileById(routeProfileId);
   const [isMuted, setMuted] = useMonitorMuted(ownerProfile?.id, id ?? '');
-  const [openFullscreen, setOpenFullscreen] = useMonitorFlag(ownerProfile?.id, id ?? '', 'fullscreenMonitorIds');
+  const [openFullscreen] = useMonitorFlag(ownerProfile?.id, id ?? '', 'fullscreenMonitorIds');
   const [isFullscreen, setFullscreen] = useAutoFullscreen({
     startFullscreen: settings.monitorDetailFullscreen || openFullscreen,
     resetKey: id,
@@ -259,14 +259,15 @@ export default function MonitorDetail() {
     [monitor?.Monitor.Height, monitor?.Monitor.Orientation, monitor?.Monitor.Width]
   );
 
-  // Maximizing remembers the monitor; exiting is session-only, since exit is
-  // the only way off the page and a remembered exit could never be kept.
-  // The monitor's settings dialog is the off switch (refs #462, #463).
+  // Maximizing changes this session only. It used to write
+  // `fullscreenMonitorIds`, which made every monitor ever maximized open
+  // fullscreen forever, with the settings dialog as the only way out (#476).
+  // The dialog's "Open in fullscreen" and the global live-view setting are
+  // the persistent form; the button beside them does not need to be one.
   const handleToggleFullscreen = useCallback(() => {
     setFullscreen(!isFullscreen);
-    if (!isFullscreen) setOpenFullscreen(true);
     zoomPan.reset();
-  }, [zoomPan, isFullscreen, setFullscreen, setOpenFullscreen]);
+  }, [zoomPan, isFullscreen, setFullscreen]);
 
   // Settings handlers - write to the OWNING profile's settings bucket, not
   // whichever profile is globally current (refs #337).

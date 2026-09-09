@@ -29,9 +29,11 @@ function isLandscapeTouch(): boolean {
  * Fullscreen for a player page. `startFullscreen` is the user's setting
  * ("open in fullscreen"), a phone turned to landscape adds a temporary
  * fullscreen on top, and the page's own maximize/exit buttons change only
- * this session through `setFullscreen`. Nothing here writes a setting: the
- * only way off a fullscreen page is its exit button, so persisting that exit
- * would make the memory impossible to keep (refs #462, #463).
+ * this session through `setFullscreen`. Nothing here or in its callers
+ * writes a setting: a fullscreen page hides its header, so exiting is forced
+ * before navigating away and a remembered exit could never be kept. Making
+ * entry the writer instead is what #476 reported - the settings that already
+ * name this preference are the only place it persists (refs #462, #463).
  *
  * A session override lasts until the next rotation or until `resetKey`
  * changes (the detail page stays mounted across monitors).

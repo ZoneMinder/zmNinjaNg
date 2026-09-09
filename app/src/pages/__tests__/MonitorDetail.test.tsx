@@ -243,16 +243,20 @@ describe('MonitorDetail All-mode deep route (refs #337)', () => {
     expect(useSettingsStore.getState().getProfileSettings('profile-1').fullscreenMonitorIds).toEqual(['1']);
   });
 
-  it('maximizing a monitor remembers it for that monitor', () => {
+  it('maximizing a monitor changes only the session and never writes the setting (refs #476)', () => {
     h.routeParams = { id: '1' };
     monitorQuery();
 
-    render(<MonitorDetail />);
+    const { unmount } = render(<MonitorDetail />);
     expect(screen.queryByTestId('monitor-detail-fullscreen-toolbar')).toBeNull();
 
     fireEvent.click(screen.getByTestId('monitor-detail-maximize'));
     expect(screen.getByTestId('monitor-detail-exit-fullscreen')).toHaveTextContent('monitor_detail.exit');
-    expect(useSettingsStore.getState().getProfileSettings('profile-1').fullscreenMonitorIds).toEqual(['1']);
+    expect(useSettingsStore.getState().getProfileSettings('profile-1').fullscreenMonitorIds).toEqual([]);
+    unmount();
+
+    render(<MonitorDetail />);
+    expect(screen.queryByTestId('monitor-detail-fullscreen-toolbar')).toBeNull();
   });
 
   it('opens every monitor fullscreen when the live view setting is on', () => {
