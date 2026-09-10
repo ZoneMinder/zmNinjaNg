@@ -936,6 +936,12 @@ describe('useStreamLifecycle', () => {
         expect(quitCountFor(halfSizeKey)).toBe(1);
       });
       expect(result.current.connKey).not.toBe(halfSizeKey);
+      // The quit says why, so a log from a zoomed session is readable.
+      expect(mockLogFn).toHaveBeenCalledWith(
+        expect.stringContaining('CMD_QUIT on scale'),
+        expect.anything(),
+        expect.objectContaining({ connkey: halfSizeKey }),
+      );
     });
 
     it('quits a multi-port stream on the port it was opened on', async () => {

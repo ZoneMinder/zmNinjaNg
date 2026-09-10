@@ -158,7 +158,8 @@ export function useMonitorStream({
   // than kept as a boolean flag, so a src swap withdraws the frame during the
   // same render that introduces it. A flag reset from an effect would not: an
   // effect runs after paint, which is one painted frame of the old picture
-  // under the new connection. refs #352
+  // under the new connection. refs #352. The two deliberate exceptions, where
+  // the old picture is worth keeping, are read off the gate below.
   const [loadedSrc, setLoadedSrc] = useState<string>('');
 
   // Stream lifecycle: connKey generation, CMD_QUIT on regen/unmount, media abort
@@ -167,6 +168,33 @@ export function useMonitorStream({
   // is computed here because the lifecycle needs it too: a scale change has to
   // re-open the stream, not just re-point the <img> (refs #478).
   const effectiveScale = streamOptions.scale ?? bandwidth.imageScale;
+
+  // Set when a scale change re-opens the stream, so the frame gate below keeps
+  // the picture on screen until the replacement decodes (refs #478).
+  const [holdFrameForRestart, setHoldFrameForRestart] = useState(false);
+  const prevScaleRef = useRef(effectiveScale);
+  useEffect(() => {
+    const previous = prevScaleRef.current;
+    if (previous === effectiveScale) return;
+    prevScaleRef.current = effectiveScale;
+    setHoldFrameForRestart(true);
+    log.monitor(
+      `Stream scale changed from ${previous} to ${effectiveScale}, re-opening stream for monitor ${monitorId}`,
+      LogLevel.INFO,
+      { monitorId, previousScale: previous, scale: effectiveScale },
+    );
+  }, [effectiveScale, monitorId]);
+
+  // The hold is a courtesy, not a promise. A restart that never produces a
+  // frame must stop borrowing the old one, or a dead feed reads as a live one.
+  useEffect(() => {
+    if (!holdFrameForRestart) return;
+    const timer = setTimeout(
+      () => setHoldFrameForRestart(false),
+      ZM_INTEGRATION.plannedRestartHoldMs,
+    );
+    return () => clearTimeout(timer);
+  }, [holdFrameForRestart]);
 
   const { connKey, forceRegenerate, releaseConnection } = useStreamLifecycle({
     monitorId,
@@ -276,6 +304,7 @@ export function useMonitorStream({
     // Whatever the element is holding, it is not a frame off a working
     // connection any more.
     setLoadedSrc('');
+    setHoldFrameForRestart(false);
     if (reconnectTimerRef.current) {
       clearTimeout(reconnectTimerRef.current);
       reconnectTimerRef.current = null;
@@ -306,6 +335,7 @@ export function useMonitorStream({
   const reportStreamLoad = () => {
     analysisFrames.applyOnStreamLoad();
     setLoadedSrc(imageSrc);
+    setHoldFrameForRestart(false);
     reconnectAttemptRef.current = 0;
     if (reconnectTimerRef.current) {
       clearTimeout(reconnectTimerRef.current);
@@ -376,10 +406,16 @@ export function useMonitorStream({
   // matching the src there would blink the tile once per interval. A snapshot
   // that starts failing does fire `error`, which clears loadedSrc, so it still
   // falls back to the placeholder.
+  //
+  // A planned restart is the same case for the same reason: the scale changed,
+  // so the src changed, but the frame on screen came off a healthy stream and
+  // the browser holds it until the new one decodes. An error reconnect never
+  // holds - scheduleReconnect clears loadedSrc precisely because what the
+  // element is showing is no longer a frame off a working connection.
   const hasFrame =
     imageSrc !== '' &&
     loadedSrc !== '' &&
-    (effectiveViewMode === 'snapshot' || loadedSrc === imageSrc);
+    (effectiveViewMode === 'snapshot' || holdFrameForRestart || loadedSrc === imageSrc);
 
   return {
     streamUrl,

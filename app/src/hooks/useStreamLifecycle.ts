@@ -52,7 +52,7 @@ interface StreamCleanupParams {
 async function quitStreamForParams(
   params: StreamCleanupParams,
   logFn: ComponentLogger,
-  reason: 'unmount' | 'profile-switch' | 'disable' | 'view-mode',
+  reason: 'unmount' | 'profile-switch' | 'disable' | 'view-mode' | 'scale',
 ): Promise<void> {
   if (
     params.viewMode !== 'streaming' ||
@@ -367,7 +367,7 @@ export function useStreamLifecycle({
           minStreamingPort: prev.minStreamingPort,
         },
         logFn,
-        'view-mode',
+        prev.viewMode === viewMode ? 'scale' : 'view-mode',
       );
     }
 

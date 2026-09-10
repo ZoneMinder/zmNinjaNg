@@ -84,8 +84,10 @@ Zoom has no upper limit, and the live view fetches the detail to go with it.
 MJPEG streams are normally scaled down before they leave ZoneMinder (**Stream
 scale** under Live Streaming in {doc}`settings`, 50% by default). As soon as
 you zoom in, the app asks for the monitor's full-size frames instead, and goes
-back to your usual scale when you reset the zoom. The picture stutters for a
-moment each way while the stream restarts.
+back to your usual scale when you reset the zoom. The last frame stays on
+screen while the new stream connects, so the switch is invisible unless the
+replacement takes more than a few seconds, at which point the tile says it is
+connecting rather than keep showing an old picture.
 
 Cameras streaming through Go2RTC already arrive at their own resolution, so
 nothing changes there. Recorded video is unscaled too, so zooming into an event
