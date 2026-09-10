@@ -127,6 +127,13 @@ export const ZMS_MODES = {
 export const ZMS_FRAMES_PARAM_MIN_VERSION = '1.37.61';
 
 /**
+ * `scale=` value that asks zms for the monitor's own frame size. Anything
+ * lower is ZoneMinder resizing before it sends, which costs detail the client
+ * cannot get back by magnifying (refs #478).
+ */
+export const ZMS_FULL_SCALE = 100;
+
+/**
  * Monitor `Decoding` value that keeps zmc decoding whether or not anyone is
  * watching. The others ('None', 'Ondemand', 'KeyFrames', 'KeyFrames+Ondemand')
  * decode on demand or not at all. Absent before ZM 1.37.

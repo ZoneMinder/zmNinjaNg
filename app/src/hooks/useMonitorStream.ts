@@ -162,6 +162,12 @@ export function useMonitorStream({
   const [loadedSrc, setLoadedSrc] = useState<string>('');
 
   // Stream lifecycle: connKey generation, CMD_QUIT on regen/unmount, media abort
+  // What this stream asks zms to resize to. The caller's own value wins over
+  // the bandwidth mode's, the same precedence the URL below spreads in, and it
+  // is computed here because the lifecycle needs it too: a scale change has to
+  // re-open the stream, not just re-point the <img> (refs #478).
+  const effectiveScale = streamOptions.scale ?? bandwidth.imageScale;
+
   const { connKey, forceRegenerate, releaseConnection } = useStreamLifecycle({
     monitorId,
     portalUrl: resolvedPortalUrl,
@@ -172,6 +178,7 @@ export function useMonitorStream({
     enabled,
     minStreamingPort: effectiveMinStreamingPort,
     profileId: currentProfile?.id,
+    scale: effectiveScale,
   });
 
   // Analysis frames: applied to the live connection by command, and re-applied
@@ -228,7 +235,7 @@ export function useMonitorStream({
     ? getStreamUrl(recordingUrl || currentProfile.cgiUrl, monitorId, {
       mode: effectiveViewMode === 'snapshot' && !snapshotSendsOneJpeg ? 'single' : 'jpeg',
       frames: snapshotSendsOneJpeg ? 1 : undefined,
-      scale: bandwidth.imageScale,
+      scale: effectiveScale,
       maxfps:
         effectiveViewMode === 'streaming'
           ? settings.streamMaxFps

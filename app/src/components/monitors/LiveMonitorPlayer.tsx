@@ -32,6 +32,7 @@ import {
   GO2RTC_FREEZE_RESET_S,
   GO2RTC_RETRY_INTERVAL_MIN,
 } from '../../lib/zmninja-ng-constants';
+import { ZMS_FULL_SCALE } from '../../lib/zm/zm-constants';
 import { Button } from '../ui/button';
 import { VideoOff, ShieldOff } from 'lucide-react';
 import { usePermissions } from '../../hooks/usePermissions';
@@ -151,6 +152,15 @@ export interface LiveMonitorPlayerProps {
    */
   bypassGo2rtcFailureCache?: boolean;
   /**
+   * Ask ZM for the monitor's own frame size instead of the profile's Stream
+   * scale, because the user has zoomed into this picture and magnifying a
+   * downscaled frame only magnifies the downscaling. Set while the view is
+   * zoomed and cleared on reset, which re-opens the stream each way. A no-op
+   * on the go2rtc/WebRTC path, which is already served at the camera's own
+   * resolution (refs #478).
+   */
+  fullResolution?: boolean;
+  /**
    * Ask ZM for a cheaper MJPEG stream than the owning profile normally wants
    * (All-mode "reduced" stream tuning, refs #337). The caller decides: the
    * montage page sets it while aggregating, the monitor detail view and Live
@@ -183,6 +193,7 @@ export function LiveMonitorPlayer({
   forceViewMode,
   bypassGo2rtcFailureCache = false,
   reduceStream = false,
+  fullResolution = false,
   paused = false,
 }: LiveMonitorPlayerProps) {
   const { t } = useTranslation();
@@ -525,8 +536,13 @@ export function LiveMonitorPlayer({
     monitorId: monitor.Id,
     serverId: monitor.ServerId,
     streamOptions: tunedStreamOptions(
-      { maxfps: rawSettings?.streamMaxFps, scale: rawSettings?.streamScale },
-      reduceStream,
+      {
+        maxfps: rawSettings?.streamMaxFps,
+        scale: fullResolution ? ZMS_FULL_SCALE : rawSettings?.streamScale,
+      },
+      // A zoomed picture is one the user is reading detail off, so the economy
+      // ceiling stands down for as long as they are in it.
+      reduceStream && !fullResolution,
     ),
     enabled: (effectiveStreamingMethod === 'mjpeg' || showMjpegPlaceholder) && !paused && !streamDenied,
     viewModeOverride: forceViewMode,

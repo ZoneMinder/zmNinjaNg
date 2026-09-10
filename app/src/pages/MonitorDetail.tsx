@@ -459,6 +459,9 @@ export default function MonitorDetail() {
               bypassGo2rtcFailureCache
               muted={isMuted}
               onMutedChange={setMuted}
+              // Zooming asks ZM for the full-size frame; resetting hands the
+              // saving back. Both re-open the stream (refs #478).
+              fullResolution={zoomPan.isZoomed}
             />
             <ZoneOverlay
               zones={zones}

@@ -912,6 +912,32 @@ describe('useStreamLifecycle', () => {
       expect(mockHttpGet).toHaveBeenCalledTimes(1);
     });
 
+    // A running nph-zms keeps sending the size it was started at, so a scale
+    // change is a different stream, not a different frame. Zooming in asks for
+    // the full-size one; without a fresh key the old process stays open on the
+    // server and the <img> reconnects to the small picture (refs #478).
+    it('quits and re-opens the stream when the requested scale changes', async () => {
+      const mediaRef = makeMediaRef();
+      const { result, rerender } = renderHook(
+        ({ scale }: { scale: number }) =>
+          useStreamLifecycle({ ...baseOptions, mediaRef, scale }),
+        { initialProps: { scale: 50 } },
+      );
+
+      await waitFor(() => {
+        expect(result.current.connKey).not.toBe(0);
+      });
+      const halfSizeKey = result.current.connKey;
+      mockHttpGet.mockClear();
+
+      rerender({ scale: 100 });
+
+      await waitFor(() => {
+        expect(quitCountFor(halfSizeKey)).toBe(1);
+      });
+      expect(result.current.connKey).not.toBe(halfSizeKey);
+    });
+
     it('quits a multi-port stream on the port it was opened on', async () => {
       // useMonitorStream computes minStreamingPort from the view mode, so a
       // flip to snapshot drops it to undefined in the same commit as the flip.
