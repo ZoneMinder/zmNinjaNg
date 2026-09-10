@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { isSpmCacheCorruption, ownedSourcePackages } from '../fix-ios-spm.mjs';
+import { evictedFrameworks, isSpmCacheCorruption, ownedSourcePackages } from '../fix-ios-caches.mjs';
 
 test('recognises the CLI shape of a gutted cache', () => {
   const output =
@@ -36,4 +36,23 @@ test('claims only the SourcePackages trees that name this checkout', () => {
   ];
 
   assert.deepEqual(ownedSourcePackages(entries, '/me/proj'), ['/dd/App-ours/SourcePackages']);
+});
+
+test('names the framework products the system has taken files out of', () => {
+  const frameworks = [
+    { path: '/dd/udid/Build/Products/Debug-iphoneos/Capacitor.framework', hasInfoPlist: false },
+    { path: '/dd/udid/Build/Products/Debug-iphoneos/Cordova.framework', hasInfoPlist: false },
+    { path: '/dd/udid/Build/Products/Debug-iphoneos/llama.framework', hasInfoPlist: true },
+  ];
+
+  assert.deepEqual(evictedFrameworks(frameworks), [
+    '/dd/udid/Build/Products/Debug-iphoneos/Capacitor.framework',
+    '/dd/udid/Build/Products/Debug-iphoneos/Cordova.framework',
+  ]);
+});
+
+test('leaves an intact built-products tree alone', () => {
+  const frameworks = [{ path: '/dd/udid/Build/Products/Debug-iphoneos/Capacitor.framework', hasInfoPlist: true }];
+
+  assert.deepEqual(evictedFrameworks(frameworks), []);
 });
