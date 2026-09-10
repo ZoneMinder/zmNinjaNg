@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Repair a gutted Swift Package Manager cache before an iOS build.
+ * Repair the iOS build caches macOS has emptied, before a build trips over them.
  *
  * Xcode keeps every SPM dependency in two cache trees it marks as purgeable:
  * the shared clones in ~/Library/Caches/org.swift.swiftpm and the per-project
@@ -15,10 +15,17 @@
  * 'LlamaKit'", which reads like the project lost its own local packages.
  * Neither points at a cache, and it has cost two sessions.
  *
- * So the CLI build resolves first and repairs on the way through. A purge is
- * only ever a re-download, but it is minutes of one, so it happens only when
- * the failure carries a corruption signature - a genuine version conflict
- * still fails fast with its own message.
+ * `npx cap run ios` keeps a third such tree, `app/ios/DerivedData/<udid>`, and
+ * eviction reaches its built products too. There the file that goes missing is
+ * a framework's Info.plist, and the build fails at the very end, in Validate,
+ * with `Framework ... did not contain an Info.plist`. Incremental builds reuse
+ * the broken product forever, so it never recovers on its own.
+ *
+ * So the CLI build checks first and repairs on the way through. A purge is
+ * only ever a rebuild, but it is minutes of one, so it happens only on
+ * evidence: a resolve failure carrying a corruption signature, or a framework
+ * product with no Info.plist. A genuine version conflict still fails fast with
+ * its own message.
  */
 
 import { execFileSync } from 'node:child_process';
@@ -30,6 +37,7 @@ import { fileURLToPath } from 'node:url';
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(SCRIPT_DIR, '..');
 const XCODE_PROJECT_DIR = join(REPO_ROOT, 'app/ios/App');
+const CAP_RUN_DERIVED_DATA = join(REPO_ROOT, 'app/ios/DerivedData');
 const DERIVED_DATA_ROOT = join(homedir(), 'Library/Developer/Xcode/DerivedData');
 const SHARED_CACHE = join(homedir(), 'Library/Caches/org.swift.swiftpm');
 
@@ -68,6 +76,50 @@ export function ownedSourcePackages(entries, projectRoot) {
   return entries.filter(({ state }) => state !== null && state.includes(projectRoot)).map((e) => e.path);
 }
 
+/**
+ * Whether a built-products tree has been evicted. Every `.framework` bundle
+ * carries an Info.plist by definition, so one without it is a product the
+ * system has taken files out of, and Validate will refuse the app that embeds
+ * it. Only `Build/Products` is inspected: `EagerLinkingTBDs` under
+ * Intermediates holds framework directories that legitimately have no plist.
+ *
+ * @param frameworks - `{ path, hasInfoPlist }` per framework in the tree.
+ */
+export function evictedFrameworks(frameworks) {
+  return frameworks.filter((f) => !f.hasInfoPlist).map((f) => f.path);
+}
+
+function capRunTreesWithEvictedProducts() {
+  if (!existsSync(CAP_RUN_DERIVED_DATA)) return [];
+  return readdirSync(CAP_RUN_DERIVED_DATA)
+    .map((name) => join(CAP_RUN_DERIVED_DATA, name))
+    .filter((tree) => existsSync(join(tree, 'Build/Products')))
+    .filter((tree) => {
+      const frameworks = frameworkBundlesIn(join(tree, 'Build/Products'));
+      return evictedFrameworks(frameworks).length > 0;
+    });
+}
+
+/** Every `<config>/**\/*.framework` directly under a Build/Products tree. */
+function frameworkBundlesIn(productsDir) {
+  const found = [];
+  const walk = (dir, depth) => {
+    if (depth > 3) return;
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      const path = join(dir, entry.name);
+      if (entry.name.endsWith('.xcframework')) continue;
+      if (entry.name.endsWith('.framework')) {
+        found.push({ path, hasInfoPlist: existsSync(join(path, 'Info.plist')) });
+        continue;
+      }
+      walk(path, depth + 1);
+    }
+  };
+  walk(productsDir, 0);
+  return found;
+}
+
 function readSourcePackageEntries() {
   if (!existsSync(DERIVED_DATA_ROOT)) return [];
   return readdirSync(DERIVED_DATA_ROOT)
@@ -100,6 +152,13 @@ function resolvePackages() {
 }
 
 function main() {
+  // The cap-run tree is checked first because it costs a few stat calls and
+  // its failure arrives at the end of a full build, not at resolve time.
+  for (const tree of capRunTreesWithEvictedProducts()) {
+    process.stdout.write(`Built frameworks under ${tree} have lost their Info.plist; removing the tree.\n`);
+    rmSync(tree, { recursive: true, force: true });
+  }
+
   const first = resolvePackages();
   if (first.ok) return 0;
 
