@@ -79,6 +79,12 @@ export const ZM_INTEGRATION = {
   mjpegEarlyRetryWindowMs: 12000,
   mjpegEarlyRetryDelayMs: 2000,
 
+  // How long a planned restart (the requested scale changed, e.g. the user
+  // zoomed in) may keep showing the frame already on screen while the new
+  // stream connects. Past it the tile admits it is waiting rather than keep
+  // presenting an old picture as a live one.
+  plannedRestartHoldMs: 5000,
+
   // Grace delay before a scheduled CMD_QUIT fires. Lets React StrictMode's
   // dev double-mount cancel the quit instead of killing a stream the
   // surviving mount is still using. See lib/zm/zms-quit.ts.

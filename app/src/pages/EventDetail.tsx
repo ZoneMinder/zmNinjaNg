@@ -329,7 +329,7 @@ export default function EventDetail() {
   const [showScrollPad, toggleScrollPad] = useScrollPad();
 
   // Pinch-to-zoom and pan for event video/image
-  const zoomPan = useZoomPan({ maxScale: 4 });
+  const zoomPan = useZoomPan();
 
   // Zoom belongs to the frame the user zoomed into, not to the page. Stepping
   // to another event keeps this component mounted (the route element is not

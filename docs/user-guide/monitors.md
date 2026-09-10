@@ -80,6 +80,19 @@ Once zoomed in, you can pan the view in several ways:
 
 Press the reset button to return to the full, unzoomed image.
 
+Zoom has no upper limit, and the live view fetches the detail to go with it.
+MJPEG streams are normally scaled down before they leave ZoneMinder (**Stream
+scale** under Live Streaming in {doc}`settings`, 50% by default). As soon as
+you zoom in, the app asks for the monitor's full-size frames instead, and goes
+back to your usual scale when you reset the zoom. The last frame stays on
+screen while the new stream connects, so the switch is invisible unless the
+replacement takes more than a few seconds, at which point the tile says it is
+connecting rather than keep showing an old picture.
+
+Cameras streaming through Go2RTC already arrive at their own resolution, so
+nothing changes there. Recorded video is unscaled too, so zooming into an event
+needs no such switch.
+
 #### Per-Monitor Override
 
 You can force MJPEG for individual monitors via the monitor's Settings dialog (Video tab). When Go2RTC is enabled for a monitor, a toggle appears to turn it off for that monitor only. See {doc}`settings` for details.

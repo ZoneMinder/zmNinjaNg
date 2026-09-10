@@ -157,7 +157,6 @@ export default function MonitorDetail() {
 
   // Pinch-to-zoom and pan (zooms around focal point, pan when zoomed, swipe when not)
   const zoomPan = useZoomPan({
-    maxScale: 4,
     swipeEnabled: !!enabledMonitors && enabledMonitors.length > 1,
     onSwipeLeft,
     onSwipeRight,
@@ -460,6 +459,9 @@ export default function MonitorDetail() {
               bypassGo2rtcFailureCache
               muted={isMuted}
               onMutedChange={setMuted}
+              // Zooming asks ZM for the full-size frame; resetting hands the
+              // saving back. Both re-open the stream (refs #478).
+              fullResolution={zoomPan.isZoomed}
             />
             <ZoneOverlay
               zones={zones}

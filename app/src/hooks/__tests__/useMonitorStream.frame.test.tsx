@@ -23,6 +23,8 @@ import { useAuthStore } from '../../stores/auth';
 import { useSettingsStore, DEFAULT_SETTINGS } from '../../stores/settings';
 import type { Profile } from '../../api/types';
 import { asProfileId } from '../../api/types';
+import { ZM_INTEGRATION } from '../../lib/zmninja-ng-constants';
+import { log, LogLevel } from '../../lib/logger';
 
 vi.mock('../../lib/http', () => ({
   httpGet: vi.fn().mockResolvedValue({}),
@@ -175,6 +177,57 @@ describe('useMonitorStream: has-a-frame gate', () => {
     act(() => resumeCallback!());
 
     expect(result.current.hasFrame).toBe(false);
+  });
+
+  // Zooming in re-requests the stream at full size. The frame on screen is
+  // still a good one and the browser holds it until the new stream decodes, so
+  // withdrawing it here would blink the feed on every zoom (refs #478).
+  it('keeps the frame across a scale change until the new stream loads', async () => {
+    const view = renderHook(
+      ({ scale }: { scale: number }) =>
+        useMonitorStream({ monitorId: '1', streamOptions: { scale } }),
+      { initialProps: { scale: 50 } },
+    );
+    await waitFor(() => expect(view.result.current.imageSrc).not.toBe(''));
+    act(() => view.result.current.reportStreamLoad());
+    const halfSizeSrc = view.result.current.imageSrc;
+
+    view.rerender({ scale: 100 });
+    await waitFor(() => expect(view.result.current.imageSrc).not.toBe(halfSizeSrc));
+
+    expect(view.result.current.hasFrame).toBe(true);
+    // The restart is invisible on screen, so the log is where it is visible.
+    expect(log.monitor).toHaveBeenCalledWith(
+      expect.stringContaining('Stream scale changed from 50 to 100'),
+      LogLevel.INFO,
+      expect.objectContaining({ monitorId: '1', previousScale: 50, scale: 100 }),
+    );
+  });
+
+  // A held frame is a picture of the past. It stands in for a stream that is
+  // about to arrive, never for one that never does.
+  it('gives up the held frame when the re-requested stream never loads', async () => {
+    vi.useFakeTimers();
+    try {
+      const view = renderHook(
+        ({ scale }: { scale: number }) =>
+          useMonitorStream({ monitorId: '1', streamOptions: { scale } }),
+        { initialProps: { scale: 50 } },
+      );
+      await vi.waitFor(() => expect(view.result.current.imageSrc).not.toBe(''));
+      act(() => view.result.current.reportStreamLoad());
+
+      view.rerender({ scale: 100 });
+      await vi.waitFor(() => expect(view.result.current.hasFrame).toBe(true));
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(ZM_INTEGRATION.plannedRestartHoldMs + 100);
+      });
+
+      expect(view.result.current.hasFrame).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   // Snapshot mode swaps the src on every refresh tick (a new cacheBuster), and
