@@ -18,7 +18,7 @@ import { useProfileById } from '../hooks/useCurrentProfile';
 import { useMonitorMuted } from '../hooks/useMonitorMuted';
 import { useMonitorFlag } from '../hooks/useMonitorFlag';
 import { MonitorInfoPopover } from '../components/monitors/MonitorInfoPopover';
-import { FullscreenExitBar } from '../components/ui/fullscreen-exit-bar';
+import { FullscreenExitButton } from '../components/ui/fullscreen-exit-button';
 import { useAutoFullscreen } from '../hooks/useAutoFullscreen';
 import { useAuthSlice } from '../stores/auth';
 import type { ProfileId } from '../api/types';
@@ -412,9 +412,9 @@ export default function MonitorDetail() {
       </div>
       )}
 
-      {/* Fullscreen exit bar */}
+      {/* Fullscreen exit control, floating over the feed */}
       {isFullscreen && (
-        <FullscreenExitBar title={monitor.Monitor.Name} onExit={handleToggleFullscreen} testIdPrefix="monitor-detail" />
+        <FullscreenExitButton title={monitor.Monitor.Name} onExit={handleToggleFullscreen} testIdPrefix="monitor-detail" />
       )}
 
       {/* Main Content */}
@@ -426,7 +426,7 @@ export default function MonitorDetail() {
         // With the floor removed the card is the screen and contain applies.
         'flex-1 flex flex-col items-center justify-center',
         isFullscreen
-          ? 'min-h-0 overflow-hidden pt-[calc(var(--fullscreen-toolbar-h)+var(--sai-top,env(safe-area-inset-top)))] pb-[var(--sai-bottom,env(safe-area-inset-bottom))] pl-[var(--sai-left,env(safe-area-inset-left))] pr-[var(--sai-right,env(safe-area-inset-right))]'
+          ? 'min-h-0 overflow-hidden pt-[var(--sai-top,env(safe-area-inset-top))] pb-[var(--sai-bottom,env(safe-area-inset-bottom))] pl-[var(--sai-left,env(safe-area-inset-left))] pr-[var(--sai-right,env(safe-area-inset-right))]'
           : 'p-2 sm:p-3 md:p-4 bg-muted/10'
       )}>
         <Card
@@ -478,7 +478,7 @@ export default function MonitorDetail() {
             positionClassName={cn(
               'left-2',
               isFullscreen
-                ? 'top-[calc(2.75rem+var(--sai-top,env(safe-area-inset-top)))]'
+                ? 'top-[calc(0.5rem+var(--sai-top,env(safe-area-inset-top)))]'
                 : 'top-2'
             )}
           />

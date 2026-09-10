@@ -155,11 +155,11 @@ Then('the currently open monitor should show a live MJPEG frame', async ({ page 
 When('I maximize the monitor feed', async ({ page }) => {
   // A touch device in landscape is already fullscreen from the rotation
   // term (useAutoFullscreen), and then there is no header button to press.
-  const toolbar = page.getByTestId('monitor-detail-fullscreen-toolbar');
-  if (!(await toolbar.isVisible().catch(() => false))) {
+  const exitButton = page.getByTestId('monitor-detail-exit-fullscreen');
+  if (!(await exitButton.isVisible().catch(() => false))) {
     await page.getByTestId('monitor-detail-maximize').click();
   }
-  await expect(toolbar).toBeVisible({ timeout: testConfig.timeouts.transition });
+  await expect(exitButton).toBeVisible({ timeout: testConfig.timeouts.transition });
 });
 
 // The feed card sat in a flex item whose min-height defaulted to its content,
@@ -173,5 +173,8 @@ Then('the fullscreen feed should fit within the viewport', async ({ page }) => {
   await expect.poll(async () => { const c = await box(); return c ? c.y + c.height : Infinity; }, { message: 'card bottom' }).toBeLessThanOrEqual(viewport.height + 1);
   await expect.poll(async () => { const c = await box(); return c ? c.x + c.width : Infinity; }, { message: 'card right' }).toBeLessThanOrEqual(viewport.width + 1);
   await expect.poll(async () => (await box())?.height ?? 0, { message: 'card height' }).toBeGreaterThan(viewport.height * 0.6);
+  // The exit control floats over the feed rather than sitting in a strip above
+  // it, so the picture starts at the very top of the screen (refs #479).
+  await expect.poll(async () => (await box())?.y ?? Infinity, { message: 'card top' }).toBeLessThanOrEqual(1);
 });
 

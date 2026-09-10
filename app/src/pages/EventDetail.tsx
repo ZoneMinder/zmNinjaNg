@@ -24,7 +24,7 @@ import { getMonitor } from '../api/monitors';
 import { resolveMinStreamingPort } from '../lib/monitor/multiport';
 import { useProfileById } from '../hooks/useCurrentProfile';
 import { useAutoFullscreen } from '../hooks/useAutoFullscreen';
-import { FullscreenExitBar } from '../components/ui/fullscreen-exit-bar';
+import { FullscreenExitButton } from '../components/ui/fullscreen-exit-button';
 import { useFreshAccessToken } from '../hooks/useFreshAccessToken';
 import type { ProfileId } from '../api/types';
 import { useEventTagMapping } from '../hooks/useEventTags';
@@ -498,7 +498,7 @@ export default function EventDetail() {
   return (
     <div className={cn('flex flex-col h-full', pageFullscreen ? 'fixed inset-0 z-50 bg-black' : 'bg-background')}>
       {pageFullscreen && (
-        <FullscreenExitBar
+        <FullscreenExitButton
           title={monitorData?.Monitor.Name ?? event.Event.Name}
           onExit={() => setFullscreen(false)}
           testIdPrefix="event-detail"
@@ -665,7 +665,7 @@ export default function EventDetail() {
         className={cn(
           'flex-1 flex flex-col items-center',
           pageFullscreen
-            ? 'min-h-0 overflow-hidden pt-[calc(var(--fullscreen-toolbar-h)+var(--sai-top,env(safe-area-inset-top)))] pb-[var(--sai-bottom,env(safe-area-inset-bottom))] pl-[var(--sai-left,env(safe-area-inset-left))] pr-[var(--sai-right,env(safe-area-inset-right))]'
+            ? 'min-h-0 overflow-hidden pt-[var(--sai-top,env(safe-area-inset-top))] pb-[var(--sai-bottom,env(safe-area-inset-bottom))] pl-[var(--sai-left,env(safe-area-inset-left))] pr-[var(--sai-right,env(safe-area-inset-right))]'
             : 'overflow-y-auto p-2 sm:p-3 md:p-4 bg-muted/10',
           incomingSlide === 'left' && 'event-slide-left',
           incomingSlide === 'right' && 'event-slide-right',
