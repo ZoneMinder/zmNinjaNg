@@ -377,7 +377,7 @@ describe('EventDetail forced ZMS playback (#313)', () => {
     setSettings(PROFILE_1, { eventPlaybackFullscreen: true });
     render(<EventDetail />);
     expect(screen.getByTestId('mp4-player')).toHaveAttribute('data-fill', 'true');
-    expect(screen.getByTestId('event-detail-exit-fullscreen')).toHaveTextContent('monitor_detail.exit');
+    expect(screen.getByTestId('event-detail-exit-fullscreen')).toHaveAttribute('aria-label', 'monitor_detail.exit_fullscreen');
     expect(screen.queryByTestId('event-detail-back')).toBeNull();
 
     fireEvent.click(screen.getByTestId('event-detail-exit-fullscreen'));
@@ -448,7 +448,7 @@ describe('EventDetail forced ZMS playback (#313)', () => {
     render(<EventDetail />);
 
     expect(screen.getByTestId('zms-player')).toHaveAttribute('data-fullscreen', 'true');
-    expect(screen.getByTestId('event-detail-exit-fullscreen')).toHaveTextContent('monitor_detail.exit');
+    expect(screen.getByTestId('event-detail-exit-fullscreen')).toHaveAttribute('aria-label', 'monitor_detail.exit_fullscreen');
     expect(screen.queryByTestId('event-detail-back')).toBeNull();
 
     fireEvent.click(screen.getByTestId('event-detail-exit-fullscreen'));
