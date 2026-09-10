@@ -594,7 +594,7 @@ export function ZmsEventPlayer({
 
   // Speed presets
   // Pinch-to-zoom and pan for ZMS image
-  const zoomPan = useZoomPan({ maxScale: 4 });
+  const zoomPan = useZoomPan();
 
   // Shared with the MP4 speed menu (EVENT_PLAYBACK_RATES). ZMS uses percentages,
   // so each multiplier maps to rate * 100.

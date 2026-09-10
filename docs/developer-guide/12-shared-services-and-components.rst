@@ -1848,7 +1848,7 @@ Click-and-hold repeats the action on every button.
 
 .. code:: tsx
 
-   const zoomPan = useZoomPan({ maxScale: 4 });
+   const zoomPan = useZoomPan();
 
    <div ref={zoomPan.ref}>
      <div ref={zoomPan.innerRef}>{/* zoomable content */}</div>

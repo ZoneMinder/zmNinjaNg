@@ -80,6 +80,12 @@ Once zoomed in, you can pan the view in several ways:
 
 Press the reset button to return to the full, unzoomed image.
 
+Zoom has no upper limit, but detail does. The app magnifies the picture it was
+sent, so how far you can usefully zoom depends on the resolution that arrives.
+MJPEG streams are scaled down before they leave ZoneMinder: raise **Stream
+scale** under Live Streaming in {doc}`settings` to 100% for the full frame, at
+the cost of bandwidth. Low bandwidth mode halves it again.
+
 #### Per-Monitor Override
 
 You can force MJPEG for individual monitors via the monitor's Settings dialog (Video tab). When Go2RTC is enabled for a monitor, a toggle appears to turn it off for that monitor only. See {doc}`settings` for details.

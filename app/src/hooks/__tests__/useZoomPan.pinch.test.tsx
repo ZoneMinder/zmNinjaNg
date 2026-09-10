@@ -19,7 +19,7 @@ describe('useZoomPan pinch limits', () => {
   it('never pinches below fit, and ignores a touch too small to be a pinch', () => {
     // No DOM needed: the config is built on the first render.
     function Harness() {
-      useZoomPan({ maxScale: 4 });
+      useZoomPan();
       return null;
     }
     render(<Harness />);

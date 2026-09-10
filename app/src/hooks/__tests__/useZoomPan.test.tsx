@@ -7,7 +7,7 @@ import { useZoomPan } from '../useZoomPan';
 // handler can run end to end.
 let api: ReturnType<typeof useZoomPan>;
 function Harness() {
-  api = useZoomPan({ maxScale: 4 });
+  api = useZoomPan();
   return (
     <div ref={api.ref} data-testid="container">
       <div ref={api.innerRef} data-testid="inner" />
@@ -60,6 +60,16 @@ describe('useZoomPan keyboard pan', () => {
     // ArrowLeft pans left: content shifts right, so translateX increases.
     expect(translateX(inner.style.transform)).toBeGreaterThan(before);
     expect(ev.defaultPrevented).toBe(true);
+  });
+
+  // Old zmNinja zoomed as far as the user wanted; a 400% ceiling stopped this
+  // one well short of reading a plate or a face (refs #478).
+  it('keeps zooming in past the old 400% ceiling', () => {
+    mountZoomable();
+
+    for (let i = 0; i < 20; i++) act(() => api.zoomIn());
+
+    expect(api.scale).toBeGreaterThan(4);
   });
 
   it('does not intercept arrow keys when not zoomed', () => {
