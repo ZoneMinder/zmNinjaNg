@@ -51,6 +51,34 @@ function resolves(tree: Tree, path: string): boolean {
   return leaf in node || Object.keys(node).some((k) => k.startsWith(`${leaf}_`));
 }
 
+/** Suffix i18next appends to a plural family, e.g. "count_one". */
+const PLURAL_SUFFIX = /_(zero|one|two|few|many|other)$/;
+
+/**
+ * Base paths of the plural families en declares, e.g. "monitors.count". Both
+ * `_one` and `_other` must be present: `timeline.filter_other` is a detection
+ * category sitting next to `filter_person`, not a plural form.
+ */
+function pluralFamilies(paths: string[]): string[] {
+  const all = new Set(paths);
+  const bases = paths.filter((p) => PLURAL_SUFFIX.test(p)).map((p) => p.replace(PLURAL_SUFFIX, ''));
+  return [...new Set(bases)].filter((base) => all.has(`${base}_one`) && all.has(`${base}_other`));
+}
+
+/**
+ * Plural categories a language needs for the counts this app shows. English
+ * has two (one/other) and Russian has three below 100 (one/few/many), so a
+ * locale legitimately carries keys en never declares. Categories that only
+ * fire for millions or fractions, such as French `many`, are left out: no
+ * screen counts that high, and i18next falls back to `_other` for them.
+ */
+function countedCategories(lang: string): string[] {
+  const rules = new Intl.PluralRules(lang);
+  const seen = new Set<string>();
+  for (let n = 0; n <= 100; n++) seen.add(rules.select(n));
+  return [...seen];
+}
+
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((entry) => {
     const full = join(dir, entry);
@@ -79,11 +107,35 @@ describe('translation keys', () => {
   it('finds the translated locales on disk', () => {
     // Without this, a discovery bug empties TRANSLATED and it.each below runs
     // zero cases, which reads as a pass.
-    expect(TRANSLATED.map(([code]) => code)).toEqual(expect.arrayContaining(['de', 'es', 'fr', 'it', 'zh']));
+    expect(TRANSLATED.map(([code]) => code)).toEqual(expect.arrayContaining(['de', 'es', 'fr', 'it', 'zh', 'ru']));
   });
 
-  it.each(TRANSLATED)('%s has exactly the keys en has', (_lang, tree) => {
-    const expected = leafPaths(en as Tree).sort();
-    expect(leafPaths(tree).sort()).toEqual(expected);
+  it.each(TRANSLATED)('%s has every key en has', (_lang, tree) => {
+    const have = new Set(leafPaths(tree));
+    expect(leafPaths(en as Tree).filter((path) => !have.has(path))).toEqual([]);
+  });
+
+  it.each(TRANSLATED)('%s adds no keys en lacks, beyond plural forms', (_lang, tree) => {
+    const expected = new Set(leafPaths(en as Tree));
+    const families = new Set(pluralFamilies([...expected]));
+    const extra = leafPaths(tree).filter(
+      (path) => !expected.has(path) && !(PLURAL_SUFFIX.test(path) && families.has(path.replace(PLURAL_SUFFIX, '')))
+    );
+    expect(extra).toEqual([]);
+  });
+
+  /**
+   * Without this, a locale copied from en carries only `_one` and `_other`,
+   * and i18next silently renders English for every count whose category is
+   * missing: Russian showed "2 monitors" for any count from 2 to 4.
+   */
+  it.each(TRANSLATED)('%s covers every plural category its counts reach', (lang, tree) => {
+    const have = new Set(leafPaths(tree));
+    const missing = pluralFamilies(leafPaths(en as Tree)).flatMap((family) =>
+      countedCategories(lang)
+        .map((category) => `${family}_${category}`)
+        .filter((path) => !have.has(path))
+    );
+    expect(missing).toEqual([]);
   });
 });

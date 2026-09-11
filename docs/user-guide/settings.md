@@ -8,7 +8,7 @@ Every section heading on this screen collapses. Click or tap a heading to fold t
 
 | Setting | Description |
 |---------|-------------|
-| **Language** | Interface language (English, German, Spanish, French, Italian, Chinese) |
+| **Language** | Interface language (English, German, Spanish, French, Italian, Chinese, Russian) |
 | **Theme** | Light, Cream, Dark, Slate, Amber, or System (follows system setting by default). The quick toggle is in the sidebar; see {doc}`getting-started`. |
 | **Date format** | How dates are displayed throughout the app |
 | **Time format** | 12-hour or 24-hour clock |
