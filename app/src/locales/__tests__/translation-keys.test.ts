@@ -79,7 +79,7 @@ describe('translation keys', () => {
   it('finds the translated locales on disk', () => {
     // Without this, a discovery bug empties TRANSLATED and it.each below runs
     // zero cases, which reads as a pass.
-    expect(TRANSLATED.map(([code]) => code)).toEqual(expect.arrayContaining(['de', 'es', 'fr', 'it', 'zh']));
+    expect(TRANSLATED.map(([code]) => code)).toEqual(expect.arrayContaining(['de', 'es', 'fr', 'it', 'zh', 'ru']));
   });
 
   it.each(TRANSLATED)('%s has exactly the keys en has', (_lang, tree) => {
