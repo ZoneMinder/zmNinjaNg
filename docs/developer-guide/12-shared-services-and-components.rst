@@ -1539,7 +1539,7 @@ partial React Query refetch would leave a dead stream dead.
 
 The icon gets ``animate-spin`` while ``isLoading``, and the button is disabled
 while loading or when ``disabled`` is set. ``label`` defaults to the
-``common.refresh`` translation key (present in en, de, es, fr, it, zh) and doubles
+``common.refresh`` translation key (present in en, de, es, fr, it, ru, zh) and doubles
 as the ``title`` and ``aria-label`` when no explicit ``aria-label`` is passed.
 ``showLabel`` (``'always'``, ``'never'``, ``'sm-and-up'``) defaults to
 ``'never'``, so pages render it icon-only. The default ``data-testid`` is
@@ -2014,7 +2014,8 @@ navigation, reorder mode, and user controls live. The mobile menu button sits
 on the left so it matches the side the drawer opens from. ``LanguageSwitcher``
 is a self-contained dropdown in the ``SidebarContent`` footer, next to the
 theme and lock controls, because language is a set-once control that does not
-belong in the header.
+belong in the header. Its entries come from ``useLanguageOptions``, the same
+hook the Settings picker uses, so both list the languages in one order.
 
 Sidebar order is per profile. An edit mode (the pencil icon) lets a user drag
 menu items; the order is saved to ``ProfileSettings.sidebarNavOrder`` as an

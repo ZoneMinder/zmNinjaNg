@@ -218,9 +218,15 @@ i18next & react-i18next
 
 Translations reach components through ``const { t } = useTranslation()``, and
 the strings live in one JSON file per language under ``src/locales/``. No
-hardcoded user-facing strings, and all six languages (en, de, es, fr, it, zh) are
-updated in the same commit; that is the Localization contract, and
+hardcoded user-facing strings, and all seven languages (en, de, es, fr, it, ru,
+zh) are updated in the same commit; that is the Localization contract, and
 :doc:`09-contributing` explains why a missing key does not look like a bug.
+
+Neither language picker keeps its own list. ``hooks/useLanguageOptions.ts``
+reads the codes in ``locales/resources.ts``, labels each with the name that
+language uses for itself, and returns English first with the rest sorted by
+label. Adding the locale to that map is therefore the only edit a new
+language needs on the React side.
 
 Constants
 ---------

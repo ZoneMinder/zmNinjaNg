@@ -1,11 +1,11 @@
 ---
 name: add-language
-description: Use when adding a new interface language (locale) to the app, or when asked to translate the UI into another language. Covers the translation file, the two language pickers, the i18n resources, and the user doc that names the available languages.
+description: Use when adding a new interface language (locale) to the app, or when asked to translate the UI into another language. Covers the translation file, the i18n resources, the plural forms the language needs, and the user doc that names the available languages.
 ---
 
 # Adding a new interface language
 
-The app bundles translations at build time. Adding a locale means touching five
+The app bundles translations at build time. Adding a locale means touching three
 code locations plus two prose locations. Miss any one and the failure is silent:
 i18next falls back to English mid-screen, or the new locale ships with no
 key-parity coverage.
@@ -44,47 +44,48 @@ ls app/src/locales
 
 Use the same string `{Name}` in all of them. Language names are not translated.
 
-## 4. Register the locale in i18n
+## 4. Register the locale
 
-In `app/src/i18n.ts`, add the import alongside the others and the entry in
-`resources`:
+In `app/src/locales/resources.ts`, add the import alongside the others and the
+entry in `LANGUAGE_RESOURCES`:
 
 ```typescript
-import {code}Translation from './locales/{code}/translation.json';
+import {code}Translation from './{code}/translation.json';
 ```
 
 ```typescript
-resources: {
+export const LANGUAGE_RESOURCES = {
   // ...
   {code}: { translation: {code}Translation },
-},
+};
 ```
 
-## 5. Update both language pickers
+Both pickers and i18next read this map, so nothing else registers a locale.
 
-There are two, and they carry separate hardcoded lists:
+## 5. Nothing to do for the pickers
 
-- `app/src/components/settings/AppearanceSection.tsx` — Settings → Appearance.
-  Add a `SelectItem`:
-
-  ```tsx
-  <SelectItem value="{code}" data-testid="settings-language-option-{code}">{t('languages.{code}')}</SelectItem>
-  ```
-
-- `app/src/components/layout/LanguageSwitcher.tsx` — the globe dropdown in the
-  sidebar. Add to the `languages` array:
-
-  ```tsx
-  { code: '{code}', label: t('languages.{code}') },
-  ```
-
-Updating only the first is the common miss: the language works in Settings and
-is absent from the sidebar.
+Both of them, Settings → Appearance and the sidebar globe dropdown, render
+`useLanguageOptions` (`app/src/hooks/useLanguageOptions.ts`), which reads the
+codes registered in step 4 and orders them English first, then by label. The
+order is covered by `app/src/components/layout/__tests__/LanguageSwitcher.test.tsx`,
+which pins the expected sequence, so add the new code there.
 
 ## 6. Update the user doc
 
 `docs/user-guide/settings.md`, Appearance table, Language row, names the
 available languages in English. Add the new one.
+
+## 7. Add the plural forms the language needs
+
+English declares `_one` and `_other`. A language with more plural categories
+needs the rest, or i18next finds no key for those counts and silently renders
+English: Russian showed "2 monitors" until `_few` and `_many` were added. The
+parity test checks every category `Intl.PluralRules` reports for counts up to
+100, so it tells you which keys are missing.
+
+```bash
+node -e "console.log(new Intl.PluralRules('{code}').resolvedOptions().pluralCategories)"
+```
 
 ## Nothing to do for dates, the assistant, or the parity test
 
@@ -119,7 +120,7 @@ change the visible text.
 - [ ] `app/src/locales/{code}/translation.json` created and fully translated
 - [ ] `languages.{code}` added to every translation file under `app/src/locales/`
 - [ ] `app/src/i18n.ts` import and `resources` entry
-- [ ] `app/src/components/settings/AppearanceSection.tsx` `SelectItem`
-- [ ] `app/src/components/layout/LanguageSwitcher.tsx` array entry
+- [ ] expected order updated in `LanguageSwitcher.test.tsx`
+- [ ] plural forms for every category the language needs
 - [ ] `docs/user-guide/settings.md` Language row
 - [ ] `npm test`, `npx tsc -b`, `npm run build`, `npm run test:e2e -- settings.feature`
