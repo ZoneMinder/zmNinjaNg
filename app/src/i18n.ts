@@ -9,6 +9,7 @@ import esTranslation from './locales/es/translation.json';
 import frTranslation from './locales/fr/translation.json';
 import itTranslation from './locales/it/translation.json';
 import zhTranslation from './locales/zh/translation.json';
+import ruTranslation from './locales/ru/translation.json';
 
 i18n
   // detect user language
@@ -30,6 +31,7 @@ i18n
       fr: { translation: frTranslation },
       it: { translation: itTranslation },
       zh: { translation: zhTranslation },
+      ru: { translation: ruTranslation },      
     },
 
     interpolation: {
