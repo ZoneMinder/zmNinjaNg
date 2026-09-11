@@ -9,7 +9,6 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { useGesture } from '@use-gesture/react';
 
 interface UseZoomPanOptions {
-  maxScale?: number;
   onSwipeLeft?: () => void;
   onSwipeRight?: () => void;
   swipeEnabled?: boolean;
@@ -28,7 +27,6 @@ const PAN_STEP = 80;
 const WHEEL_STEP = 0.15;
 
 export function useZoomPan({
-  maxScale = 4,
   onSwipeLeft,
   onSwipeRight,
   swipeEnabled = false,
@@ -74,7 +72,10 @@ export function useZoomPan({
     (s: number, x: number, y: number, animate: boolean) => {
       // Fit is the floor. Smaller than the frame is never a state a user
       // asked for, and it used to be one they could only leave by pinching out.
-      const scale = Math.max(1, Math.min(maxScale, s));
+      // There is no ceiling: a 400% one stopped short of the detail people
+      // zoom in for, and the picture's own resolution is the real limit
+      // (refs #478).
+      const scale = Math.max(1, s);
       let cx = x;
       let cy = y;
 
@@ -101,7 +102,7 @@ export function useZoomPan({
         el.style.willChange = identity ? '' : 'transform';
       }
     },
-    [maxScale],
+    [],
   );
 
   const syncState = useCallback(() => {
@@ -121,13 +122,13 @@ export function useZoomPan({
     const container = containerRef.current;
     if (!container) return;
     const { width, height } = container.getBoundingClientRect();
-    const newScale = Math.min(maxScale, cur.scale + ZOOM_STEP);
+    const newScale = cur.scale + ZOOM_STEP;
     const ratio = newScale / cur.scale;
     const cx = width / 2;
     const cy = height / 2;
     applyTransform(newScale, cx - (cx - cur.x) * ratio, cy - (cy - cur.y) * ratio, true);
     syncState();
-  }, [applyTransform, maxScale, syncState]);
+  }, [applyTransform, syncState]);
 
   const zoomOut = useCallback(() => {
     const cur = stateRef.current;
@@ -192,7 +193,7 @@ export function useZoomPan({
         // Scroll up zooms in, scroll down zooms out. Lower bound is 1 (fit) so
         // the wheel never shrinks the image below the container.
         const factor = dirY < 0 ? 1 + WHEEL_STEP : 1 - WHEEL_STEP;
-        const newScale = Math.max(1, Math.min(maxScale, cur.scale * factor));
+        const newScale = Math.max(1, cur.scale * factor);
         if (newScale === cur.scale) return;
         const ratio = newScale / cur.scale;
         applyTransform(newScale, fx - (fx - cur.x) * ratio, fy - (fy - cur.y) * ratio, false);
@@ -273,7 +274,7 @@ export function useZoomPan({
         // while unzoomed, the browser can claim a touch and cancel a pinch
         // half way through, and a half-recognised one used to land on that
         // floor - which is the "it zooms out the moment I touch a feed".
-        scaleBounds: { min: 1, max: maxScale },
+        scaleBounds: { min: 1, max: Infinity },
         // And it takes a real pinch to start one: a stray touch that the
         // browser is about to turn into a scroll should not nudge the zoom.
         threshold: 0.1,

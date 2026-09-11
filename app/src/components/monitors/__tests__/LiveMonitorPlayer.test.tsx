@@ -339,6 +339,25 @@ describe('LiveMonitorPlayer reduced stream tuning', () => {
     });
   });
 
+  // Zoom magnifies the frame that arrived, so a 50% stream is 50% of the
+  // detail however far the user zooms in. The page asks for the full frame for
+  // as long as they stay zoomed (refs #478).
+  it('asks for the full-size frame while the view is zoomed', () => {
+    render(withQuery(<LiveMonitorPlayer monitor={monitor} profile={profile} fullResolution />));
+
+    expect(latestOptions()).toEqual({ maxfps: 10, scale: 100 });
+  });
+
+  it('gives the full-size frame back when the view zooms out', () => {
+    const { rerender } = render(
+      withQuery(<LiveMonitorPlayer monitor={monitor} profile={profile} fullResolution />),
+    );
+
+    rerender(withQuery(<LiveMonitorPlayer monitor={monitor} profile={profile} />));
+
+    expect(latestOptions()).toEqual({ maxfps: 10, scale: 50 });
+  });
+
   it('keeps a profile already streaming below the ceiling where it is', () => {
     seedProfiles([makeProfile('profile-1')], { settings: { 'profile-1': { streamMaxFps: 2, streamScale: 10 } } });
 

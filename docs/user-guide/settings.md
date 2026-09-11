@@ -171,7 +171,7 @@ Settings that affect event video playback and dashboard refresh:
 | Setting | Description |
 |---------|-------------|
 | **Event autoplay** | Start video playback automatically when opening the Event Detail page |
-| **Open events in fullscreen** | Play event video fullscreen as soon as the Event Detail page opens. Entering fullscreen on the player turns this on; this switch is how you turn it off. |
+| **Open events in fullscreen** | Play event video fullscreen as soon as the Event Detail page opens. Going fullscreen on the player itself lasts only for that event. |
 | **Events per page** | How many events to load per page on the Events screen (10–1000, presets at 100/300/500) |
 | **Dashboard refresh interval** | How often the dashboard widgets reload data (5–300 seconds, presets at 10/30/60) |
 

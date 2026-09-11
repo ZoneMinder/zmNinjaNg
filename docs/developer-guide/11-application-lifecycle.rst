@@ -241,7 +241,16 @@ values are given.
    the ``useStreamLifecycle`` hook it composes) monitor their own health. If a
    stream dies, they reconnect with a fresh connection key (``connkey``),
    releasing the dead one with ``ZMS_COMMANDS.cmdQuit`` first so ZMS does not
-   leak the old process.
+   leak the old process. The requested ``scale`` is part of that connection's
+   identity: a running nph-zms keeps sending the size it started at, so
+   changing the scale quits the key and mints a new one rather than re-pointing
+   the ``<img>``. Zooming into a feed does exactly that, asking for
+   ``ZMS_FULL_SCALE`` while zoomed and dropping back to the profile's Stream
+   scale on reset. The frame gate in ``useMonitorStream`` holds the picture
+   already on screen across that swap, the same way it does across a snapshot
+   refresh, and gives up after ``plannedRestartHoldMs`` so a restart that never
+   produces a frame stops standing in for a live one. Both the scale change and
+   the CMD_QUIT it triggers are logged.
 5. **WebSocket Keepalive & Reconnect**: The notification WebSocket
    (``services/notifications.ts``) sends a version-request ping every
    ``wsKeepaliveInterval`` (60s / 120s) to maintain the connection. On

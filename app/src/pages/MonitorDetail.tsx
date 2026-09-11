@@ -18,7 +18,7 @@ import { useProfileById } from '../hooks/useCurrentProfile';
 import { useMonitorMuted } from '../hooks/useMonitorMuted';
 import { useMonitorFlag } from '../hooks/useMonitorFlag';
 import { MonitorInfoPopover } from '../components/monitors/MonitorInfoPopover';
-import { FullscreenExitBar } from '../components/ui/fullscreen-exit-bar';
+import { FullscreenExitButton } from '../components/ui/fullscreen-exit-button';
 import { useAutoFullscreen } from '../hooks/useAutoFullscreen';
 import { useAuthSlice } from '../stores/auth';
 import type { ProfileId } from '../api/types';
@@ -111,7 +111,7 @@ export default function MonitorDetail() {
   // without new branching (refs #337).
   const { profile: ownerProfile, settings } = useProfileById(routeProfileId);
   const [isMuted, setMuted] = useMonitorMuted(ownerProfile?.id, id ?? '');
-  const [openFullscreen, setOpenFullscreen] = useMonitorFlag(ownerProfile?.id, id ?? '', 'fullscreenMonitorIds');
+  const [openFullscreen] = useMonitorFlag(ownerProfile?.id, id ?? '', 'fullscreenMonitorIds');
   const [isFullscreen, setFullscreen] = useAutoFullscreen({
     startFullscreen: settings.monitorDetailFullscreen || openFullscreen,
     resetKey: id,
@@ -157,7 +157,6 @@ export default function MonitorDetail() {
 
   // Pinch-to-zoom and pan (zooms around focal point, pan when zoomed, swipe when not)
   const zoomPan = useZoomPan({
-    maxScale: 4,
     swipeEnabled: !!enabledMonitors && enabledMonitors.length > 1,
     onSwipeLeft,
     onSwipeRight,
@@ -259,14 +258,15 @@ export default function MonitorDetail() {
     [monitor?.Monitor.Height, monitor?.Monitor.Orientation, monitor?.Monitor.Width]
   );
 
-  // Maximizing remembers the monitor; exiting is session-only, since exit is
-  // the only way off the page and a remembered exit could never be kept.
-  // The monitor's settings dialog is the off switch (refs #462, #463).
+  // Maximizing changes this session only. It used to write
+  // `fullscreenMonitorIds`, which made every monitor ever maximized open
+  // fullscreen forever, with the settings dialog as the only way out (#476).
+  // The dialog's "Open in fullscreen" and the global live-view setting are
+  // the persistent form; the button beside them does not need to be one.
   const handleToggleFullscreen = useCallback(() => {
     setFullscreen(!isFullscreen);
-    if (!isFullscreen) setOpenFullscreen(true);
     zoomPan.reset();
-  }, [zoomPan, isFullscreen, setFullscreen, setOpenFullscreen]);
+  }, [zoomPan, isFullscreen, setFullscreen]);
 
   // Settings handlers - write to the OWNING profile's settings bucket, not
   // whichever profile is globally current (refs #337).
@@ -411,9 +411,9 @@ export default function MonitorDetail() {
       </div>
       )}
 
-      {/* Fullscreen exit bar */}
+      {/* Fullscreen exit control, floating over the feed */}
       {isFullscreen && (
-        <FullscreenExitBar title={monitor.Monitor.Name} onExit={handleToggleFullscreen} testIdPrefix="monitor-detail" />
+        <FullscreenExitButton title={monitor.Monitor.Name} onExit={handleToggleFullscreen} testIdPrefix="monitor-detail" />
       )}
 
       {/* Main Content */}
@@ -425,7 +425,7 @@ export default function MonitorDetail() {
         // With the floor removed the card is the screen and contain applies.
         'flex-1 flex flex-col items-center justify-center',
         isFullscreen
-          ? 'min-h-0 overflow-hidden pt-[calc(var(--fullscreen-toolbar-h)+var(--sai-top,env(safe-area-inset-top)))] pb-[var(--sai-bottom,env(safe-area-inset-bottom))] pl-[var(--sai-left,env(safe-area-inset-left))] pr-[var(--sai-right,env(safe-area-inset-right))]'
+          ? 'min-h-0 overflow-hidden pt-[var(--sai-top,env(safe-area-inset-top))] pb-[var(--sai-bottom,env(safe-area-inset-bottom))] pl-[var(--sai-left,env(safe-area-inset-left))] pr-[var(--sai-right,env(safe-area-inset-right))]'
           : 'p-2 sm:p-3 md:p-4 bg-muted/10'
       )}>
         <Card
@@ -459,6 +459,9 @@ export default function MonitorDetail() {
               bypassGo2rtcFailureCache
               muted={isMuted}
               onMutedChange={setMuted}
+              // Zooming asks ZM for the full-size frame; resetting hands the
+              // saving back. Both re-open the stream (refs #478).
+              fullResolution={zoomPan.isZoomed}
             />
             <ZoneOverlay
               zones={zones}
@@ -477,7 +480,7 @@ export default function MonitorDetail() {
             positionClassName={cn(
               'left-2',
               isFullscreen
-                ? 'top-[calc(2.75rem+var(--sai-top,env(safe-area-inset-top)))]'
+                ? 'top-[calc(0.5rem+var(--sai-top,env(safe-area-inset-top)))]'
                 : 'top-2'
             )}
           />

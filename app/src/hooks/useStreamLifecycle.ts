@@ -52,7 +52,7 @@ interface StreamCleanupParams {
 async function quitStreamForParams(
   params: StreamCleanupParams,
   logFn: ComponentLogger,
-  reason: 'unmount' | 'profile-switch' | 'disable' | 'view-mode',
+  reason: 'unmount' | 'profile-switch' | 'disable' | 'view-mode' | 'scale',
 ): Promise<void> {
   if (
     params.viewMode !== 'streaming' ||
@@ -125,6 +125,14 @@ export interface UseStreamLifecycleOptions {
    * Omitted callers keep the pre-existing monitorId-only key.
    */
   profileId?: ProfileId | null;
+  /**
+   * The `scale=` this stream is currently asking zms for. A running nph-zms
+   * keeps sending the size it was started at, so a change here is a different
+   * stream and not a different frame: the old process is quit and a fresh key
+   * minted, exactly as a view-mode flip does. Zooming in raises it and the
+   * Stream scale setting changes it (refs #478).
+   */
+  scale?: number;
 }
 
 export interface UseStreamLifecycleReturn {
@@ -167,6 +175,7 @@ export function useStreamLifecycle({
   enabled = true,
   minStreamingPort,
   profileId,
+  scale,
 }: UseStreamLifecycleOptions): UseStreamLifecycleReturn {
   const regenerateConnKey = useMonitorStore((state) => state.regenerateConnKey);
 
@@ -316,11 +325,11 @@ export function useStreamLifecycle({
   // Both directions then mint a fresh key. The new mode needs one (a snapshot
   // URL carries a connkey too), and reusing the quit key risks colliding with
   // whatever server-side state it left behind.
-  const prevStreamIdentityRef = useRef({ viewMode, monitorId, enabled, minStreamingPort });
+  const prevStreamIdentityRef = useRef({ viewMode, monitorId, enabled, minStreamingPort, scale });
   useEffect(() => {
     const prev = prevStreamIdentityRef.current;
-    prevStreamIdentityRef.current = { viewMode, monitorId, enabled, minStreamingPort };
-    if (prev.viewMode === viewMode) return;
+    prevStreamIdentityRef.current = { viewMode, monitorId, enabled, minStreamingPort, scale };
+    if (prev.viewMode === viewMode && prev.scale === scale) return;
     // Only a mode flip on an otherwise unchanged stream is this effect's to
     // handle. When the enabled flag moved in the same commit, the disable
     // teardown or the regeneration effect already owns that key. When the
@@ -358,7 +367,7 @@ export function useStreamLifecycle({
           minStreamingPort: prev.minStreamingPort,
         },
         logFn,
-        'view-mode',
+        prev.viewMode === viewMode ? 'scale' : 'view-mode',
       );
     }
 
@@ -370,7 +379,7 @@ export function useStreamLifecycle({
     // current stream was opened on, even when it changes without a flip (the
     // force-disable-multi-port setting does that).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewMode, monitorId, enabled, minStreamingPort]);
+  }, [viewMode, monitorId, enabled, minStreamingPort, scale]);
 
   // Capture the live media element on every render. The unmount cleanup runs as
   // a passive effect, by which point React has already nulled mediaRef, so we

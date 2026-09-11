@@ -44,7 +44,7 @@ The small info button next to each monitor's name, on the Monitors page and at t
 
 How a feed fills its tile — **Fit whole image** or **Crop to fill** — and **Analysis frames** live in the ⋮ menu at the end of the toolbar, on both the Monitors and Monitor Detail screens. The protocol label (enabled in {doc}`settings`) shows which streaming protocol is active on each feed. The Monitor Detail page also shows native video controls (play, pause, volume) for Go2RTC streams.
 
-The maximize button on the Monitor Detail toolbar fills the screen with the feed and hides everything else, and the red **Exit fullscreen** button brings the page back. Maximizing also remembers the monitor: it opens that way every time afterwards, including when you tap it from the Montage. Exiting does not forget it, since exiting is the only way to leave the page; to turn the memory off, use **Open in fullscreen** in the monitor's Settings dialog (Video tab), which is the same switch and applies as soon as you flip it. To open every monitor maximized, turn on **Open live view in fullscreen** in {doc}`settings` instead. On a phone or tablet, turning the device to landscape also fills the screen for as long as it stays landscape. Leaving fullscreen while landscape keeps the normal view until the next rotation.
+The maximize button on the Monitor Detail toolbar fills the screen with the feed and hides everything else. A translucent close button in the top corner brings the page back; nothing else sits over the picture. Both change only the monitor you are looking at, until you leave the page. To have one monitor open maximized every time, turn on **Open in fullscreen** in its Settings dialog (Video tab). To open every monitor maximized, turn on **Open live view in fullscreen** in {doc}`settings` instead. On a phone or tablet, turning the device to landscape also fills the screen for as long as it stays landscape. Leaving fullscreen while landscape keeps the normal view until the next rotation.
 
 Go2RTC feeds in the Monitors list start muted. The speaker icon next to a monitor's name unmutes it, and the app remembers that choice per monitor until you mute it again. The Monitor Detail page's volume control shares the same memory, so unmuting there carries to the card and the montage tile and back.
 
@@ -79,6 +79,19 @@ Once zoomed in, you can pan the view in several ways:
   or tablet does not need a clear strip beside the video to scroll from.
 
 Press the reset button to return to the full, unzoomed image.
+
+Zoom has no upper limit, and the live view fetches the detail to go with it.
+MJPEG streams are normally scaled down before they leave ZoneMinder (**Stream
+scale** under Live Streaming in {doc}`settings`, 50% by default). As soon as
+you zoom in, the app asks for the monitor's full-size frames instead, and goes
+back to your usual scale when you reset the zoom. The last frame stays on
+screen while the new stream connects, so the switch is invisible unless the
+replacement takes more than a few seconds, at which point the tile says it is
+connecting rather than keep showing an old picture.
+
+Cameras streaming through Go2RTC already arrive at their own resolution, so
+nothing changes there. Recorded video is unscaled too, so zooming into an event
+needs no such switch.
 
 #### Per-Monitor Override
 

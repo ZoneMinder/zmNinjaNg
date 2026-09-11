@@ -304,8 +304,8 @@ export interface ProfileSettings {
    *  on the profile (refs #463). ZMS playback has no audio. */
   eventPlaybackMuted: boolean;
   /** Whether the MP4 event player opens fullscreen. Set by "Open events in
-   *  fullscreen" under Settings > Playback or by entering fullscreen on the
-   *  player; only the setting clears it (refs #462, #463). */
+   *  fullscreen" under Settings > Playback, and nowhere else: entering
+   *  fullscreen on the player is a session change (refs #462, #463, #476). */
   eventPlaybackFullscreen: boolean;
   // Desktop sidebar width in pixels (60–320, persisted across sessions)
   sidebarWidth: number;
@@ -330,9 +330,8 @@ export interface ProfileSettings {
    *  its last choice across remounts (refs #463). */
   unmutedMonitorIds: string[];
   /** Monitors whose detail page opens fullscreen. Set by "Open in fullscreen"
-   *  in the monitor's settings dialog or by maximizing the page; only the
-   *  dialog clears it. Exiting is the only way off a fullscreen page, so a
-   *  remembered exit could never be kept (refs #462, #463). */
+   *  in the monitor's settings dialog, and nowhere else: maximizing the page
+   *  is a session change (refs #462, #463, #476). */
   fullscreenMonitorIds: string[];
   // Force-disable multi-port streaming. When true, the app ignores the server's
   // ZM_MIN_STREAMING_PORT and uses the portal's default port for all streams.

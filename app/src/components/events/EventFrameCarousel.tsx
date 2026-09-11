@@ -157,7 +157,7 @@ function EventFrameViewer({
 }) {
   // Destructured rather than kept whole: handing an object that still carries
   // the two refs to ZoomControls trips react-hooks/refs (rule 31).
-  const { ref, innerRef, ...controls } = useZoomPan({ maxScale: 4 });
+  const { ref, innerRef, ...controls } = useZoomPan();
 
   return (
     <Dialog open onOpenChange={onOpenChange}>

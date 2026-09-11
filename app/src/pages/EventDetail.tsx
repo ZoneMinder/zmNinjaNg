@@ -24,7 +24,7 @@ import { getMonitor } from '../api/monitors';
 import { resolveMinStreamingPort } from '../lib/monitor/multiport';
 import { useProfileById } from '../hooks/useCurrentProfile';
 import { useAutoFullscreen } from '../hooks/useAutoFullscreen';
-import { FullscreenExitBar } from '../components/ui/fullscreen-exit-bar';
+import { FullscreenExitButton } from '../components/ui/fullscreen-exit-button';
 import { useFreshAccessToken } from '../hooks/useFreshAccessToken';
 import type { ProfileId } from '../api/types';
 import { useEventTagMapping } from '../hooks/useEventTags';
@@ -181,17 +181,11 @@ export default function EventDetail() {
     updateSettings(ownerProfile.id, { eventPlaybackMuted: muted });
   }, [ownerProfile, updateSettings]);
 
-  // Entering fullscreen on the player turns the "open events in fullscreen"
-  // setting on for later events; leaving changes this session only, since
-  // leaving is forced before navigating away. The setting is the off switch
-  // (refs #462, #463).
+  // Fullscreen on this page changes the session only. Entering used to turn
+  // "Open events in fullscreen" on, which left every later event fullscreen
+  // with Settings as the only way out (#476). The player's own fullscreen
+  // button takes the page along (and back) through the same setter.
   const [isFullscreen, setFullscreen] = useAutoFullscreen({ startFullscreen: settings.eventPlaybackFullscreen });
-  // The player's own fullscreen button takes the page along (and back), and
-  // entering turns the setting on for later events; leaving never writes.
-  const handleFullscreenChange = useCallback((fullscreen: boolean) => {
-    setFullscreen(fullscreen);
-    if (fullscreen && ownerProfile) updateSettings(ownerProfile.id, { eventPlaybackFullscreen: true });
-  }, [setFullscreen, ownerProfile, updateSettings]);
 
   // Guards against a stray second 'ended' (video.js can emit it during teardown)
   // triggering a double advance. Re-armed for each event by the id-change effect.
@@ -335,7 +329,7 @@ export default function EventDetail() {
   const [showScrollPad, toggleScrollPad] = useScrollPad();
 
   // Pinch-to-zoom and pan for event video/image
-  const zoomPan = useZoomPan({ maxScale: 4 });
+  const zoomPan = useZoomPan();
 
   // Zoom belongs to the frame the user zoomed into, not to the page. Stepping
   // to another event keeps this component mounted (the route element is not
@@ -504,7 +498,7 @@ export default function EventDetail() {
   return (
     <div className={cn('flex flex-col h-full', pageFullscreen ? 'fixed inset-0 z-50 bg-black' : 'bg-background')}>
       {pageFullscreen && (
-        <FullscreenExitBar
+        <FullscreenExitButton
           title={monitorData?.Monitor.Name ?? event.Event.Name}
           onExit={() => setFullscreen(false)}
           testIdPrefix="event-detail"
@@ -671,7 +665,7 @@ export default function EventDetail() {
         className={cn(
           'flex-1 flex flex-col items-center',
           pageFullscreen
-            ? 'min-h-0 overflow-hidden pt-[calc(var(--fullscreen-toolbar-h)+var(--sai-top,env(safe-area-inset-top)))] pb-[var(--sai-bottom,env(safe-area-inset-bottom))] pl-[var(--sai-left,env(safe-area-inset-left))] pr-[var(--sai-right,env(safe-area-inset-right))]'
+            ? 'min-h-0 overflow-hidden pt-[var(--sai-top,env(safe-area-inset-top))] pb-[var(--sai-bottom,env(safe-area-inset-bottom))] pl-[var(--sai-left,env(safe-area-inset-left))] pr-[var(--sai-right,env(safe-area-inset-right))]'
             : 'overflow-y-auto p-2 sm:p-3 md:p-4 bg-muted/10',
           incomingSlide === 'left' && 'event-slide-left',
           incomingSlide === 'right' && 'event-slide-right',
@@ -736,7 +730,7 @@ export default function EventDetail() {
                         muted={settings.eventPlaybackMuted}
                         onMutedChange={handleMutedChange}
                         fill={pageFullscreen}
-                        onFullscreenChange={handleFullscreenChange}
+                        onFullscreenChange={setFullscreen}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-muted-foreground/70">

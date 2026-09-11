@@ -48,7 +48,8 @@
     "android:release": "cd android && ./gradlew assembleRelease && cd ..",
     "android:bundle": "cd android && ./gradlew bundleRelease && cd ..",
     "ios:sync": "node ../scripts/sync-version.js && npm run build && npx cap sync ios",
-    "ios:run": "npx cap run ios",
+    "ios:run": "npm run ios:fix-caches && npx cap run ios",
+    "ios:fix-caches": "node ../scripts/fix-ios-caches.mjs",
     "ios": "npm run ios:sync && npm run ios:run",
     "ios:open": "npx cap open ios",
     "icons": "capacitor-assets generate --ios --android"

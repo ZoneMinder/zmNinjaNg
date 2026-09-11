@@ -236,23 +236,41 @@ describe('MonitorDetail All-mode deep route (refs #337)', () => {
     monitorQuery();
 
     render(<MonitorDetail />);
-    expect(screen.getByTestId('monitor-detail-exit-fullscreen')).toHaveTextContent('monitor_detail.exit');
+    expect(screen.getByTestId('monitor-detail-exit-fullscreen')).toHaveAttribute('aria-label', 'monitor_detail.exit_fullscreen');
 
     fireEvent.click(screen.getByTestId('monitor-detail-exit-fullscreen'));
-    expect(screen.queryByTestId('monitor-detail-fullscreen-toolbar')).toBeNull();
+    expect(screen.queryByTestId('monitor-detail-exit-fullscreen')).toBeNull();
     expect(useSettingsStore.getState().getProfileSettings('profile-1').fullscreenMonitorIds).toEqual(['1']);
   });
 
-  it('maximizing a monitor remembers it for that monitor', () => {
+  it('maximizing a monitor changes only the session and never writes the setting (refs #476)', () => {
     h.routeParams = { id: '1' };
     monitorQuery();
 
-    render(<MonitorDetail />);
-    expect(screen.queryByTestId('monitor-detail-fullscreen-toolbar')).toBeNull();
+    const { unmount } = render(<MonitorDetail />);
+    expect(screen.queryByTestId('monitor-detail-exit-fullscreen')).toBeNull();
 
     fireEvent.click(screen.getByTestId('monitor-detail-maximize'));
-    expect(screen.getByTestId('monitor-detail-exit-fullscreen')).toHaveTextContent('monitor_detail.exit');
-    expect(useSettingsStore.getState().getProfileSettings('profile-1').fullscreenMonitorIds).toEqual(['1']);
+    expect(screen.getByTestId('monitor-detail-exit-fullscreen')).toHaveAttribute('aria-label', 'monitor_detail.exit_fullscreen');
+    expect(useSettingsStore.getState().getProfileSettings('profile-1').fullscreenMonitorIds).toEqual([]);
+    unmount();
+
+    render(<MonitorDetail />);
+    expect(screen.queryByTestId('monitor-detail-exit-fullscreen')).toBeNull();
+  });
+
+  // The exit control floats over the feed instead of sitting in a strip above
+  // it, so nothing but the picture and that one button is on screen (refs #479).
+  it('shows no chrome above the fullscreen feed, only the exit button', () => {
+    h.routeParams = { id: '1' };
+    useSettingsStore.getState().updateProfileSettings('profile-1', { fullscreenMonitorIds: ['1'] });
+    monitorQuery();
+
+    render(<MonitorDetail />);
+    const exit = screen.getByTestId('monitor-detail-exit-fullscreen');
+    expect(exit.getAttribute('title')).toContain('Front Door');
+    expect(exit).toHaveTextContent('');
+    expect(screen.queryByText('Front Door')).toBeNull();
   });
 
   it('opens every monitor fullscreen when the live view setting is on', () => {
@@ -261,7 +279,7 @@ describe('MonitorDetail All-mode deep route (refs #337)', () => {
     monitorQuery();
 
     render(<MonitorDetail />);
-    expect(screen.getByTestId('monitor-detail-exit-fullscreen')).toHaveTextContent('monitor_detail.exit');
+    expect(screen.getByTestId('monitor-detail-exit-fullscreen')).toHaveAttribute('aria-label', 'monitor_detail.exit_fullscreen');
     expect(useSettingsStore.getState().getProfileSettings('profile-1').fullscreenMonitorIds).toEqual([]);
   });
 

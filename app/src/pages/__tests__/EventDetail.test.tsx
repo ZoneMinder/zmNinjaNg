@@ -377,7 +377,7 @@ describe('EventDetail forced ZMS playback (#313)', () => {
     setSettings(PROFILE_1, { eventPlaybackFullscreen: true });
     render(<EventDetail />);
     expect(screen.getByTestId('mp4-player')).toHaveAttribute('data-fill', 'true');
-    expect(screen.getByTestId('event-detail-exit-fullscreen')).toHaveTextContent('monitor_detail.exit');
+    expect(screen.getByTestId('event-detail-exit-fullscreen')).toHaveAttribute('aria-label', 'monitor_detail.exit_fullscreen');
     expect(screen.queryByTestId('event-detail-back')).toBeNull();
 
     fireEvent.click(screen.getByTestId('event-detail-exit-fullscreen'));
@@ -386,24 +386,23 @@ describe('EventDetail forced ZMS playback (#313)', () => {
     expect(useSettingsStore.getState().getProfileSettings(PROFILE_1).eventPlaybackFullscreen).toBe(true);
   });
 
-  it("the player's own fullscreen button takes the page along and turns the setting on for later events", () => {
+  it("the player's own fullscreen button takes the page along without writing the setting (refs #476)", () => {
     const { unmount } = render(<EventDetail />);
     expect(screen.getByTestId('mp4-player')).toHaveAttribute('data-fill', 'false');
 
     fireEvent.click(screen.getByTestId('mp4-fire-fullscreen'));
-    expect(useSettingsStore.getState().getProfileSettings(PROFILE_1).eventPlaybackFullscreen).toBe(true);
+    expect(useSettingsStore.getState().getProfileSettings(PROFILE_1).eventPlaybackFullscreen).toBe(false);
     expect(screen.getByTestId('mp4-player')).toHaveAttribute('data-fill', 'true');
 
-    // Leaving native fullscreen leaves the page's too; the setting stays on.
     fireEvent.click(screen.getByTestId('mp4-fire-exit-fullscreen'));
     expect(screen.getByTestId('mp4-player')).toHaveAttribute('data-fill', 'false');
-    expect(useSettingsStore.getState().getProfileSettings(PROFILE_1).eventPlaybackFullscreen).toBe(true);
     unmount();
 
+    // The next event opens normally: only Settings > Playback turns this on.
     h.routeParams = { id: '102' };
     render(<EventDetail />);
-    expect(screen.getByTestId('mp4-player')).toHaveAttribute('data-fill', 'true');
-    expect(screen.getByTestId('event-detail-exit-fullscreen')).toHaveTextContent('monitor_detail.exit');
+    expect(screen.getByTestId('mp4-player')).toHaveAttribute('data-fill', 'false');
+    expect(screen.queryByTestId('event-detail-exit-fullscreen')).toBeNull();
   });
 
   it('starts the MP4 player muted and remembers an unmute for every later event (refs #463)', () => {
@@ -449,7 +448,7 @@ describe('EventDetail forced ZMS playback (#313)', () => {
     render(<EventDetail />);
 
     expect(screen.getByTestId('zms-player')).toHaveAttribute('data-fullscreen', 'true');
-    expect(screen.getByTestId('event-detail-exit-fullscreen')).toHaveTextContent('monitor_detail.exit');
+    expect(screen.getByTestId('event-detail-exit-fullscreen')).toHaveAttribute('aria-label', 'monitor_detail.exit_fullscreen');
     expect(screen.queryByTestId('event-detail-back')).toBeNull();
 
     fireEvent.click(screen.getByTestId('event-detail-exit-fullscreen'));
