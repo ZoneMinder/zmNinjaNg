@@ -121,7 +121,7 @@ export function AppearanceSection({ settings, update }: AppearanceSectionProps) 
               <SelectItem value="de" data-testid="settings-language-option-de">{t('languages.de')}</SelectItem>
               <SelectItem value="it" data-testid="settings-language-option-it">{t('languages.it')}</SelectItem>
               <SelectItem value="zh" data-testid="settings-language-option-zh">{t('languages.zh')}</SelectItem>
-              <SelectItem value="ru" data-testid="settings-language-option-ru">{t('languages.ru')}</SelectItem>              
+              <SelectItem value="ru" data-testid="settings-language-option-ru">{t('languages.ru')}</SelectItem>
             </SelectContent>
           </Select>
         </SettingsRow>

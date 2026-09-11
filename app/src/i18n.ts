@@ -31,7 +31,7 @@ i18n
       fr: { translation: frTranslation },
       it: { translation: itTranslation },
       zh: { translation: zhTranslation },
-      ru: { translation: ruTranslation },      
+      ru: { translation: ruTranslation },
     },
 
     interpolation: {

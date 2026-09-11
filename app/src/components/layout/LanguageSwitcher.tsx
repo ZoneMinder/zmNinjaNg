@@ -24,7 +24,7 @@ export function LanguageSwitcher({ collapsed = false }: { collapsed?: boolean })
     { code: 'de', label: t('languages.de') },
     { code: 'it', label: t('languages.it') },
     { code: 'zh', label: t('languages.zh') },
-    { code: 'ru', label: t('languages.ru') },    
+    { code: 'ru', label: t('languages.ru') },
   ];
 
   return (
