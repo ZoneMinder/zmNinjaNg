@@ -9,6 +9,7 @@ Every section heading on this screen collapses. Click or tap a heading to fold t
 | Setting | Description |
 |---------|-------------|
 | **Language** | Interface language (English, German, Spanish, French, Italian, Chinese, Russian) |
+| **Start screen** | Which screen the app opens on: Last used, Dashboard, Monitors, Montage, Live Activity, Events, or Timeline. Last used is the default and reopens the page you left, down to a specific monitor or event. Each server and each group remembers its own choice. |
 | **Theme** | Light, Cream, Dark, Slate, Amber, or System (follows system setting by default). The quick toggle is in the sidebar; see {doc}`getting-started`. |
 | **Date format** | How dates are displayed throughout the app |
 | **Time format** | 12-hour or 24-hour clock |

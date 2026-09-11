@@ -29,6 +29,13 @@ Feature: Application Settings
     Then a visible menu item should change to the selected language
 
   @all
+  Scenario: Chosen start screen decides where the app opens
+    When I navigate to the "Settings" page
+    And I set the start screen to "Timeline"
+    And I restart the app
+    Then the app should open on the "timeline" page
+
+  @all
   Scenario: Notification toggle persists across navigation
     When I navigate to the "Notifications" page
     Then I should see notification interface elements

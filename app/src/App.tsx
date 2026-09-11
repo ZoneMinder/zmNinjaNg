@@ -30,6 +30,7 @@ import { useCapacitorListener } from './hooks/useCapacitorListener';
 import { useAndroidBackButton } from './hooks/useAndroidBackButton';
 import { PipProvider } from './contexts/PipContext';
 import { BOOTSTRAP_TIMEOUTS, Z_INDEX, DEFAULT_QUERY_STALE_TIME_MS } from './lib/zmninja-ng-constants';
+import { resolveStartRoute } from './lib/navigation';
 
 // Lazy load route components for code splitting
 const ProfileForm = lazy(() => import('./pages/ProfileForm'));
@@ -88,7 +89,7 @@ function AppRoutes() {
   // when currentProfile is non-null, which stays null in All mode even with
   // profiles present (refs #337, Task 2 finding).
   const scope = useProfileScope();
-  const { logLevel, lastRoute, componentLogLevels } = settings;
+  const { logLevel, lastRoute, startScreen, componentLogLevels } = settings;
 
   // Enable automatic token refresh
   useTokenRefresh();
@@ -207,7 +208,7 @@ function AppRoutes() {
           path="/"
           element={
             scope ? (
-              <Navigate to={lastRoute || '/monitors'} replace />
+              <Navigate to={resolveStartRoute(startScreen, lastRoute)} replace />
             ) : profiles.length > 0 ? (
               <Navigate to="/profiles" replace />
             ) : (

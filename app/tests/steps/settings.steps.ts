@@ -453,3 +453,22 @@ Then('the {string} settings section should be expanded', async ({ page }, id: st
   await expect(section.getByTestId(`settings-section-${id}-toggle`)).toHaveAttribute('aria-expanded', 'true');
   await expect(section.locator('.rounded-lg.border.bg-card').first()).toBeVisible();
 });
+
+// Start screen: the picker writes a profile setting, and the index redirect
+// reads it on the next cold start, so the outcome is the route the app lands
+// on rather than anything visible in Settings.
+When('I set the start screen to {string}', async ({ page }, screen: string) => {
+  await page.getByTestId('settings-start-screen-select').click();
+  await page.getByTestId(`settings-start-screen-option-${screen.toLowerCase()}`).click();
+  await expect(page.getByTestId('settings-start-screen-select')).toContainText(new RegExp(screen, 'i'));
+});
+
+When('I restart the app', async ({ page }) => {
+  // The index route, not a reload of the current page: that is where the
+  // start-screen redirect happens.
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+});
+
+Then('the app should open on the {string} page', async ({ page }, route: string) => {
+  await expect(page).toHaveURL(new RegExp(`.*${route}`), { timeout: testConfig.timeouts.transition });
+});
