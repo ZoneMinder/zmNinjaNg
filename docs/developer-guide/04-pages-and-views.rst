@@ -19,7 +19,9 @@ a file named ``/monitors/3``.
 
 ::
 
-   /                       redirect to lastRoute (or /monitors), or /profiles, or /profiles/new
+   /                       redirect to the profile's start screen (``resolveStartRoute``:
+                           the ``startScreen`` setting, else ``lastRoute``, else /monitors),
+                           or /profiles, or /profiles/new
    /profiles/new           ProfileForm            (renders outside AppLayout)
    /setup                  redirect to /profiles/new
 
@@ -44,6 +46,17 @@ a file named ``/monitors/3``.
 ``dashboard`` and ``monitors`` are written without a leading slash. As
 children of a pathless layout route they resolve against ``/`` and land in
 the same place as their slash-prefixed siblings.
+
+Where ``/`` sends someone is a preference, not a constant.
+``resolveStartRoute`` (``src/lib/navigation.ts``) reads the profile's
+``startScreen`` setting: a path from ``START_SCREENS`` opens that screen, and
+the default ``last-used`` reopens ``lastRoute``, which AppLayout has been
+writing on every navigation. Last-used keeps deep routes, so a session that
+ended on monitor 3 reopens monitor 3, while a picked screen is always a
+section view. A stored screen the picker no longer offers falls back to
+last-used rather than opening a route that renders nothing. The setting lives
+in the profile's own settings bucket, so each server and each aggregate starts
+where its own user left off.
 
 Layout routes and the Outlet
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

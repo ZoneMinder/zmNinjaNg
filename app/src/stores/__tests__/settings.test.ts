@@ -546,3 +546,26 @@ describe('all-mode performance settings (refs #337)', () => {
     expect(s.allModeViewportGating).toBe(false);
   });
 });
+
+describe('startScreen', () => {
+  const settingsFor = (raw: Partial<ProfileSettings>) => {
+    const store = useSettingsStore.getState();
+    store.updateProfileSettings(ALL_PROFILES_ID, raw);
+    return store.getProfileSettings(ALL_PROFILES_ID);
+  };
+
+  it('defaults to last-used, the behavior before the setting existed', () => {
+    expect(useSettingsStore.getState().getProfileSettings(ALL_PROFILES_ID).startScreen).toBe('last-used');
+  });
+
+  it('keeps a screen the picker offers', () => {
+    expect(settingsFor({ startScreen: '/timeline' }).startScreen).toBe('/timeline');
+  });
+
+  // A screen dropped from the app, or a stored value from a hand-edited blob,
+  // would otherwise open the app on a route that renders nothing.
+  it('coerces a screen the picker does not offer back to last-used', () => {
+    expect(settingsFor({ startScreen: '/gone' }).startScreen).toBe('last-used');
+    expect(settingsFor({ startScreen: '/settings' }).startScreen).toBe('last-used');
+  });
+});

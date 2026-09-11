@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { resolveLastRouteSaveTarget, resolveSwitchDestination } from '../navigation';
+import {
+  resolveLastRouteSaveTarget,
+  resolveStartRoute,
+  resolveSwitchDestination,
+  START_SCREENS,
+  START_SCREEN_LAST_USED,
+} from '../navigation';
 import { ALL_PROFILES_ID, asProfileId, mintVirtualProfileId } from '../../api/types';
 
 const P1 = asProfileId('p1');
@@ -88,5 +94,39 @@ describe('resolveSwitchDestination', () => {
   // '/' is the index redirect, and it redirects to lastRoute.
   it('never lands on the index redirect', () => {
     expect(resolveSwitchDestination('/')).toBe('/monitors');
+  });
+});
+
+describe('resolveStartRoute', () => {
+  it('opens the screen the user picked, whatever the last session used', () => {
+    expect(resolveStartRoute('/timeline', '/events')).toBe('/timeline');
+    expect(resolveStartRoute('/montage', undefined)).toBe('/montage');
+  });
+
+  it('reopens the last page when the setting is left on last-used', () => {
+    expect(resolveStartRoute(START_SCREEN_LAST_USED, '/events')).toBe('/events');
+  });
+
+  // Last-used has always reopened deep routes, so a remembered monitor comes
+  // back the way it did before this setting existed.
+  it('reopens a remembered entity route under last-used', () => {
+    expect(resolveStartRoute(START_SCREEN_LAST_USED, '/monitors/3')).toBe('/monitors/3');
+  });
+
+  it('falls back to monitors when nothing is remembered', () => {
+    expect(resolveStartRoute(START_SCREEN_LAST_USED, undefined)).toBe('/monitors');
+    expect(resolveStartRoute(START_SCREEN_LAST_USED, '')).toBe('/monitors');
+  });
+
+  // A screen removed from the app, or a hand-edited settings blob, must not
+  // strand the app on a route that renders nothing.
+  it('ignores a screen the picker does not offer', () => {
+    expect(resolveStartRoute('/gone', '/events')).toBe('/events');
+    expect(resolveStartRoute('/settings', '/events')).toBe('/events');
+  });
+
+  it('offers only section views, never an entity or kiosk route', () => {
+    const paths = START_SCREENS.map((screen) => screen.path);
+    expect(paths).toEqual(['/dashboard', '/monitors', '/montage', '/live-activity', '/events', '/timeline']);
   });
 });

@@ -152,6 +152,46 @@ export function viewNameForPath(pathname: string): string | null {
 const SWITCH_FALLBACK_ROUTE = '/monitors';
 
 /**
+ * Screens the app can open on, in the order the Settings picker lists them.
+ *
+ * Views only. Settings, Profiles, Server, Logs and Notifications are places
+ * you visit and leave again, and an entity route names something that belongs
+ * to one server, so neither makes sense as the screen you land on. Labels
+ * reuse the sidebar keys, so a screen reads the same in the picker as in the
+ * nav.
+ */
+export const START_SCREENS = [
+  { path: '/dashboard', labelKey: 'sidebar.dashboard' },
+  { path: '/monitors', labelKey: 'sidebar.monitors' },
+  { path: '/montage', labelKey: 'sidebar.montage' },
+  { path: '/live-activity', labelKey: 'sidebar.live_activity' },
+  { path: '/events', labelKey: 'sidebar.events' },
+  { path: '/timeline', labelKey: 'sidebar.timeline' },
+] as const;
+
+/** `startScreen` value meaning "reopen wherever the last session ended". */
+export const START_SCREEN_LAST_USED = 'last-used';
+
+/**
+ * Where the app opens for a profile, given its `startScreen` preference and
+ * the page it last had open.
+ *
+ * Last-used is the default and the behavior the app has always had, deep
+ * routes included: ending a session on monitor 3 reopens monitor 3. A picked
+ * screen wins over that, and anything the picker does not offer - a screen
+ * since removed, a hand-edited settings blob - falls back to last-used rather
+ * than opening a route that renders nothing.
+ */
+export function resolveStartRoute(
+  startScreen: string | undefined,
+  lastRoute: string | undefined | null
+): string {
+  const picked = START_SCREENS.some((screen) => screen.path === startScreen);
+  if (picked) return startScreen as string;
+  return lastRoute || SWITCH_FALLBACK_ROUTE;
+}
+
+/**
  * Where to navigate after switching to a profile or group, given the page that
  * profile last had open (its own `lastRoute` bucket).
  *

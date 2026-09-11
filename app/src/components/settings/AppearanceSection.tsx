@@ -29,6 +29,7 @@ import { validateFormatString } from '../../lib/format-date-time';
 import { Platform } from '../../lib/platform';
 import { STORAGE_KEYS } from '../../lib/zmninja-ng-constants';
 import { useLanguageOptions } from '../../hooks/useLanguageOptions';
+import { START_SCREENS, START_SCREEN_LAST_USED } from '../../lib/navigation';
 import type {
   ProfileSettings,
   DateFormatPreset,
@@ -124,6 +125,33 @@ export function AppearanceSection({ settings, update }: AppearanceSectionProps) 
                   data-testid={`settings-language-option-${language.code}`}
                 >
                   {language.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </SettingsRow>
+
+        {/* Start Screen */}
+        <SettingsRow>
+          <RowLabel label={t('settings.start_screen')} desc={t('settings.start_screen_desc')} />
+          <Select
+            value={settings.startScreen}
+            onValueChange={(value) => update('startScreen', value)}
+          >
+            <SelectTrigger className="w-36" data-testid="settings-start-screen-select">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={START_SCREEN_LAST_USED} data-testid="settings-start-screen-option-last-used">
+                {t('settings.start_screen_last_used')}
+              </SelectItem>
+              {START_SCREENS.map((screen) => (
+                <SelectItem
+                  key={screen.path}
+                  value={screen.path}
+                  data-testid={`settings-start-screen-option${screen.path.replace(/\//g, '-')}`}
+                >
+                  {t(screen.labelKey)}
                 </SelectItem>
               ))}
             </SelectContent>

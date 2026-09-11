@@ -17,6 +17,7 @@ import type { AssistantBackend } from '../lib/assistant/types';
 import type { DateFormatPreset, TimeFormatPreset } from '../lib/format-date-time';
 import type { ThumbnailFallbackType, ThumbnailFallbackEntry } from '../lib/event/thumbnail-chain';
 import type { ProfileId } from '../api/types';
+import { START_SCREENS, START_SCREEN_LAST_USED } from '../lib/navigation';
 import {
   ALL_MODE_STREAM_TUNING_VALUES,
   coerceAllModePerformance,
@@ -242,6 +243,9 @@ export interface ProfileSettings {
   };
   disableLogRedaction: boolean;
   lastRoute: string; // Last visited route for this profile
+  // Screen the app opens on for this profile: a path from START_SCREENS, or
+  // START_SCREEN_LAST_USED to reopen whatever lastRoute remembers.
+  startScreen: string;
   // Streaming method: 'auto' tries WebRTC/MSE/HLS for Go2RTC-enabled monitors, 'mjpeg' forces MJPEG for all
   streamingMethod: StreamingMethod;
   // Which protocols to try for WebRTC streaming (video-rtc runs them in parallel)
@@ -481,6 +485,7 @@ export const DEFAULT_SETTINGS: ProfileSettings = {
   },
   disableLogRedaction: false,
   lastRoute: '/monitors',
+  startScreen: START_SCREEN_LAST_USED,
   // Auto mode: use WebRTC/MSE/HLS for Go2RTC-enabled monitors, MJPEG for others
   streamingMethod: 'auto',
   // Default: try all protocols (video-rtc runs them in parallel, first to produce video wins)
@@ -578,6 +583,14 @@ export function mergeProfileSettings(raw: Partial<ProfileSettings> | undefined):
     merged.allModeNotifications = legacyRaw.allModeMuteToasts ? 'muted' : 'live';
   } else if (!ALL_MODE_NOTIFICATIONS_VALUES.includes(merged.allModeNotifications)) {
     merged.allModeNotifications = 'live';
+  }
+  // A screen since removed from the picker, or a hand-edited blob, would open
+  // the app on a route that renders nothing.
+  if (
+    merged.startScreen !== START_SCREEN_LAST_USED &&
+    !START_SCREENS.some((screen) => screen.path === merged.startScreen)
+  ) {
+    merged.startScreen = START_SCREEN_LAST_USED;
   }
   coerceAllModePerformance(merged, DEFAULT_SETTINGS);
   return merged;
