@@ -13,19 +13,12 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 import { cn } from '../../lib/utils';
+import { useLanguageOptions } from '../../hooks/useLanguageOptions';
 
 export function LanguageSwitcher({ collapsed = false }: { collapsed?: boolean }) {
   const { i18n, t } = useTranslation();
 
-  const languages = [
-    { code: 'en', label: t('languages.en') },
-    { code: 'es', label: t('languages.es') },
-    { code: 'fr', label: t('languages.fr') },
-    { code: 'de', label: t('languages.de') },
-    { code: 'it', label: t('languages.it') },
-    { code: 'zh', label: t('languages.zh') },
-    { code: 'ru', label: t('languages.ru') },
-  ];
+  const languages = useLanguageOptions();
 
   return (
     <DropdownMenu>

@@ -28,6 +28,7 @@ import { cn } from '../../lib/utils';
 import { validateFormatString } from '../../lib/format-date-time';
 import { Platform } from '../../lib/platform';
 import { STORAGE_KEYS } from '../../lib/zmninja-ng-constants';
+import { useLanguageOptions } from '../../hooks/useLanguageOptions';
 import type {
   ProfileSettings,
   DateFormatPreset,
@@ -94,6 +95,7 @@ export interface AppearanceSectionProps {
 
 export function AppearanceSection({ settings, update }: AppearanceSectionProps) {
   const { t, i18n } = useTranslation();
+  const languages = useLanguageOptions();
 
   const [customDateDraft, setCustomDateDraft] = useState(settings.customDateFormat);
   const [customTimeDraft, setCustomTimeDraft] = useState(settings.customTimeFormat);
@@ -115,13 +117,15 @@ export function AppearanceSection({ settings, update }: AppearanceSectionProps) 
               <SelectValue placeholder={t('settings.select_language')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="en" data-testid="settings-language-option-en">{t('languages.en')}</SelectItem>
-              <SelectItem value="es" data-testid="settings-language-option-es">{t('languages.es')}</SelectItem>
-              <SelectItem value="fr" data-testid="settings-language-option-fr">{t('languages.fr')}</SelectItem>
-              <SelectItem value="de" data-testid="settings-language-option-de">{t('languages.de')}</SelectItem>
-              <SelectItem value="it" data-testid="settings-language-option-it">{t('languages.it')}</SelectItem>
-              <SelectItem value="zh" data-testid="settings-language-option-zh">{t('languages.zh')}</SelectItem>
-              <SelectItem value="ru" data-testid="settings-language-option-ru">{t('languages.ru')}</SelectItem>
+              {languages.map((language) => (
+                <SelectItem
+                  key={language.code}
+                  value={language.code}
+                  data-testid={`settings-language-option-${language.code}`}
+                >
+                  {language.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </SettingsRow>
