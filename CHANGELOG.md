@@ -1,5 +1,23 @@
 # Changelog
 
+## [zmNinjaNg-2.4.0](https://github.com/ZoneMinder/zmNinjaNg/tree/zmNinjaNg-2.4.0) (2026-09-12)
+
+[Full Changelog](https://github.com/ZoneMinder/zmNinjaNg/compare/zmNinjaNg-2.3.0...zmNinjaNg-2.4.0)
+
+**Implemented enhancements:**
+
+- Choose which screen the app opens on [\#488](https://github.com/ZoneMinder/zmNinjaNg/issues/488)
+
+**Fixed bugs:**
+
+- monitor zoom functionality \(limited at 400%\) [\#478](https://github.com/ZoneMinder/zmNinjaNg/issues/478)
+- Once set in full screen mode, monitor stays in full screen mode until unset in monitor prefs [\#476](https://github.com/ZoneMinder/zmNinjaNg/issues/476)
+
+**Closed issues:**
+
+- Russian translation contribution [\#484](https://github.com/ZoneMinder/zmNinjaNg/issues/484)
+- Can full screen mode get some actions alongside the Exit button, like Recent Events, etc? [\#477](https://github.com/ZoneMinder/zmNinjaNg/issues/477)
+
 ## [zmNinjaNg-2.3.0](https://github.com/ZoneMinder/zmNinjaNg/tree/zmNinjaNg-2.3.0) (2026-09-05)
 
 [Full Changelog](https://github.com/ZoneMinder/zmNinjaNg/compare/zmNinjaNg-2.2.1...zmNinjaNg-2.3.0)
