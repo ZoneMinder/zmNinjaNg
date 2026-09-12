@@ -166,10 +166,70 @@ Android project 3. Launch the app on a connected device/emulator
 
    npm run android:devices
 
+Automated Release Upload
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+``scripts/make_release.sh`` can publish the release to Google Play for you, so
+the manual download-and-upload steps below are only needed for a one-off
+build.
+
+The bundle is not built locally. Pushing a release tag starts the Build Android
+Release workflow, which signs the AAB with the keystore held as a repository
+secret and attaches it to the GitHub release. Rebuilding it here would mean a
+second copy of the signing key on a developer machine and a bundle that never
+went through CI, so ``scripts/upload-android.sh`` waits for that one, downloads
+it, and publishes it.
+
+One-time setup
+^^^^^^^^^^^^^^
+
+1. In the `Google Cloud console <https://console.cloud.google.com>`__, pick or
+   create a project and enable the **Google Play Android Developer API**.
+2. Create a service account in that project and download a **JSON** key for it.
+3. In the `Play Console <https://play.google.com/console>`__, go to **Users and
+   permissions**, invite the service account's email address, and grant it
+   **Release apps to testing tracks** and **Release apps to production** for
+   zmNinjaNg. Play takes up to a day to propagate a new grant.
+4. Save the key outside the repository:
+
+   .. code:: bash
+
+      mkdir -p ~/.playconsole
+      mv ~/Downloads/<project>-<hash>.json ~/.playconsole/service-account.json
+      chmod 600 ~/.playconsole/service-account.json
+
+Unlike the App Store key, this JSON file is a complete credential: it carries
+its own private key and needs no second identifier, so it never belongs in the
+repository or in a shared channel.
+
+What a release does
+^^^^^^^^^^^^^^^^^^^
+
+After pushing the tag, ``make_release.sh`` offers the mobile uploads once, for
+both stores together. Answering yes archives and uploads iOS first, since that
+does not depend on CI, and then waits for the Android workflow to attach the
+bundle before publishing it.
+
+The build lands on the **production** track as a **draft**. Nothing reaches
+users until you start the rollout in the Play Console.
+
+Release notes come from the same developer notice the App Store gets, in
+``docs/notices.json``. Play allows only 500 characters against Apple's 4000, so
+a longer notice is compressed rather than cut: every bullet survives in shorter
+wording. The final text is printed and has to be accepted before anything is
+uploaded. If the compression step is unavailable, whole bullets are dropped
+from the end and named, so you can see what will not reach Play.
+
+Publishing a past release needs only its version:
+
+.. code:: bash
+
+   ./scripts/upload-android.sh 2.4.0
+
 Production Build
 ~~~~~~~~~~~~~~~~
 
-To create a release build for distribution or the Google Play Store:
+To build and upload by hand instead, for distribution or the Google Play Store:
 
 1. Generate a Signing Key
 ^^^^^^^^^^^^^^^^^^^^^^^^^

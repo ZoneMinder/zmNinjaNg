@@ -368,6 +368,41 @@ git tag "$TAG"
 echo "Pushing tag to origin..."
 git push origin "$TAG" --force
 
+# --- Step 5: store uploads ---
+# After the tag for two reasons. The iOS build number is the git commit count,
+# so the archive has to happen at the commit that shipped; and the Android
+# bundle is built by the workflow this tag just started, so there is nothing to
+# publish until that finishes. Both scripts run standalone, so a release can be
+# tagged now and published later.
+HAVE_IOS=false
+HAVE_ANDROID=false
+compgen -G "$HOME/.appstoreconnect/private_keys/AuthKey_*.p8" >/dev/null && HAVE_IOS=true
+[ -f "$HOME/.playconsole/service-account.json" ] && HAVE_ANDROID=true
+
+if [ "$HAVE_IOS" = true ] || [ "$HAVE_ANDROID" = true ]; then
+    echo ""
+    echo "Mobile store uploads:"
+    [ "$HAVE_IOS" = true ] \
+        && echo "  iOS      archive here and upload to App Store Connect (about 15 minutes)" \
+        || echo "  iOS      skipped, no App Store Connect key installed"
+    [ "$HAVE_ANDROID" = true ] \
+        && echo "  Android  wait for the CI build, then upload the bundle to Google Play" \
+        || echo "  Android  skipped, no Play service account key installed"
+    echo ""
+    echo "Both land as drafts. Nothing reaches users without a further click."
+    read -p "Automatically upload mobile builds? [y/N] " -r
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        # iOS first: it works offline of CI, so the Android wait overlaps the
+        # workflow that is already running.
+        [ "$HAVE_IOS" = true ] && ./scripts/upload-ios.sh
+        [ "$HAVE_ANDROID" = true ] && ./scripts/upload-android.sh "$VERSION"
+    fi
+else
+    echo ""
+    echo "ℹ️  Skipping the mobile uploads: no store credentials are installed."
+    echo "   See docs/building/IOS.rst and docs/building/ANDROID.rst."
+fi
+
 echo ""
 echo "✅ Release triggered! Check GitHub Actions for progress."
 echo "   https://github.com/ZoneMinder/zmNinjaNg/actions"

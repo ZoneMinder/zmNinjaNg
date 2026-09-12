@@ -188,10 +188,84 @@ run
 Logs are best viewed in Xcode’s console when running via
 ``npm run ios:open``.
 
+Automated Release Upload
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+``scripts/make_release.sh`` can archive the app and upload it to App Store
+Connect for you, so the manual Xcode Organizer steps below are only needed
+for a one-off build. The upload happens on your Mac rather than in CI: the
+Xcode project signs automatically, so an API key is the only credential
+needed, where a macOS workflow would also need a distribution certificate
+loaded into a temporary keychain.
+
+One-time setup
+^^^^^^^^^^^^^^
+
+1. In `App Store Connect <https://appstoreconnect.apple.com>`__, go to
+   **Users and Access**, then the **Integrations** tab, then **App Store
+   Connect API**. This needs the Account Holder or Admin role.
+2. On the **Team Keys** tab, click **+**, name the key, and set Access to
+   **App Manager**, the lowest role that can upload a build. Prefer a team
+   key over an individual one: an individual key inherits one person's role
+   and stops working if their access changes.
+3. Download the ``.p8``. Apple serves it once and never again; a lost key is
+   revoked and replaced, not recovered.
+4. Put it where the Xcode tools look for it, and keep it out of the
+   repository:
+
+   .. code:: bash
+
+      mkdir -p ~/.appstoreconnect/private_keys
+      mv ~/Downloads/AuthKey_*.p8 ~/.appstoreconnect/private_keys/
+      chmod 600 ~/.appstoreconnect/private_keys/AuthKey_*.p8
+
+5. Save the issuer id, shown above the key list, next to the key:
+
+   .. code:: bash
+
+      echo <issuer-id> > ~/.appstoreconnect/issuer_id
+
+That is the whole setup, and it is per-developer: nothing identifying the
+Apple account is committed. The key id is read from the ``.p8`` filename, so
+set ``ASC_KEY_ID`` only to choose between several installed keys, and
+``ASC_ISSUER_ID`` only to override the saved one.
+
+The issuer id is not itself a credential. It travels in plaintext inside every
+API token and is inert without the private key. It is kept out of the
+repository because a public checkout has no reason to name the account that
+signs the app.
+
+Signing with a different Apple account, in a fork, needs no change here. Set
+the team in Xcode under **Signing & Capabilities**, and
+``scripts/ios-export-options.sh`` picks it up from the project.
+
+What a release does
+^^^^^^^^^^^^^^^^^^^
+
+With the key installed, ``make_release.sh`` offers the mobile uploads after it
+pushes the tag, once for both stores together. That is also when the iOS build
+number is correct: it is the git commit count, and it has to match the commit
+being released. See ``docs/building/ANDROID.rst`` for the Play half.
+Answering yes runs ``scripts/upload-ios.sh``, which syncs the version and web
+assets, archives the Release configuration, and exports straight to App Store
+Connect. Provisioning profiles for both the app and the ImageNotify extension
+are created and renewed by Xcode along the way.
+
+The script then sets the App Store **What's New** text from that version's
+developer notice in ``docs/notices.json``, stripping the Markdown the field
+would otherwise show literally. A release without a notice, which is every
+patch release, leaves the field alone and says so, so type it in yourself.
+
+Nothing is submitted for review. The build appears in App Store Connect after
+ten to thirty minutes of processing, and you release it from there.
+
+Running ``scripts/upload-ios.sh`` on its own uploads whatever is checked out,
+which is useful for a TestFlight build between releases.
+
 Production Build
 ~~~~~~~~~~~~~~~~
 
-To create a release build for the App Store or TestFlight:
+To build and upload by hand instead, for the App Store or TestFlight:
 
 1. Update Build Settings
 ^^^^^^^^^^^^^^^^^^^^^^^^
