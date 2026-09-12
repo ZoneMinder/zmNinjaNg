@@ -274,8 +274,7 @@ else
     else
         echo "⚠️  No record of an e2e run on this machine. Recommended: run it now."
     fi
-    read -p "Run it before tagging $TAG? [Y/n] " -n 1 -r
-    echo ""
+    read -p "Run it before tagging $TAG? [Y/n] " -r
     if [[ $REPLY =~ ^[Nn]$ ]]; then
         warn_no_e2e
     else
@@ -296,9 +295,7 @@ echo "  1. Generate CHANGELOG.md"
 echo "  2. Create and push git tag '$TAG'"
 echo "  3. Trigger GitHub Actions to build and create release"
 echo ""
-read -p "Proceed? [y/N] " -n 1 -r
-echo ""
-
+read -p "Proceed? [y/N] " -r
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     echo "Aborted."
     exit 0
