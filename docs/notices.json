@@ -1,5 +1,14 @@
 [
   {
+    "id": "release-2.4.0",
+    "title": "Zoom, fullscreen, and startup screen updates",
+    "body": "- Added a setting to choose which screen the app opens on, per profile.\n- Removed the 400% zoom limit on monitors, and zoomed views now load full-size frames so detail stays sharp.\n- Maximizing a monitor no longer sticks, so the app stops opening that monitor in fullscreen next time.\n- Replaced the fullscreen exit strip with a floating translucent close button over the feed.\n- Added Russian as an interface language.\n- Language pickers now list languages in a consistent order with English first.\n\n[Full changelog](https://github.com/ZoneMinder/zmNinjaNg/releases/tag/zmNinjaNg-2.4.0)",
+    "publishedAt": "2026-09-12T09:44:46.163Z",
+    "severity": "info",
+    "link": "https://github.com/ZoneMinder/zmNinjaNg/releases/tag/zmNinjaNg-2.4.0",
+    "minAppVersion": "2.4.0"
+  },
+  {
     "id": "release-2.3.0",
     "title": "Italian language, fullscreen memory, Android crash fix",
     "body": "- Added Italian as an interface language.\n- Live monitors and event playback now remember your mute and fullscreen choices, and go fullscreen when you rotate the device.\n- You can now jump straight to fullscreen for a single camera from the montage view.\n- Fixed the montage view freezing on ZoneMinder servers that do not use authentication.\n- Fixed the app crashing on launch on Android.\n- Replaced the unlabelled capture badges with a monitor info popover that also shows the decoding setting.\n- Fixed the direct mode badge showing \"Poller not running\" while the poller was running.\n- The assistant no longer attributes events to a place when no monitor covers it.\n- The assistant handles time questions more accurately, including calendar months, weekday ranges, and follow-up questions that build on the previous answer.\n- The assistant no longer denies a camera exists when you describe it in different words, and a one-off failure is no longer remembered for the rest of the day.\n\n[Full changelog](https://github.com/ZoneMinder/zmNinjaNg/releases/tag/zmNinjaNg-2.3.0)",
