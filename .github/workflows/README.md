@@ -38,6 +38,12 @@ This script will:
 3. Create a git tag in the format `zmNinjaNg-{version}`
 4. Push the tag to trigger all build workflows
 5. Create a GitHub Release with build artifacts
+6. Offer to upload the mobile builds to the App Store and Google Play
+
+The store uploads are optional and land as drafts; releasing them stays a
+manual step in App Store Connect and the Play Console. See the
+[iOS](../../docs/building/IOS.rst) and [Android](../../docs/building/ANDROID.rst)
+build guides.
 
 **Safety Checks**: The script performs validation before creating a release:
 - Fails if there are uncommitted changes

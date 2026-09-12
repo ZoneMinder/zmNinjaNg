@@ -168,6 +168,7 @@ pip install -r docs/requirements.txt sphinx-autobuild && cd docs && make clean &
 
 ### Making releases
 - See `scripts/make_release.sh` [here](scripts/make_release.sh). This automatically tags the current state and triggers release builds
+- **Store uploads**: after tagging, `make_release.sh` offers to publish to the App Store and Google Play in one prompt. Both land as drafts, so nothing reaches users until you release them in the respective console. `scripts/upload-ios.sh` and `scripts/upload-android.sh` also run on their own to publish a release tagged earlier. Setup is in the [iOS](docs/building/IOS.rst) and [Android](docs/building/ANDROID.rst) build guides
 - `app/package.json` is the source of truth for the version number
 - **In-app release notice**: run `npm run notice <version>` to draft a short "what's new" notice from the closed issues since the last release (Claude writes it, you approve it). It only writes `docs/notices.json` for you to test; nothing is committed. To discard a test draft, run `git checkout -- docs/notices.json`. On minor/major releases `make_release.sh` offers to generate one for you. Details in the [developer guide](docs/developer-guide/13-network-endpoints.rst).
 

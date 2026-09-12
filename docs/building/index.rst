@@ -173,4 +173,37 @@ To enable automated builds on your fork:
 2. Under **Workflow permissions**, select **Read and write permissions**
 3. Click **Save**
 
-Pushing a version tag triggers builds for Android, Linux (amd64 and arm64), macOS, and Windows. iOS is not built in CI, use the steps in :doc:`IOS` to build and submit it locally from a Mac with Xcode.
+Pushing a version tag triggers builds for Android, Linux (amd64 and arm64),
+macOS, and Windows. iOS is not built in CI: it is archived on a Mac with
+Xcode, which ``make_release.sh`` does for you.
+
+Store uploads
+-------------
+
+After pushing the tag, ``make_release.sh`` offers to publish to both mobile
+stores in one prompt. Each store appears only if its credentials are
+installed, and both uploads land as drafts: nothing reaches users until you
+release the build in App Store Connect or start the rollout in the Play
+Console.
+
+iOS archives locally and uploads straight to App Store Connect. Android does
+not build locally, because that would mean a second copy of the signing key on
+a developer machine and a bundle CI never saw; instead it waits for the tag's
+Android workflow to attach the AAB to the GitHub release, then publishes that.
+
+Release notes for both stores come from the same developer notice in
+``docs/notices.json``, so neither console needs the text retyped. Google Play
+allows 500 characters against Apple's 4000, so a longer notice is compressed
+rather than cut and every bullet survives in shorter wording.
+
+Both scripts also run on their own, which is how you publish a release that was
+tagged earlier:
+
+.. code:: bash
+
+   ./scripts/upload-ios.sh
+   ./scripts/upload-android.sh 2.4.0
+
+Setup is per-developer and nothing identifying either account is committed. See
+:doc:`IOS` for the App Store Connect key and :doc:`ANDROID` for the Play
+service account.

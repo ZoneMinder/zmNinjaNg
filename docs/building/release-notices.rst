@@ -67,3 +67,20 @@ the notice ships with the release.
 
 If the version already has a notice in ``docs/notices.json``, or if the
 release is a patch release, the prompt is skipped.
+
+The notice is also the store release notes
+------------------------------------------
+
+The same body becomes the "What's New" text in App Store Connect and the
+release notes in the Play Console, so neither console needs it retyped. The
+store scripts strip the Markdown, since neither field renders it, and drop the
+trailing changelog link, which is not clickable there.
+
+Apple allows 4000 characters and Google Play 500. A notice over Play's limit is
+compressed with a ``claude -p`` call that shortens the wording while keeping
+every bullet, and the result is shown and confirmed before anything uploads. If
+that call is unavailable, whole bullets are dropped from the end and named, so
+you can see what will not reach Play.
+
+A patch release has no notice, so its store notes are left alone and the
+scripts say so. Write them by hand in the console, or add a notice first.
