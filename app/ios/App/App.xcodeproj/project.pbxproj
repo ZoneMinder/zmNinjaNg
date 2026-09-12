@@ -669,7 +669,7 @@
 				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2896;
+				CURRENT_PROJECT_VERSION = 2907;
 				DEVELOPMENT_TEAM = P97TSUFFDX;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -682,7 +682,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.3.0;
+				MARKETING_VERSION = 2.4.0;
 				OTHER_SWIFT_FLAGS = "$(inherited) \"-D\" \"COCOAPODS\" \"-DDEBUG\"";
 				PRODUCT_BUNDLE_IDENTIFIER = com.zoneminder.zmNinjaNG;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -701,7 +701,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = App/AppRelease.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2896;
+				CURRENT_PROJECT_VERSION = 2907;
 				DEVELOPMENT_TEAM = P97TSUFFDX;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -714,7 +714,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.3.0;
+				MARKETING_VERSION = 2.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.zoneminder.zmNinjaNG;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
@@ -728,7 +728,7 @@
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2896;
+				CURRENT_PROJECT_VERSION = 2907;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = P97TSUFFDX;
 				DYLIB_COMPATIBILITY_VERSION = 1;
@@ -742,7 +742,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.3.0;
+				MARKETING_VERSION = 2.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.zoneminder.zmNinjaNG.LlamaBridgeInterface;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SDKROOT = iphoneos;
@@ -760,7 +760,7 @@
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2896;
+				CURRENT_PROJECT_VERSION = 2907;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = P97TSUFFDX;
 				DYLIB_COMPATIBILITY_VERSION = 1;
@@ -774,7 +774,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.3.0;
+				MARKETING_VERSION = 2.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.zoneminder.zmNinjaNG.LlamaBridgeInterface;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SDKROOT = iphoneos;
@@ -792,7 +792,7 @@
 				BUILD_LIBRARY_FOR_DISTRIBUTION = NO;
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2896;
+				CURRENT_PROJECT_VERSION = 2907;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = P97TSUFFDX;
 				DYLIB_COMPATIBILITY_VERSION = 1;
@@ -807,7 +807,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.3.0;
+				MARKETING_VERSION = 2.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.zoneminder.zmNinjaNG.LlamaBridge;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SDKROOT = iphoneos;
@@ -824,7 +824,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2896;
+				CURRENT_PROJECT_VERSION = 2907;
 				DEVELOPMENT_TEAM = P97TSUFFDX;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ImageNotification/Info.plist;
@@ -834,7 +834,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.3.0;
+				MARKETING_VERSION = 2.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.zoneminder.zmNinjaNG.ImageNotify;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -847,7 +847,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2896;
+				CURRENT_PROJECT_VERSION = 2907;
 				DEVELOPMENT_TEAM = P97TSUFFDX;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ImageNotification/Info.plist;
@@ -857,7 +857,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.3.0;
+				MARKETING_VERSION = 2.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.zoneminder.zmNinjaNG.ImageNotify;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -872,7 +872,7 @@
 				BUILD_LIBRARY_FOR_DISTRIBUTION = NO;
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2896;
+				CURRENT_PROJECT_VERSION = 2907;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = P97TSUFFDX;
 				DYLIB_COMPATIBILITY_VERSION = 1;
@@ -887,7 +887,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.3.0;
+				MARKETING_VERSION = 2.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.zoneminder.zmNinjaNG.LlamaBridge;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SDKROOT = iphoneos;
