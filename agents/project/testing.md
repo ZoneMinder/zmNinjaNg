@@ -35,9 +35,15 @@ Read before tests, UI work, navigation work, or platform checks.
   commit; proven-red classifies that directory as gate work and does not
   demand a red run against the previous commit.
 - `npm run test:mutation` flips one branch in auth, sessions, url-builder
-  and schema-tolerance and expects each module's tests to go red. Run it
-  when touching those modules or their tests; it is not in the gates because
-  it runs each suite once per mutation.
+  and schema-tolerance and expects each module's tests to go red. CI runs
+  it on every PR (about seven seconds); locally, run it when touching those
+  modules or their tests. It is not in `npm run gates` because it runs each
+  suite once per mutation.
+- The proven-red log says whether the changed tests went red by assertion
+  or only by a missing symbol. A test for a new export can only give the
+  second kind against the fork point, so it gets a warning, not a failure;
+  the reviewer then checks the assertions by hand or adds the module to the
+  mutation targets.
 - Vitest does not type-check. Run `npx tsc -b` before pushing test changes;
   ten migrated files carried bare strings where a `ProfileId` was expected
   and passed at runtime.

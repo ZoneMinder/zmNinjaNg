@@ -93,19 +93,15 @@ jobs:
         working-directory: ./app
         run: npm ci
 
-      # Advisory only: the repo has a pre-existing lint backlog (~213 problems,
-      # mostly react-hooks/* and no-explicit-any) that is out of scope to fix
-      # here. continue-on-error keeps this from blocking PRs. Remove it to make
-      # lint a hard gate once the backlog is burned down (tracked in #217).
-      - name: Run lint
-        working-directory: ./app
-        continue-on-error: true
-        run: npm run lint
-
+      # The repo has a pre-existing lint backlog (mostly react-hooks/* and
+      # no-explicit-any), so `npm run lint` cannot be a hard gate yet
+      # (tracked in #217). The ratchet below runs the same ESLint pass and
+      # lists every problem, so an advisory `npm run lint` step on top was
+      # one ESLint run for nothing and was dropped.
+      #
       # Hard gate on the size of that backlog (refs #281). .lint-baseline.json
       # records the count per rule; this fails when any rule goes above its
-      # number. The backlog can shrink or hold, never grow, which is what the
-      # advisory job above cannot enforce on its own.
+      # number. The backlog can shrink or hold, never grow.
       - name: Lint ratchet
         working-directory: ./app
         run: npm run lint:ratchet
@@ -236,6 +232,14 @@ jobs:
 
       - name: Script unit tests
         run: npm run test:scripts
+
+      # Four mutations of auth, sessions, url-builder and schema tolerance,
+      # each of which the module's tests must catch. About seven seconds. It
+      # is the one check that proves existing tests can fail, which the red
+      # proof below cannot do for code that predates the range.
+      - name: Mutation smoke
+        working-directory: ./app
+        run: npm run test:mutation
 
       # P2 by machine: the tests this range changed must fail on the code
       # the range replaces (scripts/proven-red.mjs). The unit-tests job

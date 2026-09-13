@@ -36,7 +36,8 @@ tier; docs reference IDs, never copied text.
   feature and bugfix. A test that has never failed does not demonstrate it
   can catch the bug. Changes an existing gate already covers fully rely on
   that gate instead of a bespoke new test. Gate: the proven-red CI job runs
-  each change's tests against the pre-change code and fails when they pass.
+  each change's tests against the pre-change code, fails when they pass, and
+  says whether the red was an assertion or only a missing symbol.
 - P3. Run the gates covering the change before every commit; run the full
   suite before push or PR. Never commit after a failed or unrun gate.
 - P4. Read failures and fix the cause. Never blindly retry.

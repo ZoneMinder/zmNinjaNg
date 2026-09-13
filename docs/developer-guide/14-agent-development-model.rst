@@ -225,6 +225,26 @@ changed and no unit test did. A title type that marks no behavior change
 (``docs``, ``chore``, ``ci``, ``refactor``, ``build``, ``style``, ``test``)
 then lets the change through, which is what a real refactor looks like.
 
+A red run comes in two kinds, and the job says which it saw. A test that
+fails an assertion on the old code shows the assertion bites. A test that
+fails only because it names something the old code does not have, with
+``x is not a function`` or ``Cannot find module``, shows the code is new and
+nothing about the assertions. On one September 2026 feature range, 6 of 17
+failures were of the second kind, and before the job read its own report it
+could not tell. It now counts the two apart from the JSON report of the run
+and prints both counts. When every failure is a missing reference, it prints
+a warning instead, visible as an annotation on the pull request, and still
+passes: that is the only red a brand-new module can give against the
+fork point. The reviewer then checks the assertions by hand, or adds the
+module to the mutation smoke described next.
+
+The same CI job runs ``npm run test:mutation``
+(`mutation-smoke.mjs <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/scripts/mutation-smoke.mjs>`__).
+It flips one branch in each of four modules (auth, sessions, the URL builder,
+and schema tolerance), runs that module's tests, and fails when they stay
+green. It takes about seven seconds and is the one check that proves existing
+tests can fail, which proven red cannot do for code older than the range.
+
 Tests under ``app/src/tests/``, such as agents-contracts.test.ts, check the
 repository rather than app behavior. The job does not run them against the
 old code, because the old code holds no violation for them to find. The
