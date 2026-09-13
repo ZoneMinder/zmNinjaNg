@@ -29,6 +29,8 @@ Connect each artifact to its user-visible behavior and relevant flow. Examples m
 
 ## Style
 
+- Write and edit with the slop-mop skill. The rules below add what it does
+  not cover.
 - Follow `01-introduction.rst` tone and `call-flows.rst` structure.
 - Write like a developer explaining to a colleague. No headline-style
   headings ("The X", "A deep dive into Y") and no news-article cadence;
@@ -51,16 +53,8 @@ this section now states:
   mode"), never tease them ("The retirement: an override, a migration,
   and a second death"). If a heading would work as a news headline,
   rewrite it.
-- Never invent shorthand and use it as if the reader knows it. Either
-  avoid the term or define it once, early, then reuse it ("proven red
-  means the new test was run against the pre-fix code and shown to
-  fail there"). A sentence the maintainer must decode is a defect, not
-  a style choice.
-- Depth over compression. When a sentence packs three facts into
-  subordinate clauses, split it and spell each fact out. The measure of
-  a report is whether a reader outside the session can follow every
-  sentence on first read - not its length in either direction.
-- No superlatives or ranking commentary ("the best catch of the day",
-  "the strongest evidence"). State what happened; let the reader rank.
+- The other lessons from those three rewrites are slop-mop rules. Follow
+  the skill to define shorthand at first use, to split sentences that pack
+  in several facts, and to leave out superlatives and ranking commentary.
 - Claims cite their commit (link, verified to exist before citing) and
   quoted outputs come from the record, never reconstructed.
