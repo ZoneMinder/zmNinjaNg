@@ -6,29 +6,27 @@ not line-reviewed by a person. In eight months one maintainer directing
 agents landed 2,313 commits and fourteen reverts, and each of those
 reverts is now written down where an agent reads it first.
 
-This chapter explains why that works here, what enforces correctness
-instead of eyeballs on diffs, and where a human still reviews
-deliberately.
+This chapter covers why that works here, what enforces correctness
+without line review of diffs, and where a human still reviews.
 
-.. admonition:: Proving it out
+.. admonition:: Evidence for this chapter
 
    Two documents test this chapter's claims; read them after the guide. The
    `all-profiles retrospective
    <https://github.com/ZoneMinder/zmNinjaNg/blob/main/docs/superpowers/analysis/2026-08-04-all-profiles-retrospective.md>`_
-   is a commit-by-commit validation of this model over one four-day
-   arc: three programs, roughly ninety agent contexts, and every
-   defect the review loop caught before merge, told incident by
-   incident with the probes and mutations that proved each one. It
-   also reports, with the same candor, what cost time and what a
-   future run should drop.
+   is a commit-by-commit validation of this model over four days of
+   work: three programs, roughly ninety agent contexts, and every
+   defect the review loop caught before merge, with the probes and
+   mutations that proved each one. It also reports what cost time and
+   what a future run should drop.
 
    The `post-sweep codebase review
    <https://github.com/ZoneMinder/zmNinjaNg/issues/348>`_ is the
-   complementary check: after that fix period, a fresh-context
-   twelve-pillar review scored the whole repository (overall 7.9/10),
-   with every finding re-verified against the cited source before
-   scoring. It measures where the model's gates held, where ungated
-   rules drifted, and carries the phased plan for closing the gap.
+   second check: after that fix period, a fresh-context twelve-pillar
+   review scored the whole repository (overall 7.9/10), with every
+   finding re-verified against the cited source before scoring. It
+   reports where the model's gates held and where ungated rules
+   drifted, and includes a phased plan for fixing the drift.
 
 Scope, platforms, and release guardrails
 ----------------------------------------
@@ -51,34 +49,34 @@ the model this chapter describes:
 
 The app ships an assistant that answers questions about the user's
 cameras and events by calling tools against their server, on the user's
-choice of backend: their own **Ollama** server, on-device **WebLLM**, or
-**Apple Foundation Models**. Language models fabricate where code merely
-crashes, so this subsystem carries extra guardrails: the **Assistant tool
-loop contract** gates whether a turn may answer at all, prompt changes
+choice of backend: their own Ollama server, on-device WebLLM, or Apple
+Foundation Models. A language model can return a fabricated answer where
+ordinary code would fail visibly, so this subsystem has extra guardrails:
+the Assistant tool loop contract gates whether a turn may answer at all, prompt changes
 are measured with a scored eval harness before and after
 (`llm-models <https://github.com/ZoneMinder/zmNinjaNg/blob/main/agents/project/llm-models.md>`__
-carries the numbers), and the schema rules live in
+has the numbers), and the schema rules live in
 `data-integrity <https://github.com/ZoneMinder/zmNinjaNg/blob/main/agents/project/data-integrity.md>`__.
 
-That breadth is the reason the guardrails exist: a change to a shared
-component can misbehave on **five platforms at once**, and no single
-machine can verify all of them. Platform divergence is therefore written
-down where agents will find it (the Native contract, the native playbook,
+A change to a shared component can misbehave on five platforms at once,
+and no single machine can verify all of them, so platform divergence is
+written down where agents will find it (the Native contract, the native playbook,
 the platform quirks in domain-context), web e2e runs in CI wherever a
 ZoneMinder is configured to point it at, and device e2e (Android emulator,
 iOS simulator and tablet) is run manually from scripts, never by agents.
 
-Releases follow the same posture. Android and desktop binaries are built
-by the GitHub workflows, not on a laptop: the ``build-*`` workflows are
-dispatched manually with a version number, and pushing a ``zmNinjaNg-*``
-tag drives the release workflow that publishes from those artifacts. iOS
-builds locally through Xcode for signing and App Store submission; a
-macOS runner could automate it the way Linux automates Android, and that
-has not been set up. Native build numbers change only in a deliberate
-``chore:`` commit, enforced by the version guard in CI, and test builds
-reuse the existing workflows rather than growing new ones. Contributions are held to the same standard as the
-maintainer's own work: the rules and gates in this chapter, plus a code
-review before the PR.
+Android and desktop binaries are built by the GitHub workflows, not on a
+laptop: the ``build-*`` workflows are dispatched manually with a version
+number, and pushing a ``zmNinjaNg-*`` tag drives the release workflow that
+publishes from those artifacts. iOS archives and signs locally; no macOS
+runner builds it in CI. After the tag, ``scripts/make_release.sh`` offers
+to upload the iOS build to App Store Connect (``scripts/upload-ios.sh``)
+and, once the tag's workflow has built the Android bundle, to upload that
+to Google Play (``scripts/upload-android.sh``). Native build numbers change
+only in a deliberate ``chore:`` commit, enforced by the version guard in
+CI, and test builds reuse the existing workflows rather than growing new
+ones. Outside contributions go through the same rules and gates as the
+maintainer's own work, plus a code review before the PR.
 
 Every workflow, and what fires it:
 
@@ -116,36 +114,35 @@ Every workflow, and what fires it:
 Moving from code review to constraint enforcement and design review
 -------------------------------------------------------------------
 
-Reading every generated diff stopped scaling early, and it was never good
-review to begin with: a person skimming a few hundred generated lines
-misses more than a failing test does. The principles that replaced it:
+Reading every generated diff stopped scaling early, and a person skimming a
+few hundred generated lines misses more than a failing test does. The principles that replaced it:
 
-- **Constraints instead of inspection.** Every rule an agent has to
+- **Written constraints.** Every rule an agent has to
   follow is written down; every rule a script can check has a script
   checking it; when something breaks that no rule covered, the fix has to
   include the rule that would have covered it. The maintainer states what
   should happen (a bug, a feature, an issue number), an agent does the
   work, and the gates decide whether it lands.
-- **Models check each other.** Reviews are dispatched to an agent that
+- **Cross-model checks.** Reviews are dispatched to an agent that
   did not write the code, and at milestones different frontier models
   re-verify each other's claims, gates re-run included.
   `Issue #217 <https://github.com/ZoneMinder/zmNinjaNg/issues/217#issuecomment-4882243836>`__
   has a worked example: Fable re-reviewing a 15-commit delta that Opus
   had reviewed, four verification agents plus a fresh gate run.
-- **Knowledge stays in the repository.** Session memory cannot be seen by
+- **Knowledge in the repository.** Session memory cannot be seen by
   other agents, other contributors, or CI, and dies with the machine.
-  A revert or a string of fixes to one file is a lesson already paid for.
+  A revert or a string of fixes to one file marks a lesson worth writing down.
   The facts in
   `domain-context.md <https://github.com/ZoneMinder/zmNinjaNg/blob/main/agents/project/domain-context.md>`__
   came from sweeping agent memory and the full commit history once; rule
   M5 requires the same of every future session.
-- **Rules organize by concern, not by layer.** No frontend or backend
+- **Rules by concern.** There is no frontend or backend
   rulebook: a contract owns its subsystem's invariant whichever layer it
   sits in, platform divergence lives in the native playbook and
   domain-context, and the dev guide teaches the frameworks. A layer
   playbook gets created only when a recurring failure class arrives with
   no home in the current cut.
-- **Agent count is a cost, not evidence of rigor.** Every dispatch
+- **Agent count.** Every dispatch
   re-reads context, and reviews of mechanical work here found nothing the
   gates had not already proven. Review ceremony scales with a change's
   risk, and delegation has a floor: a trivial gate-covered edit is made
@@ -153,7 +150,7 @@ misses more than a failing test does. The principles that replaced it:
   judgment work plus one whole-branch review before every PR, and a small
   bounded change relies on its gates.
 
-Human attention moved rather than disappeared. Feature work starts as a
+The maintainer still reviews, at two points. Feature work starts as a
 short design doc saying what is being built and why, and the maintainer
 approves that before implementation, because reviewing a half-page of
 intent catches wrong-direction work earlier and cheaper than reviewing
@@ -162,30 +159,29 @@ offline, at milestones: the scorecard and history-mining reviews run
 against the whole codebase roughly monthly (both described below), and
 their findings become issues, gates, and playbook entries.
 
-Documentation is the other half of that trade. Rule P10 makes every new
+Rule P10 makes every new
 API, component, hook, or utility update the developer docs and call
 flows, and the documentation playbook requires that writing to teach,
 with React explained where a chapter first relies on it and flows traced
 through real user actions. In a codebase agents write, the maintainer's
 understanding comes from approving designs before the code exists and
 reading the docs the code is forced to produce after, which is why this
-guide exists at all (see :doc:`01-introduction`).
+guide exists (see :doc:`01-introduction`).
 
-How a feature actually lands
-----------------------------
+How a feature lands
+-------------------
 
-The abstractions above are easier to trust after watching one change go
-through them. Bulk event deletion
+This section follows one change through that process: bulk event deletion
 (`issue #213 <https://github.com/ZoneMinder/zmNinjaNg/issues/213>`__,
-shipped 2026-07) is a representative walk.
+shipped 2026-07).
 
-It starts as a conversation, not code. A brainstorming pass turns "I want
+It starts as a conversation: a brainstorming pass turns "I want
 to delete events in bulk" into a design doc in
 `docs/superpowers/specs/ <https://github.com/ZoneMinder/zmNinjaNg/tree/main/docs/superpowers/specs>`__:
 what the user sees, what is out of scope, which existing pieces get
-reused. The maintainer reads and approves that half page. This is the
-moment human judgment is cheapest, and the only moment the direction can
-be wrong for free; seventeen specs live there now.
+reused. The maintainer reads and approves that half page; changing
+direction costs nothing at this point. The specs directory holds seventeen
+specs.
 
 An approved spec becomes an implementation plan in
 `docs/superpowers/plans/ <https://github.com/ZoneMinder/zmNinjaNg/tree/main/docs/superpowers/plans>`__.
@@ -195,12 +191,11 @@ conversation history. The
 opens with the goal, the architecture in five sentences, and a global
 constraints block (which directory npm runs from, which existing API
 helper is the only sanctioned delete path), then breaks the work into
-checkbox tasks where **the failing tests are embedded verbatim in the
-plan**. A task is "make this exact test pass", not "add a selection
-store". That choice is deliberate economics: when the task text contains
-the complete content to write, a cheap model can execute it, and rule P2
-is satisfied by construction because the test exists before the
-implementation by the plan's own structure.
+checkbox tasks where the failing tests are embedded verbatim in the
+plan. A task is "make this exact test pass", not "add a selection
+store". When the task text contains the complete content to write, a
+cheap model can execute it, and rule P2 holds because the plan puts each
+test before its implementation.
 
 Which tier a plan's embedded tests target follows a routing rule from the
 `testing playbook <https://github.com/ZoneMinder/zmNinjaNg/blob/main/agents/project/testing.md>`__:
@@ -224,26 +219,23 @@ whole-branch review runs before the PR. The
 records the practices that make this reliable, down to the trap that a
 piped gate command hides a red exit status.
 
-The PR itself is mostly ceremony by this point: branch protection holds
+By the PR, the gates have already run: branch protection holds
 the merge until every required check passes, and the merge is queued with
 GitHub auto-merge rather than polled for. What the gates cannot prove,
 the maintainer checks by hand where it matters: UI work gets a real
 device pass (PiP, biometrics, and rotation are not trusted from a
 simulator), and anything native waits for that verification before merge.
 Then rule P10 applies: the user guide gains the feature, this guide
-gains the components, and the call flow gets traced. The docs are
-how the maintainer finds out what actually got built.
+gains the components, and the call flow gets traced.
 
-Not every change earns this ceremony. A typo-level fix needs no issue,
-a gate-covered edit needs no dispatched agent, and cosmetic UI tweaks
-rely on existing tests. The full pipeline is for work where being wrong
-is expensive; the floor exists so the pipeline's cost never exceeds the
-change's risk.
+A typo-level fix needs no issue, a gate-covered edit needs no dispatched
+agent, and cosmetic UI tweaks rely on existing tests; the full pipeline is
+for changes where a mistake is expensive.
 
 Rules, gates, and practices
 ---------------------------
 
-This guide uses three terms with specific meanings.
+This guide uses four terms with specific meanings.
 
 A **rule** is a binding statement in
 `AGENTS.md <https://github.com/ZoneMinder/zmNinjaNg/blob/main/AGENTS.md>`__
@@ -285,14 +277,14 @@ carrying IDs, load only when the work touches their area, and lose to
 rules on any conflict. A practice becomes a rule when ignoring it starts
 breaking things.
 
-Rules also leave. Instructions are audited for cost the way code is
-audited for bugs, because every rule taxes every future session whether
-or not it earns anything back. A July 2026 friction audit (abb96c79) is
+Rules also get removed. Instructions are audited for cost, because every
+rule adds to the context of every future session whether or not it
+prevents anything. A July 2026 friction audit (abb96c79) is
 the worked example: it found a verification step that duplicated what the
 build already did, an e2e requirement with no size floor, and the same
 facts copied into three files, and the fix deleted more instruction text
 than it added. A rule that turns out to be wrong or merely expensive
-leaves the same way it arrived, through a maintainer-approved diff.
+is removed through a maintainer-approved diff, like any other rule change.
 
 How the pieces fit
 ------------------
@@ -323,8 +315,8 @@ enforcement; the bottom edges are the feedback loop that grows the files.
 at the repo root is the portable core; it contains nothing specific to
 zmNinjaNg.
 `AGENTS.project.md <https://github.com/ZoneMinder/zmNinjaNg/blob/main/AGENTS.project.md>`__
-carries the eighteen architecture contracts and the project rules. The
-point of the contracts is that an agent changing, say, settings behavior
+holds the eighteen architecture contracts and the project rules. With the
+contracts, an agent changing, say, settings behavior
 reads the Settings contract instead of rediscovering the design from
 source.
 
@@ -350,13 +342,12 @@ Two gates check the tests rather than the code. The proven-red job
 (`proven-red.mjs <https://github.com/ZoneMinder/zmNinjaNg/blob/main/scripts/proven-red.mjs>`__)
 takes the test files a PR changed, runs them in a throwaway worktree that
 holds the pre-change code, and fails when they pass there. A test that is
-green on the code it claims to guard cannot catch the bug; this is rule
-P2 as a command. Three such tests had passed review here before the job
+green on the code it claims to guard cannot catch the bug; the job enforces rule
+P2. Three such tests had passed review here before the job
 existed, each found only by stashing the fix and re-running by hand. The
 job proves every changed unit test, whatever the PR title says; a title type
 that carries no behavior change (``docs``, ``chore``, ``refactor``) only
-excuses a source change that brings no test, which is what a real refactor
-looks like. Ratchet baselines and the repo-hygiene tests under
+excuses a source change that brings no test, as in a pure refactor. Ratchet baselines and the repo-hygiene tests under
 ``app/src/tests/`` are bookkeeping and gate work, not behavior: a new gate
 assertion is proven red against a scratch violation before it lands, not
 against the previous commit, where its violation does not yet exist. The quality
@@ -388,19 +379,18 @@ CI runs the full gate suite on every push. The
 workflow lets the maintainer bring an agent into any issue or PR by
 mentioning it.
 
-When something breaks despite all of this, the fix is required to carry
-more than the patch: the same PR proposes the instruction change that
-would have prevented the break (with its gate, per M1), and any durable
-fact learned along the way goes into ``domain-context.md`` (per M5). The
-maintainer ends up reviewing small instruction diffs instead of large code
-diffs, and each failure gets absorbed once.
+When something breaks despite all of this, the PR with the fix also
+proposes the instruction change that would have prevented the break (with
+its gate, per M1), and any durable fact learned along the way goes into
+``domain-context.md`` (per M5). The maintainer ends up reviewing small
+instruction diffs instead of large code diffs.
 
 A contract, end to end
 ----------------------
 
-A concrete walk-through, using the Polling contract. In
+The Polling contract in
 `AGENTS.project.md <https://github.com/ZoneMinder/zmNinjaNg/blob/main/AGENTS.project.md>`__
-it reads:
+reads:
 
 .. code-block:: markdown
 
@@ -408,7 +398,7 @@ it reads:
    Owns: every recurring refresh interval.
    Path: `useBandwidthSettings` / `getBandwidthSettings` (`app/src/hooks/useBandwidthSettings.ts`).
    Never: literal interval values; users tune bandwidth globally.
-   Gate: `app/src/tests/agents-contracts.test.ts`; review.
+   Gate: review.
 
 That block is the *instruction*. An agent asked to add, say, a
 refresh-every-30-seconds feature reads it and knows three things without
@@ -426,25 +416,24 @@ must appear as words somewhere in ``app/src``
 (``useBandwidthSettings``, ``getBandwidthSettings``). Rename or delete the
 hook without updating the contract and the suite fails with
 ``Polling: symbol useBandwidthSettings not found in app/src`` until the
-contract matches the code again. That is the property the contracts
-depend on: they cannot silently rot, so an agent can trust them instead of
+contract matches the code again. Because a stale symbol fails the suite,
+the contracts cannot silently rot, and an agent can trust them instead of
 re-deriving the design.
 
 What the gate cannot check, review covers: nothing mechanical proves a new
 ``setInterval(30000)`` violates the ``Never:`` line, which is why the
-``Gate:`` field says ``review`` too, and why review ceremony concentrates
-on judgment. The same file carries the checks on the instruction system
-itself (core purity, word budget, evidence hashes, privacy, doc
-references, headings), so the files this chapter describes are gated by
-the same mechanism they document.
+``Gate:`` field says ``review``, and why review ceremony concentrates
+on judgment. The same file also checks the instruction system itself
+(core purity, word budget, evidence hashes, privacy, doc references,
+headings).
 
 Monthly scorecard review
 ------------------------
 
-Gates only catch what they were built to catch. Drift is whatever nobody
-wrote a gate for yet: duplication spreading across files, tests that pass
-without asserting much, a convention the code quietly stopped following.
-The first of the two deliberate human reviews covers this: roughly once a
+Gates miss drift that no one has written a gate for yet: duplication
+spreading across files, tests that pass without asserting much, a
+convention the code stopped following. The first of the two periodic
+human reviews covers this: roughly once a
 month, a scorecard review of the whole codebase. Long sessions degrade
 too, with a gate that was clear at the start of a session ignored by the
 end of it; the scorecard re-runs those checks from a clean context.
@@ -452,14 +441,14 @@ end of it; the scorecard re-runs those checks from a clean context.
 The scorecard scores twelve weighted pillars (architecture, test quality,
 code quality, DRY, type safety, error handling, security, convention
 self-consistency, performance, documentation, tooling, accessibility and
-i18n). Two constraints keep it honest. A pillar only gets a number if a
+i18n). Two constraints apply. A pillar only gets a number if a
 command was actually run to produce the evidence, and test quality is
 scored by what the suite would catch (assertion density, failure paths,
 boundary cases, mock saturation), never by test count. One useful probe:
 try to name a plausible bug the suite would miss; if that takes under a
 minute, the testing score is inflated. Output ends in a ranked fix list.
 
-The repo carries its own variant of this review as the
+The repo has its own variant of this review as the
 `fable-review <https://github.com/ZoneMinder/zmNinjaNg/tree/main/.claude/skills/fable-review>`__
 skill. It scores the same kind of pillars against this project's
 contracts, refuses to run on any model other than Fable, and writes a
@@ -471,24 +460,23 @@ Fable review scored the codebase 7.5, an Opus session executed it in
 `PR #218 <https://github.com/ZoneMinder/zmNinjaNg/pull/218>`__, and the
 re-review scored 8.1.
 
-Ranked fixes become issues, and issues become agent work.
+Each ranked fix becomes an issue for an agent to work.
 `Issue #281 <https://github.com/ZoneMinder/zmNinjaNg/issues/281>`__ shows
 the full cycle: a scorecard run found React correctness gaps, coverage
 measured against the wrong input, and import cycles; the hardening work
 landed under that issue; and several of its checks (the cycle gate, the
-scoped lint configs) stayed behind as permanent gates. The next review
+scoped lint configs) stayed behind as permanent gates, so the next review
 does not need to look for those problems again.
 
 Mining history for lessons
 --------------------------
 
-The second deliberate review audits the instruction files against the
+The second periodic review audits the instruction files against the
 commit history. The per-PR protocol only fires when someone notices in the
 moment that a lesson was learned; the
 `mine-history <https://github.com/ZoneMinder/zmNinjaNg/tree/main/.claude/skills/mine-history>`__
 skill catches what nobody noticed. It walks the history looking at
-reverts (something was tried and did not work, which is worth writing
-down), repeated fixes to the same subsystem (one misunderstanding
+reverts (something was tried and did not work), repeated fixes to the same subsystem (one misunderstanding
 surfacing over and over), and fixes that an existing gate should have
 caught. It reports candidate ``domain-context.md`` entries and candidate
 contracts, each with the commit hashes that justify it. Its first run over
@@ -517,8 +505,7 @@ here are structural rather than tooling:
   ``agents-contracts.test.ts``; every instruction-file edit that pushes
   the combined count over it fails the suite, and the choice is to trim
   wording or raise the constant, where a raise is a deliberate edit to
-  the gate with the reason in the commit message. Lowering is always
-  welcome.
+  the gate with the reason in the commit message.
 - Ceremony is priced: implementation delegates to subagents on the
   cheapest model that fits the task, trivial gate-covered edits skip the
   dispatch entirely, and independent review runs only where judgment is
@@ -534,7 +521,7 @@ rtk (a CLI wrapper that compresses command output before it reaches the
 model), codegraph (pre-indexed code structure queried instead of grepping
 and reading files), and context-mode (runs analysis in a sandbox so raw
 bytes stay out of the context window). None of it is required to work on
-this repo; it shapes the maintainer's sessions, not the repository.
+this repo.
 
 Two observations from using the stack on this project. Ponytail's
 bias shows up in decisions that are visible in the history: two
@@ -547,8 +534,8 @@ red gate's exit status through a pipeline, each caught only by rerunning
 the bare command. That failure mode recurs: a later session found bare
 ``git log`` silently capped at 50 again in a wrapped shell, detected only
 because ``git rev-list --count`` disagreed. Compression tools save tokens
-on reads; they never wrap a gate, and published savings claims deserve
-the same M2 skepticism as any other number a tool reports about itself.
+on reads but never wrap a gate, and their published savings claims get the
+same M2 check as any other number a tool reports about itself.
 
 Using this in your own project
 ------------------------------
@@ -603,6 +590,6 @@ What this asks of a contributor
 Human or agent, the entry points are the same: read ``AGENTS.md`` and
 ``AGENTS.project.md``, read the playbook for your area, and let the gates
 run. If a rule seems wrong, propose a change through the protocol instead
-of working around it quietly; a workaround that never becomes a rule
-change is exactly the drift this setup exists to prevent. See
+of working around it; a workaround that never becomes a rule change is
+the drift this setup exists to prevent. See
 :doc:`09-contributing` for branches, commits, and verification commands.

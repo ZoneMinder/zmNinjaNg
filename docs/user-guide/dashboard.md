@@ -17,10 +17,10 @@ The dashboard supports several widget types:
 
 The dashboard uses a drag-and-drop grid layout:
 
-- **Move widgets**: Click and drag a widget header to reposition it
-- **Resize widgets**: Drag the bottom-right corner of a widget to resize
-- **Add widgets**: Tap the add button to place a new widget
-- **Remove widgets**: Tap the close button on a widget header
+- Drag a widget's header to move it
+- Drag the bottom-right corner of a widget to resize it
+- Tap the add button to place a new widget
+- Tap the close button on a widget's header to remove it
 
 Your layout is saved automatically per profile.
 

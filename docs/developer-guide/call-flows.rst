@@ -79,7 +79,7 @@ When you launch the app with a profile already saved, a lot happens before the
 monitor list appears, but the shape is simple: the app restores your saved
 profile, throws away any leftover session from last time, points its HTTP client
 at your server, and then does the slow network setup (logging in, fetching
-server details) **in the background** so the splash screen never sits there
+server details) in the background so the splash screen never sits there
 waiting on the network.
 
 .. mermaid::
@@ -111,8 +111,8 @@ waiting on the network.
    first code to run. It installs the global error handlers (so an uncaught
    error anywhere ends up in the in-app log instead of vanishing), tags the
    ``<html>`` element as native vs web, and starts the iOS safe-area bootstrap,
-   then renders ``<App/>``. The reason this is first: nothing that happens later
-   should be invisible.
+   then renders ``<App/>``. It runs first so that errors thrown by anything later
+   still reach the in-app log.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/main.tsx>`__
    · → :doc:`11-application-lifecycle`
 
@@ -146,14 +146,14 @@ waiting on the network.
    caches it, so a request carries its profile with it rather than depending on
    which server was selected last. Building the session also registers this
    profile's credentials re-login with the auth store, which is what lets the
-   client quietly re-authenticate a lapsed token.
+   client re-authenticate a lapsed token on its own.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/services/profile-initialization.ts>`__
    · → :doc:`07-api-and-data-fetching`
 
-#. **Let the user in (the important bit).** ``setInitializationState(true)``
+#. **Let the user in.** ``setInitializationState(true)``
    flips ``isInitialized`` and ``isBootstrapping``. This is the moment the UI
    becomes usable: the splash hides, routing renders, and the slow network setup
-   is kicked off **without** being awaited, so it runs in the background. The app
+   is kicked off without being awaited, so it runs in the background. The app
    is interactive even while it is still logging in.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/services/profile-initialization.ts>`__
    · → :doc:`11-application-lifecycle`
@@ -173,8 +173,7 @@ waiting on the network.
    store's ``login()``, which is single-flight (concurrent callers share one
    request) and POSTs to ``/host/login.json``. On success it stores the access
    and refresh tokens and sets ``isAuthenticated: true``. A failure here is only
-   a warning, since some servers do not require auth. This is the step that
-   produces the authenticated session.
+   a warning, since some servers do not require auth.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/services/profile-bootstrap.ts>`__
    · → :doc:`07-api-and-data-fetching`
 
@@ -199,11 +198,11 @@ waiting on the network.
 #. **First real data.** ``pages/Monitors.tsx`` calls ``useScopedMonitors``,
    which fans one React Query out over every profile in scope through
    ``useQueries`` and combines the results. In single mode the scope is a
-   one-element array, so it is still one query. It is **not** gated on
+   one-element array, so it is still one query. It is not gated on
    ``isAuthenticated``: a profile in scope always gets an enabled query,
    because the client self-heals through its own ``proactiveLogin`` path and a
    real auth failure surfaces as that profile's ``ProfileError``. Gating on
-   auth is what made an aggregate render blank for any profile that had not
+   auth would render an aggregate blank for any profile that had not
    bootstrapped yet, and the hook carries a comment saying so. It polls at the
    bandwidth-profile interval, staggered across profiles.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/pages/Monitors.tsx>`__
@@ -216,7 +215,7 @@ and resets the client first. That teardown is the last scene of Flow 2.
 Flow 2: Montage opens and a live MJPEG stream runs
 --------------------------------------------------
 
-This is the busiest flow in the app and the one most worth understanding. A
+This flow involves more moving parts than any other in the app. A
 montage tile goes from "just mounted" to a live ``nph-zms`` feed, and along the
 way the app manages a **connection key** (connkey) per stream so feeds never
 collide on the server and never leak a zombie process when they go away.
@@ -293,7 +292,7 @@ collide on the server and never leak a zombie process when they go away.
 #. **The key goes into the store.** ``stores/monitors.ts``
    ``generateAndSetConnKey`` generates a random number and stores it in the
    persisted ``connKeys[monitorId]`` map. Keeping it in the store is what lets
-   teardown later compare-and-clear *exactly* the key it owns, never a newer
+   teardown later compare-and-clear the key it owns, never a newer
    concurrent one.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/stores/monitors.ts>`__
    · → :doc:`12-shared-services-and-components`
@@ -820,7 +819,7 @@ alive, and turns each live alarm into an event in the store and a toast on scree
 
 #. **Store builds the config and listeners.** ``connect`` gets its own service
    instance per profile id, builds the server config, registers state/event
-   listeners, and awaits the service connect - it no longer disconnects any
+   listeners, and awaits the service connect. It does not disconnect any
    other profile, since an aggregate needs more than one profile connected
    at once (refs #337; see Flow 23).
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/stores/notifications.ts>`__
@@ -1492,7 +1491,7 @@ states at all.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/layout/SidebarContent.tsx>`__
    · → :doc:`04-pages-and-views`
 
-#. **The state list arrives first, and quietly.** ``pages/Server.tsx`` runs a
+#. **The state list arrives first, with no error wall and no polling.** ``pages/Server.tsx`` runs a
    ``useQuery`` keyed by ``queryKeys.states(currentProfile?.id)``, gated on
    ``!!currentProfile && isAuthenticated``. Note what it does *not* destructure:
    no ``error``, so this query has no error wall, and no ``refetchInterval``, so
@@ -1503,7 +1502,7 @@ states at all.
    · → :doc:`07-api-and-data-fetching`
 
 #. **The active state is derived, then copied into local state.** ``activeState``
-   is just ``states?.find((s) => s.IsActive === '1')``, recomputed on every
+   is ``states?.find((s) => s.IsActive === '1')``, recomputed on every
    render. An effect then seeds ``selectedAction`` from it. An effect runs *after*
    the render that scheduled it, so the dropdown paints empty for one frame and
    fills on the next; the ``&& !selectedAction`` half of the guard is what stops
@@ -1533,7 +1532,7 @@ states at all.
    Unlike a query it is never cached, never refetched, and never fires on its own:
    you call ``mutate()`` and it runs ``mutationFn`` once. What it hands back is
    lifecycle, ``isPending`` while the request is open plus ``onSuccess`` and
-   ``onError`` callbacks, which is exactly the surface step 5's button binds to.
+   ``onError`` callbacks, which is the surface step 5's button binds to.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/pages/Server.tsx>`__
    · → :doc:`07-api-and-data-fetching`
 
@@ -1564,11 +1563,11 @@ states at all.
 #. **Success invalidates the key rather than editing the cache.** ``onSuccess``
    toasts, then calls
    ``queryClient.invalidateQueries({ queryKey: queryKeys.states(currentProfile?.id) })``.
-   Writing ``IsActive: '1'`` into the cached array by hand would be faster and
-   would be a lie. ZoneMinder may normalize the name or refuse the change, and
+   Writing ``IsActive: '1'`` into the cached array by hand would be faster but
+   could be wrong. ZoneMinder may normalize the name or refuse the change, and
    when the user picked ``start`` there is no matching entry in that array to
-   patch at all: the daemon verbs are not states. Refetching is the only answer
-   the app can actually justify.
+   patch at all: the daemon verbs are not states. Only a refetch reports what
+   the server did.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/pages/Server.tsx>`__
    · → :doc:`07-api-and-data-fetching`
 
@@ -1576,7 +1575,7 @@ states at all.
    ``['states', profileId]``, the same array the query in step 2 was keyed with.
    Invalidation matches by key prefix, so this reaches that entry and any future
    longer key under it. The Server queries contract forbids writing the array
-   inline precisely here: an invalidator that spells its own key drifts away from
+   inline here: an invalidator that spells its own key drifts away from
    the query that reads it, and the symptom is a page that silently stops
    updating. The ``profileId`` is a branded ``ProfileId``, minted once by
    ``asProfileId`` when ``addProfile`` generates the UUID back in Flow 4, and it
@@ -1674,7 +1673,7 @@ stream, all of which ``switchProfile`` does. The clean state comes from a
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/stores/profile.ts>`__
    · → :doc:`03-state-management-zustand`
 
-#. **Where the secret actually was.** ``getDecryptedPassword`` delegates to
+#. **The password is read from secure storage.** ``getDecryptedPassword`` delegates to
    ``ProfileService.getPassword``, which reads ``getSecureValue('password_<id>')``.
    On iOS and Android that resolves to the Keychain or Keystore. On web and
    Electron it is AES-GCM ciphertext in local storage, with the key material
@@ -1729,7 +1728,7 @@ stream, all of which ``switchProfile`` does. The clean state comes from a
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/pages/Profiles.tsx>`__
    · → :doc:`11-application-lifecycle`
 
-#. **Deleting captures the answer before it destroys the question.**
+#. **Deleting records whether the deleted profile is current before deleting it.**
    ``handleDeleteProfile`` records ``isDeletingCurrent`` before awaiting
    ``deleteProfile``, because afterwards ``currentProfileId`` already points at a
    different profile. It then re-reads ``useProfileStore.getState().profiles``
@@ -1739,7 +1738,7 @@ stream, all of which ``switchProfile`` does. The clean state comes from a
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/pages/Profiles.tsx>`__
    · → :doc:`02-react-fundamentals`
 
-#. **The store does three things and stops.** ``deleteProfile`` removes the
+#. **The store removes the password and the profile, then reselects if needed.** ``deleteProfile`` removes the
    password from secure storage, filters the profile out of the array, and, if the
    deleted profile was current, auto-selects ``profiles[0]`` and points the API
    client at its ``apiUrl``. The session belonging to the deleted server is still
@@ -1747,12 +1746,12 @@ stream, all of which ``switchProfile`` does. The clean state comes from a
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/stores/profile.ts>`__
    · → :doc:`03-state-management-zustand`
 
-#. **Which is why the page reloads, or leaves.** ``handleDeleteProfile`` ends in
+#. **The page then reloads, navigates away, or does nothing.** ``handleDeleteProfile`` ends in
    one of three ways. No profiles remain: navigate to ``/profiles/new``. The
    current profile was deleted and others remain: ``window.location.reload()``,
    which is the only thing that discards the dead session and cache for the
    auto-selected replacement. Some other profile was deleted: nothing happens
-   beyond the list re-rendering, and nothing needs to.
+   beyond the list re-rendering.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/pages/Profiles.tsx>`__
    · → :doc:`04-pages-and-views`
 
@@ -1778,9 +1777,8 @@ query against a different endpoint that is gated on the first one's answer. And
 the pad has two implementations of press-and-hold, chosen by what the camera's
 ZoneMinder driver can do: continuous drivers get one start command and one stop
 command, while relative and absolute drivers get the same step command re-fired
-on a 400ms timer for as long as the button is held. The command that stops the
-camera is the one that matters. Nothing else stops it, including the component
-being destroyed.
+on a 400ms timer for as long as the button is held. Only the stop command halts the
+camera; destroying the component does not.
 
 .. mermaid::
 
@@ -1824,7 +1822,7 @@ being destroyed.
    ``/controls/{controlId}.json``, a different table with its own record. Its
    ``enabled`` gate is ``!!monitor?.Monitor.ControlId && monitor.Monitor.Controllable === '1'``.
    A React Query with ``enabled: false`` does not run and stays in a pending state,
-   which is exactly what is wanted on the first render: ``ControlId`` is
+   which is what the first render needs: ``ControlId`` is
    ``undefined`` until the monitor lands, and firing ``/controls/undefined.json``
    would be a guaranteed 404 for every non-PTZ camera in the system.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/pages/MonitorDetail.tsx>`__
@@ -1848,7 +1846,7 @@ being destroyed.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/pages/MonitorDetail.tsx>`__
    · → :doc:`05-component-architecture`
 
-#. **The pad mounts on the monitor's word, then waits for the control record.**
+#. **The pad mounts when the monitor is controllable, then waits for the control record.**
    ``PTZControls`` renders when ``!isFullscreen && monitor.Monitor.Controllable === '1'``,
    and receives ``control={controlData?.control.Control}``, which is ``undefined``
    while the query from step 3 is still in flight. The component returns ``null``
@@ -1877,7 +1875,7 @@ being destroyed.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/monitors/PTZControls.tsx>`__
    · → :doc:`05-component-architecture`
 
-#. **Unmounting while held is the interesting failure.** ``pointerup`` never
+#. **Unmounting while a button is held still sends the stop command.** ``pointerup`` never
    arrives if the panel collapses, the monitor changes, or the user leaves the
    page. A continuous camera would keep panning into its physical limit and the
    repeat timer would keep issuing requests from a dead component. ``HoldButton``
@@ -1900,7 +1898,7 @@ being destroyed.
 #. **The control endpoint is the classic web UI, not the API.**
    ``controlMonitor`` builds a URL against ``/index.php`` rather than
    ``/api/...``, runs it through ``wrapWithImageProxy``, and sends it with a
-   ``Skip-Auth`` header. Skipping the auth gate is correct here precisely because
+   ``Skip-Auth`` header. Skipping the auth gate is correct here because
    the access token is already baked into the query string by the URL builder, the
    same way the streaming URLs in Flow 2 carry theirs.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/api/monitors.ts>`__
@@ -2014,10 +2012,9 @@ the next poll.
    The hook seeds an unseen monitor from its first response inside a ``useEffect``,
    then reports its count as 0 for that render. It is an effect and not part of
    render because seeding writes to the store, and a store write during render
-   would re-enter the render and tear the tree. Reporting 0 is the point: the same
-   response that seeds a fresh install is the one that would otherwise show the
-   monitor's entire history as new. An absent watermark seeds silently rather than
-   greeting the user with a week of backlog.
+   would re-enter the render and tear the tree. It reports 0 because the same
+   response that seeds a fresh install would otherwise show the
+   monitor's entire history as new.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/hooks/useMonitorNewEvents.ts>`__
    · → :doc:`02-react-fundamentals`
 
@@ -2050,11 +2047,11 @@ the next poll.
 
 #. **The montage tiles carry the same badge and the same click.** ``pages/Montage.tsx``
    calls ``useMonitorNewEvents`` once at page level and passes ``newEventCount`` and
-   ``newestEventAt`` to each ``MontageMonitor``, exactly as ``pages/Monitors.tsx`` does.
+   ``newestEventAt`` to each ``MontageMonitor``, the same way ``pages/Monitors.tsx`` does.
    The tile renders the same blue ``montage-new-events-badge`` and its Events button
    runs the same ``useOpenMonitorEvents`` hook with ``from: '/montage'``. The tile's
    red alarm pulse is a separate signal, driven by the notification store, and is
-   unchanged. Only the counted number is now shared with ``MonitorCard``.
+   unchanged. Only the counted number is shared with ``MonitorCard``.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/monitors/MontageMonitor.tsx>`__
    · → :doc:`05-component-architecture`
 
@@ -2177,9 +2174,9 @@ tool and ``ToolDefinition`` cannot express one), never a runtime decision.
 #. **The routing parse: one call, four verdicts.** ``classifyRequest``
    (``triage.ts``) runs ``provider.complete`` under a constrained schema and
    decides, in one round: ``continues`` (does the latest message lean on the
-   earlier exchange - decoded FIRST, and the only thing that lets any
+   earlier exchange; decoded first, and the only thing that lets any
    context reach the later calls, refs #446), ``kind``
-   (ZONEMINDER/ACTION/CHAT - advisory: a chat or action verdict runs the
+   (ZONEMINDER/ACTION/CHAT; advisory: a chat or action verdict runs the
    turn with ``tools: []`` and ``buildNoToolPrompt``, and the loop fails
    open if the model then insists on a real read tool), ``subject``
    (events/monitors/server/groups/other), and ``objects`` (an array over
@@ -2187,11 +2184,11 @@ tool and ``ToolDefinition`` cannot express one), never a runtime decision.
    in any language; selecting the whole vocabulary derives no filter, the
    creep signature). A status question about a period with no other topic
    defaults to the system, and a CHAT verdict contradicting its own subject
-   is flipped to the data lane in code - the tool-less lane fabricates when
-   handed a real question. Context is STRUCTURED (``prevTurnFromThread`` +
+   is flipped to the data lane in code: the tool-less lane fabricates when
+   handed a real question. Context is structured (``prevTurnFromThread`` +
    ``buildContextualQuestion``, ``parse-context.ts``): the previous user
    question, the slots that turn resolved, and the assistant's closing
-   offer only when it asked something - never answer prose, which the model
+   offer only when it asked something, never answer prose, which the model
    mined for "truck", "Front Yard", and "today" across three live
    transcripts. A continuation answer renders a subdued status line in the
    panel; a fresh topic renders nothing.
@@ -2201,8 +2198,8 @@ tool and ``ToolDefinition`` cannot express one), never a runtime decision.
 #. **Place coverage: a separate, focused call returning place groups.**
    ``resolveCoverage`` (``monitor-stage.ts``) runs only when the
    deterministic name scan found nothing, and asks one thing: which monitors
-   the message's places mean. It returns GROUPS - "the front vs the back"
-   is one monitor set per side (refs #446) - because judged inside the
+   the message's places mean. It returns groups ("the front vs the back"
+   is one monitor set per side, refs #446), because judged inside the
    consolidated parse this failed live twice and every rewording rotated
    the failures, while the focused call measures perfectly on the same
    cases. ``deriveMonitorGroups`` keeps every guard in code, per group:
@@ -2212,10 +2209,10 @@ tool and ``ToolDefinition`` cannot express one), never a runtime decision.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/lib/assistant/monitor-stage.ts>`__
    · → :doc:`15-assistant`
 
-#. **Time: the whole-question windows interrogation.**
+#. **Time: one call turns every period in the question into structured windows.**
    ``resolveTimeframesFromQuestion`` (``timeframe-stage.ts``) asks the model
-   to EXPRESS every period the question means as structured windows in the
-   interpreter's own branch shapes, meaning-first - nothing is copied, so
+   to express every period the question means as structured windows in the
+   interpreter's own branch shapes, meaning-first. Nothing is copied, so
    the copy-truncation class ("same day, last week" -> "last week") cannot
    occur, and a comparison of two periods emits one window each
    (refs #444). Code resolves every window through ``parseFields`` +
@@ -2223,7 +2220,7 @@ tool and ``ToolDefinition`` cannot express one), never a runtime decision.
    cache under each window's meaning label, so the tool round re-interprets
    nothing. The rolling branch is offered only when the question shows a
    rolling marker, and a multi-group (place) comparison skips the model
-   entirely when the deterministic scan can time the question - the windows
+   entirely when the deterministic scan can time the question: the windows
    model emits one window per compared place under every wording measured
    (refs #446). The scan floor is also the fallback for any failure, and
    the same path runs on every backend.
@@ -2233,11 +2230,11 @@ tool and ``ToolDefinition`` cannot express one), never a runtime decision.
 #. **The plan: code composes the tool calls.** ``planToolCalls``
    (``plan.ts``) fans one ``list_events`` per window x group x monitor with
    the parsed ``objectType``, capped at ``ASSISTANT.maxPlannedToolCalls``;
-   server/monitors/groups subjects map to their read tools. A null plan -
-   unknown subject, no roster, group mode, test mode - is the free tool
+   server/monitors/groups subjects map to their read tools. A null plan
+   (unknown subject, no roster, group mode, test mode) is the free tool
    loop, unchanged. Planned calls execute through the loop's own
    ``runOneCall`` machinery before the first model round, and same-window
-   results merge PER PLACE GROUP in code (``mergePlannedEventResultsByGroup``:
+   results merge per place group in code (``mergePlannedEventResultsByGroup``:
    summed counts, recomputed busiest hour, one summary sentence, the group
    label stamped as ``place``), so cross-monitor totals are never the
    model's arithmetic and a comparison keeps its sides (refs #436, #446).
@@ -2247,16 +2244,15 @@ tool and ``ToolDefinition`` cannot express one), never a runtime decision.
 #. **The tool-use loop.** ``runAssistantTurn`` (``lib/assistant/agent.ts``)
    slices the history at the last context boundary, trims it to the message,
    character, and turn budgets (``truncateHistory``), executes any
-   ``plannedCalls`` from the parse first - through the same ``runOneCall``
+   ``plannedCalls`` from the parse first (through the same ``runOneCall``
    machinery as model-initiated calls, so validation, trace, and result
-   cards are identical, and the model's first round opens on the data - and
+   cards are identical, and the model's first round opens on the data), and
    then calls
    ``provider.chat(history, tools, system, signal)`` in a loop capped at
    ``ASSISTANT.maxToolIterations`` (6); hitting the cap ends the turn with the
    ``__i18n:assistant.iteration_cap_reached`` sentinel instead of a real
    reply. There is no confirm step in this loop and nothing for one to guard:
-   the file's own header explains that the read-only guarantee is structural,
-   not a runtime decision.
+   the file's own header explains that the read-only guarantee is structural.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/lib/assistant/agent.ts>`__
    · → :doc:`15-assistant`
 
@@ -2325,16 +2321,15 @@ tool and ``ToolDefinition`` cannot express one), never a runtime decision.
    platform branch of its own. Swift's ``LlamaPlugin`` hands the request to
    ``LlamaEngine``, a llama.cpp context loaded with ``n_gpu_layers`` set high
    enough to run on Metal on a real device (0 in the simulator, where Metal
-   is unavailable). This is an iOS-only path now; the Android JNI engine that
-   used to answer the same call was removed with the rest of that build's
-   llama.cpp integration (issue #270). The engine renders the messages through
+   is unavailable). This path is iOS-only: the Android build has no
+   llama.cpp integration to answer the same call (issue #270). The engine renders the messages through
    the model's own built-in chat template (``llama_model_chat_template``) rather
    than a template the app supplies, and returns one
    ``{content, promptTokens, completionTokens}``
    reply with no streaming. An unparseable reply retries through the same
    self-repair loop (``SELF_REPAIR_PROMPT``, ``ASSISTANT.maxParseAttempts``)
    the other two providers use, because ``parseWebLlmTurn`` and the retry
-   shape are shared code, not a native-specific copy. The model itself and
+   shape are shared code. The model itself and
    the engine it runs on are both pinned, not chosen at runtime:
    ``ASSISTANT.nativeLlmModel`` (``lib/zmninja-ng-constants.ts``) names
    Qwen3-4B-Instruct-2507 at a Q4_K_M GGUF quantization from unsloth's
@@ -2378,7 +2373,7 @@ tool and ``ToolDefinition`` cannot express one), never a runtime decision.
    window overflows. Its
    ``contextWindow`` is learned instead from ``isSupported().contextSize`` (4096)
    on the first native call of the turn, so auto-clear still works. Rejections
-   map on the plugin's stable ``code`` exactly as the native provider's do:
+   map on the plugin's stable ``code`` the same way the native provider's do:
    ``CHAT_BUSY`` to ``__i18n:assistant.native_busy`` and anything else to
    ``__i18n:assistant.native_engine_failed`` (both strings shared, both being
    on-device engines), never the Swift ``localizedDescription``, which is only
@@ -2454,7 +2449,7 @@ tool and ``ToolDefinition`` cannot express one), never a runtime decision.
    from that list, and ``getToolByName``/``isWithheldToolName`` (``tools.ts``)
    are consulted only to phrase the refusal for a name outside it,
    distinguishing a withheld action (``WITHHELD_TOOL_NAMES``: the arm, alarm,
-   run-state, delete, and archive actions the assistant no longer implements
+   run-state, delete, and archive actions the assistant does not implement
    at all) from a known tool on a tool-less turn and from a typo. Then, in
    order: an identical repeat is refused (``toolCallSignature`` over
    ``stripOmittedArgs``-normalized input, so placeholder spelling cannot
@@ -2467,7 +2462,7 @@ tool and ``ToolDefinition`` cannot express one), never a runtime decision.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/lib/assistant/agent.ts>`__
    · → :doc:`15-assistant`
 
-#. **Three jobs, three owners: copy, interpret, compute.** The assistant
+#. **The model copies the time phrase, an interpreter parses it, and code computes the window.** The assistant
    model copies the user's time words into ``list_events``' ``when``
    verbatim and unmodified, in whatever language (measured perfect on both
    reference models). A dedicated interpreter call (``interpretWhen``,
@@ -2487,8 +2482,8 @@ tool and ``ToolDefinition`` cannot express one), never a runtime decision.
    along the way returns a corrective error the calling model retries from.
    Row and window timestamps in the tool output are re-rendered through the
    profile's date/time format (``formatTimestamp``, ``tools-readonly.ts``):
-   the model echoes whatever format the rows carry, so formatting the data
-   is formatting the answer.
+   the model echoes whatever format the rows carry, so the answer uses the
+   profile's format too.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/lib/assistant/window-interpreter.ts>`__
    · → :doc:`15-assistant`
 
@@ -2503,12 +2498,12 @@ tool and ``ToolDefinition`` cannot express one), never a runtime decision.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/lib/assistant/api-capture.ts>`__
    · → :doc:`07-api-and-data-fetching`
 
-#. **The result does the arithmetic, the model does the reading.**
+#. **Code computes the counts in the result, and the model quotes them.**
    ``list_events`` output leads with a code-built ``summary`` sentence
    (``buildResultSummary``, ``result-summary.ts``) the model is told to quote
    as its first sentence. ``matchCount`` is the server's whole-query total from
-   ZM pagination, not the page: two capped results both used to say 25 and the
-   model compared the caps as totals, so the sentence now leads with the real
+   ZM pagination, not the page: two capped results would both say 25 and the
+   model would compare the caps as totals, so the sentence leads with the real
    count ("142 events ... The 25 most recent are listed.") and the
    per-monitor and per-object tallies say "(listed rows)" whenever rows were
    capped. ``busiestHour``/``countsByHour`` are tallied app-side from the
@@ -2526,9 +2521,9 @@ tool and ``ToolDefinition`` cannot express one), never a runtime decision.
    ``echoesToolOutput`` (the raw result JSON returned as the answer). One
    correction retry (``buildGroundingCorrection``) is allowed; if the retry
    fails the same check, ``fallbackAnswerFromData`` answers with the tool's
-   own code-built summary line. There is no second model call: the judge this
-   file used to hold never caught a fabrication and rejected accurate answers.
-   Separately, two language-neutral nets replace the old English live-data
+   own code-built summary line. There is no second model call: a judge model
+   caught no fabrication and rejected accurate answers.
+   Separately, two language-neutral nets cover live data without English
    regexes (refs #265): a tool-less turn whose model calls a real registry
    read tool is allowed through rather than blocked (``activeTools`` flips to
    the registry and the call runs, since the model's own attempt outranks the
@@ -2591,8 +2586,8 @@ Flow 20: A Live Activity poll tick
 The Live Activity page shows only monitors ZoneMinder currently reports as
 alarming. Every poll tick fans out one status request per watched monitor,
 parses the response into a state, and runs that state through a dwell policy
-that decides whether each monitor's tile should exist. The reducer is the
-part that matters: mounting or unmounting a tile mints or quits a ZMS
+that decides whether each monitor's tile should exist. The reducer needs
+the most care, because mounting or unmounting a tile mints or quits a ZMS
 connection (Flow 2), so a policy that flickered a monitor in and out would
 thrash ``nph-zms`` on the server, not just the display.
 
@@ -2696,10 +2691,10 @@ thrash ``nph-zms`` on the server, not just the display.
 #. **A dismissed monitor is held out, not filtered at render time.** The
    page hands the reducer the set of monitors the user cleared by hand, and
    the reducer skips them as residents and as new arrivals alike, so the
-   tile unmounts for real and step 9 quits its stream. Suppression is the
-   point: a dismissed monitor is usually still alarming, so without it the
+   tile unmounts for real and step 9 quits its stream. The suppression is
+   needed because a dismissed monitor is usually still alarming, so without it the
    next poll would readmit the tile immediately. ``releaseDismissed`` then
-   drops a dismissal once that monitor has genuinely gone quiet, and the
+   drops a dismissal once that monitor has stopped alarming, and the
    page calls it after the reduce rather than before, or a tile dismissed
    while already cooling would survive its own dismissal.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/lib/monitor/live-activity.ts>`__
@@ -2712,9 +2707,9 @@ thrash ``nph-zms`` on the server, not just the display.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/lib/monitor/live-activity.ts>`__
    · → :doc:`04-pages-and-views`
 
-#. **A tile mount or exit is a real connection, not a repaint.** Each
+#. **Mounting or removing a tile opens or quits a ZMS connection.** Each
    visible entry renders a ``MontageMonitor``, the same tile Montage uses,
-   so mounting it mints a ZMS connkey exactly as Flow 2 describes. When the
+   so mounting it mints a ZMS connkey as Flow 2 describes. When the
    reducer drops a monitor, its tile unmounts and ``useStreamLifecycle``'s
    cleanup sends ``CMD_QUIT`` for that connkey. This is the fact the dwell
    window exists to protect: without it, a monitor alarming in short bursts
@@ -2725,12 +2720,10 @@ thrash ``nph-zms`` on the server, not just the display.
 Flow 21: Switching into a virtual profile group
 -----------------------------------------------
 
-Aggregating is not a special-cased branch bolted onto the data layer: an
-aggregate scope is an id with no backing ``Profile`` record, and every hook
-that already fanned out over "the current profile" now fans out over a list of
-one or of many the exact same way. The counterintuitive part is where that
-list comes from - the same per-profile React Query key ``useMonitors`` uses in
-single mode, so entering all mode never refetches a profile whose monitors are
+An aggregate scope is an id with no backing ``Profile`` record, and every
+hook that fans out over profiles handles a list of one or of many the same
+way. The counterintuitive part is where that list comes from: the same
+per-profile React Query key ``useMonitors`` uses in single mode, so entering all mode never refetches a profile whose monitors are
 already cached.
 
 A virtual profile (a virtual profile group in the UI, ``VirtualProfile`` in
@@ -2740,9 +2733,8 @@ A virtual profile (a virtual profile group in the UI, ``VirtualProfile`` in
 select. Its ``'all'`` scope arm carries ``aggregateId`` and ``aggregateName``
 so surfaces that name the aggregate can say which one, and its profile list is
 the group's members filtered down to the ones still present and enabled.
-Nothing downstream asks which aggregate it is aggregating, which is why
-generalizing the original built-in aggregate to groups touched no consumer in
-this flow.
+Nothing downstream asks which aggregate it is aggregating, so no consumer in
+this flow depends on whether the aggregate is a group.
 
 .. note::
 
@@ -2811,7 +2803,7 @@ this flow.
 
 #. **One branch point resolves the scope for everyone.** ``useProfileScope``
    reads ``currentProfileId`` and, when it is an aggregate, returns
-   ``{mode:'all', profile:null, profiles}`` - the group's member list instead
+   ``{mode:'all', profile:null, profiles}``, the group's member list instead
    of a one-element array. Every consumer below fans out over ``scope.profiles``
    identically in both modes, so this hook is the only place in the app that
    branches on the mode at all.
@@ -2820,14 +2812,14 @@ this flow.
 
 #. **useCurrentProfile keeps ``currentProfile`` null in All mode.** Its
    ``isAllMode`` flag is exposed alongside a ``currentProfile`` that stays
-   null, since no single profile is "the" current one while aggregating - the
-   fact the absence noted below traces back to.
+   null, since no single profile is "the" current one while aggregating. The
+   absence noted below traces back to this.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/hooks/useCurrentProfile.ts>`__
    · → :doc:`03-state-management-zustand`
 
 #. **One ``useQueries`` call, one query per profile, the same cache key.**
    ``useScopedMonitors`` maps ``scope.profiles`` into a ``getMonitors`` query
-   per profile keyed by ``queryKeys.monitors(p.id)`` - the identical key
+   per profile keyed by ``queryKeys.monitors(p.id)``, the identical key
    ``useMonitors`` uses in single mode. A profile already cached from single
    mode is not refetched just because All mode also asked for it.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/hooks/useScopedMonitors.ts>`__
@@ -2836,7 +2828,7 @@ this flow.
 #. **``combine`` tags every item with its owner and isolates failures.** The
    ``combine`` option wraps each monitor as ``{profileId, profileName, item}``
    and, separately, pushes any profile whose query errored into its own
-   ``errors`` array - one unreachable server cannot fail the whole hook or
+   ``errors`` array, so one unreachable server cannot fail the whole hook or
    blank the profiles that did answer.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/hooks/useScopedMonitors.ts>`__
    · → :doc:`07-api-and-data-fetching`
@@ -2855,23 +2847,23 @@ this flow.
    monitors; a profile with cached data and a background refetch error falls
    through to the normal view instead (the offline banner covers that case).
    Each remaining entry renders a ``profile-error-strip-<id>`` with a retry
-   button that refetches exactly that profile's query key, not the whole
+   button that refetches that profile's query key, not the whole
    scope.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/pages/Monitors.tsx>`__
    · → :doc:`07-api-and-data-fetching`
 
 The Monitors page, the Events and Timeline pages, and the profile switcher
 branch on ``isAllMode``; Flow 22 covers how Events aggregates the same way
-Monitors does here. Montage and Dashboard now resolve the same scope and
-aggregate identically - Montage additionally caps the number of simultaneous
+Monitors does here. Montage and Dashboard resolve the same scope and
+aggregate identically. Montage additionally caps the number of simultaneous
 All-mode streams it opens, so a large combined camera count can't try to open a
 live stream to every camera on every server at once. That cap reads
 ``settings.allModeMaxStreams`` from the aggregate's own bucket, edited in
 Settings' aggregate performance section and defaulting to
 ``MONTAGE_GRID.allModeMaxStreams``; Live Activity's watch cap and poll floor
-come from the same bucket the same way. Screens that are inherently single-server instead -
-Logs, Server, Notification settings, the server-scoped part of Settings, and
-the assistant panel - resolve a locally-picked profile via
+come from the same bucket the same way. Screens that are inherently single-server instead
+(Logs, Server, Notification settings, the server-scoped part of Settings, and
+the assistant panel) resolve a locally-picked profile via
 ``ProfilePicker``/``useProfileById``, defaulting to the first profile in
 scope, rather than aggregating. Live Activity aggregates too, through
 ``useLiveActivityAllMode`` (refs #337, #341), keying every tile by
@@ -2884,14 +2876,14 @@ profile" can mean more than one server at a time.
 Flow 22: Merged events and direct tap-through while aggregating
 -------------------------------------------------------------------
 
-Events aggregation reuses Flow 21's shape - one ``useQueries`` fan-out over
+Events aggregation reuses Flow 21's shape (one ``useQueries`` fan-out over
 ``scope.profiles``, one ``Scoped<T>`` wrapper, one error strip per empty
-profile - but adds two things Monitors doesn't need: a true cross-server sort
+profile) but adds two things Monitors doesn't need: a true cross-server sort
 order, and a way into a specific event or monitor that skips the profile
 switch entirely. The counterintuitive part is that a monitor card, an event
 row, and a push notification all resolve that same owning profile and land on
 the same ``/all/...`` deep route, so the destination page never has to ask
-"whose session am I in" - the URL already says so.
+"whose session am I in": the URL already says so.
 
 .. mermaid::
 
@@ -2923,17 +2915,17 @@ the same ``/all/...`` deep route, so the destination page never has to ask
        Nav->>Events: navigate(/all/events/B/eventId), no switchProfile call
 
 #. **The merge sorts by real instant, not server-local time.** ``eventInstant``
-   converts each event's ``StartDateTime`` to an epoch using its OWNING
+   converts each event's ``StartDateTime`` to an epoch using its owning
    profile's timezone, so a 9pm event on an America/New_York server and a 2am
    event on a UTC server interleave in true chronological order instead of by
-   the raw string, which Flow 21's monitor cards have no equivalent of - there
+   the raw string, which Flow 21's monitor cards have no equivalent of, since there
    is nothing to sort there.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/lib/event/event-instant.ts>`__
    · → :doc:`07-api-and-data-fetching`
 
-#. **One query per profile, the SAME cache key single mode uses.**
+#. **One query per profile, with the same cache key single mode uses.**
    ``useScopedEvents`` maps ``scope.profiles`` into a ``getEvents`` query keyed
-   by ``queryKeys.eventsList(p.id, ...)`` - identical to the single-profile
+   by ``queryKeys.eventsList(p.id, ...)``, identical to the single-profile
    Events query, so switching between single and All mode for a profile
    already visited never refetches it.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/hooks/useScopedEvents.ts>`__
@@ -2941,7 +2933,7 @@ the same ``/all/...`` deep route, so the destination page never has to ask
 
 #. **Each row carries its own chip, keyed like Monitors' cards.**
    ``EventCard`` renders an ``event-profile-chip`` whenever ``profileChip`` is
-   set - only in All mode, wired the same way ``monitor-profile-chip`` is in
+   set (only in All mode), wired the same way ``monitor-profile-chip`` is in
    Flow 21.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/events/EventCard.tsx>`__
    · → :doc:`05-component-architecture`
@@ -2958,7 +2950,7 @@ the same ``/all/...`` deep route, so the destination page never has to ask
 #. **The Events page turns that param into a standing filter, once.** An
    effect reads ``?profileId=`` and writes it into
    ``settings.eventsServerFilter`` for the All-mode settings bucket, keyed off
-   the deep-linked id so a card click narrows the merged list down to just
+   the deep-linked id so a card click narrows the merged list to
    that server instead of leaving a colliding numeric event id ambiguous
    across two profiles.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/pages/Events.tsx>`__
@@ -2969,7 +2961,7 @@ the same ``/all/...`` deep route, so the destination page never has to ask
    ``/all/monitors/:profileId/:monitorId`` when the card carries a
    ``profileId``, instead of Flow 21's switch-then-navigate; ``MonitorDetail``
    resolves its session from the route param, so the profile switcher
-   still names the group the whole time - the outcome the deep-link e2e scenario
+   still names the group the whole time, which is the outcome the deep-link e2e scenario
    asserts.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/monitors/MonitorCard.tsx>`__
    · → :doc:`05-component-architecture`
@@ -2978,7 +2970,7 @@ the same ``/all/...`` deep route, so the destination page never has to ask
    has none current.** ``resolveProfileForNotification`` special-cases an
    aggregate id via ``isAggregateProfileId``: when the notification's own
    profile is known, it returns that profile as the target with
-   ``isCrossProfile: false`` - no switch-confirmation dialog, because there is
+   ``isCrossProfile: false``, with no switch-confirmation dialog, because there is
    no "wrong" profile to switch away from while aggregating.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/lib/profile/notification-profile.ts>`__
    · → :doc:`12-shared-services-and-components`
@@ -2993,7 +2985,7 @@ the same ``/all/...`` deep route, so the destination page never has to ask
 
 #. **Tags fan out per profile and are keyed by owner, not by event id.**
    ``useScopedEventTagMapping`` asks each profile only for the event ids that
-   profile owns and merges the answers under ``scopedEventKey`` -
+   profile owns and merges the answers under ``scopedEventKey``:
    ``${profileId}:${eventId}`` in All mode, the bare id in single mode, which
    is exactly what a row carries. A single map keyed by bare event id would
    hand one server's tags to the other server's row, the event-side twin of
@@ -3001,10 +2993,10 @@ the same ``/all/...`` deep route, so the destination page never has to ask
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/hooks/useScopedEventTags.ts>`__
    · → :doc:`07-api-and-data-fetching`
 
-#. **The tag FILTER aggregates by name, because tag ids are per-server.**
+#. **The tag filter aggregates by name, because tag ids are per-server.**
    ``useScopedTags`` offers one entry per distinct tag name with the name
    standing in for ``Id``, and ``resolveOwnTagIds`` maps a selection back into
-   each profile's real ids before its query runs - the same composite-token
+   each profile's real ids before its query runs, using the same composite-token
    shape the All-mode monitor filter persists in the ALL settings bucket. A
    profile that has no tag by that name resolves to an empty list, which
    ``getEvents`` treats as "matches nothing" rather than falling through to an
@@ -3015,7 +3007,7 @@ the same ``/all/...`` deep route, so the destination page never has to ask
 #. **A profile that owns none of the selected monitors contributes nothing.**
    ``resolveOwnMonitorIds`` can only answer "no monitor filter" for a profile
    none of the composite tokens name, and ZoneMinder reads that as "every
-   monitor" - so filtering to one server's camera used to put the OTHER
+   monitor", so filtering to one server's camera would put the other
    server's whole event list on screen. ``ownFilterIds`` pairs that case with
    the impossible ``eventIds: []`` filter instead, the same shape
    ``favoritesOnly`` uses for a profile with no favorites of its own, and the
@@ -3034,11 +3026,10 @@ the same ``/all/...`` deep route, so the destination page never has to ask
 
 Timeline aggregates the same way through its own ``isAllMode`` branch, reusing
 ``useScopedEvents``'s sibling query rather than a second hook. The Events
-montage (grid) view was the one piece Task 4 left ungated-but-broken, since
-its tiles resolved thumbnails through the page-level (absent) current
-profile. It now works in All mode: each tile resolves against its event's
-OWN profile, so ``events-view-toggle`` stays enabled and the grid renders
-with no gate notice.
+montage (grid) view works in All mode because each tile resolves thumbnails
+against its event's own profile rather than the page-level current profile,
+which is absent while aggregating, so ``events-view-toggle`` stays enabled and
+the grid renders with no gate notice.
 
 Flow 21 covers how a profile enters All mode in the first place; this flow
 picks up once it's there.
@@ -3047,7 +3038,7 @@ Flow 23: Live notifications across every server in an aggregate
 ---------------------------------------------------------------------
 
 Flow 7 covers one profile's websocket. Aggregating does not multiplex
-that single connection - it mounts one independent connector per profile in
+that single connection. It mounts one independent connector per profile in
 scope, each running Flow 7's own connect/reconnect/backoff machinery
 unchanged, so one server's flaky network never stalls another's toasts. The
 counterintuitive part is that no aggregation code decides which profile an
@@ -3077,7 +3068,7 @@ land in the wrong bucket.
 #. **The handler fans out one connector per scope profile.** ``NotificationHandler``
    renders a ``ProfileNotificationConnector`` for every profile in
    ``scope.profiles`` when ``scope.mode`` is ``'all'`` and
-   ``allModeNotifications`` is not ``'off'``, gated to desktop/web only -
+   ``allModeNotifications`` is not ``'off'``, gated to desktop/web only;
    mobile keeps Flow 3's single anchor-profile connection since FCM already
    delivers every profile's events server-side regardless of which one is
    foregrounded.
@@ -3094,10 +3085,9 @@ land in the wrong bucket.
    · → :doc:`03-state-management-zustand`
 
 #. **Each profile gets its own service instance.** The store's ``connect``
-   resolves a service through ``getNotificationService(profileId)`` and no
-   longer disconnects any other profile before connecting - Flow 7's old
-   single-connection assumption doesn't hold once two connectors can be
-   connecting at once.
+   resolves a service through ``getNotificationService(profileId)`` and does
+   not disconnect any other profile before connecting, because two connectors
+   can be connecting at once.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/stores/notifications.ts>`__
    · → :doc:`03-state-management-zustand`
 
@@ -3108,7 +3098,7 @@ land in the wrong bucket.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/stores/notifications.ts>`__
    · → :doc:`03-state-management-zustand`
 
-#. **The write carries no ambiguity either.** ``addEvent(profileId, event)``
+#. **The write stores each alarm under its own profile.** ``addEvent(profileId, event)``
    stores the alarm under ``profileEvents[profileId]``; two servers reporting
    monitor id ``3`` write to two different buckets, never one overwriting the
    other.
@@ -3118,7 +3108,7 @@ land in the wrong bucket.
 #. **Toast display is a separate seam from the store write.**
    ``useNotificationAllModeToasts`` watches every scope profile's events and
    reads each one's own ``showToasts``/``playSound`` out of that profile's
-   settings - there is no "current profile" to fall back on while
+   settings, since there is no "current profile" to fall back on while
    aggregating.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/hooks/useNotificationAllModeToasts.tsx>`__
    · → :doc:`03-state-management-zustand`
@@ -3155,7 +3145,7 @@ ZoneMinder accounts are not all administrators, and the app has to work out
 what this one may do without an endpoint that answers the question. The
 counterintuitive part: the request that fails tells you as much as the one that
 succeeds. ``/users.json`` is gated on ``System() != 'None'``, so a 401 there
-proves the account has no system access, which is exactly the fact the gear
+proves the account has no system access, which is the fact the gear
 needs.
 
 .. mermaid::
@@ -3225,7 +3215,7 @@ needs.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/pages/MonitorDetail.tsx>`__
    · → :doc:`04-pages-and-views`
 
-#. **The restricted panel keeps what was never ZoneMinder's.** Force-ZMS, the
+#. **The restricted panel keeps the app's own per-monitor settings.** Force-ZMS, the
    per-monitor Go2RTC override and the cycle interval are profile settings, not
    monitor columns, and they are the stream troubleshooting knobs a restricted
    user needs most. The camera's address, username and password are what goes.
@@ -3249,22 +3239,22 @@ needs.
 #. **Buttons elsewhere grey instead of vanishing, and stay clickable.**
    ``useDeniedControl`` returns ``aria-disabled`` rather than ``disabled``: a
    disabled button dispatches no pointer events, so ``useLongPressHint`` never
-   fires and browsers suppress ``title`` too. It would grey out and explain
+   fires and browsers suppress ``title`` too, leaving a greyed button that explains
    nothing.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/hooks/useDeniedControl.ts>`__
    · → :doc:`12-shared-services-and-components`
 
-#. **One capability has no failing request to catch.** ``zms.cpp`` checks
+#. **A denied stream has no failing request to catch.** ``zms.cpp`` checks
    ``Stream`` independently of ``Monitors``, and a denied stream is an image
    that never loads. ``LiveMonitorPlayer`` is the single gate for every stream
-   surface, so the probe is what turns a permanently blank tile into a
-   sentence.
+   surface, so the probe lets it show a message instead of a permanently
+   blank tile.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/monitors/LiveMonitorPlayer.tsx>`__
    · → :doc:`05-component-architecture`
 
 Absent here: any attempt to discover permissions before login, and any check
 that hides a surface on ``unknown``. Flow 6 covers the token lifecycle this
-flow deliberately steps around; Flow 17 is the PTZ path whose pad the
+flow steps around; Flow 17 is the PTZ path whose pad the
 ``Control`` column removes.
 
 These flows touch most of the moving parts of the app. When you need to change

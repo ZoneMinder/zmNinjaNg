@@ -24,8 +24,8 @@ KioskOverlay
 
 **Location**: ``src/components/kiosk/KioskOverlay.tsx``
 
-Tap the lock and the view stays exactly where it was. Streams keep running,
-badges keep counting, and nothing responds to touch. That is one component.
+Tapping the lock leaves the view where it was: streams keep running and badges
+keep counting, but nothing responds to touch. A single component does this.
 ``KioskOverlay`` renders ``null`` unless ``kioskStore.isLocked`` is true, and
 when it is true it renders a transparent ``fixed inset-0`` div at
 ``Z_INDEX.overlay`` (9999) with ``pointerEvents: 'auto'``. The app underneath
@@ -146,8 +146,7 @@ TV mode
 Point a remote at the app on an Android TV or Fire TV and the d-pad has to
 move focus somewhere sensible. TV mode is a best-effort answer: it turns on
 the WebView's own spatial navigation and layers a couple of page-specific
-keymaps on top of it. It is not an app-wide focus-management system, and it
-does not try to be one.
+keymaps on top of it. It is not an app-wide focus-management system.
 
 TvDetector (native plugin)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -228,9 +227,7 @@ What this does not do
 ~~~~~~~~~~~~~~~~~~~~~
 
 Pages without a ``TvKeyMap`` (Dashboard, Events, Settings) rely entirely on the
-WebView's native spatial navigation moving focus between focusable elements. An
-earlier, fuller d-pad/cursor implementation was removed as dead code; nothing in
-the current tree depends on it.
+WebView's native spatial navigation moving focus between focusable elements.
 
 Notifications
 -------------
@@ -336,7 +333,7 @@ overlay instead.
 
 **Two shells around one body.** ``AskPanel`` is only the conversation body
 (messages, input, cards). The window around it is one of two shells chosen at
-runtime by viewport, because they need genuinely different JavaScript, not just
+runtime by viewport, because they need different JavaScript, not only
 different CSS. ``AssistantWidget.tsx`` is a thin switch over
 ``useAssistantPanelStore``'s ``closed | minimized | open`` state: nothing,
 a floating button, or a shell. ``useIsMobile`` (a ``matchMedia`` hook at the
@@ -389,15 +386,14 @@ itself; the only text it emits outside a normal reply is the sentinel
 Every other assistant message renders as Markdown directly: the model writes
 in the user's language already (the system prompt tells it to), so there is
 no translation lookup for a normal reply, only for this one fixed sentinel
-(the Localization contract's "never hardcode user-facing strings" still holds, it just applies
+(the Localization contract's "never hardcode user-facing strings" applies
 to the sentinel's key, not to arbitrary model output).
 
 **No confirm flow on the host.** ``useAssistantHost``
 (``components/assistant/useAssistantHost.ts``) is the ``AssistantHost``
 implementation ``AskPanel`` hands to ``runAssistantTurn``. The assistant is
-read-only: there are no destructive tools, so the confirmation flow an
-earlier revision carried (``confirm``/``resolveConfirm`` and a confirm card)
-no longer exists; a request to change something gets a plain refusal that
+read-only: there are no destructive tools, so the host has no confirmation
+flow (no ``confirm``/``resolveConfirm`` and no confirm card); a request to change something gets a plain refusal that
 points at the right screen instead. ``navigate`` on the host minimizes the
 assistant panel (``stores/assistantPanel.ts``) before routing, so an "Open"
 click on an event or monitor result card collapses the panel to the FAB

@@ -4,13 +4,10 @@ Contributing to zmNinjaNg
 The process rules for this project live in ``AGENTS.md`` at the repo root,
 with architecture contracts and project rules in ``AGENTS.project.md``.
 Rules carry tiered IDs, and this chapter cites them by ID rather than
-repeating them. A restated rule drifts the moment the original changes, and
-this chapter is the proof: it copied out P3's verification commands, and
-went on printing a typecheck flag the rule had already replaced, in four
-separate places. When a rule ID or contract below sounds relevant, read the
-source.
+repeating them, so it stays correct when a rule changes. When a rule ID or
+contract below sounds relevant, read the source.
 
-Before You Start
+Before you start
 ----------------
 
 1. **Read the documentation**
@@ -19,9 +16,9 @@ Before You Start
      list; the numbering has gaps where chapters were merged away.
    - :doc:`call-flows`. Start here if you are new. It traces real user
      actions (logging in, arming a monitor, opening a live stream) from the
-     button press through to the ZoneMinder API and back, naming the exact
-     file and symbol at each hop. It is the fastest way to build a map of the
-     codebase, and the chapters make more sense once you have one.
+     button press through to the ZoneMinder API and back, naming the file and
+     symbol at each hop. It gives you a map of the codebase, and the chapters
+     are easier to follow once you have one.
    - ``AGENTS.md`` at the repo root. Its tiered rule IDs are binding on
      human and agent contributions alike.
    - ``app/tests/README.md`` for the test harness.
@@ -49,7 +46,7 @@ Before You Start
 
    Then run the verification sequence in ``AGENTS.md`` (P3) once against a
    clean checkout. If it passes before you have changed anything, your
-   toolchain is good and any later failure is yours.
+   toolchain is good and any later failure comes from your changes.
 
 3. **Understand the codebase**
 
@@ -57,22 +54,22 @@ Before You Start
    in the running app and follow its trace in :doc:`call-flows` with the source
    open beside it.
 
-Development Workflow
+Development workflow
 --------------------
 
-1. Pick or Create an Issue
+1. Pick or create an issue
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-P1: an issue exists before the code does. Search the tracker first; if
+P1 requires an issue before any code. Search the tracker first; if
 nothing covers your change, open one. Blank issues are disabled, so bug reports
 go through the bug report template and questions go to
 `Discussions <https://github.com/ZoneMinder/zmNinjaNg/discussions>`__.
 
 For anything larger than a bug fix, agree on the approach in the issue before
-writing code. P7 makes this concrete: when more than one design is viable,
+writing code. Under P7, when more than one design is viable,
 present the options and get a decision rather than picking one and building it.
 
-2. Create a Branch
+2. Create a branch
 ~~~~~~~~~~~~~~~~~~
 
 .. code:: bash
@@ -88,7 +85,7 @@ through a pull request that references the issue, so GitHub links the commits
 itself. Pushing to a scratch branch and fast-forwarding it onto ``main`` can
 consume that auto-reference and leave the issue with no linked commits.
 
-3. Write the Failing Test First
+3. Write the failing test first
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 P2 puts the test before the implementation. Write a test that reproduces
@@ -100,15 +97,15 @@ Unit tests live next to their source in ``__tests__/``. UI, navigation, and
 interaction changes also need a Gherkin scenario in
 ``app/tests/features/*.feature``. :doc:`06-testing-strategy` covers both.
 
-4. Write the Code
+4. Write the code
 ~~~~~~~~~~~~~~~~~
 
 The architecture contracts in ``AGENTS.project.md`` decide what the code is
 allowed to do, and each names its own sanctioned path and its gate. Read them
-there. "What Reviewers Actually Check" below covers the ones new contributors
+there. "What reviewers check" below covers the ones new contributors
 trip on, and the checklist at the end of this chapter is the short form.
 
-5. Git Hooks
+5. Git hooks
 ~~~~~~~~~~~~
 
 ``git commit`` runs two local hooks via husky; the hook scripts live in
@@ -148,8 +145,7 @@ finding out.
 
 Run the verification sequence in ``AGENTS.md`` (P3) before every commit,
 and state in the commit body which steps you ran. If a step fails, read the
-output and fix the cause (P4). Re-running a failing test unchanged is not
-a debugging strategy.
+output and fix the cause (P4).
 
 7. Commit
 ~~~~~~~~~
@@ -183,12 +179,10 @@ Vague subjects (``fixed bug``, ``wip``, ``test``) and batched subjects
 (``fix login bug and add dark mode and update docs``) both get sent back. Split
 the batch into one commit per change.
 
-**Issue references.** P1 is stricter than GitHub's syntax allows. While an
-issue is open for the work, every commit for it carries ``refs #<id>``. The
-closing keyword ``fixes #<id>`` is reserved until the user has confirmed the
-fix actually works, because a commit that says ``fixes`` closes the issue the
-moment it merges, and a bug closed by assertion rather than by confirmation is
-a bug that gets reopened.
+**Issue references.** Under P1, while an issue is open for the work, every
+commit for it carries ``refs #<id>``. The closing keyword ``fixes #<id>`` is
+reserved until the user has confirmed the fix actually works, because a commit
+that says ``fixes`` closes the issue the moment it merges.
 
 .. code:: bash
 
@@ -197,15 +191,14 @@ a bug that gets reopened.
 
    refs #45"
 
-8. Push and Open a Pull Request
+8. Push and open a pull request
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: bash
 
    git push origin feature/your-feature-name
 
-There is no pull request template in the repo. This is the body that gets a
-review without a round trip:
+There is no pull request template in the repo. Use this body:
 
 .. code:: markdown
 
@@ -230,9 +223,9 @@ review without a round trip:
 
    ## Checklist
 
-   See "Before You Ask for Review" in the contributing chapter.
+   See "Before you ask for review" in the contributing chapter.
 
-9. Review and Merge
+9. Review and merge
 ~~~~~~~~~~~~~~~~~~~
 
 Address feedback in new commits rather than force-pushing, so the reviewer can
@@ -246,11 +239,11 @@ never auto-run it." The iOS and Android suites are invoked by hand, so a change 
 touches a native path is not done until someone has run it on a real device
 (the native playbook, ``agents/project/native.md``).
 
-What Reviewers Actually Check
------------------------------
+What reviewers check
+--------------------
 
-The rules are the review. These are the ones new contributors trip on most,
-in the order they tend to come up:
+These are the rules new contributors trip on most, in the order they tend to
+come up:
 
 - **Server queries contract, query keys.** An inline key array (``['monitors', profileId]``)
   compiles, fetches, and caches. It also never gets invalidated, because the
@@ -260,9 +253,9 @@ in the order they tend to come up:
 - **Stores contract, Zustand selectors.** Subscribe to fields, not to the whole store.
   Zustand re-renders a component when the value its selector returns changes,
   so a selector returning the whole store re-renders on every unrelated write.
-  The failure mode that gets missed in review is subtler: if you narrow a
-  selector down to only the actions a component calls, it compiles, renders
-  once, and then never re-renders when the data changes. Keep every field the
+  Review often misses the opposite mistake: a selector narrowed down to only
+  the actions a component calls compiles, renders once, and then never
+  re-renders when the data changes. Keep every field the
   component reads inside the selector, and use ``useShallow`` for object
   returns (see ``components/monitors/MontageMonitor.tsx``).
 - **Query UI states contract, error and loading UI.** Error walls use ``ErrorBanner`` with
@@ -270,8 +263,8 @@ in the order they tend to come up:
   reauthentication prompt. Loading states use the shared skeletons in
   ``components/ui/query-state.tsx``. A hand-rolled error div renders the raw
   ``error.message`` in English and tells a logged-out user nothing useful.
-- **Localization contract, all five locales.** Covered below; it has a specific failure mode
-  worth understanding.
+- **Localization contract, all seven locales.** Covered under
+  Internationalization below.
 - **Project rules, ``data-testid``.** The rule requires ``data-testid`` on new
   interactive elements, and the testing playbook fixes the shape: kebab-case,
   repeated elements suffixed with the entity id (``monitor-card-${monitor.Id}``),
@@ -297,11 +290,11 @@ in the order they tend to come up:
 Internationalization
 --------------------
 
-The Localization contract covers this. Two things about how it fails are worth knowing before you
-hit them.
+The Localization contract covers this. It fails in two ways that are easy to
+miss.
 
-**Hardcoded strings are invisible to the linter.** Nothing in the toolchain
-catches ``<Button>Delete</Button>``. Route every user-facing string through
+**Hardcoded strings.** No lint rule or test catches
+``<Button>Delete</Button>``. Route every user-facing string through
 ``useTranslation``:
 
 .. code:: tsx
@@ -313,44 +306,46 @@ catches ``<Button>Delete</Button>``. Route every user-facing string through
      return <EmptyState title={t('monitors.no_cameras')} />;
    }
 
-That key is real. ``Monitors()`` in ``app/src/pages/Monitors.tsx`` renders it
+``Monitors()`` in ``app/src/pages/Monitors.tsx`` renders that key
 through ``EmptyState`` inside the ``monitors-empty-state`` div, on the branch
-where ``allMonitors.length === 0``, and it is defined in all five
+where ``allMonitors.length === 0``, and it is defined in all seven
 ``app/src/locales/<lang>/translation.json`` files. The snippet is simplified
 from that call site, which also passes ``EmptyState``'s required ``icon`` prop
 (``Video``).
 
 **A missing translation does not look like a bug.** ``app/src/i18n.ts`` sets
 ``fallbackLng: 'en'``, so a key you added to ``en`` and forgot in ``de`` does
-not render as a raw key on a German device. It renders the English string, in
-the middle of a German screen, and nobody notices until a German speaker files
-an issue. There is no CI check for locale-key parity. Add the key to all five
-files in the same commit, or it will not get added at all.
+not render as a raw key on a German device. It renders the English string in
+the middle of a German screen.
+``app/src/locales/__tests__/translation-keys.test.ts`` fails the unit suite on
+this: every ``t()`` key in the source has to resolve in ``en``, and each
+translated locale has to carry every ``en`` key, no extra keys beyond plural
+forms, and every plural category its language needs. Add the key to all seven
+files in the same commit.
 
 A project rule constrains the translations themselves: "Labels must fit 320px;
 prefer concise translations." Button, tab, and action labels have to stay short
 in every language, because they share a 320 pixel wide screen. Prefer the
 single-word synonym (ES "Ajustes", not "Configuración").
 
-Two Traps Nothing Catches For You
----------------------------------
+Traps with no lint rule, test, or review gate
+---------------------------------------------
 
 An ``opacity-0`` overlay sitting over interactive content still swallows taps
 on iOS unless it also carries ``pointer-events-none``; the element is invisible
 and the button underneath it stops working, on one platform only. And every
 ``useEffect`` that starts something has to stop it in the cleanup it returns,
 because React reruns the effect on every dependency change and again on unmount,
-and in development ``StrictMode`` mounts twice on purpose. Neither has a lint
-rule, a test, or a review gate behind it.
+and in development ``StrictMode`` mounts twice on purpose.
 
-Before You Ask for Review
+Before you ask for review
 -------------------------
 
 Each item names the rule or contract that owns it.
 
 - ☐ P1: issue exists and is referenced
 - ☐ P2/P3: failing test written first; verification sequence run and passing
-- ☐ Localization contract: all five locale files updated
+- ☐ Localization contract: all seven locale files updated
 - ☐ Logging contract: ``log.*`` helpers, no ``console``
 - ☐ HTTP contract: ``lib/http.ts``, no raw ``fetch``
 - ☐ C2: no dead code, no commented-out blocks
@@ -368,13 +363,13 @@ Each item names the rule or contract that owns it.
 - ☐ Logging contract: no secrets, tokens, or passwords in log payloads
 - ☐ Both traps above
 
-Worked Examples
+Worked examples
 ---------------
 
-Adding a Feature
+Adding a feature
 ~~~~~~~~~~~~~~~~
 
-Adding a "favorites" star to monitors, as it would actually be sequenced:
+Adding a "favorites" star to monitors, in the order the work happens:
 
 .. code:: bash
 
@@ -390,7 +385,7 @@ Adding a "favorites" star to monitors, as it would actually be sequenced:
    #      (Settings contract: profile-scoped, never a global singleton)
    #    - add the star control to MonitorCard
    #      (src/components/monitors/MonitorCard.tsx), with a data-testid
-   #    - add the i18n keys to all five locale files
+   #    - add the i18n keys to all seven locale files
    #
    # 3. Verify: the P3 sequence, plus
    npm run test:e2e -- monitors.feature
@@ -408,7 +403,7 @@ Adding a "favorites" star to monitors, as it would actually be sequenced:
    git push origin feature/monitor-favorites
    # then open a PR referencing #78 (P1)
 
-Fixing a Bug
+Fixing a bug
 ~~~~~~~~~~~~
 
 .. code:: bash
@@ -437,7 +432,7 @@ fix on a device, and only then does a commit or the PR close the issue
 :doc:`02-react-fundamentals`; the streaming path itself is traced in
 :doc:`call-flows`.
 
-Updating Documentation
+Updating documentation
 ~~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: bash
@@ -450,7 +445,7 @@ Updating Documentation
 
    refs #<id>"
 
-A project rule sets the bar: "Developer docs teach React where they first rely
+A project rule applies: "Developer docs teach React where they first rely
 on it." The guide is written for a competent programmer
 with no React experience, so a doc change that introduces a React mechanism has
 to explain it at the point of use or link the section of
@@ -471,15 +466,15 @@ What is specific to this repo:
 - Components are ``PascalCase.tsx``, hooks are ``useCamelCase.ts``, utilities
   are ``camelCase.ts``, and a test file takes the name of its source
   (``MonitorCard.test.tsx``).
-- Test IDs are kebab-case (``data-testid="monitor-card-star"``), which is a
-  different convention from everything else on purpose: it makes them
-  greppable and marks them as test surface rather than app code.
+- Test IDs are kebab-case (``data-testid="monitor-card-star"``), unlike the
+  other naming conventions, so they are greppable and read as test surface
+  rather than app code.
 - Constants are ``UPPER_SNAKE_CASE`` and live in
   ``lib/zmninja-ng-constants.ts`` (app-level) or ``lib/zm-constants.ts``
   (ZoneMinder protocol-level), per the Constants contract.
-- Comments explain why, not what. The line above already says what.
+- Comments explain why the code does something; the code shows what it does.
 
-Mobile Development
+Mobile development
 ------------------
 
 zmNinjaNg is a cross-platform app built with
@@ -494,7 +489,7 @@ Prerequisites
 - **Xcode**: 26+ for iOS development (macOS only). The iOS project uses Swift
   Package Manager, not CocoaPods: packages resolve on open, no ``pod install``.
 
-Running on Device/Emulator
+Running on device/emulator
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Three ``app/package.json`` scripts cover the loop, and the difference between
@@ -558,7 +553,7 @@ bumps." Revert the bump before committing.
 
    Remove this before building for release.
 
-Getting Help
+Getting help
 ------------
 
 - **Questions about the codebase**: open a
@@ -589,5 +584,5 @@ Recognition
 -----------
 
 There is no ``CONTRIBUTORS.md``. Contributions are recorded in the git commit
-history, which is the authoritative record, and features and fixes are called
-out by name in ``CHANGELOG.md`` and in the GitHub release notes.
+history, and features and fixes are called out by name in ``CHANGELOG.md`` and
+in the GitHub release notes.

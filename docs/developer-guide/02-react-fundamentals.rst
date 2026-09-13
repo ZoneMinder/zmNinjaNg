@@ -38,8 +38,6 @@ When ``count`` changes, React re-runs ``CounterDisplay``, compares the
 new output to the old one, and updates only the parts of the DOM that
 changed. You never write the update code.
 
-Everything else in this chapter follows from that single idea.
-
 JSX
 ---
 
@@ -119,7 +117,7 @@ is the same as ``Welcome``: a function that returns JSX.
 
 Not everything in that snippet is React. Every interactive element
 carries a ``data-testid`` because the e2e suite selects on it, and no
-user-facing string is written inline: ``t()`` looks it up in the five
+user-facing string is written inline: ``t()`` looks it up in the seven
 translation files. Both are house rules, and both are non-negotiable in
 this codebase.
 
@@ -146,9 +144,9 @@ the child's perspective.
      onShowSettings: (monitor: MonitorCardProps['monitor']) => void;
    }
 
-Note that ``status`` is ``MonitorStatus | undefined``. A card can render
-before the status query has returned, so the component is written to
-handle the gap rather than assume the data is there.
+``status`` is ``MonitorStatus | undefined`` because a card can render
+before the status query has returned, so the component handles the gap
+rather than assuming the data is there.
 
 To send data the *other* way (child notifies parent), the parent passes
 a function as a prop. By convention these props start with ``on``
@@ -279,8 +277,7 @@ the re-render. The data is updated; the screen is not.
    // Right: a new array.
    const addItem = (item) => setItems(prev => [...prev, item]);
 
-This is the single rule behind a whole family of bugs. It applies to
-Zustand store state too, where mutating an object read from
+The same rule applies to Zustand store state, where mutating an object read from
 ``getState()`` silently skips every subscriber (:doc:`03-state-management-zustand`).
 
 Render: what triggers it
@@ -544,7 +541,7 @@ a **stale closure**. A ref is how you break out of one, because
 ``.current`` is read at call time rather than captured at definition
 time.
 
-zmNinjaNg needs exactly that when it tears a stream down. Simplified
+zmNinjaNg needs this when it tears a stream down. Simplified
 from ``app/src/hooks/useStreamLifecycle.ts``, which carries four more
 fields (``token``, ``viewMode``, ``minStreamingPort``,
 ``cmdQuitTimeoutMs``) through the same ref:
@@ -664,14 +661,14 @@ Use them when:
 
 - The value is passed to ``React.memo``-wrapped children (see below).
 - The value is a hook dependency.
-- The computation is genuinely expensive (sorting a list, building a
+- The computation is expensive (sorting a list, building a
   ``Set``), which is rarer than people assume.
 
 Don't use them everywhere. They cost memory and add reading overhead.
 A function used once inside a render and never passed down doesn't
 need ``useCallback``.
 
-Object identity: the bug that hides everywhere
+Object identity and unstable dependencies
 ----------------------------------------------
 
 Building on the previous section: this is the single most common
@@ -710,10 +707,9 @@ Options 1 and 2 are free; prefer them. Option 3, ``useMemo``, is the
 default for anything derived from props or state, and it is the right
 answer for effect dependencies.
 
-Option 4 is not a general-purpose alternative to option 3, and the
-difference matters. A ref mirror does not stabilize the value, it hides
+Option 4 is not interchangeable with option 3. A ref mirror does not stabilize the value, it hides
 the change: an effect that reads ``configRef.current`` will not re-run
-when ``config`` changes. Reach for it only when re-running is exactly
+when ``config`` changes. Reach for it only when re-running is
 what you must avoid, which in practice means a callback that would
 otherwise tear down and rebuild a subscription, a listener, or a stream
 on every keystroke. That is why ``useStreamLifecycle`` mirrors its
@@ -764,8 +760,7 @@ Re-rendering a card does not by itself restart its stream. React
 reconciles the existing player element in place, and the stream URL it
 computes is the same string as before, so the ``<img>`` is never
 re-fetched. What *does* restart a stream is a remount, which is what an
-unstable ``key`` causes. That is the connection between the two
-sections.
+unstable ``key`` causes.
 
 The catch: ``memo`` does a *shallow* prop check. If you pass an inline
 object or inline function, it's a new reference on every parent render
@@ -784,15 +779,15 @@ and ``memo`` is defeated:
    const handleSelect = useCallback((id) => setSelected(id), []);
    <ExpensiveChild config={config} onSelect={handleSelect} />
 
-Worth knowing that this codebase does not get this right everywhere.
+This codebase does not get this right everywhere.
 ``Monitors.tsx`` declares ``handleShowSettings`` in the render body
 rather than wrapping it in ``useCallback``, so it is a new reference on
 every render, and the ``memo`` on ``MonitorCard`` compares it and finds
 it different. The cards re-render on every status poll regardless. The
-memo is not wrong, it just isn't buying anything until the callback is
+memo is harmless, but it saves no renders until the callback is
 stabilized. Check both halves before you assume a ``memo`` is working.
 
-React Query: Server State
+React Query: server state
 -------------------------
 
 Everything so far treats state as something a component owns. Data that
@@ -827,8 +822,7 @@ fetches it. React Query caches the result under the key.
      refetchInterval: options?.refetchInterval ?? bandwidth.monitorStatusInterval,
    });
 
-The key is the whole trick. It is not a variable name; it is the cache
-address. Two components that call ``useMonitors()`` produce the same
+The key is the cache address. Two components that call ``useMonitors()`` produce the same
 key, so they read the same cache entry, and if the request is still in
 flight the second one attaches to it instead of issuing another. Both
 re-render when the data lands. Nothing had to be lifted into a shared
@@ -886,7 +880,7 @@ It reports that its settings button was pressed. The parent, which owns
 next to the state is what stops two components from disagreeing about
 whether the dialog is open.
 
-State that genuinely belongs to no single parent (the active profile,
+State that belongs to no single parent (the active profile,
 the log level) does not get threaded through six layers of props. It
 goes in a Zustand store: :doc:`03-state-management-zustand`.
 

@@ -17,7 +17,7 @@ ZoneMinder API
 
 Base URL: ``https://your-server.com/zm/api/<endpoint>``
 
-Endpoint Reference
+Endpoint reference
 ~~~~~~~~~~~~~~~~~~
 
 Every endpoint zmNinjaNg calls, and the module that owns the call. Reach for
@@ -129,7 +129,7 @@ than written in plaintext, and the user re-authenticates. The access token is
 never persisted at all, which has consequences on cold start (see the freshness
 gate below).
 
-Auth Gates
+Auth gates
 ^^^^^^^^^^
 
 ``createApiClient`` (``src/api/client.ts``) needs the access token and the
@@ -172,7 +172,7 @@ their profile/settings reads this way, and
 ``services/pushNotifications.ts`` (:doc:`12-shared-services-and-components`)
 takes its notifications/profile/auth reads this way. Refs #217.
 
-Proactive Authentication
+Proactive authentication
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 Profiles rehydrate from localStorage at startup, but login takes a
@@ -235,7 +235,7 @@ a second one. When refresh and reLogin both fail it logs out once and
 resolves false; it never rejects. ``hasRetried`` ensures each request
 attempts auth only once.
 
-Access Token Freshness Gate
+Access token freshness gate
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The background refresher in ``hooks/useTokenRefresh.ts`` keeps the
@@ -352,12 +352,12 @@ the cases where it is hit anyway (return from sleep, cold start with a
 near-expired persisted token, a refresh that failed and is being
 retried).
 
-Connection Keys (connkey)
+Connection keys (connkey)
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Streaming URLs use connection keys in addition to tokens. A connkey names one
 live ZMS stream so the client can later command that stream (pause, seek,
-quit) instead of just consuming its bytes.
+quit) as well as read its bytes.
 
 **Generation** (``src/stores/monitors.ts``):
 
@@ -525,7 +525,7 @@ shares a prefix with the leaf key, the leaf never refetches, and the list keeps
 showing a deleted event until the next poll.
 
 The new-events badge uses three keys off the same domain at three prefix widths,
-so a caller can invalidate at exactly the scope it needs:
+so a caller can invalidate at the scope it needs:
 
 .. code:: tsx
 
@@ -578,8 +578,8 @@ globally to ``DEFAULT_QUERY_STALE_TIME_MS`` = 15000 ms:
 
 Fifteen seconds is chosen to sit just under the shortest bandwidth-mode poll
 (``monitorStatusInterval``, 20 s in Normal). Any longer and a monitor-status
-refetch would land inside the fresh window and be skipped, which is exactly the
-periodic refresh the user asked for. Any shorter and a query mounting right
+refetch would land inside the fresh window and be skipped, and that skipped
+refetch is the periodic refresh the user asked for. Any shorter and a query mounting right
 after a network blip re-fetches, fails, and paints an error wall over data that
 is fine.
 
@@ -740,7 +740,7 @@ and lets the refetch supply the truth.
 
 Run-state changes take seconds to settle on the server, so an optimistic write
 would show the wrong state for longer than the refetch takes. If you add a
-mutation where an optimistic write genuinely helps, it must snapshot and
+mutation where an optimistic write helps, it must snapshot and
 restore through factory keys, not inline arrays.
 
 Pagination without infinite queries
@@ -783,8 +783,8 @@ inputs exist. Without ``enabled``, a monitor-detail query fires with
 before a profile is even selected. Every profile-scoped query in this app
 carries ``enabled: !!currentProfile && isAuthenticated`` or equivalent.
 
-There is a v5 trap attached to this. For a *disabled* query, ``isLoading`` is
-``false``, not ``true``: React Query reports it as idle, not pending. Effects
+In React Query v5, a *disabled* query reports ``isLoading`` as ``false``, not
+``true``: React Query reports it as idle, not pending. Effects
 that self-heal or reset on ``!isLoading && !data`` will therefore fire against
 a query that never ran. Gate those on ``isSuccess`` instead.
 
@@ -991,7 +991,7 @@ CapacitorHttp ``connectTimeout``/``readTimeout`` (so the native socket gives up)
 and races the request against a JS timer (so the promise settles on time even
 though the underlying native request can't be cancelled).
 
-Bandwidth Mode Settings
+Bandwidth mode settings
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Most polling intervals are controlled by the user's **bandwidth mode**
@@ -1027,7 +1027,7 @@ Property                         Normal  Low    Where used
 Two rows are indirect: ``snapshotRefreshInterval`` seeds the per-profile
 setting ``useMonitorStream`` actually reads, and ``eventPollerInterval`` is
 injected into the poller by ``stores/notifications.ts`` rather than read
-inside it, where it acts as the Low-mode floor under the user's own
+inside it, where it is the Low-mode floor under the user's own
 ``pollingInterval`` choice.
 
 **What does not use bandwidth settings:**
@@ -1068,7 +1068,7 @@ Timer rules
 - Guard the effect with the conditions that determine whether the timer should
   run at all, so you never start a no-op interval.
 
-HTTP Client Architecture
+HTTP client architecture
 ------------------------
 
 ``src/lib/http.ts`` is the single HTTP entry point across Web, iOS, Android,
@@ -1160,7 +1160,7 @@ argument.
 every three seconds per tile. A suppressed call still logs genuine failures via
 the caller.
 
-Request/Response Correlation
+Request/response correlation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Every HTTP request is assigned a monotonically increasing correlation ID, and
@@ -1198,7 +1198,7 @@ Bypasses CORS, uses the native networking stack, handles TLS natively, and
 supports self-signed certificates via the ``SSLTrust`` Capacitor plugin (see
 ``lib/security/ssl-trust.ts``).
 
-Proxy Support (Development)
+Proxy support (development)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In development on web only, requests route through a local proxy to bypass
@@ -1242,7 +1242,7 @@ Type               Description           Use Case
 On mobile, never convert to a Blob (the Native contract). A large MP4 held as a Blob in the
 WebView heap will OOM the app.
 
-Error Handling
+Error handling
 ~~~~~~~~~~~~~~
 
 The HTTP client throws ``HttpError`` (``lib/http/types.ts``, re-exported from
@@ -1302,7 +1302,7 @@ where ``MonitorSchema`` said ``z.string()``, and one field the app never reads
 took every camera off the screen (#247).
 
 Two helpers in ``lib/zm/schema-tolerance.ts`` handle it, and every schema in
-``api/`` uses them rather than re-deriving the behavior:
+``api/`` uses them:
 
 - ``withFieldCatch(shape, identity)`` wraps every field except the named
   identity fields in ``.catch(fallback)``, where the fallback is read off the
@@ -1322,7 +1322,7 @@ known values are kept as plain arrays (``KNOWN_MONITOR_FUNCTIONS``) for pickers,
 not as the parse contract. Reads are tolerant; writes stay strict, since we
 choose the values we send.
 
-API Modules
+API modules
 -----------
 
 The ``api/*.ts`` functions are thin: build a URL, call the client, validate
@@ -1443,7 +1443,7 @@ The caller decides HLS, not the helper. ``EventDetail.tsx`` inspects the event's
 When ``hls`` is true the builder emits ``view_event_hls`` for the m3u8 manifest;
 otherwise ``mode=mp4``.
 
-Monitor Exclusion
+Monitor exclusion
 ~~~~~~~~~~~~~~~~~
 
 Each profile can hide monitors. The hidden IDs live in
@@ -1589,8 +1589,8 @@ Account Permissions API (``api/users.ts``)
 ZoneMinder has no endpoint for "what may the current user do". The permission
 columns live on the Users row, and ``UsersController`` gates ``/users.json`` on
 ``System() != 'None'``, so an account can read its own permissions only when it
-already has some system access. ``fetchAccountPermissions`` works with that
-shape rather than around it:
+already has some system access. ``fetchAccountPermissions`` handles that
+restriction:
 
 .. code:: tsx
 
@@ -1626,7 +1626,7 @@ than reading a column, and every verdict has three values:
    canViewStream(permissions); // 'allowed' | 'denied' | 'unknown'
 
 Only ``denied`` may hide or grey a control. ``unknown`` has to leave the
-surface exactly as it was, because ``System='None'`` with ``Monitors='Edit'``
+surface unchanged, because ``System='None'`` with ``Monitors='Edit'``
 is a legal ZoneMinder account: guessing there takes a feature away from someone
 who has it. ``usePermissions(profileId)`` wraps the fetch with
 ``queryKeys.accountPermissions(profileId)`` and an infinite ``staleTime``. It
@@ -1691,7 +1691,7 @@ favorites ``Id IN:`` filter in one query, so:
   ``Events.tsx`` filters the (fully fetched) favorite set by tag client-side
   instead, which is accurate because the whole favorite set is in hand.
 
-Adjacent Event Navigation
+Adjacent event navigation
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ``getAdjacentEvent`` (``src/api/events.ts``) fetches a single event adjacent to
@@ -1720,8 +1720,8 @@ Continuous playback (#250) reuses this same path. The event player calls
 ``onEnded`` when a video finishes (video.js ``ended`` for MP4/HLS, or the
 ``progress / duration >= 0.99`` end signal already tracked by the ZMS player).
 ``EventDetail`` responds by calling ``goToNextEvent`` when the
-``eventContinuousPlay`` profile setting is on. That is why ``goToNextEvent`` now
-resolves ``Promise<boolean>``: the auto-advance needs to know whether a next
+``eventContinuousPlay`` profile setting is on. ``goToNextEvent`` resolves
+``Promise<boolean>`` because the auto-advance needs to know whether a next
 event existed. On ``false`` (the filtered list is exhausted) it stops and shows
 a "no more videos" toast rather than looping. Advancing goes through the same
 ``navigateToEvent(id, 'left')`` call as the next button, so the new event slides
@@ -1766,7 +1766,7 @@ Both writes go through ``client.postForm`` / ``client.putForm`` with
 ``Notification[Field]`` keys, the CakePHP form convention. Registrations are
 user-scoped: the server only returns the current user's tokens.
 
-Notification Delivery Services
+Notification delivery services
 ------------------------------
 
 Which service delivers an event to the user depends on notification mode and
@@ -1870,7 +1870,7 @@ Like the API client, this service takes its store reads through a gate
 ``stores/notifications.ts`` at module load). See
 :doc:`12-shared-services-and-components`. Refs #217.
 
-End-to-end Flow: Viewing Monitors
+End-to-end flow: viewing monitors
 ---------------------------------
 
 1. ``pages/Monitors.tsx`` calls ``useQuery({ queryKey:
@@ -1895,13 +1895,13 @@ End-to-end Flow: Viewing Monitors
 The stream URL never touches React Query. It is a plain string handed to the
 browser, which is the whole reason the freshness gate exists.
 
-ZoneMinder Streaming Protocol
+ZoneMinder streaming protocol
 -----------------------------
 
 Video streams are served by a separate ZoneMinder daemon (ZMS). Tracking the
 stream lifecycle correctly avoids leaving zombie streams on the server.
 
-Stream Lifecycle
+Stream lifecycle
 ~~~~~~~~~~~~~~~~
 
 **1. Connection key generation**

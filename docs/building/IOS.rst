@@ -415,10 +415,9 @@ To test on a physical iPhone/iPad:
 Next Steps
 ----------
 
-- **Testing**: Run the app and connect to your ZoneMinder server
-- **Customization**: Update app icons, splash screens, and branding
-- **Distribution**: Upload to App Store Connect for TestFlight or App
-  Store release
+- Run the app and connect to your ZoneMinder server
+- Update app icons, splash screens, and branding
+- Upload to App Store Connect for TestFlight or App Store release
 
 For more information, see: - `Capacitor iOS
 Documentation <https://capacitorjs.com/docs/ios>`__ - `Apple Developer

@@ -41,7 +41,7 @@ hooks along with ``GridLayoutControls``, ``FullscreenControls``,
 ``MontageKebabMenu``, and ``MontageTileErrorBoundary``. It does not export
 ``getMaxColsForWidth``; that helper lives in ``lib/event/event-utils.ts``.
 
-For the ``app/src/`` tree as a whole, see the File Organization table in
+For the ``app/src/`` tree as a whole, see the File organization table in
 :doc:`index`.
 
 Watching a live camera
@@ -336,14 +336,13 @@ ratio, honoring rotation, and passes a render prop:
 
 ``HoverPreview`` draws the enlarged frame through a **portal**. A portal renders
 a component's DOM output into a different place in the document while leaving
-it exactly where it is in the React tree, so it still receives props and
+it where it is in the React tree, so it still receives props and
 context from its parent. That matters because the preview is drawn from inside
 a grid cell that has ``overflow: hidden`` and its own stacking context. Rendered
 in place it would be clipped to the tile it is trying to escape; rendered
 through a portal into ``document.body`` it floats over the page.
 
-The important part of that snippet is ``renderPreview`` being a function rather
-than an element. ``HoverPreview`` calls it only while the preview is open, so
+In that snippet, ``renderPreview`` is a function, not an element. ``HoverPreview`` calls it only while the preview is open, so
 ``MonitorLivePreview`` mounts on hover and unmounts on leave. That is what makes
 the extra stream safe:
 
@@ -448,8 +447,8 @@ Analysis frames on a running stream
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ``hooks/useAnalysisFrames.ts`` puts ZoneMinder's analysis image (the motion
-overlay) on a live view. ZoneMinder offers two ways in, and the difference
-decides the design. ``analysis=1`` on the ``nph-zms`` URL is read once when the
+overlay) on a live view. ZoneMinder has two ways to turn the overlay
+on. ``analysis=1`` on the ``nph-zms`` URL is read once when the
 process starts, so changing it means tearing the stream down and building a new
 one. ``CMD_ANALYZE_ON`` and ``CMD_ANALYZE_OFF`` (19 and 20 in ``ZMS_COMMANDS``)
 go to the running process over its command socket, and the frames swap in place
@@ -486,11 +485,11 @@ what it last sent and for which connkey, which is what stops a multipart
 tile, and what lets a fresh connection with the setting off cost no request at
 all.
 
-Two absences are deliberate. Snapshot mode sends nothing, because
+The hook sends nothing in two cases, on purpose. Snapshot mode sends nothing, because
 ``MonitorStream::SingleImage`` in ZoneMinder reads the capture buffer directly
 and never looks at the frame type, so no parameter or command can put an overlay
-on a single image; ``AnalysisFramesToggle`` disables the button there rather than
-letting it do nothing quietly. And a go2rtc stream has no command socket, so the
+on a single image; ``AnalysisFramesToggle`` disables the button there instead of
+leaving a control with no effect. A go2rtc stream has no command socket, so the
 hook only runs on the MJPEG path that ``useMonitorStream`` owns.
 
 Video playback
@@ -899,7 +898,7 @@ row-level toggle, the floating bar, and the delete hook implement that.
 purpose: opening an event from the queued list does not clear the selection. It
 clears on Cancel, or drops the events a delete actually removed.
 
-Surviving *navigation* is the point; surviving a profile change is not.
+The selection does not survive a profile change.
 ``switchProfile``, ``deleteProfile`` and ``deleteAllProfiles``
 (``stores/profile.ts``) clear the selection, as does ``setProfileDisabled``
 when it disables a profile (re-enabling one leaves the queue alone, since
@@ -916,7 +915,7 @@ within one server, so while aggregating, ticking event 1234 on profile A also
 ticked event 1234 on profile B and would have deleted both. The store keys on
 ``eventSelectionKey(profileId, eventId)``, which is ``` `${profileId}:${eventId}` ```
 (refs #337) and mirrors ``monitorCacheKey`` in ``stores/monitors.ts``. With no
-profile in hand it falls back to the bare event id, which is exactly the key
+profile in hand it falls back to the bare event id, which is the key
 single mode used before. ``parseEventSelectionKey`` splits it back apart on the
 first ``':'``, the same convention ``resolveOwnMonitorIds`` uses for the
 composite monitor-filter tokens.
@@ -960,13 +959,12 @@ profile, because a delete has to go to the server the event lives on:
      ...
    }
 
-That grouping is the fix for a crash, not a refactor. The hook used to resolve
-one client up front with ``getCurrentSession()``. While aggregating, the
-current id is an aggregate, which has no session, so
-``getSession`` threw. The call sat inside a ``try``/``finally`` with no
-``catch``, so confirming a bulk delete produced an unhandled rejection: no
-toast, nothing deleted, the selection still there. Each profile's
-``getSession`` call is now wrapped, and a profile that cannot produce a client
+That grouping fixes a crash. Resolving one client up front with
+``getCurrentSession()`` throws while aggregating, because the current id is an
+aggregate, which has no session. With only a ``try``/``finally`` around that
+call, confirming a bulk delete produced an unhandled rejection: no toast,
+nothing deleted, the selection still there. Each profile's ``getSession`` call
+is wrapped, and a profile that cannot produce a client
 counts its events as failed rather than taking the whole batch down. The
 Aggregation contract (``AGENTS.project.md``) states the rule directly: never
 ``getCurrentSession`` where an aggregate can be current.
@@ -1092,7 +1090,7 @@ overlap the drag surface, so both of their handlers stop propagation twice:
 stopping only the click would still drag the widget out from under the cursor
 while opening the dialog.
 
-DashboardLayout, and a loop worth knowing about
+DashboardLayout and the store/grid sync loop
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Location**: ``src/components/dashboard/DashboardLayout.tsx``
@@ -1161,7 +1159,7 @@ out of ``widget.settings``:
   hour.
 - **TimelineWidget** (``widgets/TimelineWidget.tsx``): event timeline.
 
-Platform gotcha: invisible overlays swallow taps on iOS
+Invisible overlays block taps on iOS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ``MonitorWidget`` draws a caption strip over the bottom of each stream that

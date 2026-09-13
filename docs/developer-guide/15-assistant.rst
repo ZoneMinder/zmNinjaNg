@@ -12,16 +12,16 @@ Pre-turn interrogations and the plan
 ------------------------------------
 
 Before the loop runs, the question is decomposed by three small constrained
-calls - one question per judgment, because consolidated prompts measurably
-dilute each one (see ``llm-models.md`` for the scores behind every claim
-here) - and code composes the tool calls their slots determine:
+calls (one question per judgment, because consolidated prompts measurably
+dilute each one; see ``llm-models.md`` for the scores behind every claim
+here), and code composes the tool calls their slots determine:
 
 - ``triage.ts`` is the ROUTING PARSE: ``continues`` (may any context flow),
   ``kind``, ``subject``, ``objects``. Context is structured previous-turn
   facts (``parse-context.ts``), never answer prose.
 - ``monitor-stage.ts`` owns place: a deterministic name scan (substring and
   token-subset), the focused coverage call returning PLACE GROUPS, the
-  per-group derivation guards, and ``contextForTimeCall`` - a multi-group
+  per-group derivation guards, and ``contextForTimeCall``: a multi-group
   place comparison withholds the previous period from the time call.
 - ``timeframe-stage.ts`` owns time: the whole-question windows
   interrogation (``window-interpreter.ts`` supplies the prompt, branch
@@ -126,10 +126,10 @@ cannot answer an object-type question), and ``validateToolInput`` against the
 tool's own schema. Each failure returns as an ordinary error tool result the
 model corrects from within the same turn; what passes runs through
 ``captureApiCalls`` so the transcript records the ZoneMinder requests the
-tool actually made.
+tool made.
 
 Answering about a group of servers (``server-scope.ts``)
--------------------------------------------------------
+--------------------------------------------------------
 
 Every tool in ``tools-readonly.ts`` is written against one server: it calls
 ``getSession(ctx.profileId)`` and builds card thumbnails from the single
@@ -146,8 +146,7 @@ scope. Fewer than two entries means no group, and ``executeScoped`` hands the
 tool the context untouched: a single-profile install runs the path it always
 ran, byte for byte.
 
-With a group, three things change together, and they have to agree or the
-feature is worse than not having it:
+With a group, three things change together, and all three must agree:
 
 - The system prompt gains a roster (``serverLines`` in ``system-prompt.ts``)
   naming the servers, so "warehouse" is a server name to the model rather than an
@@ -162,12 +161,12 @@ feature is worse than not having it:
   ``contextForServer``. With no ``server`` it runs once per server in parallel
   and merges.
 
-The roster reaches the classifier too, and has to. ``classifyRequest``
+The roster also reaches the classifier. ``classifyRequest``
 (``triage.ts``) decides whether a turn gets tools at all, and it ran before
 anything knew what "warehouse" was: "compare warehouse and cabin" classified CHAT and
 the tool-less turn answered it with a greeting. The names go into the existing
 ZONEMINDER list rather than an appended block, for the reason that file's own
-comment gives - an appended block measured worse - and drop out entirely below
+comment gives (an appended block measured worse), and drop out entirely below
 two servers.
 
 The merged payload is ``{summary, servers: [{server, result | error}]}``.
@@ -182,11 +181,11 @@ Result cards from a group carry ``server`` and ``profileId``
 to route to ``/all/events/:profileId/:id``. The cache key becomes
 ``profileId:id`` for the reason the aggregation contract gives: raw ZoneMinder
 ids collide across servers. The same rule is why a monitor card from another
-server gets no live preview - ``useMonitors`` is the pinned profile's query,
+server gets no live preview: ``useMonitors`` is the pinned profile's query,
 and monitor 3 is a different camera on each server.
 
-The pinned profile still decides the backend, its settings and the thread; it
-no longer decides which servers get asked.
+The pinned profile still decides the backend, its settings and the thread; the
+profiles in scope decide which servers get asked.
 
 Picking the backend (``providers/provider.ts``)
 -----------------------------------------------
@@ -202,19 +201,19 @@ and ``WebLlmProvider`` otherwise.
 On either on-device path no message and no tool result is ever sent to a
 server other than the ZoneMinder server the tool call itself targets.
 
-Note that the five backend VALUES do not map one-to-one onto the four labels
+The five backend values do not map one-to-one onto the four labels
 the picker shows. ``'on-device'`` and ``'native'`` share a single label,
 ``settings.assistant.backend_download_model`` ("On-device (Download model)"),
 because the difference between them is which engine the platform happens to
 have (WebGPU on desktop and web, llama.cpp on Metal on iOS) and not anything
 a user chooses. ``AssistantSection`` therefore emits the same label from two
-branches with two different ``value`` attributes. The labels name the model's
-SUPPLIER, since that is the decision being made: the OS already has one
+branches with two different ``value`` attributes. The labels name who supplies the
+model, since that is the choice the user makes: the OS already has one
 (``'apple'`` -> Apple Intelligence, ``'gemini-nano'`` -> AICore), the app
 downloads one, or your own server runs one. Do not "fix" the duplicate label
 by splitting it back into two options; the engine is not a user-facing
 choice. ``settings.assistant.backend_on_device`` is a separate string and is
-NOT a picker label: ``assistantBackendLabel`` uses it as the generic mode
+not a picker label: ``assistantBackendLabel`` uses it as the generic mode
 suffix in the chat header ("Qwen3 4B · On-device") for all four on-device
 backends, which is why repurposing it for the picker would have mislabelled
 Apple Intelligence and AICore.
@@ -259,10 +258,9 @@ Build pins
 The llama.cpp build is pinned rather than floating. ``binaryTarget`` in
 ``app/ios/App/LlamaKit/Package.swift`` fetches release ``b10087``'s prebuilt
 XCFramework by URL and SHA-256 checksum, so an upstream retag cannot change
-what ships. The pin lives only on the iOS side now: with the Android JNI
-engine removed in issue #270, no ``CMakeLists.txt`` or ``llama_jni.cpp``
-remains in ``app/android/``, and nothing there fetches llama.cpp at build
-time.
+what ships. The pin lives only on the iOS side. No ``CMakeLists.txt`` or
+``llama_jni.cpp`` remains in ``app/android/``, and nothing there fetches
+llama.cpp at build time (issue #270 removed the Android JNI engine).
 
 Apple Intelligence (``providers/apple-intelligence.ts``)
 --------------------------------------------------------
@@ -319,8 +317,7 @@ Gemini Nano on Android (``providers/gemini-nano.ts``)
 
 The ``'gemini-nano'`` backend (refs #270) is the Android system model,
 Gemini Nano over AICore, reached through the ML Kit GenAI Prompt API. It is
-worth being precise about which provider it copies, because the obvious
-guess is wrong: it is a trimmed ``NativeLlmProvider``, not a port of
+a trimmed ``NativeLlmProvider``, not a port of
 ``AppleIntelligenceProvider``, even though both back a model the OS owns.
 
 The difference is what the decoder can be told. Foundation Models takes a
@@ -419,8 +416,8 @@ Why the picker lists two models
 ``webllmModels`` lists ``Llama-3.2-3B-Instruct-q4f16_1-MLC`` and
 ``Qwen3-4B-q4f16_1-MLC``, with Qwen3 4B as ``ASSISTANT.defaultModelId`` for
 fresh installs after it beat the llama class across the eval suite. The
-picker used to offer six, and the six differed in the one behaviour that
-matters: whether the model calls a tool at all rather than answering from
+picker used to offer six, and the six differed in whether the model calls a
+tool at all rather than answering from
 nothing. The short list keeps every entry measured against the same question
 suite. Qwen3 is a reasoning model, so ``WebLlmProvider`` sends web-llm's
 ``extra_body: { enable_thinking: false }`` for Qwen3 model ids: the engine

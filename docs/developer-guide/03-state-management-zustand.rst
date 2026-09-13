@@ -9,7 +9,7 @@ stores and selectors around that comparison is most of what this chapter
 is about; the rest is how stores get written, persisted, and reached from
 outside React.
 
-Why Global State
+Why global state
 ----------------
 
 ``useState`` is fine for component-local state, but profile, auth,
@@ -19,7 +19,7 @@ you a global ``useState``-like hook any component can call, with no Context
 Provider, optional persistence middleware, and access from outside React
 via ``store.getState()``.
 
-Creating a Store
+Creating a store
 ----------------
 
 ``create`` takes a function that receives ``set`` (and optionally ``get``)
@@ -75,7 +75,7 @@ Initialize every field. ``items: undefined`` looks harmless until an action
 spreads it (``[...state.items, item]``) and crashes. Arrays start as ``[]``,
 counters as ``0``, nullable references as ``null``.
 
-Reading State in Components
+Reading state in components
 ---------------------------
 
 A component subscribes by calling the store hook with a *selector*, a
@@ -113,7 +113,7 @@ booleans stay equal no matter how many times you recompute them:
      currentProfile ? state.isFavorited(currentProfile.id, event.Id) : false
    );
 
-``useShallow``: Stable Array and Object Selections
+``useShallow``: stable array and object selections
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The moment a selector *builds* an array or object rather than returning one
@@ -156,7 +156,7 @@ are already reference-stable. This is the object-identity lesson from
 decide "did this change?" by reference, and a freshly-built value is always
 a new reference.
 
-Anti-Pattern: Subscribing to the Whole Store
+Anti-pattern: subscribing to the whole store
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Calling the hook with no selector subscribes to everything:
@@ -184,7 +184,7 @@ never again: actions never change, so nothing is left to trigger an update.
 The Stores contract covers both directions: every field the component reads
 reactively must be in the selector.
 
-Store Values as Effect Dependencies
+Store values as effect dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Derived values inherit the same problem. ``currentProfile`` is produced by
@@ -316,7 +316,7 @@ permanently hung splash. Note the logging goes through
 (``AGENTS.project.md``) routes every log line through ``lib/logger.ts`` so
 it lands in the in-app log viewer.
 
-Calling Stores Outside React
+Calling stores outside React
 ----------------------------
 
 Start from the rule, because it decides how the code below is shaped. The
@@ -337,7 +337,7 @@ service declares the shape of the state it needs and exposes a registration
 function; the store statically imports that one function, and at module load
 hands over accessors closed over ``getState()``. ``stores/notifications.ts``
 imports ``setPushServiceStoreGates`` from ``services/pushNotifications.ts``
-for exactly that. The service imports nothing from any store: the types in
+for that. The service imports nothing from any store: the types in
 its gate interface come from ``types/notifications.ts`` and ``api/types.ts``.
 When the store later needs a runtime function out of the service, it uses a
 dynamic ``import()`` (``await import('../services/pushNotifications')``),
@@ -372,7 +372,7 @@ gates out of ``stores/auth.ts`` and ``stores/settings.ts`` and registers
 them, which is what breaks the client to auth-store to ``api/auth`` to
 client cycle.
 
-One subtlety about ``import type``. TypeScript erases it, so a type-only
+TypeScript erases ``import type``, so a type-only
 import is not a module edge at runtime and nothing would break if it closed
 a cycle today. This repo's gate counts it as an edge anyway. The comment at
 the top of ``no-circular-deps.test.ts`` says why: the four cycles that
@@ -381,7 +381,7 @@ turning any one of those ``import type`` statements into a value import
 would have made the cycle real. Treat a type-only import from a service to
 a store as the same violation as a value import.
 
-An End-to-End Switch
+An end-to-end switch
 ~~~~~~~~~~~~~~~~~~~~
 
 The two halves, subscription and ``getState``, meet when the user picks a
@@ -442,9 +442,8 @@ Settings contract (``AGENTS.project.md``), because reactive readers such as
 ``useCurrentProfile`` bypass it.
 
 **Auth** (``stores/auth.ts``) owns access and refresh tokens, under the Auth
-tokens contract (``AGENTS.project.md``). Its concurrency story is the part
-worth remembering: a module-level ``pendingLogin`` promise
-means several callers racing a fresh-start login (profile bootstrap and the
+tokens contract (``AGENTS.project.md``). For concurrency, a module-level
+``pendingLogin`` promise means several callers racing a fresh-start login (profile bootstrap and the
 API client's proactive auth, typically) attach to one ``/login.json`` POST
 instead of issuing two. ``getFreshAccessToken`` and the refresh POST are
 deduped the same way, each behind its own shared promise.
@@ -470,7 +469,7 @@ array of event ids and is persisted. Scoping by profile is what stops a
 favorite on one ZoneMinder server from showing up as a starred event on
 another.
 
-Testing a Store
+Testing a store
 ---------------
 
 A store is a module singleton. It is created the first time the module is
@@ -527,10 +526,10 @@ destructured *data* field is a snapshot of the moment you destructured it
 and will not reflect the write, which is why the monitors test above asserts
 against a fresh ``useMonitorStore.getState().connKeys``.
 
-Reference Equality and Infinite Loops
+Reference equality and infinite loops
 -------------------------------------
 
-Every trap in this chapter is the same trap. Zustand decides whether to
+Every trap in this chapter comes from comparison by reference. Zustand decides whether to
 re-render by comparing references. React decides whether to re-run an effect
 or rebuild a ``useCallback`` by comparing references. Hand either of them a
 value that is rebuilt on each pass and you get a cycle that never settles.
@@ -580,7 +579,7 @@ Notice the third defense, and the one to reach for first: ``areLayoutsEqual``
 compares layouts field by field, and ``setLayout((prev) => equal ? prev :
 next)`` returns the *previous* array when nothing moved. React bails out of a
 re-render when ``useState`` is set to the identical reference. Structural
-comparison plus returning the old reference is exactly what ``useShallow``
+comparison plus returning the old reference is what ``useShallow``
 does for selectors, applied here at component scope.
 
 Reach for refs only after the cheaper move fails: select a primitive.

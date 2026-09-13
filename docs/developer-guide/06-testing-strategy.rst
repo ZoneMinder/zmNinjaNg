@@ -11,7 +11,7 @@ Tests are layered:
 Every test verifies what a human tester would verify: can I do the task, did
 the data change, does it survive a refresh.
 
-Reading One Unit Test
+Reading one unit test
 ---------------------
 
 Start with the simplest kind. ``formatEventCount`` in ``lib/utils.ts`` turns an
@@ -82,8 +82,8 @@ awaited ``user.click()``.
 ``render()`` mounts the component into that jsdom document, exactly as the app
 mounts it into a real one at startup.
 
-``screen`` queries that document. It hands back DOM nodes, not React objects.
-That is deliberate: the assertions can only see what a user could see. A test
+``screen`` queries that document. It hands back DOM nodes, not React objects,
+so the assertions can only see what a user could see. A test
 written this way keeps passing when the component is rewritten with different
 internal state, and starts failing when the button stops being clickable, which
 is the failure a user would notice.
@@ -98,12 +98,11 @@ work and flushes it asynchronously. Awaiting the click waits for the flush, so
 the assertion on the next line runs against the settled DOM rather than the DOM
 as it was mid-update. Forget the ``await`` and the test reads a stale screen.
 
-The principle behind all of it: **test behavior, not implementation**. Assert
-that clicking delete removes the monitor, not that ``handleDelete`` called
-``removeMonitor``. The second test breaks on every refactor and passes even when
+Test behavior, not implementation: assert that clicking delete removes the
+monitor, not that ``handleDelete`` called ``removeMonitor``. The second test breaks on every refactor and passes even when
 the button is unreachable.
 
-Where Tests Live
+Where tests live
 ----------------
 
 Tests sit next to the code they cover, in a ``__tests__/`` subdirectory:
@@ -129,7 +128,7 @@ Vitest loads ``src/tests/setup.ts`` before any test file. That is where the
 Capacitor plugin mocks live, so a component that dynamically imports
 ``@capacitor/haptics`` on a native platform does not explode under Node.
 
-Mocking the Boundary, Not the App
+Mocking at the boundary
 ---------------------------------
 
 ``MonitorCard`` reaches for a Zustand store, the current profile, React Router,
@@ -145,8 +144,8 @@ Always pass the factory: a bare ``vi.mock(path)`` auto-stubs at runtime while
 the import keeps the real types, and TypeScript rejects the
 ``.mockReturnValue()`` you were about to write.
 
-What to mock is the decision that matters, and the testing playbook fixes it:
-mock the **boundary**, never the app. The boundary is ``api/*`` (the HTTP
+The testing playbook fixes what to mock: the boundary, never the app. The
+boundary is ``api/*`` (the HTTP
 client and the functions that call it), platform plugins (``setup.ts`` already
 mocks Capacitor), third-party modules such as React Router, i18next and toast,
 and a heavy leaf child that would open a stream or a canvas. The stores,
@@ -263,7 +262,7 @@ connection-key changes by hand:
 ``LiveMonitorPlayer`` child down to a ``<div data-testid="video-player">``.
 Mock at whichever boundary keeps the component's own behavior under test.
 
-Testing a Store Directly
+Testing a store directly
 ------------------------
 
 A Zustand store is a plain object outside React, so it needs no ``render()``.
@@ -301,7 +300,7 @@ The ``beforeEach`` reset matters because the store module is imported once per
 test file and its state survives between ``it`` blocks. Without the reset, test
 order decides the result.
 
-Running Unit Tests
+Running unit tests
 ------------------
 
 All commands run from ``app/``.
@@ -328,7 +327,7 @@ and mock data are excluded from the measurement.
 There is no per-directory target. Raise the four numbers in the ``thresholds``
 block of ``app/vitest.config.ts`` rather than adding a rule here.
 
-End-to-End Tests
+End-to-end tests
 ----------------
 
 E2E tests drive the real app in a real browser against a real ZoneMinder
@@ -357,7 +356,7 @@ the feature files at run time (``bddgen``, in the ``test:e2e`` script).
    ├── platforms.config.defaults.ts  # simulator names, ports, timeouts
    └── platforms.config.local.ts     # local overrides (gitignored)
 
-Feature Files
+Feature files
 ~~~~~~~~~~~~~
 
 Each scenario is one user goal, not one element:
@@ -394,7 +393,7 @@ the set. Today the Playwright config defines a single ``chromium`` project and
 no runner filters on tags, so the tags document intent rather than select a
 device.
 
-Step Definitions
+Step definitions
 ~~~~~~~~~~~~~~~~
 
 Steps live in per-screen files under ``tests/steps/`` and use Playwright's
@@ -425,7 +424,7 @@ outright. Calls that predate the rule still sit in several step files, so
 copying a neighbouring step is not a safe way to learn the convention.
 
 Selectors come from ``data-testid``, never from visible text. Text is
-translated into five languages, so ``getByText('Delete')`` fails the moment the
+translated into seven languages, so ``getByText('Delete')`` fails the moment the
 locale changes, and it is not unique. Every interactive element gets one:
 
 .. code:: tsx
@@ -434,15 +433,15 @@ locale changes, and it is not unique. Every interactive element gets one:
      {t('common.delete')}
    </Button>
 
-Capability Guards
+Capability guards
 ^^^^^^^^^^^^^^^^^
 
 Gate on capability, never on the UI under test. Some features exist only when
 the server or device supports them: PTZ controls render only for a controllable
 monitor. The tempting guard is to check whether the panel is on screen and skip
 if not. That guard is self-defeating: if the panel regresses and stops
-rendering, the guard goes false and every assertion below it silently no-ops.
-The test turns green precisely when the feature breaks.
+rendering, the guard goes false and every assertion below it silently no-ops,
+so the test passes when the feature breaks.
 
 The testing playbook requires the capability to come from an independent
 source, API or fixture data. ``tests/steps/ptz.steps.ts`` asks ZoneMinder:
@@ -477,7 +476,7 @@ A ``Then`` step may still skip when an earlier step legitimately did nothing,
 for example a server with zero events. The skip condition must be data
 (``eventCount === 0``), never a swallowed locator failure.
 
-Running E2E Tests
+Running E2E tests
 -----------------
 
 .. list-table::
@@ -510,7 +509,7 @@ Server credentials come from ``app/.env``:
    ZM_USER_1=admin
    ZM_PASSWORD_1=password
 
-Device Tests
+Device tests
 ------------
 
 Device tests are manual-invoke-only. Only the web suite runs in the automated
@@ -563,7 +562,7 @@ capture screenshots against an already-synced app, skip the sync:
    npm run test:screenshots:ios-phone
    npm run test:screenshots:ios-tablet
 
-Visual Baselines
+Visual baselines
 ~~~~~~~~~~~~~~~~
 
 There are none. Nothing in this repo diffs a screenshot against a baseline: the
@@ -574,7 +573,7 @@ script performs a pixel comparison. The one layout assertion that does run is
 past ``window.innerWidth`` outside a scroll container. Screenshots are for a
 human to look at.
 
-Device Setup
+Device setup
 ------------
 
 Prerequisites
@@ -653,7 +652,7 @@ runtime, both simulators, the Android SDK, the AVD, ``adb``, Appium, both
 drivers, port 4723, and whether you have a local config override. Each failure
 prints its own fix.
 
-Platform Config
+Platform config
 ~~~~~~~~~~~~~~~
 
 ``tests/platforms.config.defaults.ts`` holds:
@@ -681,7 +680,7 @@ Finding the exact names your machine uses:
    xcrun simctl list devices     # iOS
    emulator -list-avds           # Android
 
-Debugging Tests
+Debugging tests
 ---------------
 
 ``screen.debug()`` pretty-prints the current jsdom document, which is the

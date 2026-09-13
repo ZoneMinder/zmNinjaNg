@@ -374,9 +374,9 @@ Try cleaning the build:
 Next Steps
 ----------
 
-- **Testing**: Run the app and connect to your ZoneMinder server
-- **Customization**: Update app icons, splash screens, and branding
-- **Distribution**: Upload AAB to Google Play Console for release
+- Run the app and connect to your ZoneMinder server
+- Update app icons, splash screens, and branding
+- Upload the AAB to Google Play Console for release
 
 For more information, see: - `Capacitor Android
 Documentation <https://capacitorjs.com/docs/android>`__ - `Android

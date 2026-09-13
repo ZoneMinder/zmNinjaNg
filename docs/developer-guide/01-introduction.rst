@@ -16,7 +16,8 @@ zmNinjaNg is a client for that server. It views live camera streams, browses
 recorded footage, and receives push notifications when new recordings arrive.
 Everything it displays comes from a ZoneMinder server that the user configures.
 
-These nouns recur through the whole guide, and they are ZoneMinder's, not ours:
+These nouns recur through the whole guide. Monitor and Event are ZoneMinder's
+terms; Profile is the app's:
 
 - **Monitor**: one camera.
 - **Event**: one motion-triggered recording on a monitor.
@@ -30,7 +31,7 @@ events is keyed the same way (``profileFavorites`` in
 ``stores/eventFavorites.ts``), so switching servers cannot show you the
 previous server's cameras or starred events.
 
-Who This Guide Is For
+Who this guide is for
 ---------------------
 
 Programmers who are comfortable in some language but have not written React.
@@ -44,7 +45,7 @@ assumes.
 Code examples come from the codebase. File paths are written relative to
 ``app/``, so ``src/api/auth.ts`` means ``app/src/api/auth.ts``.
 
-A TypeScript Primer
+A TypeScript primer
 -------------------
 
 The rest of the guide assumes the TypeScript below. If you already write
@@ -116,11 +117,10 @@ automatically requires it here, which a hand-written second interface would not.
 ``Record<K, V>`` types an object whose keys are ``K`` and whose values are
 ``V``. Here it maps a monitor id to that monitor's ZMS connection key.
 
-A ``Map`` would be the more natural structure, and this store cannot use one.
+A ``Map`` would be the more natural structure, but this store cannot use one.
 ``useMonitorStore`` wraps its state in Zustand's ``persist`` middleware, which
 serializes through ``JSON.stringify``, and ``JSON.stringify(new Map())`` is
-``{}``: the entries vanish and the user's connection keys are gone after a
-reload. A lookup table that has to survive a restart is a ``Record``.
+``{}``, so a ``Map`` would lose the user's connection keys on reload.
 
 ``ProfileId``: a string the compiler keeps separate
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -155,10 +155,10 @@ parsed, never to quiet a type error somewhere else.
 ``a?.b`` evaluates to ``undefined`` when ``a`` is ``null`` or ``undefined``,
 rather than throwing. The related ``??`` operator returns its right side only
 when the left side is ``null`` or ``undefined``, where ``||`` also falls
-through on ``''`` and ``0``. The difference matters: with ``??`` an empty-string
-timezone would be kept, and with ``||`` it falls back to the device timezone.
+through on ``''`` and ``0``. With ``??`` an empty-string timezone would be
+kept; with ``||`` it falls back to the device timezone.
 
-Getting Help
+Getting help
 ------------
 
 - Read ``AGENTS.md`` at the repository root for the development rules. Every

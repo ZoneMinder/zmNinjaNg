@@ -47,9 +47,8 @@ a file named ``/monitors/3``.
 children of a pathless layout route they resolve against ``/`` and land in
 the same place as their slash-prefixed siblings.
 
-Where ``/`` sends someone is a preference, not a constant.
-``resolveStartRoute`` (``src/lib/navigation.ts``) reads the profile's
-``startScreen`` setting: a path from ``START_SCREENS`` opens that screen, and
+``resolveStartRoute`` (``src/lib/navigation.ts``) decides where ``/`` sends
+someone, from the profile's ``startScreen`` setting: a path from ``START_SCREENS`` opens that screen, and
 the default ``last-used`` reopens ``lastRoute``, which AppLayout has been
 writing on every navigation. Last-used keeps deep routes, so a session that
 ended on monitor 3 reopens monitor 3, while a picked screen is always a
@@ -101,8 +100,8 @@ a separate JavaScript chunk that downloads the first time the user navigates
 to it. Until the chunk arrives, a ``lazy`` component suspends, and the
 nearest ``<Suspense>`` ancestor renders its ``fallback`` instead.
 ``RouteLoadingFallback`` (defined in ``App.tsx``) is a spinner over
-``t('common.loading')``. The payoff is that a cold start ships the app shell
-rather than all fifteen routed pages at once.
+``t('common.loading')``. A cold start therefore ships only the app shell, not
+all fifteen routed pages.
 
 Crash isolation
 ~~~~~~~~~~~~~~~
@@ -216,7 +215,7 @@ The page component is thin. It reads edit state and the widget list from
        useShallow((state) => state.widgets[profileId] ?? [])
    );
 
-The ``useShallow`` wrappers are not decoration. A Zustand selector re-renders
+Both selectors need ``useShallow``. A Zustand selector re-renders
 the component whenever its return value changes identity, and both of these
 selectors build a fresh value on every call: ``find()`` produces a result and
 ``?? []`` produces a new empty array. Without ``useShallow`` the dashboard
@@ -226,14 +225,11 @@ would re-render on every unrelated store write. See
 Everything else the dashboard does belongs to ``DashboardLayout``
 (``src/components/dashboard/DashboardLayout.tsx``), which owns the
 ``react-grid-layout`` grid and keeps the grid's own layout state and the
-dashboard store from writing to each other forever. That sync is where the
-feature's real complexity sits, and it is documented once, in
-:doc:`05-component-architecture`. The page component is thin enough that
-there is nothing else to read here.
+dashboard store from writing to each other forever. That sync is documented
+in :doc:`05-component-architecture`.
 
-One difference between the two files is worth not misreading:
-``src/pages/Dashboard.tsx`` writes the no-profile fallback as a bare
-``'default'`` because it only uses it to index ``state.widgets``, a
+The two files write the no-profile fallback differently.
+``src/pages/Dashboard.tsx`` writes it as a bare ``'default'`` because it only uses it to index ``state.widgets``, a
 ``Record<string, ...>``, while ``DashboardLayout`` hands the same fallback to
 ``DashboardWidget``'s ``profileId`` prop, typed ``ProfileId``, so it has to
 brand it with ``asProfileId('default')``.
@@ -251,9 +247,7 @@ and an arrangement can be saved by name and reloaded later.
 The page uses ``react-grid-layout`` with an internal grid sized to
 ``displayColumns * COL_SUBDIVISION`` units, so N display columns always
 render exactly N. Each default tile is one column wide
-(``COL_SUBDIVISION`` units) and can be resized down to a single unit. A fixed
-12-column grid was used previously, which rendered the wrong count for column
-values that do not divide 12 (5 rendered 6, 9 rendered 12); see issue #220.
+(``COL_SUBDIVISION`` units) and can be resized down to a single unit.
 
 Layout logic lives in hooks under ``src/components/montage/``:
 
@@ -341,7 +335,7 @@ described in :doc:`02-react-fundamentals`, which only holds a value and is
 never called. Do not read ``useCallback`` semantics off this example either.
 ``useCallback`` appears here for one reason: React re-invokes a callback ref
 whenever the function's identity changes, so an inline arrow function would
-disconnect and rebuild the ``ResizeObserver`` on every single render.
+disconnect and rebuild the ``ResizeObserver`` on every render.
 
 Inside the observer, the first non-zero measurement calls ``onWidthChange``
 immediately so the initial layout can be built. Later changes update
@@ -349,8 +343,8 @@ immediately so the initial layout can be built. Later changes update
 ``GRID_LAYOUT.resizeDebounceMs`` (500 ms), so heights are recomputed once the
 user stops dragging the window edge rather than on every intermediate frame.
 
-That callback is where an observer and a store meet, and it is the trap worth
-naming. ``useMontageGrid`` mirrors every unstable value it needs into a ref,
+That callback reads store values and writes back to them, which can loop. To
+prevent that, ``useMontageGrid`` mirrors every unstable value it needs into a ref,
 updating each one in its own effect:
 
 .. code:: tsx
@@ -418,7 +412,9 @@ Layout migration
 ~~~~~~~~~~~~~~~~
 
 ``isLegacyLayout(stored, displayCols)`` in ``useMontageGrid`` detects layouts
-saved on the old fixed 12-column grid. On the proportional grid a layout of
+saved on the old fixed 12-column grid, which rendered the wrong count for
+column values that do not divide 12 (5 rendered 6, 9 rendered 12; see issue
+#220). On the proportional grid a layout of
 two or more columns has a rightmost edge beyond one ``COL_SUBDIVISION``
 block, so a stored layout whose rightmost edge fits inside one block is
 legacy. Single-column layouts are left alone, because the legacy and
@@ -446,8 +442,7 @@ which ``useCurrentProfile`` already resolves to while the sentinel profile is
 current, and all five are computed inside an ``isAllMode`` branch: a single
 profile carries the same keys and must never be throttled by them.
 
-They compose in a fixed order, and the order is the part worth remembering.
-The stream budget runs first and decides which tiles exist at all. Everything
+They compose in a fixed order. The stream budget runs first and decides which tiles exist at all. Everything
 after it decides what those tiles do: viewport gating and the hidden pause
 both stop a tile outright, the idle downgrade drops it to snapshots, and
 reduced tuning only changes what a still-streaming tile asks for. Stopping
@@ -457,17 +452,16 @@ holds no connection rather than polling snapshots nobody can see. A gated
 tile still occupies its budget slot: scrolling changes which tiles stream,
 never which monitors are on the page.
 
-Each tile is rendered by ``MontageMonitor``, which forwards the decisions to
-``LiveMonitorPlayer``. The page decides, the tile carries, the player acts.
-Live Activity renders the same ``MontageMonitor`` and passes none of them, so
+Each tile is rendered by ``MontageMonitor``, which forwards the page's
+decisions to ``LiveMonitorPlayer``. Live Activity renders the same ``MontageMonitor`` and passes none of them, so
 it is unaffected.
 
 **The stream budget.** ``settings.allModeMaxStreams`` caps how many tiles
 open at once. ``allocateStreamBudget`` (``src/lib/monitor/stream-budget.ts``)
 decides whose tiles those are. The scoped monitor list arrives clustered by
-profile, so slicing the first N gave the whole budget to whichever server
-sorted first and left later servers with nothing on screen. The slots are
-dealt round-robin in profile order instead, and a server with fewer monitors
+profile, so slicing the first N would give the whole budget to whichever
+server sorts first and leave later servers with nothing on screen. The slots
+are dealt round-robin in profile order instead, and a server with fewer monitors
 than its even share drops out of later passes so its unused slots go to
 servers that can fill them. The total is unchanged, which is why the overflow
 count above the grid still describes exactly the tiles that were dropped.
@@ -501,8 +495,8 @@ an element to ``registerTile``, whose ref callback is memoized per tile id and
 kept for the life of the page. That map is also how an entry finds the
 composite tile id it belongs to, since raw monitor ids collide across servers.
 
-Both halves of that sentence are load-bearing, and each cost a round. The
-observed element is INSIDE the grid item rather than being the item itself,
+Both details in that sentence are required, and each was a bug before it was
+fixed. The observed element is inside the grid item rather than being the item itself,
 because ``react-grid-layout`` clones every child with ``ref:
 this.elementRef``, which replaces any ref on that element: a ref on the tile
 root is never called. And the callback cache must survive a detach. Dropping
@@ -593,7 +587,7 @@ profile id leaks one server's cache into another. Refetch intervals always
 come from ``useBandwidthSettings()``, never a hardcoded number. See
 :doc:`07-api-and-data-fetching`.
 
-Both gates on the render path are worth reading closely:
+The render path has two gates:
 
 .. code:: tsx
 
@@ -679,7 +673,7 @@ Three queries, each gated on what it needs:
 ``enabled: false`` keeps a query from running at all, which is how the
 control query avoids asking ZoneMinder about PTZ for a camera that has none,
 and how the zones query stays idle until the user turns the overlay on. The
-non-null assertions inside each ``queryFn`` are safe precisely because the
+non-null assertions inside each ``queryFn`` are safe because the
 matching ``enabled`` condition already proved the value exists.
 
 Loading and error states use the shared pieces: ``DetailPageSkeleton`` and
@@ -703,7 +697,7 @@ Live Activity
 
 Only the monitors ZoneMinder currently reports as alarming, as live tiles. The
 page itself is a small state pipeline (poll, parse, reduce, render) sitting on
-top of the same tile Montage uses; almost none of the actual rendering logic
+top of the same tile Montage uses; almost none of the rendering logic
 belongs to this page.
 
 The pipeline, in the order it runs:
@@ -716,13 +710,13 @@ The pipeline, in the order it runs:
 - Each raw response is parsed into a ``MonitorAlarmState`` by
   ``parseAlarmState`` (``src/lib/monitor/alarm-state.ts``), inside the
   ``combine`` option of ``useQueries`` rather than in a downstream
-  ``useMemo``. That placement is load-bearing, not stylistic: without
+  ``useMemo``. The placement matters: without
   ``combine``, ``useQueries`` re-maps its results array on every render, so a
   ``useMemo`` listing it never hits and the state map gets a new identity per
   render. Since the effect below stamps ``Date.now()`` into the list, a new
-  identity per render is a render loop, not a wasted comparison. TanStack
+  identity per render causes a render loop. TanStack
   applies ``replaceEqualDeep`` to whatever ``combine`` returns, so an
-  unchanged poll yields the very same object.
+  unchanged poll yields the same object.
 - A push notification received inside the current dwell window overlays an
   early ``'alarm'`` onto that monitor's state through ``applyLiveAlarmHints``,
   so a push promotes a tile before the next poll confirms it.
@@ -735,23 +729,23 @@ The pipeline, in the order it runs:
   freshest activity. ``capActiveMonitors`` then slices the result to
   ``liveActivityMaxTiles`` and reports the remainder as an overflow count.
 - The sort key is when the alarm episode *began*, not when the monitor was
-  last alarming, and those are different things. ZoneMinder walks a
+  last alarming. ZoneMinder walks a
   winding-down event through ``alarm`` to ``alert`` to ``tape`` or ``idle``
   and back, and only ``alarm`` and ``alert`` count as alarming, so across one
   event's tail a monitor leaves and rejoins the alarming set every second or
   two. Sorting on ``lastAlarmingAt``, which is restamped from the clock on
-  every alarming pass, turned that into a reorder per tick: driving the real
-  reducer once a second over a realistic two-monitor tail produced 13
+  every alarming pass, turns that into a reorder per tick: driving the real
+  reducer once a second over a realistic two-monitor tail produces 13
   reorders in 66 seconds, 11 of them inside a 13-second window. Each one
   starts a view transition, and while a transition runs the captured elements
-  are not painted, so the grid spent a large fraction of an event's tail
+  are not painted, so the grid would spend a large fraction of an event's tail
   showing pseudo-elements instead of live video. ``episodeStartedAt`` is not
   restamped while a monitor keeps alarming, and a monitor that stops alarming
   has to stay quiet for ``LIVE_ACTIVITY.episodeGraceSeconds`` before its next
-  alarm counts as a new episode and moves it back to the top. The same input
-  now produces 2 reorders, both of them real dwell expiries.
+  alarm counts as a new episode and moves it back to the top. Sorting on it,
+  the same input produces 2 reorders, both of them real dwell expiries.
   ``lastAlarmingAt`` is still restamped every pass, because the dwell window
-  runs from it; it just no longer decides position.
+  runs from it, but it does not decide position.
 
 .. code:: tsx
 
@@ -777,38 +771,36 @@ The pipeline, in the order it runs:
 
    const { visible, overflowCount } = capActiveMonitors(active, settings.liveActivityMaxTiles);
 
-Motion is deliberately cheap. A tile enters with ``animate-in fade-in-0
-zoom-in-95`` over 200ms (tailwindcss-animate, the same utilities the dialogs
-use), and that is the only visual effect the tile carries. A cooling tile is
-rendered identically to an alarming one; the sole signal that a monitor is
-winding down is its state icon dropping out of the tile header.
+A tile enters with ``animate-in fade-in-0 zoom-in-95`` over 200ms
+(tailwindcss-animate, the same utilities the dialogs use), and that is the
+only visual effect the tile carries. A cooling tile is rendered identically to
+an alarming one; the sole signal that a monitor is winding down is its state
+icon dropping out of the tile header.
 
-The plain tile is a rendering constraint. The tile is the element
-carrying ``view-transition-name``, so it is the element the browser
+The tile has to stay that plain because it is the element carrying
+``view-transition-name``, so it is the element the browser
 snapshots, and a captured image is generated with the element's own visual
 effects already applied while ``::view-transition-new`` is the live element.
 The user-agent stylesheet composites that pair with ``mix-blend-mode:
 plus-lighter``, which only cross-fades correctly when both halves are the
 same image. A tile that animates its own ``opacity`` or ``filter`` therefore
 hands the browser two halves that do not match, and renders wrong for the
-whole transition. An earlier version faded cooling tiles toward ``opacity-60
-saturate-50`` over 700ms and hit exactly that. It was especially visible
-because the grid used to reorder roughly once a second while ZoneMinder
-flapped a winding-down monitor between ``alert`` (alarming) and ``tape`` (not
-alarming), so the mis-composite repeated for the length of an event's tail,
-which is the window right before a tile dwells out. The ``episodeStartedAt``
-sort above removes that repetition, but the constraint stands on its own:
-nothing may animate opacity or filter on this element. A test asserts a
+whole transition. Fading a cooling tile toward ``opacity-60 saturate-50`` over
+700ms breaks the cross-fade this way, and a grid reordering roughly once a
+second while ZoneMinder flaps a winding-down monitor between ``alert``
+(alarming) and ``tape`` (not alarming) would repeat the mis-composite for the
+length of an event's tail, which is the window right before a tile dwells out.
+The ``episodeStartedAt`` sort above removes that repetition, but nothing may
+animate opacity or filter on this element either way. A test asserts a
 cooling tile's resolved class list is byte-identical to an alarming one's.
 
 The 200ms is written as ``[animation-duration:200ms]`` rather than
-``duration-200``, and that is not cosmetic: ``cn()`` is
+``duration-200`` because ``cn()`` is
 ``twMerge(clsx(...))``, and tailwindcss-animate maps ``duration-*`` onto
 ``animationDuration`` as well as core Tailwind's ``transitionDuration``. A
 transition duration landing on the same element would read as one conflict
-group with the animation duration and twMerge would keep only the last, which
-is how the enter animation once silently ran at the cooling transition's
-700ms. The arbitrary-value form keeps that from happening again if a
+group with the animation duration and twMerge would keep only the last, so the
+enter animation would run at the transition's duration. The arbitrary-value form keeps that from happening again if a
 transition is ever reintroduced here. Reordering
 goes through ``runViewTransition`` (``src/lib/view-transition.ts``), which
 wraps the state update in ``document.startViewTransition`` when the browser
@@ -824,19 +816,17 @@ outright under ``prefers-reduced-motion``: the CSS transitions through the
 global rule in ``index.css``, and the view transition because
 ``runViewTransition`` checks the media query before starting one.
 
-The dwell window is not a display nicety. Each visible entry renders a
-``MontageMonitor``, the tile Montage documents above, so mounting one mints a
-ZMS connection key and unmounting it sends CMD_QUIT. A reducer that let a
-monitor flicker in and out of the list would mint and quit a fresh
-``nph-zms`` process on almost every poll; the dwell window exists to stop
-that, not just to smooth the display. :doc:`call-flows` Flow 20 traces one
+Each visible entry renders a ``MontageMonitor``, the tile Montage documents
+above, so mounting one mints a ZMS connection key and unmounting it sends
+CMD_QUIT. A reducer that let a monitor flicker in and out of the list would
+mint and quit a fresh ``nph-zms`` process on almost every poll. The dwell
+window prevents that, and it also smooths the display. :doc:`call-flows` Flow 20 traces one
 poll tick through this whole pipeline, from the fetch to that CMD_QUIT.
 
 A tile is ``LiveActivityTile`` (``src/components/live-activity/``): the
 wrapper element described above, a ``MontageMonitor``, and two overlays. The
-overlays are siblings of the tile rather than props of it, and that placement
-is the whole design. ``MontageMonitor`` is ``memo``-wrapped with the default
-comparator, so any prop that changes every second re-renders every live video
+overlays are siblings of the tile rather than props of it, because
+``MontageMonitor`` is ``memo``-wrapped with the default comparator, so any prop that changes every second re-renders every live video
 tile on screen at once. The elapsed counter, formatted by
 ``formatElapsedShort`` (``src/lib/format-date-time.ts``) from
 ``episodeStartedAt`` and the page's one-second clock, therefore never touches
@@ -856,8 +846,9 @@ worse than one that never had it.
 
 Tile height comes from the camera, not from the grid. The page lays tiles out
 in a plain CSS grid, which fixes their width and says nothing about their
-height, so every tile used to be the same box and a 4:3 camera, a 16:9 camera
-and a rotated portrait camera were all cropped or letterboxed into it.
+height, so without a ratio every tile would be the same box and a 4:3 camera,
+a 16:9 camera and a rotated portrait camera would all be cropped or
+letterboxed into it.
 ``LiveActivityTile`` reads ``getMonitorAspectRatio(Width, Height,
 Orientation)`` (``src/lib/monitor/monitor-rotation.ts``, which swaps the axes
 for a 90 or 270 degree rotation) and passes the result to ``MontageMonitor``
@@ -865,7 +856,7 @@ as ``mediaAspectRatio``. The tile then puts that ratio on its video area and
 drops the ``flex-1`` that area otherwise carries, so the card's height is the
 ``h-8`` header plus the video, which is the same
 ``videoPx + MONTAGE_GRID.cardHeaderHeightPx`` sum ``useMontageGrid`` computes
-for a Montage tile. Two details are load-bearing. The ratio goes on the video
+for a Montage tile. The ratio goes on the video
 area rather than on the card or the wrapper, because on either of those the
 header would be counted inside the camera's shape and the picture would crop
 by the header's height. And ``flex-1`` has to go, since it sets a zero flex
@@ -876,19 +867,18 @@ dimensions it cannot use, and the tile falls back to
 ``MONITOR_UI.fallbackAspectRatio`` rather than rendering a camera with no
 height. The grid then packs those tiles by row span rather than laying them into
 shared rows. A CSS grid row is as tall as the tallest item in it, so a 16:9
-camera beside a portrait fisheye left a hole under the short tile the height
-of its neighbour, and the next row started below the tall one;
-``items-start`` only stopped the short tile stretching, it never shortened
+camera beside a portrait fisheye would leave a hole under the short tile the
+height of its neighbour, and the next row would start below the tall one;
+``items-start`` only stops the short tile stretching, it never shortens
 the row. The grid therefore gets a one pixel row unit
 (``LIVE_ACTIVITY.rowUnitPx``) and each tile a ``grid-row-end: span N`` from
 ``getLiveActivityRowSpan`` (``src/lib/monitor/live-activity-layout.ts``),
 which computes the same header-plus-video sum again in pixels, from the
 measured grid width, the column count and the camera's ratio, and rounds it
-up so a tile can never overflow the rows it claims. Tiles no longer share a
-row, so auto-placement drops each one into the first free slot and the holes
-disappear. CSS multi-column masonry would also close them, and is not used:
-it flows content down column one before column two, which would quietly
-reverse the most-recent-first reading order the tile sort exists to produce.
+up so a tile can never overflow the rows it claims. Tiles do not share a row,
+so auto-placement drops each one into the first free slot and leaves no holes.
+CSS multi-column masonry would also close them, and is not used: it flows
+content down column one before column two, which would reverse the most-recent-first reading order the tile sort exists to produce.
 
 That needs the grid measured, which is ``useMeasuredWidth``
 (``src/hooks/useMeasuredWidth.ts``). It wraps montage's
@@ -908,20 +898,19 @@ which is what the ratio on the video area was there to avoid.
 
 Dismissal (the cross on a tile) is a reducer input, not a render-time filter.
 ``reduceActiveMonitors`` skips a dismissed monitor both as a resident and as
-a new arrival, so the tile really unmounts and its stream is quit. The
-suppression is the point: the monitor is usually still alarming, so without
-it the reducer would readmit the tile on the very next poll.
-``releaseDismissed`` drops a dismissal once its monitor has genuinely stopped
+a new arrival, so the tile really unmounts and its stream is quit. The skip
+matters because the monitor is usually still alarming, so without it the
+reducer would readmit the tile on the next poll.
+``releaseDismissed`` drops a dismissal once its monitor has stopped
 alarming, and the page calls it after the reduce rather than before, or a
 tile dismissed while already cooling would survive its own dismissal. The set
 lives in a page-local ref: it is not a preference, nothing renders it, and
 every read happens inside ``applyStates``.
 
 Fullscreen uses ``useFullscreenMode`` (``src/hooks/useFullscreenMode.ts``),
-shared with Montage. The hook takes the settings key it writes; it used to
-hardcode ``montageIsFullscreen``, which would have made the two pages share
-one flag, so entering fullscreen here would have put Montage in fullscreen
-too. Montage's ``FullscreenControls`` bar is not reused, because it carries
+shared with Montage. The hook takes the settings key it writes rather than
+hardcoding ``montageIsFullscreen``, so the two pages keep separate flags and
+entering fullscreen here does not put Montage in fullscreen. Montage's ``FullscreenControls`` bar is not reused, because it carries
 the kiosk lock and the tile-label toggle and would pull the kiosk store and
 the PIN pad onto a page that offers neither; ``LiveActivityChrome`` holds
 this page's own heading row and its thin fullscreen bar.

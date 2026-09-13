@@ -118,7 +118,7 @@ it, and the stream name is derived from the id and channel alone.
 Protocol negotiation runs in parallel
 -------------------------------------
 
-There is no ladder. Nothing tries WebRTC, waits for it to fail, then tries MSE.
+Protocols are not tried in sequence: nothing waits for WebRTC to fail before trying MSE.
 
 ``useGo2RTCStream`` joins the configured protocols into a single comma-separated
 string and hands it to the vendored ``video-rtc`` custom element once:
@@ -154,7 +154,7 @@ Both then race to produce video. If the peer connection delivers a video track,
 H.265 beats H.264, and a tie goes to WebRTC). The winner keeps playing and the
 loser is closed. When WebRTC wins, the WebSocket itself is closed because media
 now flows over the peer connection, a fact that makes teardown harder than
-closing a socket (see below). If WebRTC never produces a track, MSE simply keeps
+closing a socket (see below). If WebRTC never produces a track, MSE keeps
 playing.
 
 The protocol the UI reports is not necessarily the winner:
@@ -311,7 +311,7 @@ tile, every time you open the page.
 The single-monitor detail view passes ``bypassGo2rtcFailureCache`` so it neither
 reads nor writes this cache. Montage opens many connections at once and some fail
 under that load, marking those monitors failed. Without the bypass the detail view
-inherited that and skipped go2rtc, showing the loading placeholder until a reload.
+would inherit that failure and skip go2rtc, showing the loading placeholder until a reload.
 With the bypass the detail view always attempts go2rtc (a single connection
 succeeds), and a failure there falls back to MJPEG locally without poisoning the
 montage cache.
@@ -473,8 +473,8 @@ stripping them breaks WebRTC streaming on setups that rely on them.
 
 **Host guard.** ``hardenGo2RTCUrl`` logs a warning via ``log.http`` when a token
 *is* attached and the go2rtc hostname differs from the configured portal
-hostname, so a token cannot quietly be sent to a third-party host.
-``LiveMonitorPlayer`` passes ``expectedHost`` (the portal's hostname) for exactly
+hostname, so sending a token to a third-party host leaves a warning in the log.
+``LiveMonitorPlayer`` passes ``expectedHost`` (the portal's hostname) for
 this check. With no token in play today, the warning does not fire; the guard is
 there for when one is.
 
@@ -528,7 +528,7 @@ MJPEG``, or ``Go2RTC connected but no video frames, falling back to MJPEG``, or
 ``Go2RTC stream frozen, max retries reached, falling back to MJPEG``. The cache
 entry expires after 5 minutes, or on a full reload.
 
-**The badge reads MSE but I expected WebRTC.** Expected. The badge reports the
+**The badge reads MSE but I expected WebRTC.** This is expected. The badge reports the
 first protocol ``video-rtc`` started, and MSE is started before WebRTC. See
 `Protocol negotiation runs in parallel`_.
 
@@ -540,7 +540,7 @@ headers on the ``/ws`` path.
 **Connected, then falls back after 15 seconds.** The socket opened but no frames
 decoded. The stream ``{monitorId}_{channel}`` must exist in go2rtc's config; a
 monitor whose ``StreamChannel`` points at a substream the camera does not publish
-produces exactly this.
+produces this symptom.
 
 **The stream freezes and recovers, repeatedly.** The liveness watchdog is doing
 its job. ``Go2RTC stream frozen, retrying connection`` logs the reason

@@ -72,7 +72,7 @@ If you start scrolling or swiping instead of holding still, the name does not ap
 | Monitor groups and filters | Supported |
 | PTZ controls | Supported |
 | Themes | Light, Cream, Dark, Slate, Amber (+ System auto-detect) |
-| Internationalization | 5 languages (EN, DE, ES, FR, ZH) |
+| Internationalization | 7 languages (EN, DE, ES, FR, IT, RU, ZH) |
 
 ## What's Different from zmNinja?
 

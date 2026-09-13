@@ -52,8 +52,8 @@ Endpoints
      - Same as above, plus the OS-level notification permission.
    * - ``stun:stun.cloudflare.com:3478``, ``stun:stun.l.google.com:19302``
      - WebRTC ICE and NAT traversal for a go2rtc live stream. A STUN binding
-       request exposes the device's public IP address and port to the STUN
-       provider, which is the whole point of asking. No stream data crosses it.
+       request exists to learn the device's public IP address and port, so the
+       STUN provider sees both. No stream data crosses it.
      - Web, Desktop, iOS, Android, and only when the profile opts in
      - Not polled
      - Starting a go2rtc WebRTC live stream while **STUN Servers** is on.
@@ -89,7 +89,7 @@ Notes
   the active protocol list includes ``webrtc``. The server list itself is
   ``GO2RTC_STUN_SERVERS`` in ``lib/zmninja-ng-constants.ts``.
 
-Developer Notice Feed
+Developer notice feed
 ---------------------
 
 ``docs/notices.json`` is a JSON array of notice objects, validated on load, and
@@ -132,7 +132,7 @@ Deleting a notice on the client is a per-device exclusion, not a change to
 persists a ``deletedIds`` array alongside the existing ``readIds`` and
 ``dismissedBannerIds``, and ``useDeveloperNotices`` (``app/src/hooks/useDeveloperNotices.ts``)
 filters those ids out of the fetched feed on every refetch. The Developer
-Notice page offers a per-row delete button, a confirmed Clear all action, and
+Notice page has a per-row delete button, a confirmed Clear all action, and
 a Restore action that clears ``deletedIds`` and refetches.
 
 Authoring a notice, including ``scripts/generate_notice.mjs`` and how

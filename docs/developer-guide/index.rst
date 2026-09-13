@@ -53,7 +53,7 @@ links into the reference chapters.
    go2rtc-integration
 
 
-State Types
+State types
 -----------
 
 .. list-table::
@@ -78,14 +78,13 @@ State Types
      - The ZoneMinder server is the authority, and the app holds a copy that
        can go out of date
 
-The three are not interchangeable, and picking the wrong one is the most common
-structural mistake in this codebase. ``useState`` and Zustand are taught in
+The three are not interchangeable. ``useState`` and Zustand are taught in
 :doc:`02-react-fundamentals` and :doc:`03-state-management-zustand`. React
 Query, the cache that holds everything fetched from a ZoneMinder server, is
 also introduced in :doc:`02-react-fundamentals`; this app's use of it is in
 :doc:`07-api-and-data-fetching`.
 
-File Organization
+File organization
 -----------------
 
 ::
@@ -115,7 +114,7 @@ next to the code they cover, so ``lib/security/crypto.ts`` is tested by
 ``lib/security/__tests__/crypto.test.ts``. ``src/tests/`` holds only the Vitest
 setup file and the plugin mocks it registers.
 
-Development Quick Start
+Development quick start
 -----------------------
 
 Run the first ``npm install`` at the repository root, not in ``app/``. That is

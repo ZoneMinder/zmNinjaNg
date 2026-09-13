@@ -15,20 +15,20 @@ Start from what you are trying to do:
 ==============================================  ===============================================================
 Question                                        Section
 ==============================================  ===============================================================
-Build any ZoneMinder URL                        URL Builder (``lib/zm/url-builder.ts``)
-Route a monitor to the server that records it   Server Resolver (``lib/zm/server-resolver.ts``)
+Build any ZoneMinder URL                        URL builder (``lib/zm/url-builder.ts``)
+Route a monitor to the server that records it   Server resolver (``lib/zm/server-resolver.ts``)
 Close a ZMS stream without leaving a zombie     Delayed CMD_QUIT (``lib/zm/zms-quit.ts``)
-Store a password or a PIN                       Secure Storage, Crypto Utilities
-Give a monitor its own streaming port           Multi-port Resolution (``lib/monitor/multiport.ts``)
-Show a query error to the user                  Query Error Resolution (``lib/query/query-error.ts``)
-Navigate from outside a React component         Navigation Service (``lib/navigation.ts``)
-Save a montage layout per monitor group         Group-Keyed Montage Settings (``stores/settings.ts``)
-Count events the user has not seen yet          Monitor Seen Watermarks (``stores/monitorSeen.ts``)
-Read a profile setting from a non-React module  Profile Settings Accessor (``lib/profile/profile-settings.ts``)
+Store a password or a PIN                       Secure storage, Crypto utilities
+Give a monitor its own streaming port           Multi-port resolution (``lib/monitor/multiport.ts``)
+Show a query error to the user                  Query error resolution (``lib/query/query-error.ts``)
+Navigate from outside a React component         Navigation service (``lib/navigation.ts``)
+Save a montage layout per monitor group         Group-keyed montage settings (``stores/settings.ts``)
+Count events the user has not seen yet          Monitor seen watermarks (``stores/monitorSeen.ts``)
+Read a profile setting from a non-React module  Profile settings accessor (``lib/profile/profile-settings.ts``)
 Explain an icon-only button on a touch screen   useLongPressHint (``hooks/useLongPressHint.ts``)
 ==============================================  ===============================================================
 
-Shared Services (lib/ and services/)
+Shared services (lib/ and services/)
 ------------------------------------
 
 Logger (``lib/logger.ts``)
@@ -36,7 +36,7 @@ Logger (``lib/logger.ts``)
 
 Structured logging with sanitization and component-scoped helpers. Every
 entry goes to ``useLogStore`` (which backs the ``/logs`` page) and, where
-the platform allows, to a file (see Log File below).
+the platform allows, to a file (see Log file below).
 
 .. code:: typescript
 
@@ -64,8 +64,8 @@ the keys the sanitizer matches on, and the secrets inside survive redaction.
 The ERROR path used to do exactly that, which is how camera passwords
 reached shared log files (refs #307).
 
-``lib/security/url-credentials.ts`` is the one string rule worth knowing
-about. ZoneMinder stores a camera's password as URL userinfo
+One string rule, in ``lib/security/url-credentials.ts``, covers monitor
+passwords. ZoneMinder stores a camera's password as URL userinfo
 (``rtsp://admin:secret@cam/live``) in ``Monitor.Path``, repeats it in
 ``Monitor.Options``, and writes the same string into its own logs. No key
 name marks it and ``URL`` parsing never looked at ``rtsp://``, so one regex
@@ -76,7 +76,7 @@ pair, so what the UI hides and what the logs hide cannot drift apart.
 
 **Used by:** the whole app. Never call ``console.*`` directly.
 
-Global Error Sinks (``lib/global-error-handlers.ts``)
+Global error sinks (``lib/global-error-handlers.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Window-level listeners for ``unhandledrejection`` and ``error`` route the
@@ -88,7 +88,7 @@ location, and stack, truncated to ``LOGGING.maxStackLength`` characters
 (4000). They never call ``preventDefault``, so browser console reporting is
 unchanged. ``uninstallGlobalErrorHandlers()`` removes them; tests use it.
 
-HTTP Client (``lib/http.ts``)
+HTTP client (``lib/http.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 One request abstraction over four runtimes. ``lib/http.ts`` is the facade
@@ -108,7 +108,7 @@ correlation tags), and one adapter per platform.
    await httpGet('/api/events.json', { token: accessToken, params: { limit: 50 } });
    const blob = await httpGet<Blob>('/video.mp4', { responseType: 'blob' });
 
-Web uses ``fetch()`` plus a dev proxy (see Proxy URL Utilities). Mobile uses
+Web uses ``fetch()`` plus a dev proxy (see Proxy URL utilities). Mobile uses
 ``CapacitorHttp``, which bypasses the WebView's CORS enforcement entirely.
 Electron bridges the request over IPC (``electron/preload.cjs``) to the main
 process, which performs it with Electron's ``net`` module, again avoiding
@@ -116,13 +116,13 @@ renderer CORS.
 
 Self-signed certificate handling is not part of this module, because the
 adapters differ in how they surface TLS errors. On mobile a native plugin
-owns it (see SSL Trust); on Electron and web the user must add the CA to the
+owns it (see SSL trust); on Electron and web the user must add the CA to the
 system trust store.
 
 **Used by:** every module in ``api/``, the download service, and anything
 that touches the network. Raw ``fetch()`` and ``axios`` are banned.
 
-SSL Trust (``lib/security/ssl-trust.ts``)
+SSL trust (``lib/security/ssl-trust.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Most ZoneMinder installs sit behind a self-signed certificate, so the app
@@ -142,8 +142,7 @@ against it and rejects a mismatch.
 
 The certificate fetch is the accepted risk: to read a certificate you must
 first complete a handshake with a server you do not yet trust, so during that
-one fetch the native layer accepts any certificate. Pinning cannot bootstrap
-itself otherwise.
+one fetch the native layer accepts any certificate.
 
 .. code:: typescript
 
@@ -217,8 +216,8 @@ The pinned fingerprint (``SSLTrustPlugin.trustedFingerprint``) is a static
 Swift variable in the main app's process, and the ``SSLTrustURLProtocol``
 that consults it is registered only there, so neither is reachable from the
 extension. On a self-signed server the image download's TLS handshake fails
-and the push arrives without its image, silently: the extension just delivers
-the notification unchanged.
+and the extension delivers the notification without its image and without an
+error.
 
 Fixing this needs an App Group (or a shared Keychain access group) so the
 extension can read the fingerprint and validate the certificate itself.
@@ -281,7 +280,7 @@ character and the previous probe was aborted.
 
 **Used by:** ``pages/ProfileForm.tsx``, ``pages/Profiles.tsx``.
 
-Download Utilities (``services/download.ts``)
+Download utilities (``services/download.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Cross-platform file download with progress and cancellation.
@@ -332,7 +331,7 @@ calls it for you; call it yourself if you hand a stream URL to
 ``downloadSnapshotFromElement``; EventMontageView and EventDetail for
 ``downloadEventVideo``.
 
-Proxy URL Utilities (``lib/zm/proxy-utils.ts``)
+Proxy URL utilities (``lib/zm/proxy-utils.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In web development the Vite dev server runs on a different origin than the
@@ -354,7 +353,7 @@ production, Electron, and native builds pass the URL through unchanged.
 **Used by:** API functions (monitors, events), download utilities, the HTTP
 client.
 
-Server Resolver (``lib/zm/server-resolver.ts``)
+Server resolver (``lib/zm/server-resolver.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A ZoneMinder install can spread monitors across several recording servers.
@@ -391,7 +390,7 @@ never correct itself once the real server map arrived.
 **Used by:** ``hooks/useServerUrls.ts``, ``hooks/useMonitorStream.ts``, the
 Server page, MonitorDetail, EventDetail.
 
-URL Builder (``lib/zm/url-builder.ts``)
+URL builder (``lib/zm/url-builder.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Every ZoneMinder URL the app constructs comes from here: streams
@@ -439,7 +438,7 @@ connkey the first mount's teardown just killed.
 
 So the quit is scheduled after a grace delay (``ZM_INTEGRATION.cmdQuitGraceMs``,
 150 ms) and tracked per connkey. A remount reusing the connkey cancels the
-pending quit; a genuinely fresh mount generates a new connkey, so its cancel
+pending quit; a fresh mount generates a new connkey, so its cancel
 matches nothing and the abandoned stream's quit still fires.
 
 .. code:: typescript
@@ -460,7 +459,7 @@ connection may already be gone by the time the timer runs.
 **Used by:** ``components/events/ZmsEventPlayer.tsx``,
 ``components/events/EventThumbnailHoverPreview.tsx``.
 
-Multi-port Resolution (``lib/monitor/multiport.ts``)
+Multi-port resolution (``lib/monitor/multiport.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The server's ``ZM_MIN_STREAMING_PORT`` is fetched once during profile
@@ -484,7 +483,7 @@ portal's default port.
 Pass the result as ``minStreamingPort`` to the URL builders. Reading
 ``currentProfile.minStreamingPort`` at a call site bypasses the toggle.
 
-Event Icons (``lib/event/event-icons.ts``)
+Event icons (``lib/event/event-icons.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Maps a ZoneMinder event cause to a Lucide icon. ZoneMinder writes variants
@@ -504,7 +503,7 @@ Mapped causes: ``Motion`` to Move, ``Alarm`` to Bell, ``Signal`` to Wifi,
 
 **Used by:** EventCard and the event list components.
 
-Relative Time Labels (``lib/relative-time.ts``)
+Relative time labels (``lib/relative-time.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Event cards and the event detail screen show a compact "how long ago" label.
@@ -534,7 +533,7 @@ so when the narrow output starts with a sign the helper falls back to
 
 **Used by:** EventCard, EventDetail.
 
-Time Utilities (``lib/time.ts``)
+Time utilities (``lib/time.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Machine-facing date formatting: what the ZoneMinder API accepts and what an
@@ -559,7 +558,7 @@ canvas rendering, tooltips, and scrubber overlays.
 
 **Used by:** API functions, the Events page, filters, dashboard widgets.
 
-Crypto Utilities (``lib/security/crypto.ts``)
+Crypto utilities (``lib/security/crypto.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 AES-256-GCM encryption over the browser's SubtleCrypto, used by the web
@@ -585,7 +584,7 @@ present, which it is not on an insecure origin.
 **Used by:** ``lib/security/secureStorage.ts`` (its web fallback) and
 ``stores/auth.ts``.
 
-Secure Storage (``lib/security/secureStorage.ts``)
+Secure storage (``lib/security/secureStorage.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 One API over the iOS Keychain, the Android Keystore
@@ -611,20 +610,20 @@ reports which backend is active.
 **Used by:** ProfileService (passwords), ``lib/kioskPin.ts`` (PIN hash and
 salt).
 
-Platform Detection (``lib/platform.ts``)
+Platform detection (``lib/platform.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ``Platform`` exposes the booleans the rest of the app branches on:
 ``isElectron``, ``isNative``, ``isDesktopOrWeb``, ``shouldUseProxy``, and the
-per-OS flags. What matters is not the shape of the object but where the
-guards are mandatory. They gate every dynamic Capacitor import: a static
+per-OS flags. The guards are mandatory around every dynamic Capacitor
+import: a static
 import of a Capacitor plugin breaks the web build, so the pattern is always
 a platform check followed by ``await import(...)`` (the Native contract).
 
 **Used by:** the HTTP client, download utilities, proxy utilities, and every
 platform-specific branch.
 
-App Version (``lib/version.ts``)
+App version (``lib/version.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The marketing version comes from ``package.json`` and is bumped only on a prod
@@ -646,7 +645,7 @@ as ``test``.
 **Used by:** ``SidebarContent``, which renders ``getFullVersion()`` expanded
 and ``getAppVersion()`` collapsed.
 
-Safe-Area Bootstrap (``lib/safe-area-bootstrap.ts``)
+Safe-area bootstrap (``lib/safe-area-bootstrap.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Mirrors iOS ``UIView.safeAreaInsets`` into ``--sai-top`` / ``--sai-right`` /
@@ -677,7 +676,7 @@ The plugin's TypeScript surface (``SafeAreaInsets``, ``SafeAreaPlugin``) is in
 **Used by:** ``main.tsx``, plus the CSS in ``index.css`` and component styles
 that consume ``var(--sai-*)``.
 
-API Validator (``lib/zm/api-validator.ts``)
+API validator (``lib/zm/api-validator.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ZoneMinder returns numbers as strings and omits fields between versions, so
@@ -702,7 +701,7 @@ what makes a schema failure debuggable from a user's exported log file.
 
 **Used by:** every module in ``api/``. See :doc:`07-api-and-data-fetching`.
 
-Grid Utils (``lib/grid-utils.ts``)
+Grid utils (``lib/grid-utils.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Picks a grid shape for a small, fixed number of items: one item gets 1x1, two
@@ -718,9 +717,9 @@ to four get two columns, five or more get three.
 
 **Used by:** ``components/dashboard/widgets/MonitorWidget.tsx`` only. Montage
 and Monitors do not use it: their column count is user-chosen and stored per
-group (see Group-Keyed Montage Settings).
+group (see Group-keyed montage settings).
 
-Bandwidth Settings (``lib/zmninja-ng-constants.ts``)
+Bandwidth settings (``lib/zmninja-ng-constants.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Every polling and refresh interval in the app is a field on the
@@ -757,7 +756,7 @@ it.
 **Used by:** dashboard widgets, monitor views, the event player, montage, and
 anything that polls.
 
-Monitor Rotation (``lib/monitor/monitor-rotation.ts``)
+Monitor rotation (``lib/monitor/monitor-rotation.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ZoneMinder stores a monitor's orientation separately from its width and
@@ -771,7 +770,7 @@ with the dimensions swapped for 90 and 270 degrees.
 **Used by:** ``pages/MonitorDetail.tsx``, ``pages/EventDetail.tsx``,
 ``components/montage/hooks/useMontageGrid.ts``.
 
-Event Utilities (``lib/event/event-utils.ts``)
+Event utilities (``lib/event/event-utils.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ``getMaxColsForWidth(width, minWidth, gap)`` returns how many columns of at
@@ -783,7 +782,7 @@ as 0x0.
 **Used by:** ``components/events/EventListView.tsx``,
 ``components/events/EventMontageView.tsx``, ``hooks/useEventMontageGrid.ts``.
 
-Monitor Filters (``lib/monitor/filters.ts``)
+Monitor filters (``lib/monitor/filters.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Pure array-in, array-out functions, which is what makes them cheap to unit
@@ -802,14 +801,14 @@ group.
 **Used by:** ``getMonitors`` in ``api/monitors.ts``, which applies the
 per-profile exclusion at the API boundary so no page has to remember to.
 
-Profile Settings Accessor (``lib/profile/profile-settings.ts``)
+Profile settings accessor (``lib/profile/profile-settings.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 API modules run outside React and cannot call hooks, but they still need
-profile-scoped settings. This file used to read ``useProfileStore`` and
-``useSettingsStore`` directly, which closed a static import cycle:
-``api/events.ts`` imports this file, and ``stores/profile.ts`` reaches back
-into ``api/``. It now takes a ``ProfileSettingsGate``, the same
+profile-scoped settings. Reading ``useProfileStore`` and
+``useSettingsStore`` directly from this file would close a static import cycle
+(``api/events.ts`` imports this file, and ``stores/profile.ts`` reaches back
+into ``api/``), so it takes a ``ProfileSettingsGate``, the same
 dependency-injection shape as ``api/store-gates.ts``
 (:doc:`07-api-and-data-fetching`). ``stores/profile.ts`` builds the gate from
 both stores and registers it with ``setProfileSettingsGate(gate)`` at module
@@ -841,11 +840,11 @@ the top of the filtered list. Adding one second to the watermark makes the two
 operators agree on the same set. Input and output are ZM second-granularity
 local-time strings; a value that does not match the ``YYYY-MM-DD HH:mm:ss`` shape
 is returned unchanged. The watermark it reads comes from the store described
-under Monitor Seen Watermarks below.
+under Monitor seen watermarks below.
 
 **Used by:** ``hooks/useOpenMonitorEvents.ts`` only.
 
-Zone Utilities (``lib/monitor/zone-utils.ts``)
+Zone utilities (``lib/monitor/zone-utils.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Parses and renders ZoneMinder zone data for the read-only overlay on the
@@ -867,13 +866,12 @@ monitor detail page.
 
 **Used by:** ``ZoneOverlay``, ``ZoneLegend``.
 
-Query Error Resolution (``lib/query/query-error.ts``)
+Query error resolution (``lib/query/query-error.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Maps a React Query ``error`` to a message a user can act on. Events and
-Monitors both special-cased a 401 status, or an "unauthorized" substring in the
-message, into ``common.auth_required`` before falling back to a generic
-message. ``resolveQueryError`` is that logic extracted once.
+Maps a React Query ``error`` to a message a user can act on. A 401 status, or
+an "unauthorized" substring in the message, maps to ``common.auth_required``;
+anything else falls back to a generic message.
 
 .. code:: typescript
 
@@ -898,7 +896,7 @@ its one record has nothing to interpolate.
 **Used by:** Events, Monitors, Montage, Timeline, DeveloperNotice, AskPanel,
 AssistantOllamaSection.
 
-Navigation Service (``lib/navigation.ts``)
+Navigation service (``lib/navigation.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Bridges non-React code with React Router. A push notification handler runs
@@ -955,7 +953,7 @@ exported for tests and not normally called directly.
 ``components/kiosk/KioskOverlay.tsx`` (unlock),
 ``components/settings/AdvancedSection.tsx`` (set, change, clear).
 
-Log File (``lib/log-file/``)
+Log file (``lib/log-file/``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Mirrors entries from ``useLogStore`` to a file on disk, so a user can send a
@@ -997,7 +995,7 @@ gate any URL that the browser or native runtime loads directly with a token
 embedded in it. :doc:`07-api-and-data-fetching` covers the leeway window and
 the refresh-then-relogin fallthrough.
 
-Assistant Agent and Providers (``lib/assistant/``)
+Assistant agent and providers (``lib/assistant/``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The store-free core behind the "Ask" panel: a bounded tool loop in
@@ -1007,16 +1005,15 @@ tool gates, token accounting, and each backend's device quirks. The React
 surface that drives it (``AskPanel`` and its two shells) is in
 :doc:`16-platform-surfaces`.
 
-Shared Stores (stores/)
+Shared stores (stores/)
 -----------------------
 
 Montage layout and monitor-seen watermarks are Zustand stores rather than
 ``lib/`` utilities, and both are read by more than one feature.
 :doc:`03-state-management-zustand` covers how a store is built and
-subscribed to; what follows is what each one holds and why its shape is what
-it is.
+subscribed to.
 
-Group-Keyed Montage Settings (``stores/settings.ts``)
+Group-keyed montage settings (``stores/settings.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A profile can show all monitors or one selected monitor group, and each group
@@ -1113,7 +1110,7 @@ monitors, when a filter is active but ``filteredMonitorIds`` is empty.
 Montage and Monitors render gates, the event montage column control, and the
 persist layer of ``useSettingsStore``.
 
-Monitor Seen Watermarks (``stores/monitorSeen.ts``)
+Monitor seen watermarks (``stores/monitorSeen.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This store holds the "you have seen up to here" mark that the monitor card's
@@ -1147,7 +1144,7 @@ the seeding effect that makes it.
 and ``MontageMonitor``), and ``MonitorRecentEvents`` (stamps when the
 recent-events list is on screen).
 
-Shared Hooks (hooks/)
+Shared hooks (hooks/)
 ---------------------
 
 useStreamLifecycle (``hooks/useStreamLifecycle.ts``)
@@ -1230,12 +1227,12 @@ Profile switch cannot rely on unmount
 Each lifecycle instance also registers a teardown thunk in the module-level
 registry ``lib/monitor/active-streams.ts`` (``registerActiveStream`` /
 ``unregisterActiveStream``), and ``switchProfile`` in ``stores/profile.ts``
-awaits ``quitAllActiveStreams()`` as its very first step, before logout and
+awaits ``quitAllActiveStreams()`` as its first step, before logout and
 before the SSL-trust flip.
 
-The ordering is the point. Each tile's ``CMD_QUIT`` captures that tile's own
-per-server URL and token, and has to go out while the previous profile's trust
-setting and token are still in effect. React unmount races the switch: the new
+Each tile's ``CMD_QUIT`` captures that tile's own per-server URL and token, so
+it has to go out first, while the previous profile's trust setting and token
+are still in effect. React unmount races the switch: the new
 profile's SSL-trust setting can flip before the old self-signed server's
 ``CMD_QUIT`` leaves, the request then fails its TLS handshake, and an
 ``nph-zms`` process is orphaned. A central quit keyed only by monitor ID could
@@ -1270,7 +1267,7 @@ toggle and the Settings page's aggregate Streaming Mode row governing nothing.
 The split is by what a setting describes. ``viewMode`` and
 ``showAnalysisFrames`` describe the view, so the bucket the user is looking at
 owns them. Timeouts, multi-port and bandwidth describe the server, so they
-stay with the owning profile - ``useMonitorStream`` reads both, from
+stay with the owning profile: ``useMonitorStream`` reads both, from
 ``useProfileById`` and from here. Resolution keys off the app's mode, not the
 route, so the ``/all/monitors/:profileId/:id`` deep route follows the
 aggregate's bucket like every other all-mode surface.
@@ -1282,11 +1279,10 @@ back to its owning profile, so entering All mode never changes how anything
 streams until the user asks. ``AllServersStreamingSection`` on the Settings page
 is what writes it.
 
-The obvious alternative - read the aggregate bucket's own ``viewMode`` and
-treat "never written" as per-server - does not work, and the reason is worth
-remembering: ``updateProfileSettings`` seeds a fresh bucket with the whole
+Reading the aggregate bucket's own ``viewMode`` and treating "never written"
+as per-server does not work, because ``updateProfileSettings`` seeds a fresh bucket with the whole
 ``DEFAULT_SETTINGS`` shape, so the first write of ANY key (while aggregating,
-``lastRoute`` on the very first navigation) materializes ``viewMode:
+``lastRoute`` on the first navigation) materializes ``viewMode:
 'snapshot'`` alongside it. Absence is not a state a bucket stays in, and an
 e2e run caught exactly that: a montage that had merely been navigated to
 already read as Snapshot. An explicit value also keeps every default inside
@@ -1297,7 +1293,7 @@ distinguishing from absence.
 
 ``usePageViewMode`` answers the same question for a page-level control, which
 has no owning monitor to ask. Under "Per server" the answer differs per tile,
-so it reports streaming when ANY in-scope server streams - the analysis-frames
+so it reports streaming when ANY in-scope server streams: the analysis-frames
 toolbar button would otherwise disable itself over a grid of live tiles.
 
 **Used by:** ``hooks/useMonitorStream.ts``,
@@ -1460,8 +1456,6 @@ instead:
 
    <button {...useLongPressHint({ title: t('events.delete'), onClick: remove })} />
 
-Three decisions are worth knowing before you use it.
-
 The hint fires on hold, not on tap. A tap already runs the action, so a toast
 explaining what just happened would be noise on every use forever. The click
 that would follow the release is swallowed in ``onClickCapture``, so a hold
@@ -1485,14 +1479,14 @@ stays up.
 **Used by:** ``components/ui/button.tsx``, through both ``Button`` and
 ``HintButton``.
 
-Shared Components
+Shared components
 -----------------
 
 ``components/ui/`` holds the shadcn/ui primitives (``button``, ``card``,
 ``dialog``, ``popover``, ``select``, ``switch``, ``badge``, ``progress``, and
 the rest). They behave as the
 `shadcn/ui documentation <https://ui.shadcn.com/docs/components>`_ describes
-and this guide does not restate it. What follows is what this project wrote.
+and this guide does not restate it.
 
 ``button.tsx`` is the one primitive that diverges. ``Button`` runs its own
 props through ``useLongPressHint``, so any button carrying a ``title`` explains
@@ -1529,8 +1523,8 @@ The refresh control in every page header. Pressing it reloads the whole app,
 not just the page's query: ``onRefresh`` defaults to ``reloadApp``
 (``lib/reload.ts``), which calls ``window.location.reload()``. That re-runs
 bootstrap, re-authenticates, re-fetches everything, and restarts streams,
-which is what a user pressing refresh after a server hiccup actually wants. A
-partial React Query refetch would leave a dead stream dead.
+which is what a user needs after a server hiccup, since a partial React Query
+refetch would leave a dead stream dead.
 
 .. code:: tsx
 
@@ -1626,10 +1620,9 @@ HeatmapWidget, and the Dashboard when no widgets are configured.
 ErrorBanner and DetailPageSkeleton (``components/ui/query-state.tsx``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Every page rendered a query's ``error`` state as an icon-and-message box in a
-destructive tint, each with its own markup. ``ErrorBanner`` is that box.
-``DetailPageSkeleton`` is the loading skeleton MonitorDetail and EventDetail
-both defined inline: a title bar plus one aspect-video placeholder.
+``ErrorBanner`` renders a query's ``error`` state as an icon-and-message box in
+a destructive tint. ``DetailPageSkeleton`` is the loading skeleton for
+MonitorDetail and EventDetail: a title bar plus one aspect-video placeholder.
 
 .. code:: tsx
 
@@ -1668,8 +1661,8 @@ own.
 
    <SecureImage src={imageUrl} fallbackSrc={placeholderUrl} alt={alt} className="w-full" />
 
-It renders ``<img src={src}>`` plainly. The interesting part is ``onError``.
-On native, if the plain load failed, it retries through
+It renders ``<img src={src}>`` plainly. On native, if that load fails,
+``onError`` retries through
 ``getSession(profileId).client`` (or ``getCurrentSession()`` when the caller
 passes no profile) with ``responseType: 'base64'``, builds a ``data:`` URL from the response and its
 ``content-type`` header, and swaps that in. That second attempt exists because
@@ -1861,8 +1854,7 @@ without the two refs (``const { ref, innerRef, ...controls } = useZoomPan()``)
 when the compiler lint is in play: handing a component an object that still
 carries refs trips ``react-hooks/refs``.
 
-The buttons are an accessory, never the interaction itself. ``useZoomPan``
-binds wheel zoom, pinch, drag-to-pan, and arrow-key pan to the ``ref``
+Besides the buttons, ``useZoomPan`` binds wheel zoom, pinch, drag-to-pan, and arrow-key pan to the ``ref``
 container through ``@use-gesture``, whose binding effect runs on every render
 and reads the ref as it goes. ``ref`` is therefore a callback ref that also
 stores the node in state: a container rendered through a portal (the frame
@@ -2038,7 +2030,7 @@ it does, the class list before the ``|`` picks the icon for an extra
 detected-objects row (``detectedClassInfo``); the notes text itself is never
 rendered there.
 
-Adding a New Shared Service
+Adding a new shared service
 ---------------------------
 
 Pick the directory by what the code depends on, not by what it is about.

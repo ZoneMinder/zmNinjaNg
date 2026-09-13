@@ -9,7 +9,7 @@ nowhere in ``app/src``: storage goes through ``localStorage`` under Zustand's
 ``persist`` middleware, or through ``lib/security/secureStorage.ts`` when the
 value is a credential.
 
-UI and Visualization
+UI and visualization
 --------------------
 
 react-grid-layout
@@ -21,7 +21,7 @@ once at module scope: ``const WrappedGridLayout = WidthProvider(GridLayout)``.
 ``WidthProvider`` measures the container and feeds its width down, which the
 grid needs because it positions items in pixels rather than CSS columns.
 
-The reason it fits here is the shape of what it hands back. A layout is a plain
+It fits because a layout is a plain
 object: ``{ i, x, y, w, h }``, with optional ``minW`` and ``minH``. That is the
 ``WidgetLayout`` interface in ``stores/dashboard.ts``, and it drops straight
 into the persisted store (keyed by profile id, under
@@ -83,13 +83,13 @@ Charting for dashboard widgets. ``components/dashboard/widgets/TimelineWidget.ts
 uses ``BarChart``, ``Bar``, ``XAxis``, ``YAxis``, ``Tooltip``, and
 ``ResponsiveContainer`` to plot event counts over time.
 
-Data and Logic
+Data and logic
 --------------
 
 date-fns
 ~~~~~~~~
 
-Date arithmetic and formatting. The functions actually imported across
+Date arithmetic and formatting. The functions imported across
 ``app/src`` are ``format``, ``parseISO``, ``formatDistanceToNow``, ``isToday``,
 ``isYesterday``, and arithmetic helpers such as ``addHours``, ``addDays``,
 ``subDays``, ``startOfHour``, ``startOfDay``, ``startOfWeek``, ``startOfMonth``,
@@ -106,7 +106,7 @@ scrubber overlays as much as it covers JSX.
 
 Two things that look like date-fns but are not. Relative labels such as "5m ago"
 come from ``Intl.RelativeTimeFormat`` in ``lib/relative-time.ts``, because it
-localizes into all five bundled languages without shipping locale files.
+localizes into all seven bundled languages without shipping locale files.
 Converting ZoneMinder's server-local timestamps for display uses
 ``Intl.DateTimeFormat`` with an explicit ``timeZone`` in ``lib/time.ts``. The
 separate ``date-fns-tz`` package is used only by the assistant, where
@@ -154,7 +154,7 @@ from the ``queryKeys`` factory in ``lib/query/query-keys.ts`` rather than an
 inline array, so that a mutation invalidating a key cannot drift out of sync
 with the queries reading it (the Server queries contract in ``AGENTS.project.md``).
 
-The Events page's endless list is the exception worth knowing about. It is not
+The Events page's endless list is an exception. It does not use
 ``useInfiniteQuery``: ``hooks/useEventPagination.ts`` keeps a growing result
 count in ``useState`` (mirrored into a store so it survives remounts) and
 ``pages/Events.tsx`` re-runs a plain ``useQuery`` with
@@ -170,7 +170,7 @@ when the cache entry changes) is taught in :doc:`02-react-fundamentals`. How
 this app wires it to ZoneMinder, including the query-key factory, invalidation,
 error walls, and the polling intervals, is in :doc:`07-api-and-data-fetching`.
 
-Mobile and Platform
+Mobile and platform
 -------------------
 
 @capacitor/\*

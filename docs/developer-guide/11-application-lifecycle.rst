@@ -3,7 +3,7 @@ Application Lifecycle
 
 How the app runs from launch to shutdown, a runtime map of zmNinjaNg.
 
-Entry Point (``index.html`` to ``main.tsx``)
+Entry point (``index.html`` to ``main.tsx``)
 --------------------------------------------
 
 Everything starts at ``app/index.html``, the container for the React app. The
@@ -26,10 +26,10 @@ component twice in development, running each effect's setup, then its cleanup,
 then its setup again. That matters more here than in most apps, because effects
 in this codebase open MJPEG streams and WebSocket connections. Anything that
 connects on mount has to survive being torn down and reconnected immediately, so
-several hooks guard or delay their connect for exactly this reason.
+several hooks guard or delay their connect for this reason.
 ``StrictMode`` has no effect in a production build.
 
-Bootstrapping Phase (``App.tsx``)
+Bootstrapping phase (``App.tsx``)
 ---------------------------------
 
 When ``<App />`` renders, the app is not yet ready to use. It must
@@ -51,7 +51,7 @@ web/Electron.
 ``onRehydrateStorage`` and ``services/profile-initialization.ts`` picks up from
 there.
 
-Profile Bootstrap
+Profile bootstrap
 ~~~~~~~~~~~~~~~~~
 
 Once storage is rehydrated and a profile exists, ``isBootstrapping`` becomes
@@ -87,8 +87,7 @@ the self-signed certificate flag can create the bucket before the first
 bootstrap ever runs (the first profile is only bootstrapped on the next
 launch, and ``ProfileForm`` writes the certificate flag before switching to a
 self-signed profile), and every bucket write copies ``DEFAULT_SETTINGS`` in, so
-``viewMode`` is present from the first write. An earlier bucket-existence
-check never fired on either path. The user's toggle and the bootstrap both set
+``viewMode`` is present from the first write. The user's toggle and the bootstrap both set
 ``viewModeChosen`` alongside ``viewMode``; from then on the mode belongs to the
 user, so a later bootstrap leaves it alone even if the server has grown since. The step honors the profile's
 ``forceDisableMultiPort`` override the same way Settings does, and when the
@@ -105,8 +104,8 @@ warning on failure. None of them rethrows, so a step that fails does not stop
 the next one, and the app finishes bootstrapping in a degraded state rather
 than not at all. That includes authentication: a login failure is logged as
 "this might be OK if server does not require auth" and the sequence continues,
-because a public ZoneMinder server is a real configuration. What that buys is
-also what it costs, since a wrong password and a public server look identical
+because a public ZoneMinder server is a real configuration. The cost is that a
+wrong password and a public server look identical
 from here until the first authenticated query returns 401.
 
 Two timers bound the whole thing, both from ``BOOTSTRAP_TIMEOUTS``:
@@ -114,7 +113,7 @@ Two timers bound the whole thing, both from ``BOOTSTRAP_TIMEOUTS``:
 of the same length flips ``isBootstrapping`` to ``false`` so the overlay cannot
 outlive it.
 
-Bootstrap Server Map
+Bootstrap server map
 ~~~~~~~~~~~~~~~~~~~~
 
 After authentication, the bootstrap process calls
@@ -130,7 +129,7 @@ For single-server setups the map is empty. All URL lookups in
 ``resolveMonitorUrls`` and ``getPortalUrlForMonitor`` return the
 profile's default URLs when the map is empty or a ServerId is not found.
 
-Bootstrap Cancellation
+Bootstrap cancellation
 ~~~~~~~~~~~~~~~~~~~~~~
 
 If the server is unreachable or bootstrap takes too long, users can
@@ -141,7 +140,7 @@ which clears ``currentProfileId``. With no active profile the router sends the
 user to ``/profiles`` to pick another one, or to ``/profiles/new`` when none
 exist.
 
-Initialization Complete
+Initialization complete
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Once bootstrap completes (or is cancelled):
@@ -155,14 +154,14 @@ Once bootstrap completes (or is cancelled):
   - **Profiles exist, none active**: Redirects to ``/profiles`` to pick one.
   - **No profiles at all**: Redirects to ``/profiles/new``.
 
-Authentication Flow
+Authentication flow
 -------------------
 
 zmNinjaNg handles authentication differently than a typical SaaS app because
 it connects to potentially *any* ZoneMinder server, each with different
 auth requirements.
 
-Token Exchange
+Token exchange
 ~~~~~~~~~~~~~~
 
 On login, or when the app wakes up:
@@ -181,11 +180,10 @@ On login, or when the app wakes up:
 4. **Store**: Tokens are saved to ``useAuthStore`` (in memory mostly,
    refresh token persisted).
 
-``refreshToken()`` in the same file posts to ``/host/login.json`` as well,
-sending the refresh token instead of the credentials. There is one login
-endpoint, not two.
+``refreshToken()`` in the same file posts to the same ``/host/login.json``
+endpoint, sending the refresh token instead of the credentials.
 
-Refresh Loop
+Refresh loop
 ~~~~~~~~~~~~
 
 Access tokens expire on a schedule the ZoneMinder server chooses. The app has to
@@ -199,8 +197,7 @@ replace one before it lapses, without the user noticing.
   it calls ``getFreshAccessToken()``.
 - **Why the visibility check**: on mobile and in throttled browser tabs the
   interval timer stops firing while backgrounded, so a token can lapse with no
-  check having run. The token is refreshed on the way back in, not on a timer
-  that was asleep.
+  check having run.
 - **Why one shared call**: the timer, a component's proactive refresh, and a
   401 recovery can all want a new token at once. ``refreshAccessToken`` in
   ``stores/auth.ts`` keeps a single in-flight promise, so concurrent callers
@@ -214,7 +211,7 @@ replace one before it lapses, without the user noticing.
   they were on, and the next query needing auth fails with a 401 that
   ``resolveQueryError`` turns into a localized prompt to re-authenticate.
 
-Steady State
+Steady state
 ------------
 
 Once logged in and on the Dashboard, several background processes keep
@@ -244,7 +241,7 @@ values are given.
    leak the old process. The requested ``scale`` is part of that connection's
    identity: a running nph-zms keeps sending the size it started at, so
    changing the scale quits the key and mints a new one rather than re-pointing
-   the ``<img>``. Zooming into a feed does exactly that, asking for
+   the ``<img>``. Zooming into a feed does that, asking for
    ``ZMS_FULL_SCALE`` while zoomed and dropping back to the profile's Stream
    scale on reset. The frame gate in ``useMonitorStream`` holds the picture
    already on screen across that swap, the same way it does across a snapshot
@@ -275,7 +272,7 @@ values are given.
 For a reference of all timers, polling intervals, and scheduled
 actions across the application, see :doc:`07-api-and-data-fetching`.
 
-Mobile Lifecycle (Capacitor)
+Mobile lifecycle (Capacitor)
 ----------------------------
 
 On iOS and Android, the app has unique lifecycle states handled by the
@@ -291,8 +288,7 @@ mostly stops. Intervals stop firing, so anything that depends on a timer is
 stale on return.
 
 Nothing explicitly pauses the MJPEG streams. The OS suspends the webview, the
-socket goes quiet, and the stream is simply dead when the app comes back.
-Recovery happens on resume, not on the way out.
+socket goes quiet, and the stream is dead when the app comes back.
 
 The montage while aggregating is the one exception, and only when
 ``allModePauseHidden`` is on: ``useHiddenPause`` fires
@@ -309,7 +305,6 @@ Resuming
 
 When the user re-opens the app:
 
-- **State**: App comes to Foreground.
 - **Streams**: ``useVisibilityResume`` fires and ``useMonitorStream`` mints a
   fresh ``connkey`` and rebinds. It debounces on ``minHiddenMs`` (1500ms by
   default) so that a quick alt-tab does not trigger a reconnect storm. On native
@@ -335,20 +330,20 @@ When the user re-opens the app:
   store, then clears the native badge via
   ``FirebaseMessaging.removeAllDeliveredNotifications()``.
 
-Note two things resume does **not** do. There is no idle timeout: the app does
-not track a last-interaction timestamp and does not re-lock after a period
-away. And biometric authentication is not a resume gate. Kiosk lock is
+Resume has no idle timeout: the app does not track a last-interaction timestamp
+and does not re-lock after a period away. Biometric authentication is not a
+resume gate either. Kiosk lock is
 user-initiated (``useKioskLock``, from the sidebar or the fullscreen montage
 controls), and ``KioskOverlay`` offers biometrics only as a way to dismiss a
 lock the user already set. ``useKioskStore`` is ephemeral and resets to
 unlocked on app restart.
 
-Navigation Lifecycle
+Navigation lifecycle
 --------------------
 
 Navigation is ``react-router-dom``, and ``App.tsx`` mounts it as a
-``HashRouter`` rather than a ``BrowserRouter``. That is a deployment
-constraint, not a preference. Electron and the Capacitor WebViews load the app
+``HashRouter`` rather than a ``BrowserRouter`` because deployment requires
+it. Electron and the Capacitor WebViews load the app
 from ``file://`` or from a static server with no rewrite rule, and a
 ``BrowserRouter`` puts the route in the URL path, so reloading on
 ``/monitors`` asks for a ``/monitors`` document that does not exist and returns
