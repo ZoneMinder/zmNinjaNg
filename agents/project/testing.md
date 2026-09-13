@@ -52,7 +52,9 @@ Read before tests, UI work, navigation work, or platform checks.
   `Missing step`, which reads like a failing test and is not one.
 - Test UI and navigation changes with relevant feature e2e.
 - New interactive UI needs a kebab-case `data-testid`. Repeated elements suffix the entity id (`monitor-card-${monitor.Id}`); variants suffix kind or role (`assistant-message-${msg.role}`).
-- Do not use fixed `waitForTimeout`. Use auto-retrying `expect`.
+- Do not use fixed `waitForTimeout`. Use auto-retrying `expect`. The
+  quality ratchet holds the count of sleeps in `app/tests/steps/` and lists
+  the files when it grows.
 - Capability-based e2e skips must derive from API or fixture data, never visibility of UI under test. When capability exists, assert the UI.
 - Pages that stay mounted across a route param change (`/monitors/:id`,
   `/events/:id`) repaint their content either way, so a DOM property such as a

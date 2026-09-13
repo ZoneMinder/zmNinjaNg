@@ -1,5 +1,7 @@
 {
   "internalMockFiles": 67,
   "existenceAssertions": 208,
-  "avoidedTermHits": 114
+  "avoidedTermHits": 114,
+  "allProfilesIdRefs": 18,
+  "fixedSleeps": 39
 }

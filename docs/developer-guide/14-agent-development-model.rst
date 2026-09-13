@@ -232,7 +232,7 @@ Quality ratchet
 
 The quality ratchet
 (`quality-ratchet.mjs <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/scripts/quality-ratchet.mjs>`__,
-checked by ``quality-ratchet.test.ts``) stores three counts in
+checked by ``quality-ratchet.test.ts``) stores five counts in
 ``app/.quality-baseline.json`` and fails when any of them grows:
 
 - test files that mock the app's own stores, hooks, services, or components
@@ -241,8 +241,16 @@ checked by ``quality-ratchet.test.ts``) stores three counts in
 - uses of words that the
   `glossary <https://github.com/ZoneMinder/zmNinjaNg/blob/main/agents/project/glossary.md>`__
   lists under ``_Avoid_``, counted in the agent files and the developer guide
+- references to ``ALL_PROFILES_ID`` outside tests, which the Aggregation
+  contract allows only in the migration and legacy arms that already exist
+- fixed sleeps (``waitForTimeout``) in the end-to-end step files, which the
+  testing playbook forbids and which had sat at the same count through
+  thirteen commits
 
-The counts started at 121 files, 302 assertions, and 115 words.
+The first three counts started at 121 files, 302 assertions, and 115 words.
+The last two, added in September 2026, started at 18 references and 39
+sleeps. When the sleep count grows, the failure lists the files, so the
+author sees which step to rewrite with an auto-retrying ``expect``.
 
 What gates cannot check
 -----------------------

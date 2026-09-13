@@ -6,10 +6,12 @@
  * as M1 predicts: C6 (assertions must be able to fail) had 302 existence-only
  * assertions; the testing playbook's seam guidance had 121 test files mocking
  * the app's own stores, hooks, services, or components instead of testing
- * through them; the glossary's avoided terms kept appearing in prose. Like
- * the lint ratchet (refs #281), this records each count in
- * `.quality-baseline.json` and fails when one grows. Lowering is welcome;
- * raising needs a reason in the commit message (C7).
+ * through them; the glossary's avoided terms kept appearing in prose. Two
+ * more joined later: the Aggregation contract's ALL_PROFILES_ID clause (18
+ * references) and the testing playbook's fixed-sleep rule (40 sleeps that
+ * had not moved through 13 commits). Like the lint ratchet (refs #281), this
+ * records each count in `.quality-baseline.json` and fails when one grows.
+ * Lowering is welcome; raising needs a reason in the commit message (C7).
  *
  *   node scripts/quality-ratchet.mjs            print counts
  *   node scripts/quality-ratchet.mjs --update   rewrite the baseline
@@ -85,11 +87,32 @@ export function avoidedTermHits(terms = avoidedTerms()) {
   return hits;
 }
 
+/**
+ * Non-test references to the ALL sentinel. The Aggregation contract allows
+ * the rehydrate migration and the legacy arms that exist and no new ones;
+ * a count that may only fall is that clause by machine.
+ */
+export function allProfilesIdRefs(files = walk(path.join(appDir, 'src'), /\.tsx?$/)) {
+  return files
+    .filter((f) => !/\.test\.tsx?$/.test(f) && !f.includes(`${path.sep}tests${path.sep}`))
+    .reduce((n, f) => n + (readFileSync(f, 'utf8').match(/\bALL_PROFILES_ID\b/g)?.length ?? 0), 0);
+}
+
+/** Fixed sleeps in e2e step files, per file. The testing playbook forbids them; each one is a latent flake. */
+export function fixedSleeps(files = walk(path.join(appDir, 'tests/steps'), /\.ts$/)) {
+  const hits = files
+    .map((f) => [path.relative(appDir, f), readFileSync(f, 'utf8').match(/waitForTimeout\(/g)?.length ?? 0])
+    .filter(([, n]) => n > 0);
+  return Object.fromEntries(hits);
+}
+
 export function currentCounts() {
   return {
     internalMockFiles: internalMockFiles().length,
     existenceAssertions: existenceAssertions(),
     avoidedTermHits: avoidedTermHits(),
+    allProfilesIdRefs: allProfilesIdRefs(),
+    fixedSleeps: Object.values(fixedSleeps()).reduce((a, b) => a + b, 0),
   };
 }
 

@@ -10,6 +10,7 @@ import {
   avoidedTerms,
   baselinePath,
   currentCounts,
+  fixedSleeps,
   internalMockFiles,
 } from '../../scripts/quality-ratchet.mjs';
 
@@ -48,6 +49,20 @@ describe('quality ratchet (.quality-baseline.json)', () => {
       counts.avoidedTermHits,
       `${counts.avoidedTermHits} > baseline ${baseline.avoidedTermHits}; use the glossary's canonical term`,
     ).toBeLessThanOrEqual(baseline.avoidedTermHits);
+  });
+
+  it('ALL_PROFILES_ID references outside tests do not multiply (Aggregation contract)', () => {
+    expect(
+      counts.allProfilesIdRefs,
+      `${counts.allProfilesIdRefs} > baseline ${baseline.allProfilesIdRefs}; an aggregate is a virtual profile id, test it with isAggregateProfileId`,
+    ).toBeLessThanOrEqual(baseline.allProfilesIdRefs);
+  });
+
+  it('fixed sleeps in e2e steps do not multiply', () => {
+    expect(
+      counts.fixedSleeps,
+      `${counts.fixedSleeps} > baseline ${baseline.fixedSleeps}; await the condition with an auto-retrying expect instead:\n${Object.entries(fixedSleeps()).map(([f, n]) => `${f}: ${n}`).join('\n')}`,
+    ).toBeLessThanOrEqual(baseline.fixedSleeps);
   });
 
   it('no test file stubs zustand/react/shallow', () => {
