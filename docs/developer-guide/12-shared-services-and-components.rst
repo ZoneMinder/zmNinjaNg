@@ -5,8 +5,10 @@ Code that more than one page needs lives in five places: ``lib/`` for pure
 utilities with no React and no store imports, ``services/`` for platform
 bridges, ``stores/`` for the client state several features share, ``hooks/``
 for React-specific logic, and ``components/ui`` plus ``components/common``
-for shared components. This chapter walks the pieces that carry behavior
-worth explaining. Feature components that belong to one screen are in
+for shared components. This chapter covers the modules in those folders
+whose behavior is not obvious from their signatures: URL building, TLS trust,
+stream teardown, settings resolution, and the shared hooks and components
+built on them. Feature components that belong to one screen are in
 :doc:`05-component-architecture`; the API layer is in
 :doc:`07-api-and-data-fetching`.
 
@@ -125,12 +127,11 @@ that touches the network. Raw ``fetch()`` and ``axios`` are banned.
 SSL trust (``lib/security/ssl-trust.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Most ZoneMinder installs sit behind a self-signed certificate, so the app
-has to trust a certificate the OS does not. It does that with TOFU (Trust
-On First Use) pinning rather than a blanket "accept anything" switch: the
-first connection shows the user the certificate's SHA-256 fingerprint, and
-every connection afterward is validated against the fingerprint the user
-accepted. The setting is profile-scoped (``allowSelfSignedCerts`` and
+Many home ZoneMinder installs use a self-signed certificate, so the app
+has to trust a certificate the OS does not. On iOS and Android it uses TOFU
+(Trust On First Use) pinning. The first connection shows the user the
+certificate's SHA-256 fingerprint, and every connection afterward is
+validated against the fingerprint the user accepted. The setting is profile-scoped (``allowSelfSignedCerts`` and
 ``trustedCertFingerprint`` in ``ProfileSettings``) and off by default.
 
 The user enables self-signed certificates and connects.
@@ -140,9 +141,11 @@ expiry, and on accept the fingerprint is written to
 ``ProfileSettings.trustedCertFingerprint``. Every later connection validates
 against it and rejects a mismatch.
 
-The certificate fetch is the accepted risk: to read a certificate you must
-first complete a handshake with a server you do not yet trust, so during that
-one fetch the native layer accepts any certificate.
+While self-signed trust is on, the native layer accepts any certificate from
+a host that has no stored fingerprint, including during the certificate
+fetch. It has to, because reading a certificate means completing a handshake
+with a server the app does not yet trust. Once a host has a fingerprint, a
+certificate that does not match it is rejected.
 
 .. code:: typescript
 
@@ -160,19 +163,22 @@ one fetch the native layer accepts any certificate.
    // trust for HTTP requests only and does not install the WebView handler.
    const certInfo = await getServerCertFingerprint('https://zm.example.com');
 
-   // Pin (or unpin, with null) after the user decides.
-   await setTrustedFingerprint(certInfo.fingerprint);
+   // Pin after the user accepts: store the fingerprint, then re-apply.
+   updateProfileSettings(profileId, { allowSelfSignedCerts: true, trustedCertFingerprint: certInfo.fingerprint });
+   await applyTrustedCertificates();
 
-The three plugin methods behind those calls (``plugins/ssl-trust/definitions.ts``):
+The five plugin methods behind those calls (``plugins/ssl-trust/definitions.ts``):
 ``enable()`` / ``disable()`` activate the ``TrustManager`` used by HTTP
-requests and do not touch the WebView; ``setTrustedFingerprint({ fingerprint })``
-installs the WebView SSL handler only when the fingerprint is non-null;
+requests and do not touch the WebView; ``isEnabled()`` reports that state;
+``setTrustedFingerprints({ entries })`` takes one host and fingerprint pair per
+host and installs the WebView SSL handler only when the list is non-empty;
 ``getServerCertFingerprint({ url })`` returns the leaf certificate's
 fingerprint, subject, issuer, and expiry.
 
-On Android, ``onReceivedSslError`` extracts the certificate via
+On Android, ``onReceivedSslError`` proceeds for a host with no stored
+fingerprint. For a host with one, it extracts the certificate via
 ``SslCertificate.saveState()``, computes SHA-256, and calls ``proceed()``
-only on a fingerprint match, never unconditionally; HTTP requests go through
+only on a match; HTTP requests go through
 a ``TrustManager`` that validates fingerprints. On iOS, both ``URLProtocol``
 and ``WKNavigationDelegate`` validate with CommonCrypto SHA-256.
 
@@ -252,7 +258,7 @@ And credentials never appear in a log message:
 Discovery (``services/discovery.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Users type a hostname, not four URLs. Discovery probes for the API endpoint
+Users type a hostname. Discovery probes for the API endpoint
 and derives ``portalUrl``, ``apiUrl``, and ``cgiUrl`` from wherever it finds
 one. It tries HTTPS before HTTP for a scheme-less input, probes ``/zm/api``
 then ``/api``, and skips the remaining probes on a connection error rather
@@ -308,7 +314,8 @@ crash on a phone.
 Snapshot URLs must be normalized first
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A ZMS URL with ``mode=jpeg`` and ``maxfps`` is a live MJPEG stream, not a
+ZMS is ZoneMinder's streaming CGI program (``nph-zms``), which serves live
+and recorded frames over HTTP. A ZMS URL with ``mode=jpeg`` and ``maxfps`` is a live MJPEG stream, not a
 file. It never ends, so an HTTP client waiting for the response body waits
 forever:
 
@@ -429,7 +436,9 @@ below, which honors the user's opt-out.
 Delayed CMD_QUIT (``lib/zm/zms-quit.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Closing a ZMS stream means sending ``CMD_QUIT`` for its connkey, or the server
+Each ZMS stream carries a connkey, a number the app picks that identifies
+that stream's ``nph-zms`` process on the server. Closing a ZMS stream means
+sending ``CMD_QUIT`` for its connkey, or the server
 leaves an ``nph-zms`` process running. Sending it immediately on unmount breaks
 development, because React's ``StrictMode`` deliberately mounts every
 component, unmounts it, and mounts it again on the first render of a dev build,
@@ -552,7 +561,7 @@ Nothing a user reads comes from this module. User-facing dates go through
 those honor the per-profile ``dateFormat`` and ``timeFormat`` settings. For a
 short weekday label use ``fmtWeekday`` (hook) or ``formatAppWeekday``
 (standalone); weekday has no user preset, but routing it through the same
-layer keeps every user-visible date on one seam. Never call date-fns
+layer means every user-visible date goes through the same formatting helpers. Never call date-fns
 ``format()`` with a hard-coded pattern for output a user will see, including
 canvas rendering, tooltips, and scrubber overlays.
 
@@ -1124,8 +1133,7 @@ so watermarks are per device and do not sync across installs.
    // stores/monitorSeen.ts
    profileWatermarks: Record<string, Record<string, string | null>>;
 
-An absent key and a stored ``null`` mean different things, and the difference
-drives the badge. An **absent** entry means the monitor has never been seeded:
+An **absent** entry means the monitor has never been seeded:
 ``seed`` writes its newest event on the first response and the card shows no
 badge, so a fresh install does not open on a week of backlog. A stored **null**
 means the monitor had no events at all when it was seeded, so every event since
@@ -1186,29 +1194,31 @@ unmount, which is what actually releases the browser's connection.
 
 Three transitions end a key's life without an unmount, and each one quits it:
 ``enabled`` going false, a profile switch (below), and ``viewMode`` leaving
-``'streaming'``. The last is easy to miss, because by the time any other
-teardown runs the hook already reads ``'snapshot'`` and every quit path is
-gated on ``'streaming'``, so the key it holds would never be closed at all: a
-tile dropped to snapshots left a running ``nph-zms`` process behind until ZM's
-own idle timeout. The Streaming Mode setting reaches that transition, and so
-does the All-mode idle downgrade. Both directions of the flip then mint a
+``'streaming'``. The last is easy to miss. By the time any other teardown
+runs, the hook already reads ``'snapshot'``, and every quit path is gated on
+``'streaming'``. Without this transition the key it holds would never be
+closed at all: a tile dropped to snapshots left a running ``nph-zms`` process
+behind until ZM's own idle timeout. The Streaming Mode setting reaches that
+transition. So does the idle downgrade on an aggregate's montage (an
+aggregate is a virtual profile that fans out over several servers): after
+``allModeIdleMinutes`` with no pointer, key, or touch activity, its tiles fall
+back to snapshots. Both directions of the flip then mint a
 fresh key, because a snapshot URL carries a connkey too and reusing a quit one
 risks colliding with the state it left on the server. A flip arriving in the
-same commit as an ``enabled`` change belongs to the disable teardown, and one
-arriving with a monitor change has no correct move
-available: the key it holds was opened against the previous monitor's URL and
-port, while every prop now describes the new one. It stands down in both
-cases. The monitor-change path is a pre-existing gap rather than a delegation
-(the regeneration effect returns early on a live hook, so it does not mint for
-the new monitor either), and it is unreachable from the app today because
+same commit as an ``enabled`` change belongs to the disable teardown. A flip
+arriving with a monitor change cannot be handled correctly, because the key it
+holds was opened against the previous monitor's URL and port, while every prop
+now describes the new one. The hook does nothing in both cases. On a monitor
+change, nothing quits the old key or mints one for the new monitor (the
+regeneration effect returns early on a live hook). That path is unreachable from the app today because
 every call site that swaps monitors remounts the player instead, keyed by
 monitor id (refs #201).
 
 ``useMonitorStream`` builds the retry behavior on top: ``reportStreamError``
 (wired to ``<img onError>``) schedules an exponential-backoff reconnect
 (``mjpegReconnectBaseDelayMs`` 1000 ms, doubling to ``mjpegReconnectMaxDelayMs``
-15000 ms, capped at ``mjpegReconnectMaxAttempts`` 6 attempts unless insomnia
-mode is on), and ``reportStreamLoad`` (wired to ``<img onLoad>``) resets the
+15000 ms, capped at ``mjpegReconnectMaxAttempts`` 6 attempts unless the ``insomnia``
+setting, which keeps the screen awake, is on), and ``reportStreamLoad`` (wired to ``<img onLoad>``) resets the
 backoff after a good frame.
 
 The hook also answers whether there is a picture to show at all. ``hasFrame``
@@ -1245,8 +1255,10 @@ useViewPrefs (``hooks/useViewPrefs.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Answers which settings bucket a rendered stream should obey. Preferences are
-two-tier: an aggregate keeps its own bucket, stored under the group's own id,
-separate from every individual profile's.
+two-tier. An aggregate (a virtual profile over several profiles, such as All
+Servers) keeps its own bucket, the settings object the settings store holds
+per profile id. The aggregate's bucket is stored under its own id, separate
+from every individual profile's.
 
 Page-level controls get that for free, because ``useCurrentProfile`` already
 keys off ``currentProfileId`` and so resolves to the aggregate's own bucket
@@ -1264,7 +1276,7 @@ toggle and the Settings page's aggregate Streaming Mode row governing nothing.
    // Owning profile in single mode; the aggregate's bucket while aggregating.
    const { viewMode, showAnalysisFrames } = useViewPrefs(profileId);
 
-The split is by what a setting describes. ``viewMode`` and
+``viewMode`` and
 ``showAnalysisFrames`` describe the view, so the bucket the user is looking at
 owns them. Timeouts, multi-port and bandwidth describe the server, so they
 stay with the owning profile: ``useMonitorStream`` reads both, from
@@ -1283,8 +1295,7 @@ Reading the aggregate bucket's own ``viewMode`` and treating "never written"
 as per-server does not work, because ``updateProfileSettings`` seeds a fresh bucket with the whole
 ``DEFAULT_SETTINGS`` shape, so the first write of ANY key (while aggregating,
 ``lastRoute`` on the first navigation) materializes ``viewMode:
-'snapshot'`` alongside it. Absence is not a state a bucket stays in, and an
-e2e run caught exactly that: a montage that had merely been navigated to
+'snapshot'`` alongside it. An e2e run caught exactly that: a montage that had merely been navigated to
 already read as Snapshot. An explicit value also keeps every default inside
 ``mergeProfileSettings``, where the Settings contract wants it.
 
@@ -1457,7 +1468,7 @@ instead:
    <button {...useLongPressHint({ title: t('events.delete'), onClick: remove })} />
 
 The hint fires on hold, not on tap. A tap already runs the action, so a toast
-explaining what just happened would be noise on every use forever. The click
+explaining what just happened would be noise on every use. The click
 that would follow the release is swallowed in ``onClickCapture``, so a hold
 explains the button instead of pressing it. A short tap is untouched.
 
@@ -1702,8 +1713,7 @@ long-press the same tile on a phone and you get the same preview.
 runs only while the preview is open. That is what lets ``MonitorHoverPreview``
 mount a fresh stream on hover and tear it down on leave: the inner component's
 unmount runs ``useStreamLifecycle``'s cleanup, which sends ``CMD_QUIT`` for the
-preview's connkey. Passing a prebuilt element instead would keep that stream
-open forever.
+preview's connkey.
 
 The preview renders into a portal, a React feature that mounts an element into
 a different DOM node than its parent, so the popup escapes a tile's
@@ -1778,7 +1788,7 @@ Walking the chain costs a real failed request per candidate, which is why
 callers that hold an event record pass ``hasAlarmFrame`` (refs #331). The
 default chain starts at ``alarm``, and ZoneMinder answers 404 for an alarm
 frame it never recorded, so a list of such events spends one 404 each before
-falling through to ``snapshot``. A reverse proxy reads that as an attack; one
+falling through to ``snapshot``. A reverse proxy can read that as an attack; one
 reporter's proxy banned them for it. ``eventHasAlarmFrame`` answers from
 ``AlarmFrames``, a required field on ``EventSchema`` that every list response
 already carries, so the check costs no request of its own. Branch on that count
@@ -1979,7 +1989,9 @@ is visible.
 Global chrome
 ~~~~~~~~~~~~~
 
-Four components mount once, under the router, and serve every page.
+``NotificationHandler``, ``KeyboardShortcuts``, and ``CommandPalette`` mount
+once directly under the router in ``App.tsx``. ``AppLayout`` is the layout
+route that wraps every page except first-profile setup.
 
 ``components/KeyboardShortcuts.tsx``: single letters jump to each menu section
 (``d`` Dashboard, ``m`` Montage, ``e`` Events, ``v`` Monitors, ``t`` Timeline,
@@ -2043,7 +2055,7 @@ primitives, ``components/common/`` for shared app-level components, and
 import a store: invert it with the gate pattern (``api/store-gates.ts``) and
 keep ``npx madge --circular`` at zero.
 
-A new store carries obligations the other directories do not. Profile-scoped
+Profile-scoped
 preferences belong on ``ProfileSettings`` behind ``getProfileSettings`` and
 ``updateProfileSettings`` rather than in a store of their own (the Settings
 contract), every coercion and default goes in ``mergeProfileSettings``, and a
@@ -2058,6 +2070,6 @@ Logging, HTTP, and Date and time contracts, plus C5 (``lib/`` placement), all
 constrain a new shared module. Write the test first, next to the source in
 ``__tests__/`` (:doc:`06-testing-strategy`).
 
-Then document it here connected to behavior: say what a user can do because
+Document it here: say what a user can do because
 this code exists, and give one example taken from a real call site. If the new
 module sits on a path that :doc:`call-flows` traces, update the trace too.

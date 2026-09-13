@@ -258,7 +258,7 @@ come up:
   re-renders when the data changes. Keep every field the
   component reads inside the selector, and use ``useShallow`` for object
   returns (see ``components/monitors/MontageMonitor.tsx``).
-- **Query UI states contract, error and loading UI.** Error walls use ``ErrorBanner`` with
+- **Query UI states contract, error and loading UI.** Error states use ``ErrorBanner`` with
   ``resolveQueryError(err, t)``, which folds a 401 into the localized
   reauthentication prompt. Loading states use the shared skeletons in
   ``components/ui/query-state.tsx``. A hand-rolled error div renders the raw
@@ -472,7 +472,6 @@ What is specific to this repo:
 - Constants are ``UPPER_SNAKE_CASE`` and live in
   ``lib/zmninja-ng-constants.ts`` (app-level) or ``lib/zm-constants.ts``
   (ZoneMinder protocol-level), per the Constants contract.
-- Comments explain why the code does something; the code shows what it does.
 
 Mobile development
 ------------------

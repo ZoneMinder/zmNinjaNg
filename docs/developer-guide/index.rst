@@ -2,8 +2,10 @@ Developer Guide
 ===============
 
 This guide teaches you how to work on the zmNinjaNg codebase. It is written for
-developers who may not have React experience, explaining concepts from first
-principles with real examples from the code.
+developers who may not have React experience. It covers the React and Zustand
+basics the app relies on, traces of real user actions through the code, and a
+chapter for each layer, from components and data fetching to testing and the
+assistant.
 
 **New to React?** Start with :doc:`02-react-fundamentals`, then
 :doc:`03-state-management-zustand`.
@@ -78,7 +80,7 @@ State types
      - The ZoneMinder server is the authority, and the app holds a copy that
        can go out of date
 
-The three are not interchangeable. ``useState`` and Zustand are taught in
+``useState`` and Zustand are taught in
 :doc:`02-react-fundamentals` and :doc:`03-state-management-zustand`. React
 Query, the cache that holds everything fetched from a ZoneMinder server, is
 also introduced in :doc:`02-react-fundamentals`; this app's use of it is in

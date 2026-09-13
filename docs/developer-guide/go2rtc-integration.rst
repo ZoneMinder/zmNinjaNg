@@ -118,8 +118,6 @@ it, and the stream name is derived from the id and channel alone.
 Protocol negotiation runs in parallel
 -------------------------------------
 
-Protocols are not tried in sequence: nothing waits for WebRTC to fail before trying MSE.
-
 ``useGo2RTCStream`` joins the configured protocols into a single comma-separated
 string and hands it to the vendored ``video-rtc`` custom element once:
 
@@ -256,7 +254,7 @@ Falling back to MJPEG
 ---------------------
 
 Everything in this section lives in ``LiveMonitorPlayer``, not in the hook. The
-hook reports state; the component decides when go2rtc has lost.
+hook reports state; the component decides when to fall back to MJPEG.
 
 MJPEG shows first. While go2rtc is selected but has produced no decoded
 frames yet, the component renders the MJPEG ``<img>`` as the visible picture with
@@ -266,14 +264,14 @@ a blinking ellipsis badge over it (``data-testid="mse-connecting-badge"``):
 
    const showMjpegPlaceholder = effectiveStreamingMethod === 'webrtc' && !hasVideoFrames;
 
-The tile is never blank. When decoded frames appear (``videoWidth > 0``) the
+When decoded frames appear (``videoWidth > 0``) the
 component swaps to the ``<video>`` and drops the badge. A poll every
-``GO2RTC_FRAME_POLL_MS`` (250 ms) makes that swap happen the instant frames
-arrive rather than at the timeout deadline. ``derivePlayerViewState()`` folds
+``GO2RTC_FRAME_POLL_MS`` (250 ms) makes that swap happen within a quarter
+second of frames arriving rather than at the timeout deadline. ``derivePlayerViewState()`` folds
 these signals into one named state (``connecting``, ``mjpeg-placeholder``,
 ``mse-playing``, ``mjpeg``, ``no-video``) that the render branches read.
 
-go2rtc loses in three ways, and each latches ``go2rtcFailed``, which flips
+go2rtc fails in three ways, and each latches ``go2rtcFailed``, which flips
 ``effectiveStreamingMethod`` to ``mjpeg`` for this player:
 
 1. **The hook reported an error.** Any ``state === 'error'`` demotes on the next
@@ -313,8 +311,8 @@ reads nor writes this cache. Montage opens many connections at once and some fai
 under that load, marking those monitors failed. Without the bypass the detail view
 would inherit that failure and skip go2rtc, showing the loading placeholder until a reload.
 With the bypass the detail view always attempts go2rtc (a single connection
-succeeds), and a failure there falls back to MJPEG locally without poisoning the
-montage cache.
+usually succeeds), and a failure there falls back to MJPEG locally without writing
+to the montage cache.
 
 Recovery
 ~~~~~~~~
@@ -386,8 +384,8 @@ and read through the settings store. See
 ``showProtocolLabel: boolean``
   Default true. Gates the protocol badge everywhere it renders: the monitor detail
   page, montage tiles, ``MonitorCard``, and the dashboard monitor widget. On an
-  MJPEG player it reads ``MJPEG``. On a go2rtc player it reads the started
-  protocol upper-cased (``MSE``, ``WEBRTC``, ``HLS``), or ``Go2RTC`` while no
+  MJPEG player it reads ``MJPEG``. On a go2rtc player it reads the protocol
+  carrying the frames, upper-cased (``MSE``, ``WEBRTC``, ``HLS``), or ``Go2RTC`` while no
   protocol has been reported yet.
 
 ``bypassGo2rtcFailureCache`` is not a setting. It is a prop, and only
@@ -511,8 +509,7 @@ are covered by unit tests and manual checks only. See :doc:`06-testing-strategy`
 Troubleshooting
 ---------------
 
-Every step below is visible in the logs. ``log.videoPlayer`` carries the whole
-decision path.
+``log.videoPlayer`` carries the whole decision path.
 
 **A monitor plays MJPEG when it should not.** Look for
 ``Streaming: MJPEG`` and its context object. It logs
@@ -528,8 +525,9 @@ MJPEG``, or ``Go2RTC connected but no video frames, falling back to MJPEG``, or
 ``Go2RTC stream frozen, max retries reached, falling back to MJPEG``. The cache
 entry expires after 5 minutes, or on a full reload.
 
-**The badge reads MSE but I expected WebRTC.** This is expected. The badge reports the
-first protocol ``video-rtc`` started, and MSE is started before WebRTC. See
+**The badge reads MSE but I expected WebRTC.** WebRTC did not deliver a video
+track, or lost the scoring in ``onpcvideo``, so MSE is carrying the frames. The
+badge switches to ``WEBRTC`` only when WebRTC wins. See
 `Protocol negotiation runs in parallel`_.
 
 **"Go2RTC WebSocket connection failed".** The socket closed before it opened.
@@ -542,8 +540,8 @@ decoded. The stream ``{monitorId}_{channel}`` must exist in go2rtc's config; a
 monitor whose ``StreamChannel`` points at a substream the camera does not publish
 produces this symptom.
 
-**The stream freezes and recovers, repeatedly.** The liveness watchdog is doing
-its job. ``Go2RTC stream frozen, retrying connection`` logs the reason
+**The stream freezes and recovers, repeatedly.** ``Go2RTC stream frozen, retrying
+connection`` is the liveness watchdog retrying. It logs the reason
 (``no-advance``, ``readyState``, ``ended``, or ``disconnected``) and how long the
 video had been stalled.
 

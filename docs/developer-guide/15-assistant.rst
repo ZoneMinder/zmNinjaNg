@@ -8,25 +8,30 @@ end. Nothing here imports React or Zustand: ``agent.ts`` takes an
 ``AssistantHost`` interface instead, so the same loop runs against the real
 app and against tests without a DOM.
 
-Pre-turn interrogations and the plan
-------------------------------------
+Pre-turn calls and the plan
+---------------------------
 
 Before the loop runs, the question is decomposed by three small constrained
 calls (one question per judgment, because consolidated prompts measurably
-dilute each one; see ``llm-models.md`` for the scores behind every claim
-here), and code composes the tool calls their slots determine:
+dilute each one; see ``llm-models.md`` for the scores for these choices).
+Each call fills slots, the structured fields of its answer, and code composes
+the tool calls those slots determine:
 
-- ``triage.ts`` is the ROUTING PARSE: ``continues`` (may any context flow),
+- ``triage.ts`` is the routing parse, which decides where the question goes:
+  ``continues`` (may any context flow),
   ``kind``, ``subject``, ``objects``. Context is structured previous-turn
   facts (``parse-context.ts``), never answer prose.
 - ``monitor-stage.ts`` owns place: a deterministic name scan (substring and
-  token-subset), the focused coverage call returning PLACE GROUPS, the
-  per-group derivation guards, and ``contextForTimeCall``: a multi-group
+  token-subset), the focused coverage call returning place groups (sets of
+  monitors the question treats as one place), the per-group checks that the
+  model's monitors can be traced back to the question, and ``contextForTimeCall``: a multi-group
   place comparison withholds the previous period from the time call.
 - ``timeframe-stage.ts`` owns time: the whole-question windows
-  interrogation (``window-interpreter.ts`` supplies the prompt, branch
-  schema, and ``parseFields``), range-deduped and cache-seeded, with the
-  regex scan as recall floor and fallback.
+  call (``window-interpreter.ts`` supplies the prompt, branch
+  schema, and ``parseFields``). Duplicate ranges are dropped, each resolved
+  window is written to the interpreter cache so the later tool call needs no
+  model, and a regex scan adds any window the model missed and
+  answers when the call fails.
 - ``plan.ts`` turns the slots into planned ``list_events`` calls per
   window x group x monitor and merges same-window results per group, so the
   answer model quotes code-built summaries and never does cross-result
@@ -43,8 +48,7 @@ Turn loop (``agent.ts``)
 ``runAssistantTurn`` is a bounded loop (``ASSISTANT.maxToolIterations``, 6)
 that calls ``provider.chat(history, tools, system, signal)`` with the turn's
 own tool list (``opts.tools``, defaulting to ``TOOLS``) and executes each
-returned ``ToolCall`` against a definition found in that same list. The list
-is the execution authority: a turn triage routed here with no tools must
+returned ``ToolCall`` only against a definition found in that same list. A turn triage routed here with no tools must
 treat an invented call as unavailable, so the registry's ``getToolByName``
 and ``isWithheldToolName`` (``tools.ts``) are consulted only to phrase the
 refusal, distinguishing a withheld action from a known tool on a tool-less
@@ -69,14 +73,14 @@ question") hides history from the model while the thread in
 ``isContextNearlyFull`` is the decision itself: it compares the
 ``promptTokens`` a backend reported against that backend's
 ``contextWindow``, and returns false whenever either is unknown. Both
-numbers come from the backend, never from a formula the app invents over the
-prompt it built.
+numbers come from the backend, except that Apple Intelligence and Gemini
+Nano estimate token counts when the OS reports none (below).
 
 Token accounting per backend
 ----------------------------
 
-``contextWindow`` is learned rather than assumed on every backend, and
-``promptTokens`` is read off the response wherever the backend reports one:
+``contextWindow`` comes from the backend or from the value the app configured
+it with, never a guess, and ``promptTokens`` is read off the response wherever the backend reports one:
 
 - **WebLLM** knows its window exactly, because ``chatOptsFor``
   (``model-download.ts``) is what passed ``contextWindowSize`` to
@@ -135,16 +139,14 @@ Every tool in ``tools-readonly.ts`` is written against one server: it calls
 ``getSession(ctx.profileId)`` and builds card thumbnails from the single
 ``portalUrl``/``accessToken`` pair on the context. A virtual profile combines
 several servers, so something has to decide which of them a call runs against.
-That decision does not live in the tools. It lives one level up, at the single
-line in ``agent.ts`` where a call executes, which calls ``executeScoped``
+The decision lives at the single line in ``agent.ts`` where a call executes, which calls ``executeScoped``
 instead of ``def.execute``.
 
 ``ToolContext.servers`` carries the roster (``ScopedServer``: profile id, name,
 portal URL, token, streaming port, thumbnail chain, timezone), built once per
 question by ``buildScopedServers`` (``scoped-servers.ts``) from the profiles in
 scope. Fewer than two entries means no group, and ``executeScoped`` hands the
-tool the context untouched: a single-profile install runs the path it always
-ran, byte for byte.
+tool the context untouched: a single-profile install runs the tool unchanged.
 
 With a group, three things change together, and all three must agree:
 
@@ -162,9 +164,9 @@ With a group, three things change together, and all three must agree:
   and merges.
 
 The roster also reaches the classifier. ``classifyRequest``
-(``triage.ts``) decides whether a turn gets tools at all, and it ran before
-anything knew what "warehouse" was: "compare warehouse and cabin" classified CHAT and
-the tool-less turn answered it with a greeting. The names go into the existing
+(``triage.ts``) decides whether a turn gets tools at all, so it needs the server names too;
+without them "compare warehouse and cabin" classifies as CHAT and gets a
+tool-less answer. The names go into the existing
 ZONEMINDER list rather than an appended block, for the reason that file's own
 comment gives (an appended block measured worse), and drop out entirely below
 two servers.
@@ -184,7 +186,8 @@ ids collide across servers. The same rule is why a monitor card from another
 server gets no live preview: ``useMonitors`` is the pinned profile's query,
 and monitor 3 is a different camera on each server.
 
-The pinned profile still decides the backend, its settings and the thread; the
+The pinned profile (the current profile the Ask panel runs under) still
+decides the backend, its settings and the thread; the
 profiles in scope decide which servers get asked.
 
 Picking the backend (``providers/provider.ts``)
@@ -198,7 +201,8 @@ when the profile's backend is Ollama, ``NativeLlmProvider`` when it is
 ``GeminiNanoProvider`` when it is ``'gemini-nano'`` (all three refs #270),
 and ``WebLlmProvider`` otherwise.
 
-On either on-device path no message and no tool result is ever sent to a
+On the four on-device backends (WebLLM, llama.cpp, Apple Intelligence, and
+Gemini Nano) no message and no tool result is ever sent to a
 server other than the ZoneMinder server the tool call itself targets.
 
 The five backend values do not map one-to-one onto the four labels
@@ -258,9 +262,8 @@ Build pins
 The llama.cpp build is pinned rather than floating. ``binaryTarget`` in
 ``app/ios/App/LlamaKit/Package.swift`` fetches release ``b10087``'s prebuilt
 XCFramework by URL and SHA-256 checksum, so an upstream retag cannot change
-what ships. The pin lives only on the iOS side. No ``CMakeLists.txt`` or
-``llama_jni.cpp`` remains in ``app/android/``, and nothing there fetches
-llama.cpp at build time (issue #270 removed the Android JNI engine).
+what ships. The pin lives only on the iOS side; issue #270 removed the
+Android JNI engine.
 
 Apple Intelligence (``providers/apple-intelligence.ts``)
 --------------------------------------------------------
@@ -320,7 +323,7 @@ Gemini Nano over AICore, reached through the ML Kit GenAI Prompt API. It is
 a trimmed ``NativeLlmProvider``, not a port of
 ``AppleIntelligenceProvider``, even though both back a model the OS owns.
 
-The difference is what the decoder can be told. Foundation Models takes a
+Foundation Models takes a
 ``GenerationSchema`` built per turn, which is how the Apple provider
 constrains the reply to the turn contract. ML Kit's structured output is
 compile-time Kotlin codegen (a ``@Generable`` data class processed by KSP)
@@ -331,8 +334,8 @@ code-level grounding checks in ``agent.ts`` rather than a decoder
 constraint.
 
 The bridge measures two capabilities at runtime rather than trusting the ML
-Kit documentation, because on a real device the documentation is wrong about
-both. The Prompt API is documented with an input limit under 4000 tokens;
+Kit documentation, because on a Pixel 10 running ``nano-v3`` the documentation is wrong
+about both. The Prompt API is documented with an input limit under 4000 tokens;
 a Pixel 10 running ``nano-v3`` reports 8192 from ``getTokenLimit()``, so
 ``isSupported`` reads the real number and advertises it minus a 1024-token
 reply reserve, the same reserve the Apple plugin applies for the same
@@ -390,7 +393,7 @@ the 16384 cap rather than its native 128K. A model id absent from the list
 gets no override at all rather than a guessed window.
 
 ``chatOptsFor`` always sends ``sliding_window_size: -1`` alongside the
-window, and that pairing is load-bearing. web-llm throws
+window. web-llm throws
 ``WindowSizeConfigurationError`` when both windows resolve positive, and
 ``sliding_window_size`` does not come from the bundled registry at all: it
 comes from each model's ``mlc-chat-config.json``, fetched from HuggingFace,
@@ -415,11 +418,7 @@ Why the picker lists two models
 
 ``webllmModels`` lists ``Llama-3.2-3B-Instruct-q4f16_1-MLC`` and
 ``Qwen3-4B-q4f16_1-MLC``, with Qwen3 4B as ``ASSISTANT.defaultModelId`` for
-fresh installs after it beat the llama class across the eval suite. The
-picker used to offer six, and the six differed in whether the model calls a
-tool at all rather than answering from
-nothing. The short list keeps every entry measured against the same question
-suite. Qwen3 is a reasoning model, so ``WebLlmProvider`` sends web-llm's
+fresh installs. Qwen3 is a reasoning model, so ``WebLlmProvider`` sends web-llm's
 ``extra_body: { enable_thinking: false }`` for Qwen3 model ids: the engine
 pre-closes an empty think block so the model cannot reason, unlike the
 ``/no_think`` text directive, which only hides the tag. This list only ever

@@ -4,7 +4,7 @@ Platform Surfaces
 The features in this chapter are not page components. Each of them sits over
 or beside the whole app: a lock screen that covers whatever view is showing, a
 d-pad input layer that changes how every screen is driven, a push pipeline that
-delivers UI while the app is closed, and an assistant window that floats above
+delivers notifications while the app is closed, and an assistant window that floats above
 the page you were reading. They are grouped here because they share that
 shape, not because they share code.
 
@@ -25,15 +25,13 @@ KioskOverlay
 **Location**: ``src/components/kiosk/KioskOverlay.tsx``
 
 Tapping the lock leaves the view where it was: streams keep running and badges
-keep counting, but nothing responds to touch. A single component does this.
-``KioskOverlay`` renders ``null`` unless ``kioskStore.isLocked`` is true, and
+keep counting, but nothing responds to touch. ``KioskOverlay`` renders ``null`` unless ``kioskStore.isLocked`` is true, and
 when it is true it renders a transparent ``fixed inset-0`` div at
 ``Z_INDEX.overlay`` (9999) with ``pointerEvents: 'auto'``. The app underneath
 is untouched and still re-rendering; the overlay just swallows every pointer
 event before it can reach anything.
 
-Pointer events are the easy half. A locked screen also has to survive the
-other ways out of a view. Browser and gesture back navigation is intercepted
+Browser and gesture back navigation is intercepted
 by pushing a history entry when the lock engages and pushing another one from
 a ``popstate`` handler, so every back attempt lands on the same entry again.
 The Android hardware back button does not raise ``popstate``, so it is
@@ -144,8 +142,8 @@ TV mode
 -------
 
 Point a remote at the app on an Android TV or Fire TV and the d-pad has to
-move focus somewhere sensible. TV mode is a best-effort answer: it turns on
-the WebView's own spatial navigation and layers a couple of page-specific
+move focus somewhere sensible. TV mode turns on the WebView's own spatial
+navigation and layers a couple of page-specific
 keymaps on top of it. It is not an app-wide focus-management system.
 
 TvDetector (native plugin)
@@ -185,7 +183,8 @@ Settings > Appearance (``settings-tv-mode``). ``AppLayout`` runs
 
 While TV mode is active, ``AppLayout`` toggles a ``tv-mode`` class on
 ``<html>``, which is where ``index.css`` raises the base font size to 20px and
-gives ``:focus-visible`` elements a heavier ring for 10-foot viewing, and calls
+gives ``:focus-visible`` elements a heavier ring for reading from across a
+room, and calls
 ``enableSpatialNavigation()`` once.
 
 useTvKeyHandler
@@ -303,7 +302,8 @@ watches ``events[0].EventId`` and, when a new one appears, invalidates
 ``queryKeys.monitorEventsSinceMonitor`` for that monitor, so its badge count
 refetches within a second instead of at the 60000 ms poll. It runs independent of
 the toast effect above (which is gated on ``settings.showToasts``) so the badge
-moves with the bell whatever the toast setting, and it seeds its own last-seen id
+updates along with the ``NotificationBadge`` bell whatever the toast setting,
+and it seeds its own last-seen id
 on first run so a backlog present at mount does not fire a burst of invalidations.
 :doc:`call-flows` Flow 18 places it in the badge's refetch path.
 
@@ -348,7 +348,7 @@ differ only in layout. The shell stays mounted (hidden) while minimized, so a
 running turn survives collapsing to the button.
 
 **Empty state and connection dot.** With an empty thread ``AskPanel`` renders
-``AssistantIntro``: Ninjii's greeting plus a row of clickable example prompts
+``AssistantIntro``: a greeting from Ninjii (the assistant's name in the UI) plus a row of clickable example prompts
 (``assistant.intro_example_1..4``, one of them "Summarize my day") that teach
 the kind of question the assistant answers. A chip click fills the input rather
 than sending, so the user can edit before the turn starts. Next to the backend
@@ -393,13 +393,12 @@ to the sentinel's key, not to arbitrary model output).
 (``components/assistant/useAssistantHost.ts``) is the ``AssistantHost``
 implementation ``AskPanel`` hands to ``runAssistantTurn``. The assistant is
 read-only: there are no destructive tools, so the host has no confirmation
-flow (no ``confirm``/``resolveConfirm`` and no confirm card); a request to change something gets a plain refusal that
-points at the right screen instead. ``navigate`` on the host minimizes the
-assistant panel (``stores/assistantPanel.ts``) before routing, so an "Open"
-click on an event or monitor result card collapses the panel to the FAB
-instead of leaving a chat window open behind the page it just opened. The
-assistant itself never routes the app: result cards are the only navigation
-affordance.
+flow (no ``confirm``/``resolveConfirm`` and no confirm card). ``navigate`` on
+the host minimizes the assistant panel (``stores/assistantPanel.ts``) before
+routing, so an "Open" click on an event or monitor result card collapses the
+panel to the floating button instead of leaving a chat window open behind the
+page it just opened. The assistant itself never routes the app: result cards
+are the only way to navigate from it.
 
 **Used by:** ``AppLayout.tsx`` mounts ``AssistantWidget`` once for the whole
 app; ``AssistantDesktopPanel`` and ``AssistantMobileSheet`` are the only

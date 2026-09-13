@@ -1,8 +1,7 @@
 Key Libraries
 =============
 
-zmNinjaNg leans on a small number of third-party libraries, and each one is
-here because it solves a problem the platform does not. What follows is what
+zmNinjaNg leans on a small number of third-party libraries. What follows is what
 each library is used for in this codebase and where it bites. One dependency,
 ``@capacitor/preferences``, is declared in ``app/package.json`` and imported
 nowhere in ``app/src``: storage goes through ``localStorage`` under Zustand's
@@ -48,8 +47,8 @@ types only, with ``import type videojs from 'video.js'``.) ``videojs-markers``
 draws event points on the seek bar; the marker configs are built in
 ``lib/event/video-markers.ts`` and applied to the player there.
 
-ZoneMinder streams vary in format (MJPEG, multiple MP4 profiles), and the
-native ``<video>`` element handles those inconsistently across browsers.
+Recorded events arrive as MP4 or HLS, and the native ``<video>`` element
+handles those inconsistently across browsers.
 video.js gives one API and a plugin surface over the differences.
 
 Neither live monitor streams nor ZMS event playback go through video.js. ZMS
@@ -104,7 +103,7 @@ time format from profile settings before doing so. This is the Date and time
 contract in ``AGENTS.project.md``, and it covers canvas rendering, tooltips, and
 scrubber overlays as much as it covers JSX.
 
-Two things that look like date-fns but are not. Relative labels such as "5m ago"
+Two date features do not use date-fns. Relative labels such as "5m ago"
 come from ``Intl.RelativeTimeFormat`` in ``lib/relative-time.ts``, because it
 localizes into all seven bundled languages without shipping locale files.
 Converting ZoneMinder's server-local timestamps for display uses
@@ -122,8 +121,8 @@ Profile creation and the settings forms. Zod schemas describe the data shape and
 its validation rules, react-hook-form owns the field state and the render
 cycle.
 
-Pairing them pays off because a Zod schema is two things at once: a runtime
-check and, through ``z.infer``, a TypeScript type. Form input and the API
+Through ``z.infer``, a Zod schema also gives a TypeScript type, so one
+declaration is both the runtime check and the type. Form input and the API
 payload are derived from the same declaration, so they cannot drift apart while
 one side is edited.
 
@@ -138,10 +137,9 @@ of far downstream where the symptom is an unexplained 401.
 @tanstack/react-query
 ~~~~~~~~~~~~~~~~~~~~~
 
-React Query holds every piece of data that came from a ZoneMinder server: the
-monitor list, event pages, server status, daemon health. The problem it solves
-is that this data is a cache of somebody else's state, not this app's state. It
-can go stale while the user is looking at it, two screens can want it at once,
+React Query holds the data that comes from a ZoneMinder server: the
+monitor list, event pages, server status, daemon health. The server owns that
+data and can change it at any time, so the copy the app holds can go stale while the user is looking at it, two screens can want it at once,
 and a request can fail halfway. Putting it in a Zustand store would mean
 hand-writing loading flags, error flags, deduplication, and refetch timers for
 each screen.

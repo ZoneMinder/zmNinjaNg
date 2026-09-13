@@ -103,10 +103,9 @@ it because downloading a snapshot means reading pixels off the live element:
      }
    };
 
-The ``e.stopPropagation()`` is load-bearing. The picture and its wrapper are a
-click target that navigates to ``/monitors/<id>``, and the download button sits
-inside it. Without stopping the event, downloading a snapshot would also open
-the monitor.
+The picture and its wrapper are a click target that navigates to
+``/monitors/<id>``, and the download button sits inside it. Without
+``e.stopPropagation()``, downloading a snapshot would also open the monitor.
 
 The Events button carries a ``monitor-new-events-badge`` counting events the
 monitor recorded since the user last opened it. The count arrives as the
@@ -133,13 +132,12 @@ never-seeded one (the watermark is ``null``, so the whole history is the new set
 
 ``MonitorInfoPopover`` (``components/monitors/MonitorInfoPopover.tsx``) is the
 info button beside the monitor name on both card layouts and in the
-``MonitorDetail`` header. It replaced three icon-only badges whose meaning
-lived in a hover ``title`` (invisible on touch) and gave ``Decoding`` its
-first appearance in the UI: the popover lists the four capture-pipeline
-fields ZM 1.38+ splits Function into, Decoding among them
-(``monitor.Capturing !== undefined`` is the tell, the same one the card
-used), or Function before that, then resolution and the frame-rate cap,
-each with a label and nothing singled out. ``MonitorInfoContent`` is the
+``MonitorDetail`` header. Each field shows as a labeled row, so the popover
+works on touch, where a hover ``title`` would be invisible. On ZM 1.38 and
+later, which split Function into four capture-pipeline fields, the popover
+lists those four, Decoding among them. ``monitor.Capturing !== undefined``
+tells the two versions apart. On older servers it lists Function instead.
+Resolution and the frame-rate cap follow, and no row is singled out. ``MonitorInfoContent`` is the
 body alone; ``MontageMonitor`` renders it in a ``Popover`` anchored
 (``PopoverAnchor``) to the tile's "..." button and opened from a menu item,
 so the popover appears where the menu just closed. Radix's trigger toggles
@@ -152,48 +150,53 @@ propagation, because the card around it navigates on click (refs #467).
 
 ``useMonitorMuted`` (``hooks/useMonitorMuted.ts``) is the other hook both tiles
 share. A Go2RTC tile starts muted so a grid does not open as a cacophony, but
-the choice used to live in component state and reset on every remount: a group
-switch, a route change, or a relaunch put every unmuted monitor back to muted.
-The hook is a thin inversion over ``useMonitorFlag``
+the hook persists each unmute in the profile, so a group switch, a route
+change, or a relaunch does not put an unmuted monitor back to muted, as
+component state would. The hook is a thin inversion over ``useMonitorFlag``
 (``hooks/useMonitorFlag.ts``), which turns membership in one of the profile's
 monitor-id lists (``unmutedMonitorIds``, ``fullscreenMonitorIds``) into a
 ``[value, setValue]`` pair: read through ``getProfileSettings``, written back
 with ``updateProfileSettings``, so the state survives remounts and syncs with
 the rest of the profile. The key is the monitor id within one profile, which
 is why the same id on a second server does not collide. Without a profile id
-the value is false and the setter is a no-op. ``FullscreenExitBar`` (``components/ui/fullscreen-exit-bar.tsx``) is the strip
-along the top of an app-level fullscreen page: subject name and the Exit
-button, shared by ``MonitorDetail`` and ``EventDetail``. The event page goes
-fullscreen the way Monitor Detail does for both players: ``ZmsEventPlayer``
-takes a ``fullscreen`` prop that swaps its 16:9 box for the height the page
-gives it, transport controls kept below, and ``Mp4EventPlayer`` takes
-``fill`` (refs #462). ``MonitorDetail`` uses the same
+the value is false and the setter is a no-op. ``MonitorDetail`` uses the same
 mute hook, but its mute control is the browser's own (``showControls``), so
 ``useGo2RTCStream`` listens for ``volumechange`` on the video element and
 reports through ``onMutedChange``. A change that lands on the value the hook
 itself just wrote from the ``muted`` option is skipped, so only the user's
 clicks reach the setting.
 
+``FullscreenExitBar`` (``components/ui/fullscreen-exit-bar.tsx``) is the strip
+along the top of an app-level fullscreen page: subject name and the Exit
+button, shared by ``MonitorDetail`` and ``EventDetail``. The event page goes
+fullscreen the way Monitor Detail does for both players: ``ZmsEventPlayer``
+takes a ``fullscreen`` prop that swaps its 16:9 box for the height the page
+gives it, transport controls kept below, and ``Mp4EventPlayer`` takes
+``fill`` (refs #462).
+
 ``useAutoFullscreen`` (``hooks/useAutoFullscreen.ts``) drives fullscreen on
 the two player pages, ``MonitorDetail`` (seeded by the monitor's
 ``fullscreenMonitorIds`` entry, the "Open in fullscreen" switch in
 ``MonitorAppPreferences``) and ``EventDetail`` (seeded by
 ``eventPlaybackFullscreen``, "Open events in fullscreen" in
-``PlaybackSection``). It returns ``[isFullscreen, setFullscreen]`` where
-``isFullscreen`` is the setting OR a temporary landscape term, so a rotated
-phone fills the screen and a desktop window, landscape all day, does not
-(``(pointer: coarse)`` is the touch test; the orientation comes from
-``screen.orientation`` where it exists, because iOS evaluates the
-``(orientation: landscape)`` media query against the zoomed visual viewport
-and a pinch briefly read as portrait, bouncing the page out of fullscreen
-and back; the media query is only the fallback), OR
-a session override from ``setFullscreen``, the page's own maximize/exit
-button. The hook itself writes no setting; the pages do, and only on enter:
+``PlaybackSection``). It returns ``[isFullscreen, setFullscreen]``.
+``isFullscreen`` is true when the setting is on, when a touch device is in
+landscape, or when the page's own maximize/exit button set a session override
+through ``setFullscreen``. The landscape term makes a rotated phone fill the
+screen while a desktop window, landscape all day, does not.
+``(pointer: coarse)`` is the touch test.
+
+The orientation comes from ``screen.orientation`` where it exists, with the
+``(orientation: landscape)`` media query only as the fallback. iOS evaluates
+that media query against the zoomed visual viewport, so a pinch briefly read
+as portrait and bounced the page out of fullscreen and back.
+
+The hook itself writes no setting; the pages do, and only on enter:
 maximizing writes the monitor into ``fullscreenMonitorIds``, entering
 fullscreen on the event player sets ``eventPlaybackFullscreen``. Exit is
-session-only because exit is the only way off a fullscreen page, so a
-remembered exit would end every visit by forgetting; the settings switches
-are the off switches. ``monitorDetailFullscreen`` (Settings > Live Streaming)
+session-only. Exit is the only way off a fullscreen page, so saving it would
+turn the setting off every time the user leaves; the settings switches are
+the off switches. ``monitorDetailFullscreen`` (Settings > Live Streaming)
 is the every-monitor form and ORs in beside the per-monitor entry. The
 override lasts until the next rotation or until ``resetKey`` (the monitor id)
 changes, since the detail page stays mounted across monitors (refs #462,
@@ -201,10 +204,10 @@ changes, since the detail page stays mounted across monitors (refs #462,
 
 ``useZoomPan`` writes no ``transform`` or ``will-change`` at identity. Either
 one makes the element the containing block for every ``position: fixed``
-descendant, and video.js full-window mode (the fallback when the real
-Fullscreen API refuses a request made without a gesture, so every rotation
-and every "open in fullscreen") positions the player ``fixed``: with the
-transform in place it filled the card, not the viewport (refs #462).
+descendant. Video.js full-window mode, the CSS fullscreen it uses in place of
+the Fullscreen API (``preferFullWindow``, set on iOS), positions the player
+``fixed``. With a transform in place, that player filled the card instead of
+the viewport (refs #462).
 
 The whole component is wrapped in ``memo``:
 
@@ -300,7 +303,7 @@ This is written as a class:
      }
    }
 
-Catching a render error is the one thing React never gave hooks. A hook runs
+Hooks cannot catch render errors. A hook runs
 *inside* the render that throws, so it cannot observe its own failure;
 ``getDerivedStateFromError`` and ``componentDidCatch`` are lifecycle methods
 that only exist on classes. Every class component in this codebase is an error
@@ -343,8 +346,8 @@ in place it would be clipped to the tile it is trying to escape; rendered
 through a portal into ``document.body`` it floats over the page.
 
 In that snippet, ``renderPreview`` is a function, not an element. ``HoverPreview`` calls it only while the preview is open, so
-``MonitorLivePreview`` mounts on hover and unmounts on leave. That is what makes
-the extra stream safe:
+``MonitorLivePreview`` mounts on hover and unmounts on leave, and its stream
+lives exactly as long as it is mounted:
 
 .. code:: tsx
 
@@ -386,8 +389,8 @@ browser starts a second stream. Only the second one has a key anyone can quit.
 Viewing N monitors leaves N orphaned processes running until ZoneMinder's own
 idle timeout reaps them.
 
-The fix is a guard on the URL, not on the render. ``useMonitorStream`` never
-produces a stream URL without a real key:
+The fix is a guard on the URL: ``useMonitorStream`` never produces a stream
+URL without a real key.
 
 .. code:: tsx
 
@@ -426,8 +429,8 @@ sees the latest connkey rather than the one captured when the cleanup was
 created. ``removeAttribute('src')`` rather than ``src = ''`` because an empty
 ``src`` resolves to the page URL on some engines and fires a spurious request.
 
-The ``isConnected`` guard is there because the comment on the dependency array
-is a wish, not a guarantee. React runs the cleanup of an ``[]`` effect against a
+The ``isConnected`` guard is there because the cleanup of an ``[]`` effect can
+run without an unmount, whatever the comment on the dependency array says. React runs the cleanup of an ``[]`` effect against a
 live, still-committed tree in three situations: the StrictMode mount
 double-invoke, revealing a Suspense subtree that was hidden while something else
 in the boundary loaded, and a Fast Refresh update in dev. None of them is an
@@ -591,9 +594,8 @@ records an entry in ``eventPlaybackFullscreen``.
 
 Markers are rendered by ``videojs-markers``: the ``markers`` array maps to the
 alarm and max-score frames on the event timeline, and ``onMarkerClick`` seeks
-to a frame. Getting them onto the player is fussier than it looks, and getting
-it wrong produced a recurring "Failed to update video markers" error on every
-event that had markers.
+to a frame. Calling the plugin the wrong way produces a "Failed to update
+video markers" error on every event that has markers.
 
 The cause is ``this``-binding. ``videojs-markers`` (v1.x) is a Video.js *basic*
 plugin registered with ``videojs.plugin()``, and the first thing its plugin
@@ -650,7 +652,7 @@ video with it. ``reclaimFromPip()`` hands the player and element back when the
 same event is opened again; ``closePip()`` disposes both.
 
 Chapter 3 taught Zustand for state shared across the tree, and PiP is shared
-state, so why Context here? Because what is shared is not data. It is a live
+state, but PiP uses Context because what it shares are element handles: a live
 ``HTMLVideoElement``, a Video.js ``Player`` instance, and the identity of a DOM
 node that only exists because a component rendered it. Zustand stores hold plain
 values that selectors compare and components re-render on; none of that applies
@@ -703,9 +705,8 @@ forward 5s, end), speed presets (0.25x, 0.5x, 1x, 2x, 4x), a frame-position
 scrubber with alarm-frame markers, and jump buttons for the first alarm frame
 and the max-score frame. Below the player sits a thumbnail for the max-score
 frame, shown only when that frame differs from the alarm frame. The alarm frame
-had a thumbnail here too until ``EventFrameCarousel`` began leading with it
-above the player (refs #272); the quick-jump button still seeks to it, so
-nothing was lost with the picture. Playback position is tracked by polling
+has no thumbnail here because ``EventFrameCarousel`` shows it above the player
+(refs #272); the quick-jump button seeks to it. Playback position is tracked by polling
 ``ZMS_COMMANDS.cmdQuery`` (``lib/zm/zm-constants.ts``) through
 ``getZmsControlUrl`` at the bandwidth-aware ``zmsStatusInterval``; the poll
 shares an ``AbortController`` with its in-flight ``httpGet`` calls so unmount
@@ -903,7 +904,7 @@ The selection does not survive a profile change.
 (``stores/profile.ts``) clear the selection, as does ``setProfileDisabled``
 when it disables a profile (re-enabling one leaves the queue alone, since
 nothing goes out of view). ``DeleteBatchBar``
-lives in ``AppLayout`` and never unmounts. Without that, ticking an event on
+lives in ``AppLayout`` and never unmounts. Without that clearing, ticking an event on
 one server and then switching servers left the bar showing its count with
 nothing marked under it, and confirming would have deleted events on a server
 the user was no longer looking at. Those actions clear the whole queue rather
@@ -911,8 +912,10 @@ than filtering out one profile's keys: the profile list just changed under a
 destructive queue, and dropping it is the safe direction.
 
 The entries are *not* raw ZoneMinder event ids. An event id is only unique
-within one server, so while aggregating, ticking event 1234 on profile A also
-ticked event 1234 on profile B and would have deleted both. The store keys on
+within one server. When an aggregate is current (a virtual profile that fans
+out over several profiles, such as "All Servers"), a bare id would make
+ticking event 1234 on profile A also tick event 1234 on profile B, and a
+delete would remove both. The store keys on
 ``eventSelectionKey(profileId, eventId)``, which is ``` `${profileId}:${eventId}` ```
 (refs #337) and mirrors ``monitorCacheKey`` in ``stores/monitors.ts``. With no
 profile in hand it falls back to the bare event id, which is the key
@@ -959,13 +962,11 @@ profile, because a delete has to go to the server the event lives on:
      ...
    }
 
-That grouping fixes a crash. Resolving one client up front with
-``getCurrentSession()`` throws while aggregating, because the current id is an
-aggregate, which has no session. With only a ``try``/``finally`` around that
-call, confirming a bulk delete produced an unhandled rejection: no toast,
-nothing deleted, the selection still there. Each profile's ``getSession`` call
-is wrapped, and a profile that cannot produce a client
-counts its events as failed rather than taking the whole batch down. The
+Grouping lets each batch use its owning profile's session. One client resolved
+up front with ``getCurrentSession()`` would throw when an aggregate is current,
+because an aggregate has no session. Each profile's ``getSession`` call is
+wrapped in its own ``try``/``catch``, and a profile that cannot produce a
+client counts its events as failed rather than taking the whole batch down. The
 Aggregation contract (``AGENTS.project.md``) states the rule directly: never
 ``getCurrentSession`` where an aggregate can be current.
 
@@ -1013,7 +1014,7 @@ If any deletion failed, the hook logs via ``log.eventCard`` and toasts
 ``events.delete_failed``; otherwise it toasts ``events.delete_selected_success``,
 pluralized on the count. It never rejects. Deleting is destructive, and a
 rejected promise reaching the bar's ``onClick`` is a failure the user never
-sees, which is what the old All-mode crash looked like.
+sees.
 
 The cache work sits in its own ``try``/``catch`` for a related reason. By the
 time it runs the server has already dropped the events, so a cache error must
@@ -1032,9 +1033,8 @@ camera has them, sits a collapsible list of that monitor's newest events. The
 header (title, refresh button, collapse toggle, "All events" link) always
 renders; the body collapses, and the collapsed state is remembered per monitor.
 
-Collapsing does more than hide the rows. The body unmounts and the query behind
-it is disabled, so a collapsed list issues no requests and no background
-refreshes:
+Collapsing unmounts the body and disables the query behind it, so a collapsed
+list issues no requests and no background refreshes:
 
 .. code:: tsx
 
@@ -1168,7 +1168,7 @@ nothing is amiss. On iOS there is no hover: the strip stays at ``opacity-0``,
 and an ``opacity-0`` element still hit-tests. Tapping the monitor hits the
 invisible strip and the tap goes nowhere.
 
-The fix is on the element, not the parent:
+The fix puts ``pointer-events-none`` on the strip itself:
 
 .. code:: tsx
 
@@ -1177,8 +1177,6 @@ The fix is on the element, not the parent:
 Any ``opacity-0`` element sitting over interactive content needs
 ``pointer-events-none``. Add ``group-hover:pointer-events-auto`` back if it must
 accept input once visible. ``EventHeatmap``'s tooltip carries the same pair.
-Invisible is not the same as non-interactive, and only a real iOS device shows
-the difference.
 
 Tuning the aggregate
 --------------------
@@ -1188,15 +1186,17 @@ AllServersPerformanceSection
 
 **Location**: ``src/components/settings/AllServersPerformanceSection.tsx``
 
-Every guardrail that bounds All-mode fan-out is a row here: the montage stream
-cap, the Live Activity watch cap and poll floor, the notification grouping
-window, and the three connection knobs. Settings.tsx renders it only while
+An aggregate sends requests to every server in it. Each setting that limits
+that load is a row here: the montage stream cap, the Live Activity watch cap
+and poll floor, the notification grouping window, and four connection
+settings (stream tuning, pausing hidden streams, viewport gating, and idle
+minutes). Settings.tsx renders it only while
 ``isAllMode``, above the profile picker, next to
 ``AllServersStreamingSection``, because these bound the aggregate rather than
 the server picked below.
 
 Each row's value lives in the current aggregate's settings bucket and its
-default is the constant its consumer used to hardcode, so
+default is the named constant its consumer reads, so
 ``DEFAULT_SETTINGS.allModeMaxStreams`` is ``MONTAGE_GRID.allModeMaxStreams``
 and resetting a row writes that constant back. The editable range comes from
 ``ALL_MODE_PERFORMANCE`` in ``src/lib/zmninja-ng-constants.ts``, and
@@ -1219,8 +1219,9 @@ picked up by the input without any extra wiring.
 
 **Test ids**: ``all-mode-max-streams-input``/``-reset``,
 ``all-mode-max-watched-input``/``-reset``, ``all-mode-poll-floor-input``/``-reset``,
-``all-mode-burst-window-input``/``-reset``, ``all-mode-stream-tuning-select``,
-``all-mode-pause-hidden-switch``, ``all-mode-idle-minutes-input``/``-reset``.
+``all-mode-burst-window-input``/``-reset``, ``all-mode-stream-tuning-select``/``-reset``,
+``all-mode-pause-hidden-switch``, ``all-mode-viewport-gating-switch``,
+``all-mode-idle-minutes-input``/``-reset``.
 
 Hiding monitors
 ---------------
@@ -1271,8 +1272,8 @@ Monitor ids are persisted in four places: ``excludedMonitorIds``, each montage
 group's ``hiddenMonitorIds`` and ``workingLayout``, and dashboard widget
 settings. Deleting a monitor in ZoneMinder removes it from the API but from
 none of those, so it lingers as a ghost. A hidden monitor that no longer exists
-was the worst case: still counted in the hidden total, absent from the list
-that would let you un-hide it, and therefore permanently stuck.
+is the worst case. It still counts in the hidden total but is absent from the
+list that would let you un-hide it, so without pruning it stays stuck.
 
 ``AppLayout`` mounts ``useReconcileDeletedMonitors`` once. It reads the same
 ``monitorsAllIncludingExcluded`` query the section above uses, so it adds no

@@ -24,8 +24,7 @@ terms; Profile is the app's:
 - **Profile**: one configured ZoneMinder server, with its URL, credentials, and
   settings. Settings are scoped to a profile, never global.
 
-Profile scoping reaches further than the settings screen. Every React Query
-cache key carries the profile id (``queryKeys.monitors(profileId)`` in
+Every React Query cache key carries the profile id (``queryKeys.monitors(profileId)`` in
 ``lib/query/query-keys.ts``), and per-profile client state such as favorited
 events is keyed the same way (``profileFavorites`` in
 ``stores/eventFavorites.ts``), so switching servers cannot show you the

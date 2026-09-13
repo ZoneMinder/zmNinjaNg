@@ -126,8 +126,8 @@ under ``STORAGE_KEYS.authRefreshToken``:
 
 If secure storage is unavailable (no Web Crypto), the token is dropped rather
 than written in plaintext, and the user re-authenticates. The access token is
-never persisted at all, which has consequences on cold start (see the freshness
-gate below).
+never persisted at all, so on cold start the app has no usable token until
+login or refresh completes (see the freshness gate below).
 
 Auth gates
 ^^^^^^^^^^
@@ -153,7 +153,9 @@ that, so a client is always reached through ``getSession(profileId)``. Tests inj
 object literals with the same method names, so no test mocks zustand to
 exercise the client.
 
-Single-flight state sits behind the gates rather than in the client. The
+Single-flight state (one shared in-progress promise that concurrent callers
+await instead of starting their own call) sits behind the gates rather than in
+the client. The
 pending ``login``, ``getFreshAccessToken``, ``refreshAccessToken``,
 ``proactiveLogin``, and ``recoverFromAuthFailure`` promises are module-level
 variables in ``stores/auth.ts``, keyed by profile, and
@@ -162,7 +164,7 @@ variables in ``stores/auth.ts``, keyed by profile, and
 rebuilt session cannot inherit a login, refresh, or recovery started for the
 session it replaced; ``dropAllSessions()`` does the same for every profile.
 
-The same DI-gate shape (module defines a narrow gate interface and a
+The same dependency-injection gate shape (module defines a narrow gate interface and a
 setter, a store assembles the real implementation from ``getState()`` and
 registers it once at load time) is used wherever a low-level module would
 otherwise need a static import of a zustand store that itself depends on
@@ -242,7 +244,7 @@ The background refresher in ``hooks/useTokenRefresh.ts`` keeps the
 stored access token current on a 60-second cadence. That is enough for
 calls routed through ``createApiClient``, which can intercept a 401
 and retry. It is not enough for URLs that the browser or native runtime
-loads directly: ZMS stream frames, event MP4s, event thumbnails, and
+loads directly: frames from ZMS (ZoneMinder's streaming server, ``nph-zms``), event MP4s, event thumbnails, and
 push-notification image backfills. Once a stale token is baked into a
 ``<img>`` or ``<video>`` ``src``, the request fires with no interceptor
 in front of it. A 401 there shows up as a broken image, not a retry.
@@ -447,8 +449,7 @@ marks the monitor as viewed and keeps ``zmc`` decoding.
 monitor reports a ``Decoding`` other than ``ZM_DECODING_ALWAYS``, and
 ``mode=single`` otherwise: a monitor on ``Always`` never stops decoding and
 does not need a stream, and a server that reports no ``Decoding`` at all is
-older than the field. That fallback matters because ``frames=`` arrived
-later than ``Decoding`` did: ``zms`` logs unknown parameters and keeps
+older than the field. ``frames=`` arrived later than ``Decoding`` did, and ``zms`` logs unknown parameters and keeps
 streaming, so a ``frames=1`` request to a server without it would leave an
 unbounded MJPEG connection open on every poll. The version check against
 ``ZMS_FRAMES_PARAM_MIN_VERSION`` closes the gap for the 1.37 development
@@ -487,7 +488,7 @@ How this app uses React Query
 Server state is managed with ``@tanstack/react-query``. :doc:`02-react-fundamentals`
 teaches the model (a query is a keyed cache entry plus a fetch function; a
 mutation writes and then invalidates keys). This section covers only what is
-specific to zmNinjaNg, and none of it is guessable from the TanStack docs.
+specific to zmNinjaNg.
 
 Query keys come from a factory
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -652,8 +653,8 @@ with ``resolveQueryError(err, t)`` (``lib/query/query-error.ts``), which folds a
 401 into the localized auth prompt and everything else into a translated
 fallback (the Query UI states contract). Never render ``error.message`` directly.
 
-A request that never reached the server is resolved separately, and the test
-for it is structural: it carries no ``status``, because there was no response
+A request that never reached the server is resolved separately. Such a
+request carries no ``status``, because there was no response
 to take one from, while an HTTP error always has one. Do NOT match on the
 message. The four adapters word this failure four different ways, and one of
 them omits the address entirely:
@@ -674,9 +675,7 @@ them omits the address entirely:
 
 The leading slash in the Android form is ``InetSocketAddress.toString()``,
 which prints ``hostname/literal-address``; a raw IP has no hostname, so the
-hostname half comes out empty. That artifact used to reach users verbatim
-through ``assistant.error_generic`` ("Ninjii error: {{error}}"), untranslated
-in all five locales (refs #312).
+hostname half comes out empty (refs #312).
 
 The address therefore comes from the REQUEST, not the message. ``lib/http.ts``
 stamps ``HttpError.host`` with ``new URL(fullUrl).host`` in its catch, the one
@@ -695,8 +694,8 @@ Refetch intervals come from bandwidth settings
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Any query that polls reads its interval from ``useBandwidthSettings()``, never
-a literal (the Polling contract). The user's Normal/Low choice is the single lever that
-changes network usage across every screen:
+a literal (the Polling contract). The user's Normal/Low choice sets every polling
+interval, along with image scale, image quality, and stream frame rate:
 
 .. code:: tsx
 
@@ -784,7 +783,7 @@ before a profile is even selected. Every profile-scoped query in this app
 carries ``enabled: !!currentProfile && isAuthenticated`` or equivalent.
 
 In React Query v5, a *disabled* query reports ``isLoading`` as ``false``, not
-``true``: React Query reports it as idle, not pending. Effects
+``true``. Effects
 that self-heal or reset on ``!isLoading && !data`` will therefore fire against
 a query that never ran. Gate those on ``isSuccess`` instead.
 
@@ -1240,7 +1239,7 @@ Type               Description           Use Case
    const response = await httpGet<string>(url, { responseType: 'base64' });
 
 On mobile, never convert to a Blob (the Native contract). A large MP4 held as a Blob in the
-WebView heap will OOM the app.
+WebView heap runs the app out of memory.
 
 Error handling
 ~~~~~~~~~~~~~~
@@ -1288,16 +1287,16 @@ means the server build predates tags rather than a real error:
 Schema drift tolerance
 ----------------------
 
-ZoneMinder changes what it sends between releases, and the Zod schemas in
-``api/types.ts`` are the only thing between that and a blank screen. The policy,
-enforced by tests in ``api/__tests__/types.test.ts`` and by the data-integrity
-playbook (``agents/project/data-integrity.md``): a response must never fail because of a field.
+ZoneMinder changes what it sends between releases, and the API layer validates
+responses against the Zod schemas in ``api/types.ts``. ``validateApiResponse`` throws when a
+schema rejects the data, so a single mismatched field fails the whole request.
+A response must never fail because of a field. Tests in
+``api/__tests__/types.test.ts`` and the data-integrity playbook
+(``agents/project/data-integrity.md``) enforce that rule.
 
-There are two distinct hazards, and only one is about *new* fields.
-
-A field ZoneMinder adds that we do not declare is already harmless, because Zod
-strips unknown keys. The danger is the reverse: a field we *do* declare whose
-type drifts. In ZM 1.38.3 ``V4LMultiBuffer`` began arriving as boolean ``false``
+The danger is a field we *do* declare whose type drifts. A field ZoneMinder
+adds that we do not declare is harmless, because Zod strips unknown keys. In
+ZM 1.38.3 ``V4LMultiBuffer`` began arriving as boolean ``false``
 where ``MonitorSchema`` said ``z.string()``, and one field the app never reads
 took every camera off the screen (#247).
 
@@ -1448,8 +1447,8 @@ Monitor exclusion
 
 Each profile can hide monitors. The hidden IDs live in
 ``excludedMonitorIds`` on the profile's settings, and the exclusion is
-applied at the API boundary so hidden monitors never enter the rest of the
-app.
+applied at the API boundary so hidden monitors stay out of every screen that
+does not explicitly ask for them.
 
 ``getMonitors`` drops excluded monitors by default. Callers that need the full
 list, such as the Settings UI that restores monitors, pass ``includeExcluded``:
@@ -1602,8 +1601,8 @@ restriction:
 Three results, each meaning something different:
 
 - The account's columns, when the list came back and contained its row.
-- ``SYSTEM_NONE_PERMISSIONS`` when the server answered 401. That refusal is
-  itself an answer: it proves ``System`` is ``'None'``, and leaves every other
+- ``SYSTEM_NONE_PERMISSIONS`` when the server answered 401. A 401 proves
+  ``System`` is ``'None'``, and leaves every other
   column unknown.
 - ``undefined`` when the list came back without a matching row, which happens
   if ZoneMinder maps the token to a name the profile does not store. Gating a
@@ -1733,7 +1732,7 @@ way through ``eventPlaybackMuted``, MP4 only, since ZMS has no audio (refs #463)
 Notifications API (``api/notifications.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Manages FCM push token registration through ZoneMinder's Notifications REST
+Manages FCM (Firebase Cloud Messaging) push token registration through ZoneMinder's Notifications REST
 API. Used in Direct ZM notification mode, where tokens are registered via REST
 instead of over the Event Server WebSocket.
 
@@ -1785,7 +1784,7 @@ Singleton via ``getNotificationService()``.
 
 - Exponential backoff with jitter: 2 s, 4 s, 8 s, 16 s, capped at 2 minutes
   (``baseReconnectDelay`` 2000, ``maxReconnectDelay`` 120000).
-- Jitter of ±25% prevents a thundering herd when many clients reconnect.
+- Jitter of ±25% stops many clients from reconnecting at the same moment.
 - Reconnection continues indefinitely until the user explicitly disconnects.
   An ``intentionalDisconnect`` flag distinguishes a user-initiated disconnect
   from a network failure; only the former stops reconnection.
@@ -1842,7 +1841,7 @@ store imports.
 - Poll interval comes from ``resolvePollIntervalMs`` in
   ``stores/notifications.ts``: the profile's own ``pollingInterval`` (the
   Notification settings dropdown) wins, and Low bandwidth mode floors it at
-  ``eventPollerInterval`` so the mode can never be made faster than itself.
+  ``eventPollerInterval``, so Low mode never polls faster than that value.
   A missing or nonsensical stored value falls back to the bandwidth default.
 - Scheduling is a recursive ``setTimeout``, not ``setInterval``, so an interval
   change (the user picking a new cadence, or switching to Low mode) takes effect
@@ -1893,13 +1892,14 @@ End-to-end flow: viewing monitors
    URL through ``getStreamUrl``, and renders an ``<img>``.
 
 The stream URL never touches React Query. It is a plain string handed to the
-browser, which is the whole reason the freshness gate exists.
+browser, which is one reason the freshness gate exists.
 
 ZoneMinder streaming protocol
 -----------------------------
 
 Video streams are served by a separate ZoneMinder daemon (ZMS). Tracking the
-stream lifecycle correctly avoids leaving zombie streams on the server.
+stream lifecycle correctly avoids leaving zombie streams on the server: ZMS
+processes that keep streaming after no client is watching.
 
 Stream lifecycle
 ~~~~~~~~~~~~~~~~

@@ -1,7 +1,8 @@
 Application Lifecycle
 =====================
 
-How the app runs from launch to shutdown, a runtime map of zmNinjaNg.
+How zmNinjaNg starts, bootstraps a profile, and keeps running in the foreground
+and background.
 
 Entry point (``index.html`` to ``main.tsx``)
 --------------------------------------------
@@ -23,7 +24,7 @@ it; the page loads ``src/main.tsx``; and ``main.tsx`` finds the
 Both names are imported directly: ``createRoot`` from ``react-dom/client`` and
 ``StrictMode`` from ``react``. ``StrictMode`` deliberately mounts every
 component twice in development, running each effect's setup, then its cleanup,
-then its setup again. That matters more here than in most apps, because effects
+then its setup again. That matters because effects
 in this codebase open MJPEG streams and WebSocket connections. Anything that
 connects on mount has to survive being torn down and reconnected immediately, so
 several hooks guard or delay their connect for this reason.
@@ -82,7 +83,8 @@ responsive. It runs in order:
    from that port and the server's monitor count.
 
 Step 8 only runs while the profile's ``viewModeChosen`` flag is unset. Neither
-the bucket nor ``viewMode`` itself is the signal: ``lastRoute``, the theme, or
+the profile's bucket (its settings object in the settings store) nor
+``viewMode`` itself is the signal: ``lastRoute``, the theme, or
 the self-signed certificate flag can create the bucket before the first
 bootstrap ever runs (the first profile is only bootstrapped on the next
 launch, and ``ProfileForm`` writes the certificate flag before switching to a
@@ -133,7 +135,7 @@ Bootstrap cancellation
 ~~~~~~~~~~~~~~~~~~~~~~
 
 If the server is unreachable or bootstrap takes too long, users can
-cancel:
+cancel.
 
 The **Cancel** button on the bootstrap overlay calls ``cancelBootstrap()``,
 which clears ``currentProfileId``. With no active profile the router sends the
@@ -157,8 +159,7 @@ Once bootstrap completes (or is cancelled):
 Authentication flow
 -------------------
 
-zmNinjaNg handles authentication differently than a typical SaaS app because
-it connects to potentially *any* ZoneMinder server, each with different
+zmNinjaNg can connect to any ZoneMinder server, and each server has its own
 auth requirements.
 
 Token exchange
@@ -166,19 +167,19 @@ Token exchange
 
 On login, or when the app wakes up:
 
-1. **Credentials**: ``bootstrapAuth`` asks the profile store for the decrypted
+1. Credentials: ``bootstrapAuth`` asks the profile store for the decrypted
    password (``getDecryptedPassword``) and passes it with the profile's
    username to the auth store's ``login()``. The refresh token itself never
    sits in the persisted blob: ``stores/auth.ts`` reads and writes it through
    ``lib/security/secureStorage.ts``, and drops it rather than falling back to
    plaintext when secure storage is unavailable.
-2. **Login API**: ``login()`` in ``api/auth.ts`` posts form-encoded credentials
+2. Login API: ``login()`` in ``api/auth.ts`` posts form-encoded credentials
    to ``/host/login.json``. ZoneMinder wants a form body here, not JSON, so the
    call goes through ``client.postForm`` rather than the usual JSON path.
-3. **Response**: Server returns ``access_token`` and ``refresh_token``, which
+3. Response: Server returns ``access_token`` and ``refresh_token``, which
    ``LoginResponseSchema.parse`` validates before anything reads them.
-4. **Store**: Tokens are saved to ``useAuthStore`` (in memory mostly,
-   refresh token persisted).
+4. Store: Tokens are saved to ``useAuthStore``. The access token stays in memory
+   only; the refresh token goes to secure storage, as step 1 says.
 
 ``refreshToken()`` in the same file posts to the same ``/host/login.json``
 endpoint, sending the refresh token instead of the credentials.
@@ -214,8 +215,7 @@ replace one before it lapses, without the user noticing.
 Steady state
 ------------
 
-Once logged in and on the Dashboard, several background processes keep
-the app alive.
+Once logged in and on the Dashboard, several timers refresh data.
 
 Every interval below except the token check comes from
 ``BANDWIDTH_SETTINGS`` in ``lib/zmninja-ng-constants.ts``, read through
@@ -223,18 +223,18 @@ Every interval below except the token check comes from
 switching the profile to low-bandwidth mode slows all of them at once. Both
 values are given.
 
-1. **Token Refresh**: Background timer checks token expiry every 60
+1. Token refresh: Background timer checks token expiry every 60
    seconds (``ZM_INTEGRATION.tokenCheckInterval``) and refreshes once within 30
    minutes of expiry (``ZM_INTEGRATION.accessTokenLeewayMs``). This one is not
-   bandwidth-scaled: a lapsed token breaks everything, so it is not a knob.
-2. **Event Polling**: Dashboard event widgets poll on
+   bandwidth-scaled: once the token lapses, every authenticated API call fails
+   with a 401, so it is not a knob.
+2. Event polling: Dashboard event widgets poll on
    ``eventsWidgetInterval`` (30s / 60s). The monitor-detail recent-events list
    uses ``monitorRecentEventsInterval`` (30s / 60s).
-3. **Monitor Status**: The monitor list polls ``monitorStatusInterval``
+3. Monitor status: The monitor list polls ``monitorStatusInterval``
    (20s / 40s). Alarm state on the Monitor Detail page polls the faster
-   ``alarmStatusInterval`` (5s / 10s), because an alarm the user cannot see
-   within a few seconds is not worth showing.
-4. **Stream Keep-Alive**: Streaming connections (``useMonitorStream``, via
+   ``alarmStatusInterval`` (5s / 10s).
+4. Stream keep-alive: Streaming connections (``useMonitorStream``, via
    the ``useStreamLifecycle`` hook it composes) monitor their own health. If a
    stream dies, they reconnect with a fresh connection key (``connkey``),
    releasing the dead one with ``ZMS_COMMANDS.cmdQuit`` first so ZMS does not
@@ -248,7 +248,7 @@ values are given.
    refresh, and gives up after ``plannedRestartHoldMs`` so a restart that never
    produces a frame stops standing in for a live one. Both the scale change and
    the CMD_QUIT it triggers are logged.
-5. **WebSocket Keepalive & Reconnect**: The notification WebSocket
+5. WebSocket keepalive and reconnect: The notification WebSocket
    (``services/notifications.ts``) sends a version-request ping every
    ``wsKeepaliveInterval`` (60s / 120s) to maintain the connection. On
    disconnection, it reconnects automatically using exponential backoff with
@@ -266,7 +266,7 @@ values are given.
    ``useNotificationPushSetup`` (FCM token initialization on mobile), and
    ``useNotificationDelivered`` (cold start notification processing and
    resume badge sync)
-6. **Daemon Status**: Server page checks ZoneMinder daemon health on
+6. Daemon status: Server page checks ZoneMinder daemon health on
    ``daemonCheckInterval`` (30s / 60s)
 
 For a reference of all timers, polling intervals, and scheduled
@@ -275,13 +275,10 @@ actions across the application, see :doc:`07-api-and-data-fetching`.
 Mobile lifecycle (Capacitor)
 ----------------------------
 
-On iOS and Android, the app has unique lifecycle states handled by the
-OS.
-
 Backgrounding
 ~~~~~~~~~~~~~
 
-When the user swipes the app away (but doesn't close it):
+When the user switches to another app without closing this one:
 
 Capacitor fires ``pause`` and ``appStateChange``, and JavaScript execution
 mostly stops. Intervals stop firing, so anything that depends on a timer is
@@ -290,12 +287,13 @@ stale on return.
 Nothing explicitly pauses the MJPEG streams. The OS suspends the webview, the
 socket goes quiet, and the stream is dead when the app comes back.
 
-The montage while aggregating is the one exception, and only when
+The montage on an aggregate (a virtual profile that spans several servers,
+such as "All Servers") is the one exception, and only when
 ``allModePauseHidden`` is on: ``useHiddenPause`` fires
 ``MONTAGE_GRID.pauseHiddenGraceMs`` after the page goes hidden and disables
 each tile's stream hooks, which CMD_QUITs the connkey instead of leaving the
 server's ``nph-zms`` process running until it notices the socket is gone. See
-:doc:`04-pages-and-views` for the rest of the All-mode guardrails.
+:doc:`04-pages-and-views` for the other limits the montage applies on an aggregate.
 
 ``App.tsx`` flushes the log buffer on ``pause``, so entries are not lost if the
 OS kills the process while it is backgrounded.
@@ -367,6 +365,6 @@ keyed by profile and filters, precisely because opening an event unmounts the
 page and a purely component-local count would collapse back to the first page
 when the user navigated back.
 
-The one place this bites is scroll position, which is component-local by
+Scroll position is one place this bites, which is component-local by
 default. Persist it to a Zustand store if a screen needs to restore it.
 

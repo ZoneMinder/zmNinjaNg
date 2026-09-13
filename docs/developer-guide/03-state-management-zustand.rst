@@ -2,9 +2,9 @@ State Management with Zustand
 =============================
 
 zmNinjaNg uses `Zustand <https://github.com/pmndrs/zustand>`_ for global
-state, and nearly everything that has gone wrong with it traces back to
-one mechanism: Zustand decides whether to re-render by comparing a
-selector's previous result against its next one by reference. Structuring
+state. Several bugs with it trace to one mechanism. Zustand decides
+whether to re-render by comparing a selector's previous result against its
+next one by reference. Structuring
 stores and selectors around that comparison is most of what this chapter
 is about; the rest is how stores get written, persisted, and reached from
 outside React.
@@ -14,7 +14,8 @@ Why global state
 
 ``useState`` is fine for component-local state, but profile, auth,
 settings, and notifications need to be visible to many components across
-the tree. Without a shared store, you end up prop-drilling. Zustand gives
+the tree. Without a shared store, you end up prop-drilling: passing the same values
+as props through every component between the owner and the reader. Zustand gives
 you a global ``useState``-like hook any component can call, with no Context
 Provider, optional persistence middleware, and access from outside React
 via ``store.getState()``.
@@ -319,23 +320,23 @@ it lands in the in-app log viewer.
 Calling stores outside React
 ----------------------------
 
-Start from the rule, because it decides how the code below is shaped. The
-Service boundary contract (``AGENTS.project.md``) says a service never
+The Service boundary contract (``AGENTS.project.md``) says a service never
 statically imports a store, and the module graph under ``src/`` stays
 acyclic. The gate is ``src/tests/no-circular-deps.test.ts``, which walks
 every static import in the tree and fails with the cycle path if it finds
 one.
 
-The mechanism itself is ordinary: ``useProfileStore`` is a hook, but
+``useProfileStore`` is a hook, but
 ``useProfileStore.getState()`` is a plain function call that reads current
 state from anywhere. There is no subscription and no re-render; you get a
 snapshot of the values as of that instant. What the contract constrains is
 which module is allowed to make that call.
 
-The answer is dependency inversion, and it runs store-to-service. The
-service declares the shape of the state it needs and exposes a registration
-function; the store statically imports that one function, and at module load
-hands over accessors closed over ``getState()``. ``stores/notifications.ts``
+The store registers with the service instead. The service declares the
+shape of the state it needs and exposes a registration function; the store
+statically imports that one function, and at module load hands over
+accessors closed over ``getState()``. This is dependency inversion: the
+service owns the interface, and the store supplies the implementation. ``stores/notifications.ts``
 imports ``setPushServiceStoreGates`` from ``services/pushNotifications.ts``
 for that. The service imports nothing from any store: the types in
 its gate interface come from ``types/notifications.ts`` and ``api/types.ts``.
@@ -394,7 +395,7 @@ access token are still in effect, then does the single write that matters,
 continues outside React to ensure the new profile's session exists and run its
 bootstrap. There is no client to swap: the incoming profile's session is built
 by ``getSession(profile.id)`` and the outgoing profile's stays cached, so
-switching back costs nothing. Only the rollback path calls
+switching back rebuilds no session, though bootstrap runs again. Only the rollback path calls
 ``logout(profile.id)``.
 
 Stores in zmNinjaNg
@@ -450,8 +451,8 @@ deduped the same way, each behind its own shared promise.
 
 The next three are smaller, and this is the only place they are written up.
 
-**Kiosk** (``stores/kioskStore.ts``) holds lock state, the insomnia setting
-captured at lock time so unlocking can restore it, and the PIN cooldown.
+**Kiosk** (``stores/kioskStore.ts``) holds lock state, the keep-screen-awake
+setting (``insomnia``) captured at lock time so unlocking can restore it, and the PIN cooldown.
 After ``KIOSK.maxPinAttempts`` (5) failures, ``recordFailedAttempt`` sets
 ``cooldownUntil`` to ``KIOSK.cooldownMs`` (30 seconds) in the future. Nothing
 is persisted, so the app always starts unlocked. The PIN itself lives in
@@ -529,12 +530,12 @@ against a fresh ``useMonitorStore.getState().connKeys``.
 Reference equality and infinite loops
 -------------------------------------
 
-Every trap in this chapter comes from comparison by reference. Zustand decides whether to
+Most traps in this chapter come from comparison by reference. Zustand decides whether to
 re-render by comparing references. React decides whether to re-run an effect
 or rebuild a ``useCallback`` by comparing references. Hand either of them a
 value that is rebuilt on each pass and you get a cycle that never settles.
 
-``DashboardLayout`` sits in the worst version of this. The store owns the
+``DashboardLayout`` risks a loop between the store and the grid. The store owns the
 widget layouts; the grid owns a local copy in ``useState`` so dragging feels
 immediate; and ``react-grid-layout`` fires ``onLayoutChange`` whenever that
 local copy moves. Writing every fired layout back to the store would mean:
@@ -575,13 +576,13 @@ resulting ``onLayoutChange`` is ignored rather than echoed back.
 dependency array, so the callback identity survives a profile change instead
 of being rebuilt and handed to ``react-grid-layout`` as a new prop.
 
-Notice the third defense, and the one to reach for first: ``areLayoutsEqual``
-compares layouts field by field, and ``setLayout((prev) => equal ? prev :
+The third defense costs less than the refs, so try it before them.
+``areLayoutsEqual`` compares layouts field by field, and ``setLayout((prev) => equal ? prev :
 next)`` returns the *previous* array when nothing moved. React bails out of a
 re-render when ``useState`` is set to the identical reference. Structural
 comparison plus returning the old reference is what ``useShallow``
 does for selectors, applied here at component scope.
 
-Reach for refs only after the cheaper move fails: select a primitive.
+Before either, try selecting a primitive, which is the cheapest move.
 ``currentProfileId`` is a string, ``isEditing`` is a boolean, and neither can
 ever be a stale reference.

@@ -1,15 +1,16 @@
 Testing Strategy
 ================
 
-Tests are layered:
+The suite has three tiers.
 
 1. **Unit tests**: functions, stores, and components, in isolation, in Node.
-2. **Web E2E**: user journeys in a real browser against a real ZoneMinder server.
+2. **Web end-to-end (E2E) tests**: user journeys in a real browser against a
+   real ZoneMinder server.
 3. **Device E2E**: an Appium harness that drives the built app on an Android
    emulator and iOS simulators.
 
-Every test verifies what a human tester would verify: can I do the task, did
-the data change, does it survive a refresh.
+Tests assert outcomes a user would notice, such as whether a task completes,
+whether data changed, and whether the change survives a refresh.
 
 Reading one unit test
 ---------------------
@@ -98,9 +99,10 @@ work and flushes it asynchronously. Awaiting the click waits for the flush, so
 the assertion on the next line runs against the settled DOM rather than the DOM
 as it was mid-update. Forget the ``await`` and the test reads a stale screen.
 
-Test behavior, not implementation: assert that clicking delete removes the
-monitor, not that ``handleDelete`` called ``removeMonitor``. The second test breaks on every refactor and passes even when
-the button is unreachable.
+To test a delete button, assert that clicking it removes the monitor, rather
+than that ``handleDelete`` called ``removeMonitor``. The second assertion breaks
+when ``handleDelete`` is renamed or inlined, and passes even when the button is
+unreachable.
 
 Where tests live
 ----------------
@@ -144,21 +146,22 @@ Always pass the factory: a bare ``vi.mock(path)`` auto-stubs at runtime while
 the import keeps the real types, and TypeScript rejects the
 ``.mockReturnValue()`` you were about to write.
 
-The testing playbook fixes what to mock: the boundary, never the app. The
-boundary is ``api/*`` (the HTTP
+The testing playbook fixes what to mock. The boundary is ``api/*`` (the HTTP
 client and the functions that call it), platform plugins (``setup.ts`` already
 mocks Capacitor), third-party modules such as React Router, i18next and toast,
 and a heavy leaf child that would open a stream or a canvas. The stores,
 hooks, services and components in between run for real.
 
-The reason is a failure mode a mocked store cannot show. In production
-``useShallow`` wraps a selector and compares its result field by field; a
+In production ``useShallow`` wraps a selector and compares its result field by field; a
 selector that mints a fresh array or object on every call defeats that and the
 component re-renders forever through ``useSyncExternalStore``. A test that
 stubs the store, or stubs ``useShallow`` to the identity function, sees a clean
 pass. Seven test files in this repository carried exactly that stub; against
 the real store three of them looped with "Maximum update depth exceeded", and
-the quality ratchet now fails any file that reintroduces it.
+the quality ratchet now fails any file that reintroduces it. The quality
+ratchet (``app/scripts/quality-ratchet.mjs``) is a gate that counts known-bad
+test patterns and fails when a count grows; :doc:`14-agent-development-model`
+describes it.
 
 Seeding the real stores
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -183,8 +186,8 @@ so a test cannot pass on a request nobody scripted.
    afterEach(() => { resetProfileFixture(); resetFakeStoreGates(); });
 
 The test then asserts on the store, which is where a user's click ends up.
-No ``addWidget`` spy: the real action ran, and the widget is either in the
-real store or it is not.
+There is no ``addWidget`` spy. The real action ran, and the widget is either
+in the real store or it is not.
 
 .. code:: tsx
 
@@ -207,11 +210,12 @@ real store or it is not.
      });
    });
 
-Assert values, not existence. ``toBeInTheDocument()`` says an element
+``toBeInTheDocument()`` says an element
 rendered and nothing about what it shows; the quality ratchet counts those
 too. The first file converted this way found a real bug: "the progress bar
 exists" became "the bar reports 40%", and it did not, because ``Progress``
-never forwarded ``value`` to its Radix root.
+never forwarded ``value`` to ``@radix-ui/react-progress``, the unstyled Radix
+UI component it wraps.
 
 Mocking React Query
 ~~~~~~~~~~~~~~~~~~~
@@ -233,12 +237,12 @@ with a function that returns the cache entry you want the component to see:
    }));
 
 Return ``{ data: undefined, isLoading: true }`` from the same factory to test
-the loading branch, and an ``error`` to test the error wall.
+the loading branch, and an ``error`` to test the ``ErrorBanner`` error state.
 
 Mocking a streaming hook
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-``useMonitorStream`` opens an MJPEG connection. ``LiveMonitorPlayer.test.tsx``
+``useMonitorStream`` opens a Motion JPEG (MJPEG) connection. ``LiveMonitorPlayer.test.tsx``
 swaps it for a plain object, which lets the test drive stream errors and
 connection-key changes by hand:
 
@@ -296,9 +300,8 @@ the state afterwards. From ``src/stores/__tests__/monitors.test.ts``:
      });
    });
 
-The ``beforeEach`` reset matters because the store module is imported once per
-test file and its state survives between ``it`` blocks. Without the reset, test
-order decides the result.
+The store module is imported once per test file and its state survives between
+``it`` blocks. Without the ``beforeEach`` reset, test order decides the result.
 
 Running unit tests
 ------------------
@@ -359,7 +362,7 @@ the feature files at run time (``bddgen``, in the ``test:e2e`` script).
 Feature files
 ~~~~~~~~~~~~~
 
-Each scenario is one user goal, not one element:
+Each scenario covers one user goal:
 
 .. code:: gherkin
 
@@ -397,7 +400,7 @@ Step definitions
 ~~~~~~~~~~~~~~~~
 
 Steps live in per-screen files under ``tests/steps/`` and use Playwright's
-``page`` fixture directly. There is no driver abstraction layer.
+``page`` fixture directly.
 
 .. code:: ts
 
@@ -436,11 +439,10 @@ locale changes, and it is not unique. Every interactive element gets one:
 Capability guards
 ^^^^^^^^^^^^^^^^^
 
-Gate on capability, never on the UI under test. Some features exist only when
-the server or device supports them: PTZ controls render only for a controllable
-monitor. The tempting guard is to check whether the panel is on screen and skip
-if not. That guard is self-defeating: if the panel regresses and stops
-rendering, the guard goes false and every assertion below it silently no-ops,
+Pan-tilt-zoom (PTZ) controls render only for a controllable monitor, and other
+features likewise exist only when the server or device supports them. The
+tempting guard is to check whether the panel is on screen and skip if not. If
+the panel regresses and stops rendering, the guard goes false and every assertion below it silently no-ops,
 so the test passes when the feature breaks.
 
 The testing playbook requires the capability to come from an independent
@@ -570,8 +572,7 @@ device harness captures PNGs and stops there, and no step, helper, or npm
 script performs a pixel comparison. The one layout assertion that does run is
 ``Then no element should overflow the viewport horizontally`` in
 ``tests/steps/platform.steps.ts``, which walks the DOM for elements extending
-past ``window.innerWidth`` outside a scroll container. Screenshots are for a
-human to look at.
+past ``window.innerWidth`` outside a scroll container.
 
 Device setup
 ------------
@@ -683,8 +684,8 @@ Finding the exact names your machine uses:
 Debugging tests
 ---------------
 
-``screen.debug()`` pretty-prints the current jsdom document, which is the
-fastest way to find out why a query matched nothing:
+``screen.debug()`` pretty-prints the current jsdom document, which is a
+quick way to find out why a query matched nothing:
 
 .. code:: tsx
 

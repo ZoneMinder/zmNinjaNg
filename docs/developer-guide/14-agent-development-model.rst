@@ -14,7 +14,7 @@ without line review of diffs, and where a human still reviews.
    Two documents test this chapter's claims; read them after the guide. The
    `all-profiles retrospective
    <https://github.com/ZoneMinder/zmNinjaNg/blob/main/docs/superpowers/analysis/2026-08-04-all-profiles-retrospective.md>`_
-   is a commit-by-commit validation of this model over four days of
+   is a commit-by-commit retrospective of this model over four days of
    work: three programs, roughly ninety agent contexts, and every
    defect the review loop caught before merge, with the probes and
    mutations that proved each one. It also reports what cost time and
@@ -35,7 +35,7 @@ One codebase ships everywhere zmNinjaNg runs: iOS and Android through
 Capacitor, macOS, Windows, and Linux through Electron, and the browser
 directly.
 
-zmNinjaNg is the front end of an ecosystem built on ZoneMinder. zmNinjaNg,
+zmNinjaNg is the front end of a set of projects built on ZoneMinder. zmNinjaNg,
 zmesNg, and pyzmNg are developed under the model this chapter describes;
 ZoneMinder is not.
 
@@ -90,8 +90,8 @@ Every workflow, and what fires it:
      - Purpose
    * - ``ci.yml``
      - every PR, push to main
-     - version guard, lints, build, unit tests (full-history checkout for
-       the evidence gate), the proven-red check and script tests, and web
+     - version guard, lints, build, unit tests (full-history checkout so
+       the gate can confirm commit hashes cited as evidence exist), the proven-red check and script tests, and web
        e2e when the ZM secrets are set
    * - ``claude.yml``
      - @claude mention on issues and PRs
@@ -115,35 +115,34 @@ Every workflow, and what fires it:
 Moving from code review to constraint enforcement and design review
 -------------------------------------------------------------------
 
-Reading every generated diff stopped scaling early, and a person skimming a
-few hundred generated lines misses more than a failing test does. The principles that replaced it:
+Reading every generated diff stopped scaling early. What replaced it:
 
-- **Written constraints.** Every rule an agent has to
+- Every rule an agent has to
   follow is written down; every rule a script can check has a script
   checking it; when something breaks that no rule covered, the fix has to
   include the rule that would have covered it. The maintainer states what
   should happen (a bug, a feature, an issue number), an agent does the
   work, and the gates decide whether it lands.
-- **Cross-model checks.** Reviews are dispatched to an agent that
+- Reviews are dispatched to an agent that
   did not write the code, and at milestones different frontier models
   re-verify each other's claims, gates re-run included.
   `Issue #217 <https://github.com/ZoneMinder/zmNinjaNg/issues/217#issuecomment-4882243836>`__
   has a worked example: Fable re-reviewing a 15-commit delta that Opus
   had reviewed, four verification agents plus a fresh gate run.
-- **Knowledge in the repository.** Session memory cannot be seen by
+- Session memory cannot be seen by
   other agents, other contributors, or CI, and dies with the machine.
   A revert or a string of fixes to one file marks a lesson worth writing down.
   The facts in
   `domain-context.md <https://github.com/ZoneMinder/zmNinjaNg/blob/main/agents/project/domain-context.md>`__
   came from sweeping agent memory and the full commit history once; rule
   M5 requires the same of every future session.
-- **Rules by concern.** There is no frontend or backend
+- There is no frontend or backend
   rulebook: a contract owns its subsystem's invariant whichever layer it
   sits in, platform divergence lives in the native playbook and
   domain-context, and the dev guide teaches the frameworks. A layer
   playbook gets created only when a recurring failure class arrives with
-  no home in the current cut.
-- **Agent count.** Every dispatch
+  no home in the current playbook split.
+- Every dispatch
   re-reads context, and reviews of mechanical work here found nothing the
   gates had not already proven. Review ceremony scales with a change's
   risk, and delegation has a floor: a trivial gate-covered edit is made
@@ -176,12 +175,12 @@ This section follows one change through that process: bulk event deletion
 (`issue #213 <https://github.com/ZoneMinder/zmNinjaNg/issues/213>`__,
 shipped 2026-07).
 
-It starts as a conversation: a brainstorming pass turns "I want
+A brainstorming pass turns "I want
 to delete events in bulk" into a design doc in
 `docs/superpowers/specs/ <https://github.com/ZoneMinder/zmNinjaNg/tree/main/docs/superpowers/specs>`__:
 what the user sees, what is out of scope, which existing pieces get
 reused. The maintainer reads and approves that half page; changing
-direction costs nothing at this point. The specs directory holds seventeen
+direction costs little at this point. The specs directory holds seventeen
 specs.
 
 An approved spec becomes an implementation plan in
@@ -202,7 +201,7 @@ Which tier a plan's embedded tests target follows a routing rule from the
 `testing playbook <https://github.com/ZoneMinder/zmNinjaNg/blob/main/agents/project/testing.md>`__:
 pure logic in ``lib/``, stores, and hooks gets unit tests beside the
 source; anything a user sees or navigates gets a scenario in a feature
-file plus units for the logic underneath; native-only flows (PiP,
+file plus units for the logic underneath; native-only flows (picture-in-picture,
 biometrics, downloads) are verified on a device by hand. E2e asserts the
 journey, units assert the edge cases, and the same assertion never lives
 in both tiers. Scenario selectors come from ``data-testid``, generated by
@@ -211,8 +210,8 @@ kebab-case, entity-id suffix for repeated elements
 (``monitor-card-${monitor.Id}``), kind or role suffix for variants
 (``assistant-message-${msg.role}``).
 
-Execution is subagent-driven: one agent per task with fresh context, the
-orchestrating session staying clean to judge reports. Each task ends with
+One agent runs each task with fresh context, and the orchestrating
+session stays clean to judge reports. Each task ends with
 the covering gates (``npm run gates`` scoped to what changed), each
 judgment-heavy task gets an independent review against its brief, and one
 whole-branch review runs before the PR. The
@@ -224,7 +223,7 @@ By the PR, the gates have already run: branch protection holds
 the merge until every required check passes, and the merge is queued with
 GitHub auto-merge rather than polled for. What the gates cannot prove,
 the maintainer checks by hand where it matters: UI work gets a real
-device pass (PiP, biometrics, and rotation are not trusted from a
+device pass (picture-in-picture, biometrics, and rotation are not trusted from a
 simulator), and anything native waits for that verification before merge.
 Then rule P10 applies: the user guide gains the feature, this guide
 gains the components, and the call flow gets traced.
@@ -252,9 +251,9 @@ the subsystem owns, the sanctioned path through it, the bypasses that are
 always bugs, and the gate that checks it.
 
 A **gate** is a script that enforces a rule. Rule M1 requires one for any
-rule a script could check, added in the same change as the rule; an audit
-here once found every ungated rule violated while every gated rule held,
-which is the reason for the rule. Current gates: the unit suite, three
+rule a script could check, added in the same change as the rule. M1 cites
+the audit behind it, which found every ungated rule violated while every
+gated rule held. Current gates: the unit suite, three
 blocking lints, the ratcheted lint baseline, the quality ratchet and
 proven-red check described under "How the pieces fit", and
 `agents-contracts.test.ts <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/tests/agents-contracts.test.ts>`__,
@@ -265,9 +264,9 @@ evidence exist in history, the knowledge files contain no emails or IP
 addresses, and rule IDs cited in this guide resolve. Branch protection on
 ``main`` requires these checks, so a PR cannot merge before they pass;
 merges queue with GitHub auto-merge and land when the checks go green.
-Rule M2 covers the gates' own blind spot: a number a gate
-reports has to describe the thing it claims to measure, because a gate
-that measures the wrong input passes forever.
+Rule M2 requires checking a gate's input as well as its exit code. A
+number a gate reports has to describe the thing it claims to measure, and
+a gate that reads the wrong input can pass while its rule is broken.
 
 A **practice** is advisory guidance in the playbooks under
 `agents/ <https://github.com/ZoneMinder/zmNinjaNg/tree/main/agents>`__:
@@ -275,8 +274,9 @@ how to structure multi-agent work, when review ceremony is worth it, which
 model tier fits which kind of task, and the accumulated domain facts.
 Practices cite evidence (commit hashes, a validation date) instead of
 carrying IDs, load only when the work touches their area, and lose to
-rules on any conflict. A practice becomes a rule when ignoring it starts
-breaking things.
+rules on any conflict. A practice becomes a rule through the
+self-improvement protocol, when a breakage or review finding shows the
+practice would have prevented it.
 
 Rules also get removed. Instructions are audited for cost, because every
 rule adds to the context of every future session whether or not it
@@ -333,7 +333,7 @@ holds workflow guidance that is not project-specific. Playbooks are read
 when the work touches their area, so they can afford detail that the
 always-loaded files cannot, and each fact has exactly one home: the
 playbooks point at contracts rather than restating them, so a rule
-changed in one place cannot drift in another.
+changed in one place is less likely to drift in another.
 
 Enforcement lives in ``app/src/tests/`` and the CI workflows. Covering
 gates run before every commit; the full battery runs before a push or PR
@@ -348,10 +348,12 @@ P2. Three such tests had passed review here before the job
 existed, each found only by stashing the fix and re-running by hand. The
 job proves every changed unit test, whatever the PR title says; a title type
 that carries no behavior change (``docs``, ``chore``, ``refactor``) only
-excuses a source change that brings no test, as in a pure refactor. Ratchet baselines and the repo-hygiene tests under
-``app/src/tests/`` are bookkeeping and gate work, not behavior: a new gate
-assertion is proven red against a scratch violation before it lands, not
-against the previous commit, where its violation does not yet exist. The quality
+excuses a source change that brings no test, as in a pure refactor. The job does
+not ask for a red run from a lowered ratchet baseline or a new repo-hygiene
+test under ``app/src/tests/``, because the previous commit holds no
+violation for such a test to find. Instead, the author proves a new
+assertion there red by adding a deliberate violation, watching the test
+fail, and removing the violation before the change lands. The quality
 ratchet
 (`quality-ratchet.mjs <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/scripts/quality-ratchet.mjs>`__,
 gated by ``quality-ratchet.test.ts``) records three counts in
@@ -383,8 +385,7 @@ mentioning it.
 When something breaks despite all of this, the PR with the fix also
 proposes the instruction change that would have prevented the break (with
 its gate, per M1), and any durable fact learned along the way goes into
-``domain-context.md`` (per M5). The maintainer ends up reviewing small
-instruction diffs instead of large code diffs.
+``domain-context.md`` (per M5).
 
 A contract, end to end
 ----------------------
@@ -417,9 +418,10 @@ must appear as words somewhere in ``app/src``
 (``useBandwidthSettings``, ``getBandwidthSettings``). Rename or delete the
 hook without updating the contract and the suite fails with
 ``Polling: symbol useBandwidthSettings not found in app/src`` until the
-contract matches the code again. Because a stale symbol fails the suite,
-the contracts cannot silently rot, and an agent can trust them instead of
-re-deriving the design.
+contract matches the code again. Because a stale name fails the suite,
+the symbols and paths in ``Path:`` and ``Gate:`` lines stay current, and an
+agent can trust them instead of re-deriving the design. The ``Owns:`` and
+``Never:`` text gets no such check.
 
 What the gate cannot check, review covers: nothing mechanical proves a new
 ``setInterval(30000)`` violates the ``Never:`` line, which is why the
@@ -433,9 +435,9 @@ Monthly scorecard review
 
 Gates miss drift that no one has written a gate for yet: duplication
 spreading across files, tests that pass without asserting much, a
-convention the code stopped following. The first of the two periodic
-human reviews covers this: roughly once a
-month, a scorecard review of the whole codebase. Long sessions degrade
+convention the code stopped following. The first of two periodic reviews
+covers this. Roughly once a month, the maintainer has an agent run a
+scorecard review of the whole codebase from a skill. Long sessions degrade
 too, with a gate that was clear at the start of a session ignored by the
 end of it; the scorecard re-runs those checks from a clean context.
 
@@ -445,9 +447,9 @@ self-consistency, performance, documentation, tooling, accessibility and
 i18n). Two constraints apply. A pillar only gets a number if a
 command was actually run to produce the evidence, and test quality is
 scored by what the suite would catch (assertion density, failure paths,
-boundary cases, mock saturation), never by test count. One useful probe:
-try to name a plausible bug the suite would miss; if that takes under a
-minute, the testing score is inflated. Output ends in a ranked fix list.
+boundary cases, mock saturation), never by test count. As a probe, the
+reviewer tries to name a plausible bug the suite would miss. If that takes
+under a minute, the testing score is inflated. Output ends in a ranked fix list.
 
 The repo has its own variant of this review as the
 `fable-review <https://github.com/ZoneMinder/zmNinjaNg/tree/main/.claude/skills/fable-review>`__
@@ -476,7 +478,7 @@ The second periodic review audits the instruction files against the
 commit history. The per-PR protocol only fires when someone notices in the
 moment that a lesson was learned; the
 `mine-history <https://github.com/ZoneMinder/zmNinjaNg/tree/main/.claude/skills/mine-history>`__
-skill catches what nobody noticed. It walks the history looking at
+skill looks for lessons nobody recorded at the time. It walks the history looking at
 reverts (something was tried and did not work), repeated fixes to the same subsystem (one misunderstanding
 surfacing over and over), and fixes that an existing gate should have
 caught. It reports candidate ``domain-context.md`` entries and candidate
@@ -494,8 +496,7 @@ Claude Code users can create a routine with the ``/schedule`` command.
 Token economics
 ---------------
 
-Token spend is treated as a design constraint, and most of the savings
-here are structural rather than tooling:
+Two parts of the setup keep token spend down:
 
 - Always-loaded context is capped: the instruction files sit under a
   word budget enforced by the gate (about 2k words, under 3k tokens per
@@ -507,12 +508,11 @@ here are structural rather than tooling:
   the combined count over it fails the suite, and the choice is to trim
   wording or raise the constant, where a raise is a deliberate edit to
   the gate with the reason in the commit message.
-- Ceremony is priced: implementation delegates to subagents on the
-  cheapest model that fits the task, trivial gate-covered edits skip the
-  dispatch entirely, and independent review runs only where judgment is
-  involved. Plans that embed their tests verbatim
-  are part of the same economics: transcription is the cheapest work a
-  model does, so the expensive thinking happens once, at planning time.
+- Implementation goes to subagents on the smallest model that fits the
+  task, trivial gate-covered edits skip the dispatch entirely, and
+  independent review runs only where judgment is involved. Plans embed
+  their tests verbatim, so the design work happens once, in the planning
+  session, and the implementing model copies tests and code from the plan.
 
 The maintainer additionally runs
 `tokless <https://github.com/HoangP8/tokless>`__, a local toolkit that
@@ -524,15 +524,11 @@ and reading files), and context-mode (runs analysis in a sandbox so raw
 bytes stay out of the context window). None of it is required to work on
 this repo.
 
-Two observations from using the stack on this project. Ponytail's
-bias shows up in decisions that are visible in the history: two
-instruction files instead of a template hierarchy, and one gate file
-instead of a test per rule. And output compression is the reason rule P6
-exists: in one
+Output compression is the reason rule P6 exists. In one
 working session the rtk wrapper capped a commit count at 50 on a
 2254-commit repo, hid a failing test behind a log-file path, and masked a
 red gate's exit status through a pipeline, each caught only by rerunning
-the bare command. That failure mode recurs: a later session found bare
+the bare command. A later session found bare
 ``git log`` silently capped at 50 again in a wrapped shell, detected only
 because ``git rev-list --count`` disagreed. Compression tools save tokens
 on reads but never wrap a gate, and their published savings claims get the
@@ -549,8 +545,7 @@ keeps it that way; project facts go in the other files.
 Write an ``AGENTS.project.md`` for your codebase. Most of the work is the
 contracts. Find the places where your code has one sanctioned path
 (settings, HTTP, logging, state) and write an Owns / Path / Never / Gate
-block for each, using real symbol names. Five contracts covering the paths
-people actually bypass are worth more than a complete inventory.
+block for each, using real symbol names.
 
 Copy
 `agents-contracts.test.ts <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/tests/agents-contracts.test.ts>`__
@@ -567,8 +562,7 @@ importing the two instruction files; other harnesses read ``AGENTS.md``
 directly. The two periodic reviews are optional.
 
 Do not start with thirty rules. A handful of contracts plus the core is
-enough, and the protocol grows the rest one incident at a time. Rules
-added after a real incident get followed, and speculative ones drift.
+enough, and the protocol grows the rest one incident at a time.
 
 Where everything lives
 ----------------------
@@ -591,6 +585,5 @@ What this asks of a contributor
 Human or agent, the entry points are the same: read ``AGENTS.md`` and
 ``AGENTS.project.md``, read the playbook for your area, and let the gates
 run. If a rule seems wrong, propose a change through the protocol instead
-of working around it; a workaround that never becomes a rule change is
-the drift this setup exists to prevent. See
+of working around it. See
 :doc:`09-contributing` for branches, commits, and verification commands.

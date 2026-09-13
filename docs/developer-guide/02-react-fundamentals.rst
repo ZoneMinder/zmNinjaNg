@@ -18,8 +18,8 @@ In a typical web stack you tell the DOM what to change:
    if (count > 5) button.classList.add('warning');
 
 Every event handler walks the DOM, finds elements, mutates them. As
-features grow, those mutations sprawl across the file and forget about
-each other.
+features grow, handlers mutate the same elements without knowing about
+each other, and the page drifts out of step with the data.
 
 React inverts that. You write a function that returns *what the UI
 should look like for the current data*, and React handles the DOM:
@@ -54,10 +54,9 @@ is not HTML; it compiles to ``React.createElement`` calls.
 **element**: a plain JavaScript object describing what should be
 rendered. React compares this render's elements against the previous
 render's elements and uses the difference to decide which DOM nodes to
-create, update, or remove. Everything React does with your components
-operates on those objects, not on the browser's DOM.
+create, update, or remove.
 
-JSX adds exactly three rules on top of JavaScript:
+JSX adds three rules on top of JavaScript:
 
 1. **Embed JS expressions in ``{}``**: ``<span>Hello, {name}</span>``,
    ``<button disabled={isLoading}>``, ``<ul>{items.map(...)}</ul>``.
@@ -81,8 +80,9 @@ an HTML element, ``<Welcome>`` as your component.
    // Use it like an HTML tag:
    <Welcome name="Alice" />   // renders: Hello, Alice!
 
-Components compose. A page is a component that renders other
-components, which render other components.
+The Monitors page (``app/src/pages/Monitors.tsx``) is a component that
+renders one ``MonitorCard`` per monitor, and each card renders a player,
+badges, and buttons.
 
 A real one from zmNinjaNg, simplified from
 ``app/src/components/monitors/MonitorCard.tsx`` (the original also
@@ -118,8 +118,8 @@ is the same as ``Welcome``: a function that returns JSX.
 Not everything in that snippet is React. Every interactive element
 carries a ``data-testid`` because the e2e suite selects on it, and no
 user-facing string is written inline: ``t()`` looks it up in the seven
-translation files. Both are house rules, and both are non-negotiable in
-this codebase.
+translation files. Both are house rules. No lint checks either one;
+code review does.
 
 Props: data flowing in
 ----------------------
@@ -159,8 +159,8 @@ callback belongs to the one component that renders a settings button.
 How this codebase writes a component
 ------------------------------------
 
-A few conventions, none of them enforced by React, all of them assumed
-by the rest of the guide. ``ZoneLegend`` shows most of them at once:
+A few conventions that React does not enforce but the rest of the guide
+assumes. ``ZoneLegend`` shows most of them at once:
 
 .. code:: tsx
 
@@ -189,16 +189,17 @@ object shape: ``export type MonitorRunState = 'live' | 'warning' |
 go right there too (``positionClassName = 'top-2 left-2'``), which is
 why the component never has to test for ``undefined``.
 
-**Exported functions declare their return type.** It is a check on the
-implementation, not documentation for the caller:
+**Exported functions declare their return type.** The compiler then
+flags a body that returns something other than the declared type:
 ``export const getMaxColsForWidth = (width: number, minWidth: number, gap: number): number =>``
 in ``lib/event/event-utils.ts``.
 
 **Never ``any``.** Use ``unknown`` and narrow. React Query hands errors
 back as ``unknown`` because a query function can throw anything, so
 ``resolveQueryError(err: unknown, t: TFunction)`` narrows before it
-touches a field (``lib/query/query-error.ts``). ``any`` disables the
-type checker precisely where it earns its keep. ``unknown`` forces the
+touches a field (``lib/query/query-error.ts``). ``any`` turns off
+checking for that value, so reading a field it does not have still
+compiles. ``unknown`` forces the
 narrowing to be written down.
 
 **Guard with early returns.** ``if (!visible) return null;`` reads
@@ -206,7 +207,7 @@ better than wrapping the whole tree in a conditional, and returning
 ``null`` from a component is how you render nothing. One constraint,
 from the rules of hooks below: every hook the component calls must run
 before any conditional ``return``, or the hook count changes between
-renders. Hooks first, guards second, JSX last.
+renders.
 
 State: data the component owns
 ------------------------------
@@ -264,7 +265,7 @@ How this goes wrong: mutating state in place
 React decides whether state changed by comparing the new value to the
 old one **by reference**. Mutating the existing array or object leaves
 the reference identical, so React concludes nothing changed and skips
-the re-render. The data is updated; the screen is not.
+the re-render.
 
 .. code:: tsx
 
@@ -289,9 +290,8 @@ A component re-renders when:
 2. Its props change.
 3. Its parent re-renders. *Even if its props didn't change.*
 
-Point 3 is the one that surprises people. By default, React doesn't
-try to be clever. When a parent re-renders, all its children re-render
-too. We'll see how to opt out (``memo``) later.
+By default, React does not compare props before re-rendering a child:
+when a parent re-renders, all its children re-render too. We'll see how to opt out (``memo``) later.
 
 A render is just a function call. React calls your component, gets the
 returned JSX, compares it to the previous result, and patches the DOM.
@@ -409,8 +409,7 @@ third one's value.
      if (!userId) return <p>Select a user</p>;
    }
 
-Early ``return`` statements are the same trap seen from the other side:
-every hook the component uses must be called before any conditional
+The same rule covers early ``return`` statements: every hook the component uses must be called before any conditional
 return. For data fetching, the hook that must not be skipped has a
 built-in way to sit idle instead, the ``enabled`` option described in
 :doc:`07-api-and-data-fetching`.
@@ -503,8 +502,8 @@ cleanup before each re-run of the effect and once at unmount.
 what you see while developing. On a development build React mounts each
 component, runs its effects, runs every cleanup, and mounts again. An
 effect that logs on setup therefore logs twice in ``npm run dev`` and
-once in a production build, and that is not a bug. What the double mount
-is there to expose is the opposite case: if the thing your effect
+once in a production build, and that is not a bug. The double mount
+exposes the opposite case. If the thing your effect
 started is still running twice afterwards (two intervals ticking, two
 streams open), the cleanup is not undoing everything the setup did.
 
@@ -517,7 +516,7 @@ need a value that:
 - persists across renders, and
 - can be updated without causing a re-render.
 
-That's a ref:
+``useRef`` gives you that value.
 
 .. code:: tsx
 
@@ -536,7 +535,7 @@ methods like ``.play()``, ``.focus()``, ``.scrollIntoView()``.
 **2. Escape the closure snapshot** in a long-lived effect or cleanup.
 An unmount cleanup with ``[]`` deps is created during the mount render,
 so by "Each render is a snapshot" above it closes over the values from
-that render and nothing else. That captured-too-early read has a name:
+that render and nothing else. This is called
 a **stale closure**. A ref is how you break out of one, because
 ``.current`` is read at call time rather than captured at definition
 time.
@@ -581,11 +580,13 @@ fields (``token``, ``viewMode``, ``minStreamingPort``,
 monitor changes, so it is almost never the value present at mount.
 Without the ref the cleanup would quit a connection key that no longer
 exists, the real stream would stay open on the server, and the user
-would accumulate one zombie ZMS process per monitor viewed.
+would accumulate one orphaned ZMS process (``nph-zms``, ZoneMinder's
+streaming server, which runs one process per open stream) per monitor
+viewed.
 
-The same ref feeds the profile-switch teardown thunk registered a few
-lines up, for the same reason: the thunk is registered once but called
-much later, and it must quit the stream that is running *then*.
+The same ref feeds the teardown function the hook registers with
+``app/src/lib/monitor/active-streams.ts`` for profile switches, for the
+same reason: that function is registered once but called much later, and it must quit the stream that is running *then*.
 
 Quick contrast:
 
@@ -662,7 +663,7 @@ Use them when:
 - The value is passed to ``React.memo``-wrapped children (see below).
 - The value is a hook dependency.
 - The computation is expensive (sorting a list, building a
-  ``Set``), which is rarer than people assume.
+  ``Set``).
 
 Don't use them everywhere. They cost memory and add reading overhead.
 A function used once inside a render and never passed down doesn't
@@ -671,7 +672,7 @@ need ``useCallback``.
 Object identity and unstable dependencies
 ----------------------------------------------
 
-Building on the previous section: this is the single most common
+Building on the previous section: this is a common
 source of "why is this re-rendering / re-fetching forever" bugs.
 
 .. code:: tsx
@@ -680,7 +681,7 @@ source of "why is this re-rendering / re-fetching forever" bugs.
    [1, 2] === [1, 2]        // false
    () => {} === () => {}    // false
 
-It bites hardest where you can't see the allocation. ``new Date()`` in
+Hidden allocations are the easy ones to miss. ``new Date()`` in
 a render body, an inline ``style={{ width: 100 }}``, an inline
 ``onChange={(e) => ...}``, and a ``{ ...defaults, ...props }`` spread
 all mint a fresh reference on every render.
@@ -707,9 +708,9 @@ Options 1 and 2 are free; prefer them. Option 3, ``useMemo``, is the
 default for anything derived from props or state, and it is the right
 answer for effect dependencies.
 
-Option 4 is not interchangeable with option 3. A ref mirror does not stabilize the value, it hides
-the change: an effect that reads ``configRef.current`` will not re-run
-when ``config`` changes. Reach for it only when re-running is
+Option 4 is not interchangeable with option 3. A ref mirror holds the latest value where an effect
+can read it without listing it as a dependency, so an effect that reads
+``configRef.current`` will not re-run when ``config`` changes. Reach for it only when re-running is
 what you must avoid, which in practice means a callback that would
 otherwise tear down and rebuild a subscription, a listener, or a stream
 on every keystroke. That is why ``useStreamLifecycle`` mirrors its
@@ -718,7 +719,7 @@ never re-run, and it must still see the current connection key.
 
 If you use option 4 where option 3 belonged, you get an effect that
 silently keeps working from data that has since moved on. That is the
-stale closure again, this time self-inflicted.
+stale closure again.
 
 React.memo: skipping unnecessary renders
 ----------------------------------------
@@ -791,7 +792,7 @@ React Query: server state
 -------------------------
 
 Everything so far treats state as something a component owns. Data that
-lives on the ZoneMinder server is a different animal. Several screens
+lives on the ZoneMinder server is owned by no component. Several screens
 want the same monitor list at once, it goes out of date on its own
 while nobody is looking, fetching it is slow, and every fetch can fail.
 
@@ -831,8 +832,7 @@ parent or a store to make that happen.
 Fresh and stale
 ~~~~~~~~~~~~~~~
 
-One word is worth pinning down before you read any query code. A cache
-entry is *fresh* or *stale*. Fresh means React Query serves it and does
+A cache entry is *fresh* or *stale*. Fresh means React Query serves it and does
 nothing else. Stale means React Query **still serves it** and starts a
 background refetch, then re-renders the component when the new data
 lands.
@@ -854,7 +854,8 @@ Component communication
 -----------------------
 
 Data flows down through props; notifications flow back up through
-callback props. There is no third mechanism at the component level.
+callback props. Context can also hand data to a deep child without the
+props in between; it is covered later (see the last section).
 
 .. code:: tsx
 
@@ -910,10 +911,10 @@ and then immediately leave the page.
 handler never runs. In ``MonitorCard`` as currently laid out these
 guards are precautionary: only the thumbnail ``<div>`` carries the
 navigate handler, and the buttons are siblings of it rather than
-children. They earn their keep the day someone moves a button inside
-the clickable region, which is a one-line JSX change that would
-otherwise introduce a navigation bug nowhere near the line that caused
-it.
+children. If someone later moves a button inside the clickable region,
+a one-line JSX change, the guards stop that button from also navigating
+away, a bug that would otherwise show up nowhere near the line that
+caused it.
 
 Putting it together
 -------------------
@@ -930,8 +931,7 @@ A typical hook-heavy component does roughly this:
 7. Returns JSX.
 
 If something feels wrong (re-renders too often, an effect runs on
-every render, a callback fires twice), the cause is almost always one
-of:
+every render, a callback fires twice), common causes are:
 
 - Forgot the dependency array on ``useEffect``.
 - A dependency is an inline object/array/function (object identity).

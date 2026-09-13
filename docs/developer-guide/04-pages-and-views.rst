@@ -3,7 +3,7 @@ Pages and Views
 
 A tour of the screens and the routing that connects them. A page here is
 an ordinary function that returns markup for the current data; the router
-decides which one runs, and nothing else about a page is special.
+decides which one runs.
 
 Routing
 -------
@@ -54,8 +54,8 @@ writing on every navigation. Last-used keeps deep routes, so a session that
 ended on monitor 3 reopens monitor 3, while a picked screen is always a
 section view. A stored screen the picker no longer offers falls back to
 last-used rather than opening a route that renders nothing. The setting lives
-in the profile's own settings bucket, so each server and each aggregate starts
-where its own user left off.
+in the profile's own settings bucket, so each server and each aggregate (a virtual
+profile that fans out over several profiles) starts where its own user left off.
 
 Layout routes and the Outlet
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -333,7 +333,7 @@ node's ``ref`` prop, React calls it with the element on mount and with
 ``null`` on unmount. This is a different feature from the ``useRef`` box
 described in :doc:`02-react-fundamentals`, which only holds a value and is
 never called. Do not read ``useCallback`` semantics off this example either.
-``useCallback`` appears here for one reason: React re-invokes a callback ref
+``useCallback`` is here because React re-invokes a callback ref
 whenever the function's identity changes, so an inline arrow function would
 disconnect and rebuild the ``ResizeObserver`` on every render.
 
@@ -435,11 +435,11 @@ controls, fit selector, refresh, edit, fullscreen). Stored per profile in
 Keeping aggregation affordable
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-One montage across four servers is four servers' worth of encoding and one
-client's worth of decoding, so the page carries five guardrails that only
-apply while aggregating (refs #337). All five read the ALL settings bucket,
-which ``useCurrentProfile`` already resolves to while the sentinel profile is
-current, and all five are computed inside an ``isAllMode`` branch: a single
+One montage across four servers has all four servers encoding streams while
+one client decodes every tile, so the page carries five guardrails that only
+apply while aggregating (refs #337). All five read the current aggregate's
+settings bucket (its own settings object in the settings store), which
+``useCurrentProfile`` returns while an aggregate is current, and all five are computed inside an ``isAllMode`` branch: a single
 profile carries the same keys and must never be throttled by them.
 
 They compose in a fixed order. The stream budget runs first and decides which tiles exist at all. Everything
@@ -470,8 +470,8 @@ count above the grid still describes exactly the tiles that were dropped.
 ``'reduced'`` runs each tile's stream options through ``tunedStreamOptions``
 (``src/lib/monitor/stream-tuning.ts``), which holds ``maxfps`` and ``scale``
 down to ``MONTAGE_GRID.reducedMaxFps`` and ``MONTAGE_GRID.reducedScale``.
-They are ceilings and never floors, so a profile the user has already
-throttled below them keeps its own values. Both are ZMS query parameters, so
+A profile the user has already throttled below them keeps its own values,
+because the constants only cap. Both are ZMS query parameters, so
 this reaches the MJPEG path only; a go2rtc tile is served from an existing
 RTSP stream that neither parameter touches.
 
@@ -481,8 +481,9 @@ RTSP stream that neither parameter touches.
 opened in a background tab pauses too. After
 ``MONTAGE_GRID.pauseHiddenGraceMs`` out of sight it reports paused, and the
 player disables both stream hooks: the MJPEG
-lifecycle CMD_QUITs its connkey on the way down rather than orphaning an
-``nph-zms`` process, and ``useGo2RTCStream`` closes its own connection. The
+lifecycle sends ``CMD_QUIT`` (ZoneMinder's stop-stream command) for its
+connkey, the id ZoneMinder uses to address one ``nph-zms`` streaming process,
+so that process is not orphaned, and ``useGo2RTCStream`` closes its own connection. The
 grace period is the debounce, because a teardown and reconnect of every tile
 costs more than the half minute of streaming it saves. Window blur is
 deliberately not a pause signal, unlike in ``useVisibilityResume``: on
@@ -495,8 +496,7 @@ an element to ``registerTile``, whose ref callback is memoized per tile id and
 kept for the life of the page. That map is also how an entry finds the
 composite tile id it belongs to, since raw monitor ids collide across servers.
 
-Both details in that sentence are required, and each was a bug before it was
-fixed. The observed element is inside the grid item rather than being the item itself,
+The observed element is inside the grid item rather than being the item itself,
 because ``react-grid-layout`` clones every child with ``ref:
 this.elementRef``, which replaces any ref on that element: a ref on the tile
 root is never called. And the callback cache must survive a detach. Dropping
@@ -516,7 +516,7 @@ layout change: react-grid-layout positions tiles with transforms, and the
 observer measures the element's real box, so a tile dragged or resized into
 view reports itself.
 
-Two asymmetries are deliberate. A tile nobody has measured yet counts as
+A tile nobody has measured yet counts as
 gated, because assuming the opposite mints a connkey for every off-screen
 tile on mount and quits it a frame later, which is the expensive half of a
 teardown for no streaming at all. That includes the first render, before the
@@ -543,8 +543,8 @@ teardown, so each tile's live connkey is quit as it goes; that closure lives in
 ``useStreamLifecycle`` rather than here, because the Streaming Mode setting
 reaches the same transition (see
 :doc:`12-shared-services-and-components`). It is independent of
-insomnia on purpose: a montage left up on a display insomnia is keeping awake
-is the case it exists for.
+the ``insomnia`` setting (keep the screen awake) on purpose, because a montage
+left up on a display that setting keeps awake is the case it exists for.
 
 Monitors
 --------
@@ -710,7 +710,7 @@ The pipeline, in the order it runs:
 - Each raw response is parsed into a ``MonitorAlarmState`` by
   ``parseAlarmState`` (``src/lib/monitor/alarm-state.ts``), inside the
   ``combine`` option of ``useQueries`` rather than in a downstream
-  ``useMemo``. The placement matters: without
+  ``useMemo``. Without
   ``combine``, ``useQueries`` re-maps its results array on every render, so a
   ``useMemo`` listing it never hits and the state map gets a new identity per
   render. Since the effect below stamps ``Date.now()`` into the list, a new
@@ -898,9 +898,9 @@ which is what the ratio on the video area was there to avoid.
 
 Dismissal (the cross on a tile) is a reducer input, not a render-time filter.
 ``reduceActiveMonitors`` skips a dismissed monitor both as a resident and as
-a new arrival, so the tile really unmounts and its stream is quit. The skip
-matters because the monitor is usually still alarming, so without it the
-reducer would readmit the tile on the next poll.
+a new arrival, so the tile really unmounts and its stream is quit, and the
+reducer does not readmit it on the next poll while the monitor is still
+alarming, which it usually is.
 ``releaseDismissed`` drops a dismissal once its monitor has stopped
 alarming, and the page calls it after the reduce rather than before, or a
 tile dismissed while already cooling would survive its own dismissal. The set

@@ -51,7 +51,9 @@ Endpoints
      - An incoming push message.
      - Same as above, plus the OS-level notification permission.
    * - ``stun:stun.cloudflare.com:3478``, ``stun:stun.l.google.com:19302``
-     - WebRTC ICE and NAT traversal for a go2rtc live stream. A STUN binding
+     - WebRTC ICE (Interactive Connectivity Establishment, how peers find a
+       working network path) and NAT (network address translation) traversal
+       for a go2rtc live stream. A STUN (Session Traversal Utilities for NAT) binding
        request exists to learn the device's public IP address and port, so the
        STUN provider sees both. No stream data crosses it.
      - Web, Desktop, iOS, Android, and only when the profile opts in
@@ -78,8 +80,9 @@ Notes
   ``DEVELOPER_NOTICES.pollIntervalMs`` in ``lib/zmninja-ng-constants.ts``). FCM
   and STUN are not polled at all: each is reached only when something triggers
   it.
-- The push token is registered with your own ZoneMinder server, not with any
-  third party.
+- The app registers the push token only with your own ZoneMinder server. To
+  issue that token, the Firebase SDK sends device and app identifiers to Google
+  (see the Google FCM row above).
 - There are no analytics or telemetry endpoints. The Firebase Analytics SDK is
   not bundled on any platform, and collection is explicitly disabled via the
   ``firebase_analytics_collection_enabled`` (Android) and
