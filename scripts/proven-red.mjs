@@ -198,8 +198,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const [base, head] = process.argv.slice(2).filter((a) => !a.startsWith('--'));
   const titleIndex = process.argv.indexOf('--title');
   const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  // An empty --title (a push event has no PR title) falls back to the head subject.
   const title =
-    titleIndex > -1 ? process.argv[titleIndex + 1] : git(['log', '-1', '--format=%s', head], repo);
+    (titleIndex > -1 && process.argv[titleIndex + 1]) || git(['log', '-1', '--format=%s', head], repo);
   if (!base || !head) {
     console.error('usage: proven-red.mjs <base> <head> [--title "<title>"]');
     process.exit(2);

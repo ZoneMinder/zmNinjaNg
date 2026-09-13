@@ -259,13 +259,15 @@ jobs:
       # P2 by machine: the tests this range changed must fail on the code
       # the range replaces (scripts/proven-red.mjs). The unit-tests job
       # proves the same tests are green on head.
+      # The title goes through env, never into the script text: on a fork
+      # PR it is attacker-controlled, and an interpolated `${{ }}` inside
+      # `run:` is a shell injection.
       - name: Changed tests go red on the pre-change code
-        run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            node scripts/proven-red.mjs "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" --title "${{ github.event.pull_request.title }}"
-          else
-            node scripts/proven-red.mjs "${{ github.event.before }}" "${{ github.event.after }}"
-          fi
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.event.pull_request.head.sha || github.event.after }}
+        run: node scripts/proven-red.mjs "$BASE" "$HEAD" --title "$PR_TITLE"
 
   e2e-tests:
     runs-on: ubuntu-latest
