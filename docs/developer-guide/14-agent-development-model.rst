@@ -35,8 +35,9 @@ One codebase ships everywhere zmNinjaNg runs: iOS and Android through
 Capacitor, macOS, Windows, and Linux through Electron, and the browser
 directly.
 
-zmNinjaNg is the front end of a three-part ecosystem, all developed under
-the model this chapter describes:
+zmNinjaNg is the front end of an ecosystem built on ZoneMinder. zmNinjaNg,
+zmesNg, and pyzmNg are developed under the model this chapter describes;
+ZoneMinder is not.
 
 - **ZoneMinder** records from the cameras and exposes the API and
   streaming daemon everything else talks to.
@@ -363,7 +364,7 @@ lists under ``_Avoid_``. Each number may fall or hold; raising one needs a
 reason in the commit message, the same rule as the lint ratchet. The
 baseline started at 121 files, 302 assertions, and 115 terms.
 
-Review still happens on every change, done by agents rather than the
+Review still happens on every PR, done by agents rather than the
 maintainer. The workflow in
 `claude-workflows.md <https://github.com/ZoneMinder/zmNinjaNg/blob/main/agents/generic/claude-workflows.md>`__
 pairs an implementing agent with an independent reviewing agent for work
