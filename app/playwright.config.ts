@@ -28,9 +28,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 1,
   workers: process.env.E2E_WORKERS ? Number(process.env.E2E_WORKERS) : 1,
-  // The JSON file is the "when did e2e last run, and did it pass" stamp that
-  // make_release.sh reads before tagging. Overwritten on every run.
-  reporter: [['html'], ['json', { outputFile: '.e2e-last-run.json' }]],
+  reporter: [['html']],
 
   timeout: 30000,
 

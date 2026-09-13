@@ -146,11 +146,12 @@ scenario. A gate that always costs 18 minutes gets routed around, so it asks
 instead: Enter runs it, ``n`` skips with a warning. ``--skip-e2e`` skips
 without the question, for scripted runs.
 
-Every e2e run writes ``app/.e2e-last-run.json`` (Playwright's JSON reporter,
-gitignored). The prompt reads it and says when the suite last ran on this
-machine and whether it passed, and recommends a run when that record is
-missing, failed, or older than two weeks. It only recommends; the answer is
-still yours.
+The release runs the suite with ``npm run test:e2e:full``, which writes the
+date to ``app/.e2e-full-pass`` (gitignored) only when the whole suite passes.
+A failed run, or a run of some features with ``npm run test:e2e``, leaves the
+date alone. The prompt says when the full suite last passed on this machine,
+and recommends a run when there is no date or it is older than two weeks. It
+only recommends; the answer is still yours.
 
 With no terminal to ask on, it runs rather than skipping: silence should not
 lose the only cover these journeys have. Missing ``app/.env`` is an error

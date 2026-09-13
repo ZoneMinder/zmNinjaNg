@@ -65,7 +65,8 @@ Read before tests, UI work, navigation work, or platform checks.
 
 - Automated e2e is Chromium only: `npm run test:e2e`. Nothing runs it on a
   schedule: CI's job skips (no reachable ZoneMinder) and `make_release.sh`
-  asks, reading `app/.e2e-last-run.json` to say when it last ran here.
+  asks, reading `app/.e2e-full-pass` (the date `npm run test:e2e:full` writes
+  after a full passing run) to say when the whole suite last passed here.
 - Android, iPhone, and iPad suites are manual Appium screenshot checks.
 - Native OS flows such as PiP, biometrics, push, downloads, sharing, and lifecycle require device verification.
 - UI work considers Electron, iOS, Android, portrait, and landscape. Record unavailable manual checks in handoff.
