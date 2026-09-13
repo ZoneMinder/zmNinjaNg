@@ -231,6 +231,11 @@ matching reality, fixing it is a protocol change like any rule edit.
   or it leaks onto the next entity (4e447581, 200d805d, ec43a4dd). Keying
   the route instead would remount the player and mint a fresh connkey on
   every step.
+- use-gesture carries a gesture's `offset` over from its last run, and
+  nothing outside the gesture updates it. When state that the gesture drives
+  can also change elsewhere (a reset, zoom buttons), the config needs
+  `from` reading that state, or the next pinch starts at the old scale
+  (#489).
 - The scroll pad's automatic trigger was wrong twice, a free-pixel threshold
   the player's `100svh-7rem` cap could never satisfy and then a coverage
   ratio, and became a remembered per-profile setting (524d45a5, 500cae59,

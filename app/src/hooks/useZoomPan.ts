@@ -278,6 +278,11 @@ export function useZoomPan({
         // And it takes a real pinch to start one: a stray touch that the
         // browser is about to turn into a scroll should not nudge the zoom.
         threshold: 0.1,
+        // use-gesture otherwise resumes each pinch from the last pinch's
+        // offset, which a reset or a button zoom never touches: after a
+        // fullscreen toggle or a monitor step, the first pinch jumped back to
+        // the old magnification (refs #489).
+        from: () => [stateRef.current.scale, 0],
         rubberband: true,
       },
       // Pointer events (no touch:true) so mouse drag pans on desktop too.
