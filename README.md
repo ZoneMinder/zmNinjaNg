@@ -12,15 +12,16 @@
 
 **[Documentation](https://zmninjang.readthedocs.io/en/latest/)**
 
-A web and mobile application for ZoneMinder for viewing live camera feeds, reviewing events, a local AI chat agent and much more. It is a rewrite of the original zmNinja application, built on React, TypeScript, Capacitor, and Electron. 
+A web and mobile application for ZoneMinder for viewing live camera feeds, watching many cameras at once in a montage, reviewing events on a timeline, and asking questions of a local AI chat agent. It is a rewrite of the original zmNinja application, built on React, TypeScript, Capacitor, and Electron.
 
 ### Demo
 
 [Watch the demo](https://zmninjang.zoneminder.com/)
 
-###  Notes:
+### Notes
 - zmNinjaNg supports self-signed certificates on mobile (iOS/Android). Enable it in Settings > Connection. On desktop, add your CA to the system trust store. Using proper certificates (e.g. [LetsEncrypt](https://letsencrypt.org/)) is still recommended.
-- zmNinjaNg has been tested with [zmesNg](https://zmeventnotificationng.readthedocs.io/en/latest/) - I'd recommend you switch to this new ecosystem
+- zmNinjaNg has been tested with [zmesNg](https://zmeventnotificationng.readthedocs.io/en/latest/) - I'd recommend you switch to this new ecosystem. If you want push notifications, you'll have to use it.
+- If you use the AI agent, I'd highly recommend you use Qwen-8b on your Ollama server, or Qwen-3b on device. The local LLMs provided in phones are terrible.
 
 <details>
 <summary>Screenshots</summary>
@@ -44,50 +45,45 @@ A web and mobile application for ZoneMinder for viewing live camera feeds, revie
 </details>
 
 ### Support
-I (Pliablepixels) don't plan to support zmNinjaNg with any urgency. Please don't ping me and expect quick answers. ZoneMinder however does plan to offer limited support, just like it did with zmNinja. 
+I (Pliablepixels) don't plan to support zmNinjaNg with any urgency. Please don't ping me and expect quick answers. ZoneMinder however does plan to offer limited support, just like it did with zmNinja.
 
 ### Agentic AI
-zmNinjaNg, esNg and pyzmNg heavily use Agentic UI (Claude) for development. Thanks to these tools, I was able to redo things and get it to a point where the new codebase is better in many ways than the old one. I don't plan to change this anytime soon (and if I did, I won't have time to extend this anymore). In short, in my view, this is the new way of development for me atleast. I've spent a lot of time working with Claude to build this system - just because I used AI doesn't really mean I don't know what is going on. I do and I still spend time reading/understanding the code as changes are made. 
+zmNinjaNg, esNg and pyzmNg heavily use Agentic AI (Claude) for development. Thanks to these tools, I was able to redo things and get it to a point where the new codebase is better in many ways than the old one. I don't plan to change this anytime soon (and if I did, I wouldn't have time to extend this anymore). In short, in my view, this is the new way of development for me at least. I've spent a lot of time working with Claude to build this system - just because I used AI doesn't really mean I don't know what is going on. I do and I still spend time reading/understanding the code as changes are made.
 
-#### Pull Requests
+#### Pull requests
 
 I am happy to accept PRs, but I don't want [AI slop](https://en.wikipedia.org/wiki/AI_slop). Funny I am saying this, given this repo is largely AI agent(s) generated. The difference is I understand the system and do my best to ensure it follows good principles. Remember these tools are capable but love to write a lot of code doing custom things when simpler/better means are available. They also make mistakes. So here are the rules:
 
 - PRs are judged by this repo's rules and gates, not by who or what wrote the code. Point your agent at [AGENTS.md](AGENTS.md) and [AGENTS.project.md](AGENTS.project.md); the contracts there describe the sanctioned path through every subsystem, and the gates fail anything that bypasses them
-- Every gate must pass before you PR: the unit suite, the blocking lints, and the instruction-system checks. [docs/developer-guide/14-agent-development-model.rst](docs/developer-guide/14-agent-development-model.rst) explains how the whole system works
+- Run `npm run gates` from `app/` before you PR, and make sure it passes. [docs/developer-guide/14-agent-development-model.rst](docs/developer-guide/14-agent-development-model.rst) explains how the whole system works
 - Before you PR, run a code review (agent-driven is fine; that is how this repo works). If a rule seems wrong, propose a rule change in the PR instead of working around it
 
-###  Notes
-- Self-signed certificates are supported on mobile (iOS/Android) via Settings > Connection. On desktop, add your CA to the system trust store. Using proper certificates (e.g. [LetsEncrypt](https://letsencrypt.org/)) is still recommended.
-- If you want push notifications, you'll have to use a newer [Event Server](https://zmeventnotificationng.readthedocs.io/en/latest/)
-- If you use the AI agent, I'd highly recommend you use Qwen-8b on your Ollama server, or Qwen-3b on device. The local LLMs provided in phones are terrible. 
 
-
-## Quick Start
+## Quick start
 
 ### Binaries
 - Download from [here](https://zmninjang.zoneminder.com/)
 - I use Github workflows and runners to automatically build release binaries [here](https://github.com/ZoneMinder/zmNinjaNg/tree/main/.github/workflows). Binaries are built for specific platforms. If the binary doesn't work for your linux distro, look at those files
 
-## Build from Source
+## Build from source
 
 ### Prerequisites
 - Node.js ^20.19.0 || >=22.12.0 and npm ([download](https://nodejs.org/en/download))
 
-### GitHub Actions Setup (For Automated Releases)
+### GitHub Actions setup (for automated releases)
 
 If you're setting up automated builds via GitHub Actions, you need to enable write permissions:
 
 1. Go to your repository on GitHub
 2. Navigate to **Settings** → **Actions** → **General**
 3. Scroll down to **Workflow permissions**
-4. Select **"Read and write permissions"**
-5. Check **"Allow GitHub Actions to create and approve pull requests"** (optional)
+4. Select **Read and write permissions**
+5. Check **Allow GitHub Actions to create and approve pull requests** (optional)
 6. Click **Save**
 
 This allows the workflows to create GitHub releases automatically when you push a tag.
 
-### Desktop Development
+### Desktop development
 
 ```bash
 git clone https://github.com/ZoneMinder/zmNinjaNg
@@ -98,7 +94,7 @@ npm install
 npm run electron:dev   # Electron shell (Chromium)
 ```
 
-### Desktop Production Builds
+### Desktop production builds
 
 Desktop builds use Electron (bundles its own Chromium).
 
@@ -118,16 +114,16 @@ npm run preview        # Preview the production build
 ```
 Deploy the web build (`app/dist/`) to Netlify, Vercel, GitHub Pages, AWS S3, etc.
 
-### Mobile Builds
+### Mobile builds
 
-- For Android setup and builds, see [ANDROID](docs/building/ANDROID.md)
-- For iOS setup and builds, see [IOS](docs/building/IOS.md)
+- For Android setup and builds, see [ANDROID](docs/building/ANDROID.rst)
+- For iOS setup and builds, see [IOS](docs/building/IOS.rst)
 
 ## Testing
 
-The project includes unit tests and cross-platform E2E tests. All commands run from `app/`.
+The project includes unit tests and cross-platform E2E tests. All testing commands run from `app/`.
 
-### Unit Tests
+### Unit tests
 
 ```bash
 npm run test:unit              # Run all unit tests
@@ -135,7 +131,7 @@ npm run test:unit -- --watch   # Watch mode
 npm run test:coverage          # With coverage report
 ```
 
-### Web E2E Tests
+### Web E2E tests
 
 Uses Playwright with Gherkin `.feature` files against a real ZoneMinder server. Configure credentials in `app/.env`.
 
@@ -147,9 +143,9 @@ npm run test:e2e:visual-update                        # Regenerate visual baseli
 npm run test:all                                      # Unit + web E2E
 ```
 
-### Device E2E Tests
+### Device E2E tests
 
-Tests run on real devices: Android emulator and iOS simulator (phone + tablet). Each platform uses shell scripts that handle building, booting, and running tests.
+Tests run on the Android emulator and iOS simulators (phone + tablet). Each platform uses shell scripts that handle building, booting, and running tests.
 
 ```bash
 bash scripts/test-android.sh          # Android emulator (Playwright via CDP)
@@ -168,8 +164,6 @@ pip install -r docs/requirements.txt sphinx-autobuild && cd docs && make clean &
 
 ### Making releases
 - See `scripts/make_release.sh` [here](scripts/make_release.sh). This automatically tags the current state and triggers release builds
-- **Store uploads**: after tagging, `make_release.sh` offers to publish to the App Store and Google Play in one prompt. Both land as drafts, so nothing reaches users until you release them in the respective console. `scripts/upload-ios.sh` and `scripts/upload-android.sh` also run on their own to publish a release tagged earlier. Setup is in the [iOS](docs/building/IOS.rst) and [Android](docs/building/ANDROID.rst) build guides
+- After tagging, `make_release.sh` offers to publish to the App Store and Google Play in one prompt. Both land as drafts, so nothing reaches users until you release them in the respective console. `scripts/upload-ios.sh` and `scripts/upload-android.sh` also run on their own to publish a release tagged earlier. Setup is in the [iOS](docs/building/IOS.rst) and [Android](docs/building/ANDROID.rst) build guides
 - `app/package.json` is the source of truth for the version number
-- **In-app release notice**: run `npm run notice <version>` to draft a short "what's new" notice from the closed issues since the last release (Claude writes it, you approve it). It only writes `docs/notices.json` for you to test; nothing is committed. To discard a test draft, run `git checkout -- docs/notices.json`. On minor/major releases `make_release.sh` offers to generate one for you. Details in the [developer guide](docs/developer-guide/13-network-endpoints.rst).
-
-
+- From the repo root, run `npm run notice <version>` to draft a short in-app "what's new" notice from the closed issues since the last release (Claude writes it, you approve it). It only writes `docs/notices.json` for you to test; nothing is committed. To discard a test draft, run `git checkout -- docs/notices.json`. On minor/major releases `make_release.sh` offers to generate one for you. Details in the [release notices guide](docs/building/release-notices.rst).
