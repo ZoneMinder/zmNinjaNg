@@ -195,7 +195,10 @@ those checks go green.
 CI also runs a ``pr-acceptance`` job, which fails when the pull request body
 has no ``## Acceptance`` section or the section is empty. Rule P1 says that
 section quotes the issue's acceptance lines, the lines that say what the
-finished change must do.
+finished change must do. The same job fails a pull request whose title starts
+with ``feat`` when the body has no ``## Spec`` section. That section holds a
+link to the spec under ``docs/superpowers/specs/``, or one line saying why
+the feature needs none (see "How a feature lands").
 
 Rule M2 says to check what a gate reads, not only whether it passed. A gate
 that reads the wrong input can pass while its rule is broken, so any number a
@@ -326,6 +329,13 @@ The spec says what the user sees, what is out of scope, and which existing
 code gets reused. The maintainer reads and approves the half-page spec before
 any code is written, while changing direction still means editing a document.
 The directory holds seventeen specs.
+
+Nothing checked that the step happened. Between 2026-08-05 and 2026-09-13,
+twenty-six ``feat`` pull requests merged and none added a spec. The
+``pr-acceptance`` job now fails a ``feat`` pull request whose body has no
+``## Spec`` section. The section is a link to the spec, or one line saying
+why the feature needs none, which keeps a one-line toggle from needing a
+design document while making the skip a written decision.
 
 Plan
 ~~~~

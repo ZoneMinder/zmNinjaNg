@@ -116,6 +116,7 @@ Gate: review.
 ## Project rules
 
 - Run npm commands from `app/`. Run root `npm install` once so hooks exist.
+- A `feat` PR links its spec under `docs/superpowers/specs/` or says in its `## Spec` section why it needs none. Gate: the `pr-acceptance` CI job.
 - UI changes that alter behavior or navigation need an outcome-based e2e test with platform tags and `data-testid` on new interactive elements. Cosmetic changes (spacing, styling, label wording) rely on existing gates.
 - Only one `npm run test:e2e` per working tree.
 - Device e2e (iOS, Android, Tauri) is manual-only; agents never auto-run it.
@@ -138,8 +139,9 @@ Per commit, run what the change touches; `npm run gates` before push or PR. Bloc
 `lint:ratchet`. Baselines `app/.lint-baseline.json`
 and `app/.quality-baseline.json` lower with `npm run lint:ratchet -- --update`
 and `node scripts/quality-ratchet.mjs --update`. CI also runs
-`scripts/proven-red.mjs` (P2), `npm run test:scripts`, and `pr-acceptance`
-(PR body needs `## Acceptance` content). State completed checks in handoff.
+`scripts/proven-red.mjs` (P2), `npm run test:mutation`, `npm run test:scripts`,
+and `pr-acceptance` (PR body needs `## Acceptance` content, and `## Spec` on a
+`feat`). State completed checks in handoff.
 
 ## Playbooks
 

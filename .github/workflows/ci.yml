@@ -36,15 +36,30 @@ jobs:
       - name: PR body quotes the issue's acceptance lines
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          section=$(printf '%s' "$PR_BODY" | awk '/^##[[:space:]]*Acceptance/{f=1;next} /^##[[:space:]]/{f=0} f')
-          # Drop the template's HTML comment and any blank lines before judging.
-          content=$(printf '%s' "$section" | perl -0pe 's/<!--.*?-->//gs' | tr -d '[:space:]')
-          if [ -z "$content" ]; then
+          # Content of one "## Heading" section, with the template's HTML comment and whitespace stripped.
+          section() {
+            printf '%s' "$PR_BODY" | awk -v h="$1" '$0 ~ "^##[[:space:]]*"h {f=1;next} /^##[[:space:]]/{f=0} f' | perl -0pe 's/<!--.*?-->//gs' | tr -d '[:space:]'
+          }
+          if [ -z "$(section Acceptance)" ]; then
             echo "::error title=No acceptance lines::This PR body has no '## Acceptance' section with content. P1 in AGENTS.md: land through an issue-linked PR whose body quotes the issue's acceptance lines, because the Spec review axis judges the diff against them."
             exit 1
           fi
           echo "Acceptance section present."
+          # A feature starts from an approved spec (chapter 14, "How a feature
+          # lands"). 26 feat PRs landed after 2026-08-04 and none added one, so
+          # the step had lapsed unnoticed. A feat PR now links its spec under
+          # docs/superpowers/specs/ or says in one line why it needs none.
+          case "$PR_TITLE" in
+            feat*)
+              if [ -z "$(section Spec)" ]; then
+                echo "::error title=No spec::A feat PR needs a '## Spec' section: a link to its spec under docs/superpowers/specs/, or one line saying why this feature needs none."
+                exit 1
+              fi
+              echo "Spec section present."
+              ;;
+          esac
 
   native-version-guard:
     runs-on: ubuntu-latest
