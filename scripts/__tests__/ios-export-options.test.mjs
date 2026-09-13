@@ -9,13 +9,18 @@ const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const GENERATOR = join(REPO_ROOT, 'scripts/ios-export-options.sh');
 const PBXPROJ = join(REPO_ROOT, 'app/ios/App/App.xcodeproj/project.pbxproj');
 
-/** The generated plist as an object, via plutil so malformed output fails here. */
+/**
+ * The generated plist as an object, via Python's plistlib so malformed output
+ * fails here. plutil would do the same but only exists on macOS, and CI runs
+ * these tests on Linux.
+ */
 function exportOptions() {
   const plist = execFileSync('bash', [GENERATOR], { encoding: 'utf8' });
-  const json = execFileSync('plutil', ['-convert', 'json', '-o', '-', '-'], {
-    input: plist,
-    encoding: 'utf8',
-  });
+  const json = execFileSync(
+    'python3',
+    ['-c', 'import json, plistlib, sys; print(json.dumps(plistlib.loads(sys.stdin.buffer.read())))'],
+    { input: plist, encoding: 'utf8' },
+  );
   return JSON.parse(json);
 }
 
