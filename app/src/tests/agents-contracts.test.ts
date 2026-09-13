@@ -365,6 +365,37 @@ describe('contract Never clauses a grep can decide', () => {
     ).toEqual([]);
   });
 
+  it('Stores: no whole-store subscription', () => {
+    // `useXStore()` with no selector re-renders on every store write. The
+    // contract's sanctioned shape is a selector per field (useShallow for
+    // several); the count was zero when this landed, so zero is the number.
+    expect(offenders(/\buse[A-Z]\w*Store\(\)/)).toEqual([]);
+  });
+
+  it('Polling: no literal refresh interval outside the bandwidth hook', () => {
+    // Users tune every interval through useBandwidthSettings; a literal
+    // 30000 in a component is a bug even though it works (Polling contract).
+    // Two seconds and up counts as a refresh. Faster literals are display
+    // ticks (an elapsed-seconds counter runs at 1000) and cost no bandwidth.
+    const literalMs = '(?:[2-9]_?\\d{3}|\\d{2,}_?\\d{3})';
+    expect(
+      offenders(new RegExp(`\\b(?:refetchInterval|staleTime)\\s*:\\s*${literalMs}|\\bsetInterval\\([^;]*?,\\s*${literalMs}\\s*\\)`), (f) =>
+        f.startsWith('hooks/useBandwidthSettings'),
+      ),
+    ).toEqual([]);
+  });
+
+  it('Date and time: no literal date-fns pattern in a component or page', () => {
+    // Rendering goes through useDateTimeFormat / formatAppDate so the user's
+    // locale and 12/24-hour choice apply everywhere. A `format(d, 'yyyy-MM-dd')`
+    // in a component bypasses both.
+    expect(
+      offenders(/\bformat\([^;\n]*?,\s*['"][^'"]*(?:yyyy|MM|dd|HH|mm|ss)/, (f) =>
+        !/^(components|pages)\//.test(f),
+      ),
+    ).toEqual([]);
+  });
+
   it('Error handling: abort checks go through isAbortError', () => {
     // DOMException does not extend Error in browsers and an abort can arrive
     // wrapped; the helper checks the name, which is the part that holds.

@@ -89,9 +89,12 @@ trust them instead of working the design out from the source.
 
 Some ``Never:`` lines can be checked with a text search, such as no
 ``console`` calls or no raw ``fetch``, and the same test file checks those.
-The Polling ``Never:`` line is not one of them. No script can tell that a new
-``setInterval(30000)`` breaks it, so the ``Gate:`` line says ``review``, and a
-reviewing agent has to catch it.
+The Polling line joined them in September 2026: a literal of two seconds or
+more handed to ``setInterval`` or a ``refetchInterval`` fails the suite. What
+no script can tell is whether the value a component reads from the hook is
+the right one for that screen, so a reviewing agent still has to judge that.
+Contracts whose ``Gate:`` line says ``review`` have no text search that
+settles their clauses at all.
 
 Where the instruction files live
 --------------------------------

@@ -15,7 +15,7 @@ Gate: review.
 Owns: every recurring refresh interval.
 Path: `useBandwidthSettings` / `getBandwidthSettings` (`app/src/hooks/useBandwidthSettings.ts`).
 Never: literal interval values; users tune bandwidth globally.
-Gate: review.
+Gate: `app/src/tests/agents-contracts.test.ts` (no literal interval of two seconds or more).
 
 ### HTTP
 Owns: all network requests, including native TLS handling.
@@ -57,7 +57,7 @@ Gate: `app/src/tests/agents-contracts.test.ts` (no inline query keys); review fo
 Owns: client state via Zustand.
 Path: subscriptions select every reactive field they read, with `useShallow` for multi-field selects (`app/src/stores/`); selectors return raw slices or primitives, deriving shapes in `useMemo` outside the subscription.
 Never: mutating objects returned by `getState`; whole-store subscriptions; minting objects inside a selector - `useShallow` never stabilizes them and the render loops.
-Gate: review; subscription changes need a real-store regression test (testing playbook).
+Gate: `app/src/tests/agents-contracts.test.ts` (no whole-store subscription); review for the rest; subscription changes need a real-store regression test (testing playbook).
 
 ### Aggregation (virtual profile groups)
 Owns: surfaces fanning out over multiple profiles.
@@ -93,7 +93,7 @@ Gate: `app/src/tests/control-consistency.test.ts`.
 Owns: user-facing date and time rendering.
 Path: `useDateTimeFormat` (`app/src/hooks/useDateTimeFormat.ts`) or `formatAppDate` helpers (`app/src/lib/format-date-time.ts`).
 Never: literal date-fns pattern strings in components.
-Gate: review.
+Gate: `app/src/tests/agents-contracts.test.ts`.
 
 ### Localization
 Owns: all user-facing text.
