@@ -28,6 +28,11 @@ export default defineConfig([
       globals: globals.browser,
     },
     rules: {
+      // C2 by machine: the count of over-long files is held by the lint
+      // ratchet (.lint-baseline.json), so it can fall but not grow. The two
+      // files below are where the Constants contract and the ZoneMinder
+      // schemas funnel values by design, and are exempt in the next block.
+      'max-lines': ['error', { max: 400, skipBlankLines: true, skipComments: true }],
       'no-restricted-syntax': [
         'error',
         {
@@ -50,6 +55,12 @@ export default defineConfig([
     files: ['src/lib/platform.ts', 'src/lib/__tests__/secureStorage.test.ts'],
     rules: {
       'no-restricted-syntax': 'off',
+    },
+  },
+  {
+    files: ['src/lib/zmninja-ng-constants.ts', 'src/api/types.ts', '**/*.test.{ts,tsx}', 'src/tests/**'],
+    rules: {
+      'max-lines': 'off',
     },
   },
 ])

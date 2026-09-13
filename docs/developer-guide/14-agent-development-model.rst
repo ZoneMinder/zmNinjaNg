@@ -178,7 +178,12 @@ set before a push or pull request.
 ``lint:ratchet`` compares lint results against a stored baseline in
 ``app/.lint-baseline.json`` and fails when the count grows. A check like this
 is called a ratchet. Its number may fall or stay the same, and raising it by
-hand needs a reason in the commit message (rule C7).
+hand needs a reason in the commit message (rule C7). Rule C2's 400-line limit
+rides on the same pass since September 2026: ESLint's ``max-lines`` rule
+counts files over the limit, and the ratchet holds that count. It started at
+29, with the constants module and the ZoneMinder schema file exempt, because
+the Constants contract and the schema rules funnel values into them by
+design.
 
 CI runs the gates again on every pull request. Branch protection on ``main``
 blocks a merge until the required checks pass: unit tests, lint, build, the

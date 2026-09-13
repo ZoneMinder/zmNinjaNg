@@ -2,6 +2,7 @@
   "@typescript-eslint/no-empty-object-type": 3,
   "@typescript-eslint/no-explicit-any": 90,
   "@typescript-eslint/no-this-alias": 1,
+  "max-lines": 29,
   "no-restricted-syntax": 4,
   "react-hooks/exhaustive-deps": 32,
   "react-hooks/globals": 2,

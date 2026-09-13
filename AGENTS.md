@@ -57,12 +57,13 @@ tier; docs reference IDs, never copied text.
 - C1. Reuse ladder: existing codebase helper, then stdlib, then platform
   feature, then installed dependency, then new code. A new dependency is a
   last resort.
-- C2. Keep files near 400 lines. No dead code, commented-out replacements,
-  or speculative abstractions.
+- C2. Keep files under 400 lines of code. No dead code, commented-out
+  replacements, or speculative abstractions. Gate: the lint ratchet holds
+  the count of over-long files.
 - C3. Never hardcode user-facing text; every locale updates together.
 - C4. Never inline semantic values; constants live in their dedicated
   modules.
-- C5. New modules live in domain folders. No one-file folders.
+- C5. New modules live in domain folders.
 - C6. Test assertions must be able to fail: assert fetched values or
   user-visible outcomes, never element existence or child count. Gate: the
   quality ratchet.
