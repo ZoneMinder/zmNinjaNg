@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, mkdirSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { classify, classifyFailures, readFailures, skipReason, proveRed } from '../proven-red.mjs';
@@ -188,6 +188,23 @@ test('readFailures takes per-test messages and the file-level message when a fil
     );
     assert.deepEqual(readFailures(report), ['AssertionError: expected 1 to be 2', "Error: Failed to resolve import './gone'"]);
     assert.deepEqual(readFailures(join(dir, 'missing.json')), []);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('proveRed reads the changed tests from the head commit, not the working tree', () => {
+  const { dir, base, head, git } = repo();
+  try {
+    // Locally the checkout is often on another branch than the range being proved.
+    git('checkout', '-q', base);
+    const runTests = (appDir) => {
+      const copied = join(appDir, 'src/lib/__tests__/sum.test.ts');
+      assert.ok(existsSync(copied), 'head test file missing from the worktree');
+      assert.equal(readFileSync(copied, 'utf8'), 'expect(sum(1, 2)).toBe(3)\n');
+      return 1;
+    };
+    assert.equal(proveRed({ base, head, repo: dir, title: 'fix(sum): add', runTests, log: () => {} }), 0);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
