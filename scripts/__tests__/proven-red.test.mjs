@@ -4,7 +4,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { classify, skipReason, proveRed } from '../proven-red.mjs';
+import { classify, classifyFailures, readFailures, skipReason, proveRed } from '../proven-red.mjs';
 
 test('classify separates unit tests, test support, source, and non-code', () => {
   const split = classify([
@@ -141,4 +141,54 @@ test('a repo-hygiene gate under app/src/tests is gate work, not a unit test to p
   assert.deepEqual(split.unitTests, []);
   assert.deepEqual(split.testSupport, ['app/src/tests/quality-ratchet.test.ts']);
   assert.match(skipReason('fix: x', split), /gate/);
+});
+
+test('a red made only of missing references is reported as such, and still passes', () => {
+  const { dir, base, head } = repo();
+  try {
+    const lines = [];
+    const log = (l) => lines.push(l);
+    const missing = { code: 1, failures: ['TypeError: (0 , resolveStartRoute) is not a function\n    at x.test.ts:3'] };
+    assert.equal(proveRed({ base, head, repo: dir, title: 'feat(nav): start screen', runTests: () => missing, log }), 0);
+    assert.match(lines.at(-1), /only because they reference code it does not have/);
+    assert.match(lines.at(-1), /resolveStartRoute/);
+
+    lines.length = 0;
+    const assertion = { code: 1, failures: ['AssertionError: expected 1 to be 2', 'TypeError: y is not a function'] };
+    assert.equal(proveRed({ base, head, repo: dir, title: 'fix(sum): add', runTests: () => assertion, log }), 0);
+    assert.match(lines.at(-1), /as they should \(1 assertion failure\(s\), 1 missing reference\(s\)\)/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('classifyFailures counts assertion failures and missing references apart', () => {
+  const kinds = classifyFailures([
+    'AssertionError: expected 3 to be 4',
+    "Error: expect(element).toHaveTextContent()",
+    "Error: Cannot find module './new-thing'",
+    'ReferenceError: newHook is not defined',
+  ]);
+  assert.deepEqual({ assertion: kinds.assertion, missing: kinds.missing }, { assertion: 2, missing: 2 });
+  assert.match(kinds.sample, /Cannot find module/);
+});
+
+test('readFailures takes per-test messages and the file-level message when a file could not load', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'proven-red-report-'));
+  const report = join(dir, 'vitest.json');
+  try {
+    writeFileSync(
+      report,
+      JSON.stringify({
+        testResults: [
+          { status: 'failed', message: '', assertionResults: [{ status: 'failed', failureMessages: ['AssertionError: expected 1 to be 2'] }, { status: 'passed', failureMessages: [] }] },
+          { status: 'failed', message: "Error: Failed to resolve import './gone'", assertionResults: [] },
+        ],
+      }),
+    );
+    assert.deepEqual(readFailures(report), ['AssertionError: expected 1 to be 2', "Error: Failed to resolve import './gone'"]);
+    assert.deepEqual(readFailures(join(dir, 'missing.json')), []);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

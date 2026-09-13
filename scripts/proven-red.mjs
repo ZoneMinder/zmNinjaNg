@@ -22,9 +22,18 @@
  * browser e2e steps, which need a ZoneMinder and cannot run here. Fails when a
  * behavior change arrives with no changed test at all. A changed unit test is
  * always proved, whatever the title claims.
+ *
+ * A red run is not one proof but two. A test that fails an assertion on the
+ * old code shows the assertion bites. A test that fails only because it
+ * references a symbol the fork point does not have (`x is not a function`,
+ * `Cannot find module`) shows the code is new and nothing about the
+ * assertions; that is the only red a new module can ever give against the
+ * fork point. The job reads the failures and says which kind it saw, and
+ * warns when every failure is the second kind, so a reviewer knows the
+ * assertions still need a look (M2: read what a gate measured).
  */
 import { execFileSync } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, rmSync, symlinkSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, symlinkSync } from 'node:fs';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -75,6 +84,16 @@ function git(args, cwd) {
   return execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
 }
 
+/** A failure that says the symbol or module is missing, not that a value was wrong. */
+const MISSING_REFERENCE =
+  /is not a function|is not defined|is not a constructor|Cannot find module|Failed to resolve import|does not provide an export|Cannot read propert/;
+
+/** Sort vitest failure messages into assertion failures and missing references. */
+export function classifyFailures(failures) {
+  const missing = failures.filter((m) => MISSING_REFERENCE.test(m));
+  return { assertion: failures.length - missing.length, missing: missing.length, sample: missing[0] };
+}
+
 /**
  * Run the head tests against the base code in a worktree.
  * `runTests(appDir, files)` returns the vitest exit code; injectable for tests.
@@ -114,12 +133,25 @@ export function proveRed({ base, head, repo, title, runTests = runVitest, log = 
     if (existsSync(modules)) symlinkSync(modules, path.join(worktree, 'app/node_modules'));
 
     const relative = split.unitTests.map((f) => f.replace(/^app\//, ''));
-    const code = runTests(path.join(worktree, 'app'), relative);
+    const result = runTests(path.join(worktree, 'app'), relative);
+    const { code, failures = [] } = typeof result === 'number' ? { code: result } : result;
     if (code === 0) {
       log(`proven-red: ${relative.length} changed test file(s) pass on the pre-change code; they cannot catch the bug they claim to.`);
       return 1;
     }
-    log(`proven-red: changed tests fail on the pre-change code, as they should.`);
+    const kinds = classifyFailures(failures);
+    if (failures.length > 0 && kinds.assertion === 0) {
+      const warning =
+        `proven-red: the changed tests fail on the pre-change code only because they reference code it does not have ` +
+        `(${kinds.missing} failure(s), e.g. "${kinds.sample.split('\n')[0]}"). That proves the code is new, not that ` +
+        `the assertions would catch a wrong value. Check the assertions in review, or run npm run test:mutation on the module.`;
+      log(process.env.GITHUB_ACTIONS ? `::warning title=Red by missing symbol only::${warning}` : warning);
+      return 0;
+    }
+    log(
+      `proven-red: changed tests fail on the pre-change code, as they should` +
+        (failures.length ? ` (${kinds.assertion} assertion failure(s), ${kinds.missing} missing reference(s)).` : '.'),
+    );
     return 0;
   } finally {
     try {
@@ -130,13 +162,29 @@ export function proveRed({ base, head, repo, title, runTests = runVitest, log = 
   }
 }
 
+/** Run vitest; the JSON report beside the default one is how the failures get read. */
 function runVitest(appDir, files) {
+  const report = path.join(mkdtempSync(path.join(tmpdir(), 'proven-red-report-')), 'vitest.json');
+  const args = ['vitest', 'run', ...files, '--reporter=default', '--reporter=json', `--outputFile=${report}`];
+  let code = 0;
   try {
-    execFileSync('npx', ['vitest', 'run', ...files], { cwd: appDir, stdio: 'inherit' });
-    return 0;
+    execFileSync('npx', args, { cwd: appDir, stdio: 'inherit' });
   } catch (error) {
-    return error.status ?? 1;
+    code = error.status ?? 1;
   }
+  return { code, failures: readFailures(report) };
+}
+
+/** Every failure message in a vitest JSON report: per-test ones, and the file-level one when a file could not even load. */
+export function readFailures(report) {
+  if (!existsSync(report)) return [];
+  const failures = [];
+  for (const file of JSON.parse(readFileSync(report, 'utf8')).testResults ?? []) {
+    const perTest = (file.assertionResults ?? []).flatMap((t) => t.failureMessages ?? []);
+    failures.push(...perTest);
+    if (perTest.length === 0 && file.status === 'failed' && file.message) failures.push(file.message);
+  }
+  return failures;
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
