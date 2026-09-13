@@ -53,9 +53,11 @@ named fleet.
   commits, and a one-line test summary. Never paste session history into a
   dispatch.
 - Model tiering: cheapest model when the task text contains the complete
-  content to write (transcription plus testing); mid tier for reviews and
-  prose judgment; the most capable model only for the final whole-branch
-  review.
+  content to write (transcription plus testing); mid tier for code reviews;
+  the most capable model only for the final whole-branch review. Tasks whose
+  output is prose (docs, reports, prose review with slop-mop) run on Opus or
+  newer. Smaller models follow slop-mop's word lists but skip the checks that
+  need judgment.
 - Tasks involving judgment get an independent review against their brief
   before the next task starts; purely mechanical tasks rely on their gates.
   Fixes get a scoped re-review that verdicts each finding ADDRESSED or NOT

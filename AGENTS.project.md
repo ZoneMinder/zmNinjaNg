@@ -125,6 +125,7 @@ Gate: review.
 - GitHub comments end with `Posted by Claude, assisting @<login>.`, where `<login>` comes from `gh api user --jq .login`. Never hardcode a username. Commits carry no such line.
 - Test builds use a matching GitHub workflow; add one only when none fits.
 - Developer docs teach React where they first rely on it.
+- Prose people read (docs, commit bodies, PR and issue bodies, GitHub comments) is written with the slop-mop skill; prose reviews run its detect mode on Opus or newer.
 
 ## Verification
 
