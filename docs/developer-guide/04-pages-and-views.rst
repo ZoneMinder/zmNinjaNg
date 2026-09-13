@@ -783,7 +783,7 @@ use), and that is the only visual effect the tile carries. A cooling tile is
 rendered identically to an alarming one; the sole signal that a monitor is
 winding down is its state icon dropping out of the tile header.
 
-That is a rendering constraint, not only a taste one. The tile is the element
+The plain tile is a rendering constraint. The tile is the element
 carrying ``view-transition-name``, so it is the element the browser
 snapshots, and a captured image is generated with the element's own visual
 effects already applied while ``::view-transition-new`` is the live element.

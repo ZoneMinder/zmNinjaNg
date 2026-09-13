@@ -290,7 +290,7 @@ collide on the server and never leak a zombie process when they go away.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/hooks/useStreamLifecycle.ts>`__
    · → :doc:`12-shared-services-and-components`
 
-#. **The key is stored, not just held.** ``stores/monitors.ts``
+#. **The key goes into the store.** ``stores/monitors.ts``
    ``generateAndSetConnKey`` generates a random number and stores it in the
    persisted ``connKeys[monitorId]`` map. Keeping it in the store is what lets
    teardown later compare-and-clear *exactly* the key it owns, never a newer
@@ -3196,7 +3196,7 @@ needs.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/api/users.ts>`__
    · → :doc:`07-api-and-data-fetching`
 
-#. **The refusal is parsed, not just counted.** ``isPermissionDenied`` matches
+#. **The refusal is recognized by its body.** ``isPermissionDenied`` matches
    ZoneMinder's "Insufficient Privileges" body rather than the bare 401 status,
    because the same status also means "log in again" and the two need opposite
    handling.
