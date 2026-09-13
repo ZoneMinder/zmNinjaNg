@@ -322,13 +322,13 @@ The commands above are what that sequence runs for the unit tier.
 Coverage
 ~~~~~~~~
 
-``app/vitest.config.ts`` sets one threshold for the whole suite: **60%** for
-lines, functions, branches, and statements, using the v8 provider. Drop below
-any of them and ``npm test -- --coverage`` fails. ``src/tests/``, config files,
-and mock data are excluded from the measurement.
-
-There is no per-directory target. Raise the four numbers in the ``thresholds``
-block of ``app/vitest.config.ts`` rather than adding a rule here.
+``npm test -- --coverage`` prints a report with the v8 provider.
+``src/tests/``, config files, and mock data are excluded from the measurement.
+The report is information, not a gate: no pull request check runs it, and the
+60% thresholds the config once carried were removed in September 2026 because
+nothing enforced them. Test quality is judged by what the suite would catch,
+through the proven-red job and the mutation smoke in CI (see
+:doc:`14-agent-development-model`), not by a coverage percentage.
 
 End-to-end tests
 ----------------
