@@ -41,7 +41,9 @@ const TEST_SUPPORT = /^app\/src\/tests\/|\/__tests__\/|^app\/tests\/steps\//;
 // behaviour. Counting them as source made a pure test migration (tests
 // changed, a baseline lowered, no app code touched) demand a red proof it
 // cannot give, since its tests rightly pass on the old code too.
-const NON_CODE = /^(docs\/|agents\/|\.github\/|.*\.md$|.*\.rst$|app\/src\/locales\/|app\/tests\/features\/|app\/\.[\w-]+-baseline\.json$)/;
+// site/ is the static GitHub Pages portal. It sits outside app/, where the
+// proof runs vitest, so no changed test could ever prove a change to it.
+const NON_CODE = /^(docs\/|agents\/|\.github\/|site\/|.*\.md$|.*\.rst$|app\/src\/locales\/|app\/tests\/features\/|app\/\.[\w-]+-baseline\.json$)/;
 
 /** Split a changed-file list into what to run, what to carry along, and what counts as behavior. */
 export function classify(files) {

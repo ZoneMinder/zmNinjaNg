@@ -130,6 +130,12 @@ test('a ratchet baseline is bookkeeping, not source', () => {
   assert.equal(skipReason('test: migrate', split), 'no source file changed');
 });
 
+test('the static portal page under site/ is not app source', () => {
+  const split = classify(['site/index.html']);
+  assert.deepEqual(split.source, []);
+  assert.equal(skipReason('feat(site): add a button', split), 'no source file changed');
+});
+
 test('a repo-hygiene gate under app/src/tests is gate work, not a unit test to prove', () => {
   const split = classify(['app/src/tests/quality-ratchet.test.ts', 'scripts/proven-red.mjs']);
   assert.deepEqual(split.unitTests, []);
