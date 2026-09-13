@@ -43,8 +43,8 @@ Tap **Edit Layout** to rearrange the grid:
 - **Save Layout**: save the current arrangement under a name so you can reload it later
 - **Scroll pad**: buttons on the right edge of the screen that move the grid
 
-The ⋮ menu also carries how a feed fills its tile — **Fit whole image** or
-**Crop to fill** — and **Analysis frames**, settings you pick once rather than
+The ⋮ menu also carries how a feed fills its tile (**Fit whole image** or
+**Crop to fill**) and **Analysis frames**, settings you pick once rather than
 reach for.
 
 In edit mode a drag anywhere on a cell moves that cell, so on a touch screen

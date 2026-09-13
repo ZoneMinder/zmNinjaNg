@@ -1,7 +1,8 @@
 /**
  * Enforces AGENTS.md rule 1: no em-dashes in source or developer docs.
  * Scans app/src ts/tsx files (excluding src/locales and this file) and
- * docs/developer-guide rst files, failing with a list of offenders.
+ * docs/developer-guide rst and docs/user-guide md files, failing with a list
+ * of offenders.
  */
 import { describe, it, expect } from 'vitest';
 import * as fs from 'node:fs';
@@ -12,6 +13,7 @@ const EM_DASH = '—';
 const thisFile = fileURLToPath(import.meta.url);
 const srcDir = path.resolve(path.dirname(thisFile), '..');
 const docsDir = path.resolve(path.dirname(thisFile), '../../../docs/developer-guide');
+const userDocsDir = path.resolve(path.dirname(thisFile), '../../../docs/user-guide');
 
 function collectSourceFiles(dir: string): string[] {
   const out: string[] = [];
@@ -46,11 +48,14 @@ describe('no em-dash characters', () => {
     expect(offenders, `Em-dashes found (replace per AGENTS.md rule 1):\n${offenders.join('\n')}`).toEqual([]);
   });
 
-  it('docs/developer-guide rst files are free of em-dashes', () => {
+  it.each([
+    ['docs/developer-guide', docsDir, '.rst'],
+    ['docs/user-guide', userDocsDir, '.md'],
+  ])('%s files are free of em-dashes', (_label, dir, ext) => {
     const files = fs
-      .readdirSync(docsDir)
-      .filter((f) => f.endsWith('.rst'))
-      .map((f) => path.join(docsDir, f));
+      .readdirSync(dir)
+      .filter((f) => f.endsWith(ext))
+      .map((f) => path.join(dir, f));
     expect(files.length).toBeGreaterThan(0);
     const offenders = findOffenders(files);
     expect(offenders, `Em-dashes found (replace per AGENTS.md rule 1):\n${offenders.join('\n')}`).toEqual([]);

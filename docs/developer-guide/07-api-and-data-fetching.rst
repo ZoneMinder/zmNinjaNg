@@ -687,7 +687,7 @@ variable is an address rather than English platform prose.
 
 Aborts are excluded: a cancelled request also has no ``status``, and a user
 cancelling must not be told the server is unreachable. Use ``isAbortError``
-here, not ``isTimeoutError`` -- the latter deliberately folds aborts into
+here, not ``isTimeoutError``: the latter deliberately folds aborts into
 timeouts for the assistant's retry logic, which is the opposite of what this
 branch needs.
 
