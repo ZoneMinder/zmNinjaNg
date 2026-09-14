@@ -7,13 +7,6 @@ short written design, called a spec, before any code exists. Agents write
 the code and its tests. Checks that run on every pull request decide whether
 a change can merge, and an agent that did not write the change reviews it.
 
-When this chapter was first written, in July 2026 (commit ``25b78369``), one
-maintainer working this way had landed 2,313 commits in eight months.
-Fourteen of those commits have "revert" in the subject line. Twelve of the
-fourteen are now written up in
-`domain-context.md <https://github.com/ZoneMinder/zmNinjaNg/blob/main/agents/project/domain-context.md>`__
-or in a contract, where an agent reads them before working in that area.
-
 zmNinjaNg is the app in a family of projects built on ZoneMinder, the server
 that records from the cameras and serves the API and streams the app talks
 to. Two other projects in the family are developed the same way.
@@ -68,7 +61,7 @@ The Polling contract in AGENTS.project.md reads:
    Owns: every recurring refresh interval.
    Path: `useBandwidthSettings` / `getBandwidthSettings` (`app/src/hooks/useBandwidthSettings.ts`).
    Never: literal interval values; users tune bandwidth globally.
-   Gate: review.
+   Gate: `app/src/tests/agents-contracts.test.ts` (no literal interval of two seconds or more).
 
 Say an agent is asked to add a feature that refreshes every 30 seconds. From
 this block alone, without opening the source, it learns three facts.
@@ -89,8 +82,8 @@ trust them instead of working the design out from the source.
 
 Some ``Never:`` lines can be checked with a text search, such as no
 ``console`` calls or no raw ``fetch``, and the same test file checks those.
-The Polling line joined them in September 2026: a literal of two seconds or
-more handed to ``setInterval`` or a ``refetchInterval`` fails the suite. What
+For Polling, a literal of two seconds or more handed to ``setInterval`` or a
+``refetchInterval`` fails the suite. What
 no script can tell is whether the value a component reads from the hook is
 the right one for that screen, so a reviewing agent still has to judge that.
 Contracts whose ``Gate:`` line says ``review`` have no text search that
@@ -179,11 +172,10 @@ set before a push or pull request.
 ``app/.lint-baseline.json`` and fails when the count grows. A check like this
 is called a ratchet. Its number may fall or stay the same, and raising it by
 hand needs a reason in the commit message (rule C7). Rule C2's 400-line limit
-rides on the same pass since September 2026: ESLint's ``max-lines`` rule
-counts files over the limit, and the ratchet holds that count. It started at
-29, with the constants module and the ZoneMinder schema file exempt, because
-the Constants contract and the schema rules funnel values into them by
-design.
+rides on the same pass: ESLint's ``max-lines`` rule counts files over the
+limit, and the ratchet holds that count. The constants module and the
+ZoneMinder schema file are exempt, because the Constants contract and the
+schema rules funnel values into them by design.
 
 CI runs the gates again on every pull request. Branch protection on ``main``
 blocks a merge until the required checks pass: unit tests, lint, build, the
@@ -272,13 +264,10 @@ checked by ``quality-ratchet.test.ts``) stores five counts in
 - references to ``ALL_PROFILES_ID`` outside tests, which the Aggregation
   contract allows only in the migration and legacy arms that already exist
 - fixed sleeps (``waitForTimeout``) in the end-to-end step files, which the
-  testing playbook forbids and which had sat at the same count through
-  thirteen commits
+  testing playbook forbids
 
-The first three counts started at 121 files, 302 assertions, and 115 words.
-The last two, added in September 2026, started at 18 references and 39
-sleeps. When the sleep count grows, the failure lists the files, so the
-author sees which step to rewrite with an auto-retrying ``expect``.
+When the sleep count grows, the failure lists the files, so the author sees
+which step to rewrite with an auto-retrying ``expect``.
 
 What gates cannot check
 -----------------------
@@ -328,11 +317,8 @@ the design is settled, produced a spec in
 The spec says what the user sees, what is out of scope, and which existing
 code gets reused. The maintainer reads and approves the half-page spec before
 any code is written, while changing direction still means editing a document.
-The directory holds seventeen specs.
 
-Nothing checked that the step happened. Between 2026-08-05 and 2026-09-13,
-twenty-six ``feat`` pull requests merged and none added a spec. The
-``pr-acceptance`` job now fails a ``feat`` pull request whose body has no
+The ``pr-acceptance`` job fails a ``feat`` pull request whose body has no
 ``## Spec`` section. The section is a link to the spec, or one line saying
 why the feature needs none, which keeps a one-line toggle from needing a
 design document while making the skip a written decision.
@@ -566,10 +552,8 @@ at reverts, which show something was tried and did not work, at repeated fixes
 to the same subsystem, which show one misunderstanding coming back, and at
 fixes an existing gate should have caught. It reports candidate
 ``domain-context.md`` entries and candidate contracts, each with the commit
-hashes behind it. Its first run, over this repository's first 2,254 commits,
-produced two contracts and twenty ``domain-context.md`` entries. The Auth
-tokens contract came from 8 fixes. The Assistant tool loop contract came from
-63 commits fixing the same kind of failure.
+hashes behind it. The Auth tokens and Assistant tool loop contracts both came
+from runs of fixes to the same kind of failure.
 
 Scheduling the reviews
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -588,13 +572,12 @@ every turn. Two parts of the setup limit how much that is.
 
 AGENTS.md, AGENTS.project.md, and CLAUDE.md load into every session, so
 agents-contracts.test.ts caps their combined size at 4,000 words with the
-``WORD_BUDGET`` constant. The three files hold about 2,150 words. Detail goes
-in playbooks, which load only for work in their area. An edit that pushes the
-total past the limit fails the suite. The author then either trims wording or
-raises the constant, and a raise needs its reason in the commit message, like
-a ratchet. The limit went from 2,100 to 4,000 on 2026-08-30 as headroom. The
-comment beside the constant says each new rule still has to answer whether a
-script could check it instead.
+``WORD_BUDGET`` constant. Detail goes in playbooks, which load only for work
+in their area. An edit that pushes the total past the limit fails the suite.
+The author then either trims wording or raises the constant, and a raise needs
+its reason in the commit message, like a ratchet. The comment beside the
+constant says each new rule still has to answer whether a script could check
+it instead.
 
 Implementation runs in subagents on the smallest model that can do the task.
 A trivial edit that a gate covers skips the subagent. Independent review runs
@@ -611,13 +594,11 @@ instead of searching and reading files), and context-mode (runs analysis in a
 sandbox so raw output stays out of the context). None of it is required to
 work on this repository.
 
-Output compression is why rule P6 exists. In one session the rtk wrapper
-capped a commit count at 50 on a 2,254-commit repository, hid a failing test
-behind a log file path, and hid a failing gate's exit status inside a
-pipeline. Each was caught only by running the bare command again. A later
-session found ``git log`` capped at 50 again in a wrapped shell, noticed only
-because ``git rev-list --count`` gave a different number. Compression tools
-can be used for reading, but a gate always runs as the bare command. Token
+Output compression is why rule P6 exists. The rtk wrapper has capped
+``git log`` output at 50 commits, hidden a failing test behind a log file
+path, and hidden a failing gate's exit status inside a pipeline. Each was
+caught only by running the bare command again. Compression tools can be used
+for reading, but a gate always runs as the bare command. Token
 savings a tool reports about itself get the same check as any other number a
 tool reports (rule M2).
 
@@ -650,9 +631,10 @@ existing workflows instead of adding new ones.
      - What it does
    * - ``ci.yml``
      - every PR, push to main
-     - version guard, lints, build, unit tests (with the full history checked
-       out, so the gate can confirm cited commit hashes exist), the proven-red
-       check, script tests, and web e2e when the ZoneMinder secrets are set
+     - PR acceptance check, version guard, lints, build, unit tests (with the
+       full history checked out, so the gate can confirm cited commit hashes
+       exist), the proven-red check with script tests and the mutation smoke,
+       and web e2e when the ZoneMinder secrets are set
    * - ``claude.yml``
      - @claude mention on issues and PRs
      - brings an agent into the thread
@@ -667,7 +649,8 @@ existing workflows instead of adding new ones.
      - creates the GitHub release with a generated changelog
    * - ``test.yml``
      - release published
-     - runs the unit tests again with coverage against the released code
+     - runs the unit tests with coverage, and the web e2e tests, against the
+       released code
    * - ``deploy-pages.yml``
      - push to main touching ``site/**``
      - deploys the project site
@@ -683,26 +666,23 @@ existing workflows instead of adding new ones.
 Using this in your own project
 ------------------------------
 
-Copy AGENTS.md unchanged. It contains no zmNinjaNg names, and the portability
-test keeps it that way. Project facts go in the other files.
+The framework in this chapter is packaged as
+`gap-trap <https://github.com/pliablepixels/gap-trap>`__, a skill that sets it
+up in another repository. Install it following its README, then run
+``/gap-trap setup`` in the repository. It reads the code, proposes contracts
+and gates for that codebase, and asks about anything it cannot settle. It then
+writes AGENTS.md (the same file this repository uses), AGENTS.project.md, the
+playbooks, the instruction gate, proven red, and the ratchets, and installs
+slop-mop. Node and Python repositories get the gates inside their test suite.
+Other languages get shell versions.
 
-Write an ``AGENTS.project.md`` for your codebase. Most of the work is the
-contracts. Find the places where your code has one sanctioned path (settings,
-HTTP, logging, state), and write an Owns, Path, Never, and Gate block for
-each, using real symbol names.
+After the first incidents, or about once a month, ``/gap-trap refine`` looks
+for rules without gates, contracts that name code that no longer exists, and
+lessons in the commit history since the last run. It proposes one pull
+request, which covers what ``mine-history`` does here.
 
-Copy agents-contracts.test.ts and point it at your tree: your source
-directory, your list of forbidden names, and a word limit measured from your
-own files plus some room. Copy ``agents/generic/`` as it is, and start
-``agents/project/`` with an empty ``domain-context.md``. If the project has
-history, one ``mine-history`` run over all of it produces most of the first
-entries.
-
-Claude Code needs a CLAUDE.md that imports the two instruction files. Other
-agent tools read AGENTS.md directly. To use the same writing rules, install
-slop-mop from its repository and add a project rule that requires it. The
-periodic reviews are optional. Start with the core and a handful of contracts,
-and add rules through the protocol as incidents happen.
+To set the framework up by hand instead, gap-trap's ``reference/framework.md``
+describes each part, and its ``templates/`` directory holds the files to copy.
 
 Evidence for this chapter
 -------------------------
@@ -739,6 +719,7 @@ Where everything lives
 - `mine-history <https://github.com/ZoneMinder/zmNinjaNg/tree/main/.claude/skills/mine-history>`__, the history review skill
 - `fable-review <https://github.com/ZoneMinder/zmNinjaNg/tree/main/.claude/skills/fable-review>`__, the scored codebase review skill
 - `slop-mop <https://github.com/pliablepixels/slop-mop>`__, the writing skill, installed separately
+- `gap-trap <https://github.com/pliablepixels/gap-trap>`__, this framework packaged for other repositories
 
 What this asks of a contributor
 -------------------------------
