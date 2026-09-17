@@ -48,8 +48,13 @@ export function EventContextRibbon({ lanes, onSelect }: EventContextRibbonProps)
                   aria-label={t('events.around.dot_label', { camera: lane.monitorName, offset: offsetLabel(dot.offsetMs) })}
                   onClick={() => onSelect(dot.eventId)}
                   className={cn(
-                    'absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary hover:bg-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                    dot.isAnchor ? 'h-3 w-3 ring-2 ring-offset-1 ring-primary/40' : 'h-2 w-2'
+                    'absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                    // Colour and size both carry the anchor, never colour alone:
+                    // the neighbours recede so the event you came from is the
+                    // one the eye lands on.
+                    dot.isAnchor
+                      ? 'h-3 w-3 bg-primary ring-2 ring-offset-1 ring-primary/40'
+                      : 'h-2 w-2 bg-muted-foreground/60 hover:bg-muted-foreground'
                   )}
                   style={{ left: `${dot.leftPercent}%` }}
                 />
