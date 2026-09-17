@@ -274,7 +274,16 @@
       "open": "Événements à proximité",
       "permission_denied": "Ce compte ne peut pas lire les événements.",
       "empty": "Rien d'autre dans cette période",
-      "close": "Fermer"
+      "close": "Fermer",
+      "window": "Fenêtre",
+      "scope": "Moniteurs",
+      "minutes_one": "±{{count}} min",
+      "minutes_other": "±{{count}} min",
+      "scope_linked": "Liés",
+      "scope_group": "Groupe",
+      "scope_all": "Tous",
+      "scope_unavailable_linked": "Ce moniteur n'a aucun moniteur lié.",
+      "scope_unavailable_group": "Ce moniteur n'appartient à aucun groupe."
     }
   },
   "event_detail": {

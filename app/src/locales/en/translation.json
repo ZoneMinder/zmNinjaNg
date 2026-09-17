@@ -274,7 +274,16 @@
       "open": "Around this event",
       "permission_denied": "This account cannot read events.",
       "empty": "Nothing else in this window",
-      "close": "Close"
+      "close": "Close",
+      "window": "Window",
+      "scope": "Cameras",
+      "minutes_one": "±{{count}}m",
+      "minutes_other": "±{{count}}m",
+      "scope_linked": "Linked",
+      "scope_group": "Group",
+      "scope_all": "All",
+      "scope_unavailable_linked": "This camera has no linked cameras.",
+      "scope_unavailable_group": "This camera is in no group."
     }
   },
   "event_detail": {

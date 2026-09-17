@@ -274,7 +274,16 @@
       "open": "Eventos cercanos a este",
       "permission_denied": "Esta cuenta no puede leer eventos.",
       "empty": "Nada más en este intervalo",
-      "close": "Cerrar"
+      "close": "Cerrar",
+      "window": "Ventana",
+      "scope": "Monitores",
+      "minutes_one": "±{{count}} min",
+      "minutes_other": "±{{count}} min",
+      "scope_linked": "Vinculadas",
+      "scope_group": "Grupo",
+      "scope_all": "Todas",
+      "scope_unavailable_linked": "Este monitor no tiene monitores vinculados.",
+      "scope_unavailable_group": "Este monitor no está en ningún grupo."
     }
   },
   "event_detail": {

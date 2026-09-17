@@ -274,7 +274,16 @@
       "open": "Umgebung dieses Ereignisses",
       "permission_denied": "Dieses Konto kann keine Ereignisse lesen.",
       "empty": "Nichts weiter in diesem Zeitraum",
-      "close": "Schließen"
+      "close": "Schließen",
+      "window": "Fenster",
+      "scope": "Monitore",
+      "minutes_one": "±{{count}} Min.",
+      "minutes_other": "±{{count}} Min.",
+      "scope_linked": "Verknüpft",
+      "scope_group": "Gruppe",
+      "scope_all": "Alle",
+      "scope_unavailable_linked": "Dieser Monitor hat keine verknüpften Monitore.",
+      "scope_unavailable_group": "Dieser Monitor ist in keiner Gruppe."
     }
   },
   "event_detail": {

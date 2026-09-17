@@ -284,7 +284,18 @@
       "open": "События рядом с этим",
       "permission_denied": "Эта учётная запись не может читать события.",
       "empty": "Больше ничего в этом периоде",
-      "close": "Закрыть"
+      "close": "Закрыть",
+      "window": "Окно",
+      "scope": "Мониторы",
+      "minutes_one": "±{{count}} мин",
+      "minutes_few": "±{{count}} мин",
+      "minutes_many": "±{{count}} мин",
+      "minutes_other": "±{{count}} мин",
+      "scope_linked": "Связанные",
+      "scope_group": "Группа",
+      "scope_all": "Все",
+      "scope_unavailable_linked": "У этого монитора нет связанных мониторов.",
+      "scope_unavailable_group": "Этот монитор не состоит ни в одной группе."
     }
   },
   "event_detail": {

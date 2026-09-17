@@ -274,7 +274,16 @@
       "open": "附近事件",
       "permission_denied": "此账户无法读取事件。",
       "empty": "此时段内没有其他事件",
-      "close": "关闭"
+      "close": "关闭",
+      "window": "窗口",
+      "scope": "监视器",
+      "minutes_one": "±{{count}}分钟",
+      "minutes_other": "±{{count}}分钟",
+      "scope_linked": "关联",
+      "scope_group": "分组",
+      "scope_all": "全部",
+      "scope_unavailable_linked": "此监视器没有关联的监视器。",
+      "scope_unavailable_group": "此监视器不属于任何分组。"
     }
   },
   "event_detail": {
