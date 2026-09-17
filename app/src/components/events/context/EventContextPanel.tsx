@@ -29,6 +29,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose, SheetFooter }
 import { Button } from '../../ui/button';
 import { EventContextControls } from './EventContextControls';
 import { EventContextList } from './EventContextList';
+import { EventContextGraph } from './EventContextGraph';
 import { EventContextRibbon } from './EventContextRibbon';
 import { buildRibbonLanes } from '../../../lib/event/event-context-view';
 import { EVENT_CONTEXT } from '../../../lib/zmninja-ng-constants';
@@ -153,20 +154,30 @@ function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId:
     navigate(`/events?${params.toString()}`);
   }, [window, monitorIds, profileId, closePanel, navigate]);
 
+  // Graph is an alternate, pointer-driven way to browse the same rows; the
+  // list stays the sanctioned surface for loading, error and empty states
+  // (and for the truncated-by-the-server notice), so the toggle only takes
+  // effect once there is something settled to lay out (refs #494).
+  const showGraph = context.view === 'graph' && !isLoading && !error && rows.length > 0;
+
   return (
     <>
       <EventContextControls value={shownContext} onChange={applyContext} available={available} />
       <EventContextRibbon lanes={lanes} onSelect={onSelect} />
-      <div ref={listRef} className="contents">
-        <EventContextList
-          rows={rows}
-          profileId={profileId}
-          isLoading={isLoading}
-          error={error}
-          truncated={truncated}
-          onWiden={onWiden}
-        />
-      </div>
+      {showGraph ? (
+        <EventContextGraph rows={rows} monitorNames={monitorNames} windowMinutes={context.windowMinutes} profileId={profileId} />
+      ) : (
+        <div ref={listRef} className="contents">
+          <EventContextList
+            rows={rows}
+            profileId={profileId}
+            isLoading={isLoading}
+            error={error}
+            truncated={truncated}
+            onWiden={onWiden}
+          />
+        </div>
+      )}
       <SheetFooter className="flex-row gap-2 border-t p-3">
         <Button variant="outline" size="sm" className="flex-1" onClick={openInTimeline} data-testid="event-context-open-timeline">
           {t('events.around.timeline')}

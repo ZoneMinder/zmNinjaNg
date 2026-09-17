@@ -217,6 +217,10 @@ export const TIMELINE = {
 export type EventContextScope = 'linked' | 'group' | 'all';
 export const EVENT_CONTEXT_SCOPES: readonly EventContextScope[] = ['linked', 'group', 'all'] as const;
 
+/** "Around this event": list rows or the force-directed graph (refs #494). */
+export type EventContextView = 'list' | 'graph';
+export const EVENT_CONTEXT_VIEWS: readonly EventContextView[] = ['list', 'graph'] as const;
+
 /** "Around this event": the window either side of an anchor event, and the
  *  ceiling on how much of the answer one request may ask for. */
 export const EVENT_CONTEXT = {

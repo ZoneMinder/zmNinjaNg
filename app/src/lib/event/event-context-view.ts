@@ -6,7 +6,11 @@
  * these live here beside `event-context.ts` instead.
  */
 
+import { buildThumbnailChainForEvent, eventHasAlarmFrame } from './thumbnail-chain';
+import { calculateThumbnailDimensions, getMonitorDimensions, EVENT_GRID_CONSTANTS } from './event-utils';
 import type { EventAroundRow } from '../../hooks/useEventsAround';
+import type { ThumbnailFallbackEntry } from './thumbnail-chain';
+import type { Event, ProfileId } from '../../api/types';
 
 /**
  * "+38s" / "+22m 01s" / "+22m" / "+1h 05m" / "−4m 12s": digits and units, no
@@ -35,6 +39,37 @@ export function offsetLabel(offsetMs: number): string {
   if (offsetMs < 0) return `−${value}`;
   if (offsetMs > 0) return `+${value}`;
   return value;
+}
+
+export interface RowThumbnailOptions {
+  portalUrl: string;
+  thumbnailChain: ThumbnailFallbackEntry[];
+  token: string | undefined;
+  minStreamingPort: number | undefined;
+  profileId: ProfileId | undefined;
+}
+
+/** Thumbnail chain and aspect ratio for one row: the list's own rows and the
+ *  graph's nodes share this so both surfaces fall back through fallback URLs
+ *  identically (refs #494). Mirrors MonitorRecentEvents.tsx's buildRow. */
+export function buildRowThumbnail(event: Event, opts: RowThumbnailOptions) {
+  const { width, height } = getMonitorDimensions(undefined, event.Width, event.Height);
+  const { width: tw, height: th } = calculateThumbnailDimensions(
+    width,
+    height,
+    event.Orientation,
+    EVENT_GRID_CONSTANTS.LIST_VIEW_TARGET_SIZE
+  );
+  const urls = buildThumbnailChainForEvent(event.MonitorId, [], opts.portalUrl, event.Id, opts.thumbnailChain, {
+    token: opts.token,
+    width: tw,
+    height: th,
+    minStreamingPort: opts.minStreamingPort,
+    monitorId: event.MonitorId,
+    hasAlarmFrame: eventHasAlarmFrame(event),
+    profileId: opts.profileId,
+  });
+  return { urls, aspectRatio: tw / th };
 }
 
 export interface RibbonDot {

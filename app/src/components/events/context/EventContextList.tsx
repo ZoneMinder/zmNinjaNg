@@ -11,46 +11,13 @@ import { ErrorBanner } from '../../ui/query-state';
 import { EmptyState } from '../../ui/empty-state';
 import { Button } from '../../ui/button';
 import { resolveQueryError } from '../../../lib/query/query-error';
-import { offsetLabel } from '../../../lib/event/event-context-view';
-import { buildThumbnailChainForEvent, eventHasAlarmFrame } from '../../../lib/event/thumbnail-chain';
-import { calculateThumbnailDimensions, getMonitorDimensions, EVENT_GRID_CONSTANTS } from '../../../lib/event/event-utils';
+import { offsetLabel, buildRowThumbnail } from '../../../lib/event/event-context-view';
 import { useProfileById } from '../../../hooks/useCurrentProfile';
 import { useFreshAccessToken } from '../../../hooks/useFreshAccessToken';
 import { resolveMinStreamingPort } from '../../../lib/monitor/multiport';
 import { cn } from '../../../lib/utils';
 import type { EventAroundRow } from '../../../hooks/useEventsAround';
-import type { Event, ProfileId } from '../../../api/types';
-import type { ThumbnailFallbackEntry } from '../../../lib/event/thumbnail-chain';
-
-interface RowThumbnailOptions {
-  portalUrl: string;
-  thumbnailChain: ThumbnailFallbackEntry[];
-  token: string | undefined;
-  minStreamingPort: number | undefined;
-  profileId: ProfileId | undefined;
-}
-
-/** Thumbnail chain and aspect ratio for one row, mirroring
- *  MonitorRecentEvents.tsx's buildRow. */
-function buildRowThumbnail(event: Event, opts: RowThumbnailOptions) {
-  const { width, height } = getMonitorDimensions(undefined, event.Width, event.Height);
-  const { width: tw, height: th } = calculateThumbnailDimensions(
-    width,
-    height,
-    event.Orientation,
-    EVENT_GRID_CONSTANTS.LIST_VIEW_TARGET_SIZE
-  );
-  const urls = buildThumbnailChainForEvent(event.MonitorId, [], opts.portalUrl, event.Id, opts.thumbnailChain, {
-    token: opts.token,
-    width: tw,
-    height: th,
-    minStreamingPort: opts.minStreamingPort,
-    monitorId: event.MonitorId,
-    hasAlarmFrame: eventHasAlarmFrame(event),
-    profileId: opts.profileId,
-  });
-  return { urls, aspectRatio: tw / th };
-}
+import type { ProfileId } from '../../../api/types';
 
 export interface EventContextListProps {
   rows: EventAroundRow[];

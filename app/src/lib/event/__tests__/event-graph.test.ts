@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildGraph, stepGraph, targetRadius, type GraphNode, type GraphEdge } from '../event-graph';
+import { buildGraph, stepGraph, targetRadius, selectGraphRows, type GraphNode, type GraphEdge } from '../event-graph';
 import { EVENT_CONTEXT } from '../../zmninja-ng-constants';
 import type { EventAroundRow } from '../../../hooks/useEventsAround';
 
@@ -127,5 +127,36 @@ describe('stepGraph', () => {
     expect(a.x).toBe(40);
     expect(a.y).toBe(0);
     expect(b.x !== bBefore.x || b.y !== bBefore.y).toBe(true);
+  });
+});
+
+describe('selectGraphRows', () => {
+  it('keeps every row when there are no more than the cap', () => {
+    const rows = [row('anchor', '1', 0, true), row('a', '2', 5000)];
+    const result = selectGraphRows(rows, 5);
+    expect(result).toEqual({ rows, omitted: 0 });
+  });
+
+  it('keeps the rows nearest the anchor by absolute offset, dropping the rest', () => {
+    const rows = [
+      row('anchor', '1', 0, true),
+      row('near', '2', 1000),
+      row('far', '3', -50000),
+      row('mid', '4', 8000),
+    ];
+    const result = selectGraphRows(rows, 3);
+    expect(result.rows.map((r) => r.event.Id)).toEqual(['anchor', 'near', 'mid']);
+    expect(result.omitted).toBe(1);
+  });
+
+  it('preserves the original chronological order among the rows it keeps', () => {
+    const rows = [
+      row('far-before', '1', -9000),
+      row('anchor', '1', 0, true),
+      row('near', '2', 1000),
+      row('far-after', '3', 9000),
+    ];
+    const result = selectGraphRows(rows, 2);
+    expect(result.rows.map((r) => r.event.Id)).toEqual(['anchor', 'near']);
   });
 });

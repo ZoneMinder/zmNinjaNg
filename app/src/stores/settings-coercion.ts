@@ -16,7 +16,9 @@ import {
   ALL_MODE_PERFORMANCE,
   EVENT_CONTEXT,
   EVENT_CONTEXT_SCOPES,
+  EVENT_CONTEXT_VIEWS,
   type EventContextScope,
+  type EventContextView,
 } from '../lib/zmninja-ng-constants';
 
 /** All mode only: how much each aggregated tile's stream is dialed back.
@@ -105,11 +107,13 @@ export function coerceAllModePerformance(
 export interface EventContextSettings {
   windowMinutes: number;
   scope: EventContextScope;
+  view: EventContextView;
 }
 
 export const DEFAULT_EVENT_CONTEXT: EventContextSettings = {
   windowMinutes: EVENT_CONTEXT.defaultWindowMinutes,
   scope: 'all',
+  view: 'list',
 };
 
 /** Brings a persisted `eventContext` back inside what the UI can express: an
@@ -127,9 +131,11 @@ export function coerceEventContext(
   const raw = merged.eventContext ?? defaults.eventContext;
   const windowOffered = (EVENT_CONTEXT.windowChoices as readonly number[]).includes(raw.windowMinutes);
   const scopeKnown = EVENT_CONTEXT_SCOPES.includes(raw.scope);
-  if (raw === merged.eventContext && windowOffered && scopeKnown) return;
+  const viewKnown = EVENT_CONTEXT_VIEWS.includes(raw.view);
+  if (raw === merged.eventContext && windowOffered && scopeKnown && viewKnown) return;
   merged.eventContext = {
     windowMinutes: windowOffered ? raw.windowMinutes : defaults.eventContext.windowMinutes,
     scope: scopeKnown ? raw.scope : defaults.eventContext.scope,
+    view: viewKnown ? raw.view : defaults.eventContext.view,
   };
 }

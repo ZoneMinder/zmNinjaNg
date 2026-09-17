@@ -15,13 +15,13 @@ describe('AppearanceSection event context defaults', () => {
     const update = vi.fn();
     render(<AppearanceSection settings={{ ...DEFAULT_SETTINGS }} update={update} />);
     fireEvent.click(screen.getByTestId('event-context-window-30'));
-    expect(update).toHaveBeenCalledWith('eventContext', { windowMinutes: 30, scope: 'all' });
+    expect(update).toHaveBeenCalledWith('eventContext', { windowMinutes: 30, scope: 'all', view: 'list' });
   });
 
   it('writes the default scope the user picked', () => {
     const update = vi.fn();
     render(<AppearanceSection settings={{ ...DEFAULT_SETTINGS }} update={update} />);
     fireEvent.click(screen.getByTestId('event-context-scope-linked'));
-    expect(update).toHaveBeenCalledWith('eventContext', { windowMinutes: 10, scope: 'linked' });
+    expect(update).toHaveBeenCalledWith('eventContext', { windowMinutes: 10, scope: 'linked', view: 'list' });
   });
 });

@@ -7,7 +7,7 @@
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../ui/button';
 import { useDeniedControl } from '../../../hooks/useDeniedControl';
-import { EVENT_CONTEXT } from '../../../lib/zmninja-ng-constants';
+import { EVENT_CONTEXT, EVENT_CONTEXT_VIEWS, type EventContextView } from '../../../lib/zmninja-ng-constants';
 import { EVENT_CONTEXT_SCOPES, type EventContextScope } from '../../../lib/event/event-context';
 import type { EventContextSettings } from '../../../stores/settings';
 
@@ -81,6 +81,20 @@ export function EventContextControls({ value, onChange, available }: EventContex
             enabled={isScopeEnabled(scope, available)}
             onSelect={() => onChange({ ...value, scope })}
           />
+        ))}
+      </div>
+      <div className="flex items-center gap-1" role="group" aria-label={t('common.view')}>
+        {EVENT_CONTEXT_VIEWS.map((view: EventContextView) => (
+          <Button
+            key={view}
+            size="sm"
+            variant={value.view === view ? 'default' : 'outline'}
+            aria-pressed={value.view === view}
+            onClick={() => onChange({ ...value, view })}
+            data-testid={`event-context-view-${view}`}
+          >
+            {t(`events.around.view_${view}`)}
+          </Button>
         ))}
       </div>
     </div>

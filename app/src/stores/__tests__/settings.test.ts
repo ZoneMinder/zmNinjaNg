@@ -591,43 +591,51 @@ describe('startScreen', () => {
 });
 
 describe('mergeProfileSettings eventContext', () => {
-  it('defaults to a ten minute window over every camera', () => {
+  it('defaults to a ten minute window over every camera, list view', () => {
     expect(mergeProfileSettings(undefined).eventContext).toEqual({
       windowMinutes: 10,
       scope: 'all',
+      view: 'list',
     });
   });
 
-  it('keeps a window the user chose', () => {
+  it('keeps a window and view the user chose', () => {
     const merged = mergeProfileSettings({
-      eventContext: { windowMinutes: 30, scope: 'linked' },
+      eventContext: { windowMinutes: 30, scope: 'linked', view: 'graph' },
     } as Partial<typeof DEFAULT_SETTINGS>);
-    expect(merged.eventContext).toEqual({ windowMinutes: 30, scope: 'linked' });
+    expect(merged.eventContext).toEqual({ windowMinutes: 30, scope: 'linked', view: 'graph' });
   });
 
   it('replaces a window no chip offers with the default', () => {
     const merged = mergeProfileSettings({
-      eventContext: { windowMinutes: 4000, scope: 'all' },
+      eventContext: { windowMinutes: 4000, scope: 'all', view: 'list' },
     } as Partial<typeof DEFAULT_SETTINGS>);
     expect(merged.eventContext.windowMinutes).toBe(10);
   });
 
   it('replaces a scope the app does not know with the default', () => {
     const merged = mergeProfileSettings({
-      eventContext: { windowMinutes: 15, scope: 'neighbours' },
+      eventContext: { windowMinutes: 15, scope: 'neighbours', view: 'list' },
     } as unknown as Partial<typeof DEFAULT_SETTINGS>);
-    expect(merged.eventContext).toEqual({ windowMinutes: 15, scope: 'all' });
+    expect(merged.eventContext).toEqual({ windowMinutes: 15, scope: 'all', view: 'list' });
+  });
+
+  it('replaces a view the app does not know with the default', () => {
+    const merged = mergeProfileSettings({
+      eventContext: { windowMinutes: 15, scope: 'all', view: 'timeline' },
+    } as unknown as Partial<typeof DEFAULT_SETTINGS>);
+    expect(merged.eventContext).toEqual({ windowMinutes: 15, scope: 'all', view: 'list' });
   });
 
   it('survives a half-written blob', () => {
     const merged = mergeProfileSettings({
       eventContext: { scope: 'group' },
     } as unknown as Partial<typeof DEFAULT_SETTINGS>);
-    expect(merged.eventContext).toEqual({ windowMinutes: 10, scope: 'group' });
+    expect(merged.eventContext).toEqual({ windowMinutes: 10, scope: 'group', view: 'list' });
   });
 
   it('keeps the persisted object identity when it is already valid', () => {
-    const eventContext = { windowMinutes: 15, scope: 'linked' as const };
+    const eventContext = { windowMinutes: 15, scope: 'linked' as const, view: 'graph' as const };
     expect(
       mergeProfileSettings({ eventContext } as Partial<typeof DEFAULT_SETTINGS>).eventContext
     ).toBe(eventContext);

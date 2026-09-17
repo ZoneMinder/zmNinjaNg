@@ -126,6 +126,24 @@ export function edgeSpringForce(a: GraphNode, b: GraphNode): { fx: number; fy: n
   };
 }
 
+/** Slices to at most `maxNodes` rows, keeping the ones nearest the anchor by
+ *  absolute offset (the anchor itself, offsetMs 0, is always nearest and so
+ *  always kept). Surviving rows keep their original order. */
+export function selectGraphRows(
+  rows: EventAroundRow[],
+  maxNodes: number
+): { rows: EventAroundRow[]; omitted: number } {
+  if (rows.length <= maxNodes) return { rows, omitted: 0 };
+  const nearest = new Set(
+    [...rows]
+      .sort((a, b) => Math.abs(a.offsetMs) - Math.abs(b.offsetMs))
+      .slice(0, maxNodes)
+      .map((row) => row.event.Id)
+  );
+  const kept = rows.filter((row) => nearest.has(row.event.Id));
+  return { rows: kept, omitted: rows.length - kept.length };
+}
+
 /** One simulation step, mutating `nodes` in place. The anchor never moves;
  *  a node named by `opts.draggingId` is held at its current position while
  *  everything else still reacts to it. Returns the total kinetic energy so
