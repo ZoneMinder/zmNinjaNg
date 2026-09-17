@@ -36,12 +36,15 @@ const row = (id: string, offsetMs: number, isAnchor = false, monitorId = '3'): E
   isAnchor,
 });
 
-const monitorNames = new Map([['3', 'Front Door']]);
+const monitorNames = new Map([
+  ['3', 'Front Door'],
+  ['4', 'Driveway'],
+]);
 
-function renderGraph(rows: EventAroundRow[], windowMinutes = 10, names = monitorNames) {
+function renderGraph(rows: EventAroundRow[], names = monitorNames) {
   return render(
     <MemoryRouter>
-      <EventContextGraph rows={rows} monitorNames={names} windowMinutes={windowMinutes} profileId={undefined} />
+      <EventContextGraph rows={rows} monitorNames={names} profileId={undefined} />
     </MemoryRouter>
   );
 }
@@ -50,50 +53,26 @@ afterEach(() => {
   navigate.mockClear();
   resetProfileFixture();
   resetFakeStoreGates();
-  vi.unstubAllGlobals();
 });
-
-function stubReducedMotion(matches: boolean) {
-  vi.stubGlobal(
-    'matchMedia',
-    vi.fn((query: string) => ({
-      matches: query.includes('prefers-reduced-motion') ? matches : false,
-      media: query,
-      addEventListener: () => {},
-      removeEventListener: () => {},
-    }))
-  );
-}
 
 describe('EventContextGraph', () => {
   it('renders one node per row', () => {
-    stubReducedMotion(true);
     renderGraph([row('406', 0, true), row('407', 38000)]);
     expect(screen.getByTestId('event-context-node-406')).toBeTruthy();
     expect(screen.getByTestId('event-context-node-407')).toBeTruthy();
   });
 
-  it('names the anchor node distinctly from an offset node', () => {
-    stubReducedMotion(true);
+  it('names the root node distinctly from a leaf node', () => {
     renderGraph([row('406', 0, true), row('407', 38000)]);
-    const anchor = screen.getByTestId('event-context-node-406');
-    const other = screen.getByTestId('event-context-node-407');
-    expect(anchor.getAttribute('aria-label')).toContain('events.around.this_event');
-    expect(anchor.getAttribute('aria-label')).toContain('Front Door');
-    expect(other.getAttribute('aria-label')).toContain('+38s');
-    expect(other.getAttribute('aria-label')).toContain('Front Door');
+    const root = screen.getByTestId('event-context-node-406');
+    const leaf = screen.getByTestId('event-context-node-407');
+    expect(root.getAttribute('aria-label')).toContain('events.around.this_event');
+    expect(root.getAttribute('aria-label')).toContain('Front Door');
+    expect(leaf.getAttribute('aria-label')).toContain('+38s');
+    expect(leaf.getAttribute('aria-label')).toContain('Front Door');
   });
 
-  it('pins the anchor node at the centre', () => {
-    stubReducedMotion(true);
-    renderGraph([row('406', 0, true), row('407', 38000)]);
-    const anchor = screen.getByTestId('event-context-node-406');
-    expect(anchor.getAttribute('data-node-x')).toBe('0');
-    expect(anchor.getAttribute('data-node-y')).toBe('0');
-  });
-
-  it('lays every node in chronological tab order', () => {
-    stubReducedMotion(true);
+  it('lays every event node in chronological tab order', () => {
     renderGraph([row('407', 38000), row('406', 0, true), row('405', -252000)]);
     const buttons = screen.getAllByRole('button');
     expect(buttons.map((b) => b.dataset.testid)).toEqual([
@@ -103,8 +82,23 @@ describe('EventContextGraph', () => {
     ]);
   });
 
+  it('renders one branch per camera with a non-anchor event, ordered nearest first', () => {
+    renderGraph([
+      row('anchor', 0, true, '3'),
+      row('far', 20000, false, '4'),
+      row('near', 1000, false, '5'),
+    ]);
+    const branches = screen.getAllByTestId(/event-context-branch-/);
+    expect(branches.map((b) => b.dataset.testid)).toEqual(['event-context-branch-5', 'event-context-branch-4']);
+  });
+
+  it('gives the anchor camera no branch when it has no other events', () => {
+    renderGraph([row('406', 0, true), row('407', 38000, false, '4')]);
+    expect(screen.queryByTestId('event-context-branch-3')).toBeNull();
+    expect(screen.getByTestId('event-context-branch-4')).toBeTruthy();
+  });
+
   it('says how many were left out once the row count passes the cap', () => {
-    stubReducedMotion(true);
     const rows = [
       row('anchor', 0, true),
       ...Array.from({ length: EVENT_CONTEXT.maxGraphNodes + 4 }, (_, i) => row(`e${i}`, (i + 1) * 1000)),
@@ -114,13 +108,11 @@ describe('EventContextGraph', () => {
   });
 
   it('says nothing when every row fits under the cap', () => {
-    stubReducedMotion(true);
     renderGraph([row('406', 0, true), row('407', 38000)]);
     expect(screen.queryByTestId('event-context-graph-truncated')).toBeNull();
   });
 
   it('opens the event and marks it viewed on a tap that did not drag', () => {
-    stubReducedMotion(true);
     renderGraph([row('406', 0, true), row('407', 38000)]);
     const node = screen.getByTestId('event-context-node-407');
     fireEvent.pointerDown(node, { clientX: 100, clientY: 100, pointerId: 1 });
@@ -129,55 +121,43 @@ describe('EventContextGraph', () => {
     expect(useReturnHighlightStore.getState().lastViewedEventId).toBe('407');
   });
 
-  it('opens the anchor event too when it is tapped', () => {
-    stubReducedMotion(true);
+  it('opens the root event too when it is tapped', () => {
     renderGraph([row('406', 0, true)]);
-    fireEvent.click(screen.getByTestId('event-context-node-406'));
+    const node = screen.getByTestId('event-context-node-406');
+    fireEvent.pointerDown(node, { clientX: 10, clientY: 10, pointerId: 1 });
+    fireEvent.pointerUp(node, { clientX: 10, clientY: 10, pointerId: 1 });
     expect(navigate).toHaveBeenCalledWith('/events/406', { state: { from: '/monitors/3' } });
   });
 
-  it('moves a dragged node to the pointer while held, and never navigates', () => {
-    stubReducedMotion(true);
-    renderGraph([row('406', 0, true), row('407', 38000)]);
-    const node = screen.getByTestId('event-context-node-407');
-    const before = { x: node.getAttribute('data-node-x'), y: node.getAttribute('data-node-y') };
-    fireEvent.pointerDown(node, { clientX: 0, clientY: 0, pointerId: 1 });
-    fireEvent.pointerMove(node, { clientX: 60, clientY: 15, pointerId: 1 });
-    const held = { x: node.getAttribute('data-node-x'), y: node.getAttribute('data-node-y') };
-    expect(held).not.toEqual(before);
-    expect(held).toEqual({ x: '60', y: '15' });
-    fireEvent.pointerUp(node, { clientX: 60, clientY: 15, pointerId: 1 });
-    expect(navigate).not.toHaveBeenCalled();
-  });
-
-  it('lets a released node settle back off the exact drop point', () => {
-    stubReducedMotion(true);
-    renderGraph([row('406', 0, true), row('407', 38000)]);
-    const node = screen.getByTestId('event-context-node-407');
-    fireEvent.pointerDown(node, { clientX: 0, clientY: 0, pointerId: 1 });
-    fireEvent.pointerMove(node, { clientX: 60, clientY: 15, pointerId: 1 });
-    fireEvent.pointerUp(node, { clientX: 60, clientY: 15, pointerId: 1 });
-    const released = { x: node.getAttribute('data-node-x'), y: node.getAttribute('data-node-y') };
-    expect(released).not.toEqual({ x: '60', y: '15' });
-  });
-
-  it('keyboard-activates a node via click without needing a pointer drag', () => {
-    stubReducedMotion(true);
+  it('keyboard-activates a node via click without needing a pointer gesture', () => {
     renderGraph([row('406', 0, true), row('407', 38000)]);
     fireEvent.click(screen.getByTestId('event-context-node-407'));
     expect(navigate).toHaveBeenCalledWith('/events/407', { state: { from: '/monitors/3' } });
   });
 
-  it('paints a settled layout synchronously under reduced motion, with real positions', () => {
-    stubReducedMotion(true);
-    renderGraph([row('406', 0, true), row('407', 5000), row('408', -5000)]);
-    const a = screen.getByTestId('event-context-node-407');
-    expect(a.getAttribute('data-node-x')).not.toBeNull();
-    expect(Number.isFinite(Number(a.getAttribute('data-node-x')))).toBe(true);
+  it('pans the whole canvas on a drag, and never navigates', () => {
+    renderGraph([row('406', 0, true), row('407', 38000)]);
+    const canvas = screen.getByTestId('event-context-graph');
+    const before = screen.getByTestId('event-context-graph-canvas').style.transform;
+    fireEvent.pointerDown(canvas, { clientX: 0, clientY: 0, pointerId: 1 });
+    fireEvent.pointerMove(canvas, { clientX: 40, clientY: 15, pointerId: 1 });
+    const after = screen.getByTestId('event-context-graph-canvas').style.transform;
+    expect(after).not.toEqual(before);
+    expect(after).toContain('translate(40px, 15px)');
+    fireEvent.pointerUp(canvas, { clientX: 40, clientY: 15, pointerId: 1 });
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it('still opens the node on release when the drag stayed under the move threshold', () => {
+    renderGraph([row('406', 0, true), row('407', 38000)]);
+    const node = screen.getByTestId('event-context-node-407');
+    fireEvent.pointerDown(node, { clientX: 0, clientY: 0, pointerId: 1 });
+    fireEvent.pointerMove(node, { clientX: 1, clientY: 1, pointerId: 1 });
+    fireEvent.pointerUp(node, { clientX: 1, clientY: 1, pointerId: 1 });
+    expect(navigate).toHaveBeenCalledWith('/events/407', { state: { from: '/monitors/3' } });
   });
 
   it('captions each node with the monitor name, monitor id, and event id', () => {
-    stubReducedMotion(true);
     renderGraph([row('406', 0, true), row('407', 38000)]);
     const caption = screen.getByTestId('event-context-node-caption-407');
     expect(caption.textContent).toContain('Front Door');
@@ -186,37 +166,29 @@ describe('EventContextGraph', () => {
   });
 
   it('keeps the caption out of the accessible name, so it never disagrees with the aria-label', () => {
-    stubReducedMotion(true);
     renderGraph([row('406', 0, true), row('407', 38000)]);
     expect(screen.getByTestId('event-context-node-caption-407').getAttribute('aria-hidden')).toBe('true');
   });
 
-  it('truncates a long monitor name in the caption but keeps the full text in a title', () => {
-    stubReducedMotion(true);
+  it('truncates a long monitor name in the branch label but keeps the full text in a title', () => {
     const longName = 'A Very Long Monitor Name That Should Not Blow Up The Node';
-    renderGraph([row('406', 0, true), row('407', 38000)], 10, new Map([['3', longName]]));
-    expect(screen.getByTestId('event-context-node-caption-407').getAttribute('title')).toContain(longName);
+    renderGraph(
+      [row('406', 0, true, '3'), row('407', 38000, false, '4')],
+      new Map([['3', 'Front Door'], ['4', longName]])
+    );
+    expect(screen.getByTestId('event-context-branch-4').getAttribute('title')).toBe(longName);
   });
 
-  it('labels each edge with the unsigned time gap between its endpoints', () => {
-    stubReducedMotion(true);
+  it('labels each leaf edge with the unsigned time gap from the anchor', () => {
     renderGraph([row('406', 0, true), row('407', 38000)]);
-    const label = screen.getByTestId('event-context-edge-406-407').textContent ?? '';
+    const label = screen.getByTestId('event-context-edge-monitor:3-407').textContent ?? '';
     expect(label).toContain('38s');
     expect(label).not.toContain('+');
     expect(label).not.toContain('−');
   });
 
-  it('moves the edge label to the new midpoint when an endpoint is dragged', () => {
-    stubReducedMotion(true);
+  it('leaves the root-to-branch edge unlabelled', () => {
     renderGraph([row('406', 0, true), row('407', 38000)]);
-    const edge = screen.getByTestId('event-context-edge-406-407');
-    const before = { x: edge.getAttribute('data-edge-mid-x'), y: edge.getAttribute('data-edge-mid-y') };
-    const node = screen.getByTestId('event-context-node-407');
-    fireEvent.pointerDown(node, { clientX: 0, clientY: 0, pointerId: 1 });
-    fireEvent.pointerMove(node, { clientX: 60, clientY: 16, pointerId: 1 });
-    const after = { x: edge.getAttribute('data-edge-mid-x'), y: edge.getAttribute('data-edge-mid-y') };
-    expect(after).not.toEqual(before);
-    fireEvent.pointerUp(node, { clientX: 60, clientY: 16, pointerId: 1 });
+    expect(screen.getByTestId('event-context-edge-406-monitor:3').textContent).toBe('');
   });
 });

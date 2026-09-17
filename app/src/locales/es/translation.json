@@ -292,7 +292,7 @@
       "scope_unavailable_linked": "Este monitor no tiene monitores vinculados.",
       "scope_unavailable_group": "Este monitor no está en ningún grupo.",
       "view_list": "Lista",
-      "view_graph": "Grafo",
+      "view_graph": "Árbol",
       "graph_truncated": "Mostrando los {{count}} más cercanos. Cambia a Lista para ver el resto."
     }
   },

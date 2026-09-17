@@ -3379,6 +3379,20 @@ queries, and two of them exist only to work out what the third should ask for.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/events/context/EventContextRibbon.tsx>`__
    · → :doc:`05-component-architecture`
 
+#. **The tree is the list's alternate view, laid out by a pure function.**
+   ``EventContextGraph`` renders when ``eventContext.view`` is ``'graph'`` (the
+   stored value predates the tree and was kept to avoid the settings-merge loop
+   fixed in 87b827fc; the toggle's own label reads "Tree"). ``event-tree.ts``'s
+   ``buildEventTree`` takes the same rows and the monitor name map and returns
+   node positions and edge endpoints for three fixed columns - the anchor as
+   root, one branch per monitor with a non-anchor event, that monitor's events
+   as leaf thumbnails - with no DOM or React involved, so the layout is
+   unit-tested directly. The component owns only the pan/zoom transform and
+   pointer handling; a tap that did not drag opens that node's event exactly as
+   a list row does.
+   `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/lib/event/event-tree.ts>`__
+   · → :doc:`05-component-architecture`
+
 #. **The footer button pushes the window as URL query params.**
    ``openInEvents`` pushes the window and monitor ids as URL query params and
    navigates, because ``resolveInitialFilters`` reads exactly those params

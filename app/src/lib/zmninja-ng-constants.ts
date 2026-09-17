@@ -217,7 +217,9 @@ export const TIMELINE = {
 export type EventContextScope = 'linked' | 'group' | 'all';
 export const EVENT_CONTEXT_SCOPES: readonly EventContextScope[] = ['linked', 'group', 'all'] as const;
 
-/** "Around this event": list rows or the force-directed graph (refs #494). */
+/** "Around this event": list rows or the tree (refs #494). The persisted
+ *  value stays 'graph' - it predates the tree and a stored enum gaining a
+ *  value is what caused the settings merge loop fixed in 87b827fc. */
 export type EventContextView = 'list' | 'graph';
 export const EVENT_CONTEXT_VIEWS: readonly EventContextView[] = ['list', 'graph'] as const;
 
@@ -239,28 +241,16 @@ export const EVENT_CONTEXT = {
   /** Lanes visible before the ribbon scrolls inside its own box. */
   ribbonMaxLanes: 8,
 
-  // Force-directed graph view (event-graph.ts). Nothing above this line is
-  // graph-specific; these tune the simulation only.
-  /** Thumbnail diameter, in pixels; also the minimum gap repulsion holds
-   *  between two node centres. */
+  // Tree view (event-tree.ts). Nothing above this line is tree-specific.
+  /** Thumbnail diameter, in pixels, for the root and leaf nodes. */
   graphNodeSize: 56,
-  /** Orbit radius, in pixels, for a node right next to the anchor. */
-  graphMinRadius: 90,
-  /** Orbit radius, in pixels, for a node at the edge of the window. */
-  graphMaxRadius: 260,
-  /** How hard the radial spring pulls a node toward its target orbit. */
-  graphRadialSpringStrength: 0.06,
-  /** How hard same-camera nodes pull toward each other. */
-  graphEdgeSpringStrength: 0.02,
-  /** Rest length, in pixels, of a same-camera edge. */
-  graphEdgeRestLength: 110,
-  /** Numerator of the inverse-square node/node repulsion. */
-  graphRepulsionStrength: 6000,
-  /** Fraction of velocity kept each step; the rest is damped away so the
-   *  simulation settles instead of oscillating. */
-  graphDamping: 0.82,
-  /** Total kinetic energy below which the simulation is considered settled. */
-  graphSettleEnergy: 0.05,
+  /** Vertical space, in pixels, each leaf row occupies in the stack. */
+  treeRowHeight: 80,
+  /** Horizontal gap, in pixels, between root-to-branch and
+   *  branch-to-leaf columns. */
+  treeColumnGap: 96,
+  /** Margin, in pixels, around the tree's own canvas. */
+  treePadding: 16,
   /** Nodes shown at once; the caller slices to the nearest N by absolute
    *  offset and reports how many it left out. */
   maxGraphNodes: 60,

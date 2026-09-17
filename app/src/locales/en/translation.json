@@ -292,7 +292,7 @@
       "scope_unavailable_linked": "This camera has no linked cameras.",
       "scope_unavailable_group": "This camera is in no group.",
       "view_list": "List",
-      "view_graph": "Graph",
+      "view_graph": "Tree",
       "graph_truncated": "Showing the nearest {{count}}. Switch to List for the rest."
     }
   },

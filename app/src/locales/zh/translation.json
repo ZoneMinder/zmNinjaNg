@@ -292,7 +292,7 @@
       "scope_unavailable_linked": "此监视器没有关联的监视器。",
       "scope_unavailable_group": "此监视器不属于任何分组。",
       "view_list": "列表",
-      "view_graph": "图谱",
+      "view_graph": "树",
       "graph_truncated": "显示最近的 {{count}} 个。切换到列表查看其余部分。"
     }
   },

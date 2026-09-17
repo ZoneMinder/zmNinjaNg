@@ -124,7 +124,7 @@ function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId:
     navigate(`/events?${params.toString()}`);
   }, [window, monitorIds, profileId, closePanel, navigate]);
 
-  // Graph is an alternate, pointer-driven way to browse the same rows; the
+  // The tree is an alternate, pointer-driven way to browse the same rows; the
   // list stays the sanctioned surface for loading, error and empty states
   // (and for the truncated-by-the-server notice), so the toggle only takes
   // effect once there is something settled to lay out (refs #494).
@@ -135,7 +135,7 @@ function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId:
       <EventContextControls value={shownContext} onChange={applyContext} available={available} />
       <EventContextRibbon lanes={lanes} onSelect={onSelect} />
       {showGraph ? (
-        <EventContextGraph rows={rows} monitorNames={monitorNames} windowMinutes={context.windowMinutes} profileId={profileId} />
+        <EventContextGraph rows={rows} monitorNames={monitorNames} profileId={profileId} />
       ) : (
         <div ref={listRef} className="contents">
           <EventContextList
