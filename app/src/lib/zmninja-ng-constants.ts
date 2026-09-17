@@ -210,6 +210,19 @@ export const TIMELINE = {
   liveArrivalTtlMs: 5000,
 } as const;
 
+/** "Around this event": the window either side of an anchor event, and the
+ *  ceiling on how much of the answer one request may ask for. */
+export const EVENT_CONTEXT = {
+  /** Selectable windows, in minutes. Rendered as chips, so keep them few. */
+  windowChoices: [5, 10, 15, 30, 60] as const,
+  defaultWindowMinutes: 10,
+  /** Rows one window may return before the list says it truncated. */
+  maxResults: 200,
+  /** Above this many monitor ids, the request drops the MonitorId filter and
+   *  narrows client-side: ZoneMinder's filter URLs cap out near 8KB. */
+  maxMonitorIds: 40,
+} as const;
+
 /**
  * Notification Service Constants
  *
