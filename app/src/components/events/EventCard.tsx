@@ -227,9 +227,14 @@ function EventCardComponent({ event, monitorName, profileId, profileChip, thumbn
               />
             )}
           </div>
-          <div className="absolute bottom-0.5 left-1/2 -translate-x-1/2 sm:bottom-1 bg-black/50 text-white text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded font-medium">
-            {event.Length}s
-          </div>
+          {isWithinDays(startTime, RELATIVE_TIME_LIST_WINDOW_DAYS) && (
+            <div
+              className="absolute bottom-0.5 left-1/2 -translate-x-1/2 sm:bottom-1 max-w-[calc(100%-0.5rem)] truncate bg-black/50 text-white text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded font-medium"
+              data-testid="event-relative-time"
+            >
+              {formatEventRelative(startTime, i18n.language, t)}
+            </div>
+          )}
           </div>
         </div>
 
@@ -320,15 +325,14 @@ function EventCardComponent({ event, monitorName, profileId, profileChip, thumbn
                 <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
                 {fmtTime(startTime)}
               </div>
-              {isWithinDays(startTime, RELATIVE_TIME_LIST_WINDOW_DAYS) && (
-                <div
-                  className="flex items-center gap-1 sm:gap-1.5 bg-primary/10 rounded px-1.5 py-0.5 min-w-0"
-                  data-testid="event-relative-time"
-                >
-                  <Hourglass className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                  <span className="truncate min-w-0">{formatEventRelative(startTime, i18n.language, t)}</span>
-                </div>
-              )}
+              <div
+                className="flex items-center gap-1 sm:gap-1.5 bg-primary/10 rounded px-1.5 py-0.5"
+                title={t('events.duration')}
+                data-testid="event-duration"
+              >
+                <Hourglass className="h-3 w-3 sm:h-4 sm:w-4" />
+                {event.Length}s
+              </div>
             </div>
           </div>
 

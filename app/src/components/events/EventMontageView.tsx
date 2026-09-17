@@ -186,9 +186,11 @@ const EventMontageTile = memo(function EventMontageTile({
           />
         )}
         <div className="absolute top-2 right-2 flex items-center gap-2">
-          <Badge variant="secondary" className="text-xs">
-            {event.Length}s
-          </Badge>
+          {isWithinDays(startTime, RELATIVE_TIME_LIST_WINDOW_DAYS) && (
+            <Badge variant="secondary" className="text-xs" data-testid="event-montage-relative-time">
+              {formatEventRelative(startTime, i18n.language, t)}
+            </Badge>
+          )}
           {hasVideo && (
             <Button
               variant="secondary"
@@ -225,11 +227,7 @@ const EventMontageTile = memo(function EventMontageTile({
         )}
         <div className="text-xs text-muted-foreground truncate">
           {fmtDateTimeShort(startTime)}
-          {isWithinDays(startTime, RELATIVE_TIME_LIST_WINDOW_DAYS) && (
-            <span data-testid="event-montage-relative-time">
-              {` · ${formatEventRelative(startTime, i18n.language, t)}`}
-            </span>
-          )}
+          <span data-testid="event-montage-duration">{` · ${event.Length}s`}</span>
         </div>
         {event.Cause && (() => {
           const CauseIcon = getEventCauseIcon(event.Cause);
