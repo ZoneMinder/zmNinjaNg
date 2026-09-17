@@ -56,7 +56,9 @@ export function EventContextControls({ value, onChange, available }: EventContex
   const { t } = useTranslation();
   return (
     <div className="flex flex-wrap items-center gap-2 border-b px-4 pb-3">
-      <div className="flex items-center gap-1" role="group" aria-label={t('events.around.window')}>
+      {/* Six chips do not fit 320px on one line, so they wrap rather than
+          overflow the panel. */}
+      <div className="flex flex-wrap items-center gap-1" role="group" aria-label={t('events.around.window')}>
         {EVENT_CONTEXT.windowChoices.map((minutes) => (
           <Button
             key={minutes}

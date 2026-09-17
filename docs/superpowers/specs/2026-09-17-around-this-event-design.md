@@ -68,10 +68,12 @@ work.
 A single control bar under the anchor header, labels one word each so they fit
 320px:
 
-- Window: chips for ±5, 10, 15, 30, 60 minutes, values from
+- Window: chips for ±1, 5, 10, 15, 30, 60 minutes, values from
   `EVENT_CONTEXT.windowChoices` in `lib/zmninja-ng-constants.ts`. The default
   window is 10 minutes and a default the user cannot select back is a trap, so
-  10 is a chip; five chips is already as many as fit 320px, so ±1 is not.
+  10 is a chip. ±1 answers "what else was happening at that exact moment",
+  which is the question the issue opens with. Six chips do not fit 320px on
+  one line, so the control bar wraps them.
 - Scope: segmented `Linked | Group | All`. Linked is disabled with a hint when
   the anchor monitor's `LinkedMonitors` is empty; Group is disabled when the
   anchor monitor belongs to no group. A disabled segment states why on press

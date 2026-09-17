@@ -221,7 +221,7 @@ export const EVENT_CONTEXT_SCOPES: readonly EventContextScope[] = ['linked', 'gr
  *  ceiling on how much of the answer one request may ask for. */
 export const EVENT_CONTEXT = {
   /** Selectable windows, in minutes. Rendered as chips, so keep them few. */
-  windowChoices: [5, 10, 15, 30, 60] as const,
+  windowChoices: [1, 5, 10, 15, 30, 60] as const,
   defaultWindowMinutes: 10,
   /** Rows one window may return before the list says it truncated. */
   maxResults: 200,
