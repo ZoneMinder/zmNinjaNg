@@ -77,6 +77,8 @@ If you already know the symptom, jump straight to its flow:
     toasts stop, or an event lands under the wrong server.
 24. Opening a monitor's settings on a restricted account: the settings gear
     shows for an account that cannot use it, or hides for one that can.
+25. Around this event: the panel shows the wrong cameras, or widening the
+    window fetches nothing new.
 
 Flow 1: Cold start to an authenticated session
 ----------------------------------------------
@@ -3244,6 +3246,151 @@ Absent here: any attempt to discover permissions before login, and any check
 that hides a surface on ``unknown``. Flow 6 covers the token lifecycle this
 flow steps around; Flow 17 is the PTZ path, and ``PTZControls``
 hides its pad when the account's ``Control`` permission is denied.
+
+Flow 25: Around this event
+--------------------------
+
+Every event card, montage tile, and the Timing card on the event detail page
+carry a link-icon button asking one question: what did the other cameras
+record around this moment? The panel that answers it is mounted once in the
+app shell, driven by a two-field Zustand store, and its data hook runs three
+queries - two of which exist only to resolve what the third one asks for.
+
+.. mermaid::
+
+   sequenceDiagram
+       autonumber
+       participant User as User
+       participant Button as EventContextButton
+       participant Store as eventContext store
+       participant Panel as EventContextPanel
+       participant Body as EventContextBody
+       participant Hook as useEventsAround
+       participant ZM as ZoneMinder
+
+       User->>Button: taps "Around this event" on a card, tile, or Timing card
+       Button->>Store: openPanel(anchor, profileId)
+       Store-->>Panel: open=true, anchor, profileId
+       Panel->>Body: mount, key=profileId:anchor.Event.Id
+       Body->>Hook: useEventsAround(anchor, profileId, {windowMinutes, scope})
+       Hook->>ZM: GET monitors.json, GET groups.json
+       ZM-->>Hook: monitors (LinkedMonitors column), groups
+       Hook->>ZM: GET events.json, StartDateTime within ±window, MonitorId filter from scope
+       ZM-->>Hook: events in the window
+       Hook-->>Body: rows (offset from anchor), ribbon lanes, truncated, error
+       Body-->>User: controls, ribbon, and rows rendered in the sheet
+
+#. **The trigger is one button, reused on three surfaces.** ``EventContextButton``
+   wraps the row's ``Event`` into an ``EventData`` and calls
+   ``openPanel({ Event: event }, ownerProfileId)`` on the ``eventContext`` store,
+   with ``stopPropagation`` so tapping it on a card does not also open the event
+   underneath. ``EventCard``, ``EventMontageView`` and the Timing card in
+   ``EventDetail.tsx`` render the same component unchanged; only the Timing card
+   passes ``labelled`` for the full-width text form instead of the icon-only
+   overlay. ``useDeniedControl`` greys it, rather than hiding it, when
+   ``canViewEvents`` says the owning profile cannot read events.
+   `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/events/context/EventContextButton.tsx>`__
+   · → :doc:`05-component-architecture`
+
+#. **One store and one panel serve every card.** ``useEventContextStore`` holds
+   only ``anchor``, ``profileId`` and ``open`` - no per-card state. ``EventContextPanel``
+   is mounted once in the app shell and renders ``null`` whenever ``!open || !anchor``,
+   so a page of two hundred event cards costs two hundred small buttons and one
+   sheet, not two hundred sheets.
+   `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/events/context/EventContextPanel.tsx>`__
+   · → :doc:`03-state-management-zustand`
+
+#. **The sheet's side comes from the viewport, and the body remounts fresh on
+   every open.** ``useIsMobile`` picks ``side="bottom"`` on a phone and
+   ``side="right"`` otherwise; Radix's ``Sheet`` supplies the backdrop, Escape
+   handling and focus trap. ``EventContextBody`` is keyed on
+   ``${profileId}:${anchor.Event.Id}``, the same key-forces-remount idiom Flow 17
+   uses for a live tile: because the panel itself never unmounts across a whole
+   session, the key is what makes each open start from a clean ``useState`` seeded
+   from that profile's *current* settings, instead of whatever window and scope
+   were left on screen from the panel's first-ever open.
+   `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/events/context/EventContextPanel.tsx>`__
+   · → :doc:`02-react-fundamentals`
+
+#. **The window and scope live in local state, and write back on every change.**
+   ``EventContextBody`` seeds ``useState<EventContextSettings>(settings.eventContext)``
+   from the anchor profile's settings, and ``applyContext`` both updates that state
+   and calls ``updateProfileSettings(profileId, { eventContext: next })``. The next
+   time any card's button opens the panel, the fresh ``EventContextBody`` from the
+   step above reads that saved value back in.
+   `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/events/context/EventContextPanel.tsx>`__
+   · → :doc:`07-api-and-data-fetching`
+
+#. **The hook runs three queries, two of them just to resolve the third's filter.**
+   ``useEventsAround`` fetches ``monitors.json`` (for the anchor camera's
+   ``LinkedMonitors`` column) and ``groups.json`` (for group membership), then
+   builds the events query's ``monitorId`` filter from whichever the chosen scope
+   needs. Both run under the same ``queryKeys.monitors`` / ``queryKeys.groups`` keys
+   the rest of the app uses, so an already-open Events page has usually paid for
+   them already.
+   `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/hooks/useEventsAround.ts>`__
+   · → :doc:`07-api-and-data-fetching`
+
+#. **The events query waits on ``isPending``, not ``isLoading``, from the other two.**
+   React Query v5 reports ``isLoading: false`` for a query whose ``enabled`` is
+   still false, because nothing has started loading yet - so gating the events
+   query's own ``enabled`` on the monitors/groups queries' ``isLoading`` would let
+   it fire before their data existed, asking ZoneMinder for "every camera" before
+   the hook even knew what "linked" or "group" meant for this event. ``isPending``
+   stays true for a query that has neither run nor returned, including one that is
+   ``enabled: false``, which is what makes the ordering hold.
+   `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/hooks/useEventsAround.ts>`__
+   · → :doc:`07-api-and-data-fetching`
+
+#. **The scope resolves to a monitor id list, or to no filter at all.**
+   ``resolveScopeMonitorIds`` (``lib/event/event-context.ts``) returns ``undefined``
+   for the ``all`` scope, meaning ask for every camera; for ``linked`` it unions the
+   anchor's own id with ``parseLinkedMonitorIds`` of its ``LinkedMonitors`` column;
+   for ``group`` it unions every member of any group ``groupMonitorIds`` finds the
+   anchor camera in. A scope that resolves to no ids, or to more ids than one
+   filter URL can carry, also falls back to ``undefined`` - a window over every
+   camera is a worse answer than an error, but it is still an answer.
+   `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/lib/event/event-context.ts>`__
+   · → :doc:`07-api-and-data-fetching`
+
+#. **The window is computed once, in the anchor profile's own timezone.**
+   ``eventContextWindow`` pads the anchor event's start and end by
+   ``windowMinutes`` on each side, converting through ``resolveProfileTimezone``
+   so an All-mode anchor from a server in another timezone still gets bounds in
+   its own server's wall clock, not the viewer's.
+   `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/lib/event/event-context.ts>`__
+   · → :doc:`07-api-and-data-fetching`
+
+#. **Rows carry their own offset from the anchor, and the anchor is one of them.**
+   The events query result is mapped to ``{ event, offsetMs, isAnchor }`` with
+   ``eventInstant(item, timezone) - window.anchorMs``, then sorted by that offset,
+   so the anchor's own event always appears in its rightful place in the list
+   rather than needing to be spliced back in.
+   `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/hooks/useEventsAround.ts>`__
+   · → :doc:`07-api-and-data-fetching`
+
+#. **The ribbon and the list are two views over the same rows.**
+   ``buildRibbonLanes`` groups rows by ``MonitorId`` into one lane per camera and
+   positions each dot 0-100% across the window from its offset; it renders nothing
+   for a single lane, since one camera's dots say nothing the list below does not.
+   Tapping a dot scrolls that event's row into view in the list below and marks it
+   viewed through the return-highlight store.
+   `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/events/context/EventContextRibbon.tsx>`__
+   · → :doc:`05-component-architecture`
+
+#. **The two footer buttons write filters into different settings buckets, on
+   purpose.** ``openInTimeline`` writes the resolved window into the *current*
+   profile's ``timelinePageFilters`` - the aggregate id in All mode, a real profile
+   id otherwise - because that is the bucket ``useTimelineFilters`` actually reads,
+   not the anchor's own profile. ``openInEvents`` instead pushes the window and
+   monitor ids as URL query params and navigates, because ``resolveInitialFilters``
+   reads exactly those params ahead of any persisted filter; nav state has no
+   reader there.
+   `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/events/context/EventContextPanel.tsx>`__
+   · → :doc:`04-pages-and-views`
+
+The Timeline and Events buttons hand off into Flow 9 and Flow 5 respectively,
+each landing pre-filtered to the same window this panel just showed.
 
 When you need to change something, find the nearest flow, open its ``source`` link to land on the exact
 code, and follow the ``→`` link for the chapter that explains that layer.
