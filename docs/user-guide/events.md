@@ -125,7 +125,7 @@ Two controls at the top of the panel narrow what "close to" means:
 
 A camera scope with nothing to offer (the camera has no linked cameras, or belongs to no group) stays visible but greyed out rather than disappearing, so you can see why it is not an option. If the window comes up empty, a **Wider** link steps up to the next window size.
 
-A ribbon above the list shows one row per camera with a dot for each of its events in the window, so you can see at a glance which cameras were also busy; tapping a dot jumps to that event in the list below. From there, **Timeline** or **Events** open the same window and cameras on those pages.
+A ribbon above the list shows one row per camera with a dot for each of its events in the window, so you can see at a glance which cameras were also busy; tapping a dot jumps to that event in the list below. From there, **Events** opens the same window and cameras on that page.
 
 The window and camera choice you last picked is remembered per profile and used the next time you open the panel.
 

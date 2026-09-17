@@ -13,7 +13,6 @@ vi.mock('react-router-dom', () => ({
 }));
 
 import { useEventContextStore } from '../../../../stores/eventContext';
-import { useSettingsStore } from '../../../../stores/settings';
 import { EventContextPanel } from '../EventContextPanel';
 import { EventContextButton } from '../EventContextButton';
 import { seedProfiles, resetProfileFixture, makeProfile, asProfileId, fakeApiClient } from '../../../../tests/profile-fixture';
@@ -82,27 +81,6 @@ afterEach(() => {
 });
 
 describe('EventContextPanel footer', () => {
-  it('sends the window to the timeline filters and navigates', async () => {
-    openPanel();
-    await screen.findByTestId('event-context-empty');
-
-    fireEvent.click(screen.getByTestId('event-context-open-timeline'));
-
-    expect(navigate).toHaveBeenCalledWith('/timeline');
-    const filters = useSettingsStore.getState().getProfileSettings(P1).timelinePageFilters;
-    // TimelineFiltersPanel renders these into <input type="datetime-local">,
-    // which renders an empty field for anything that is not browser-local
-    // `YYYY-MM-DDTHH:mm`, and Timeline re-reads them as browser-local before
-    // converting to the server's zone (refs #494).
-    expect(filters.startDateTime).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/);
-    expect(filters.endDateTime).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/);
-    // p1 keeps UTC, so the window is 20:59:03Z to 21:29:41Z; the input's
-    // minute resolution truncates each bound. Comparing instants rather than
-    // digits keeps this true whatever zone the test machine runs in.
-    expect(new Date(filters.startDateTime).getTime()).toBe(Date.parse('2026-09-17T20:59:00Z'));
-    expect(new Date(filters.endDateTime).getTime()).toBe(Date.parse('2026-09-17T21:29:00Z'));
-  });
-
   it('sends the window to the events page as a URL deep link', async () => {
     openPanel();
     await screen.findByTestId('event-context-empty');
@@ -114,8 +92,8 @@ describe('EventContextPanel footer', () => {
     const [pathname, query] = target.split('?');
     expect(pathname).toBe('/events');
     const params = new URLSearchParams(query);
-    // Browser-local for the same reason the Timeline hatch converts: Events
-    // parses the param back with `new Date(...)` in the browser's zone.
+    // Browser-local: Events parses the param back with `new Date(...)` in
+    // the browser's zone.
     expect(new Date(params.get('startDateTime')!).getTime()).toBe(Date.parse('2026-09-17T20:59:00Z'));
     expect(new Date(params.get('endDateTime')!).getTime()).toBe(Date.parse('2026-09-17T21:29:00Z'));
     // No events in the window (emptyServer): nothing resolved, so no
@@ -174,9 +152,9 @@ describe('EventContextPanel footer', () => {
     openPanel();
     await screen.findByTestId('event-context-empty');
 
-    fireEvent.click(screen.getByTestId('event-context-open-timeline'));
+    fireEvent.click(screen.getByTestId('event-context-open-events'));
 
     expect(useEventContextStore.getState().open).toBe(false);
-    expect(screen.queryByTestId('event-context-panel')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('event-context-panel')).toBeNull();
   });
 });

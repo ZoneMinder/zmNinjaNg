@@ -3379,20 +3379,15 @@ queries, and two of them exist only to work out what the third should ask for.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/events/context/EventContextRibbon.tsx>`__
    · → :doc:`05-component-architecture`
 
-#. **The two footer buttons write filters into different settings buckets, on
-   purpose.** ``openInTimeline`` writes the resolved window into
-   ``timelinePageFilters`` in the *current* profile's bucket, which is keyed by the
-   aggregate's id when an aggregate is current and by a real profile id otherwise.
-   That is the bucket ``useTimelineFilters`` actually reads, and it is not always
-   the anchor's own profile. ``openInEvents`` instead pushes the window and monitor
-   ids as URL query params and navigates, because ``resolveInitialFilters`` reads
-   exactly those params ahead of any persisted filter; nav state has no reader
-   there.
+#. **The footer button pushes the window as URL query params.**
+   ``openInEvents`` pushes the window and monitor ids as URL query params and
+   navigates, because ``resolveInitialFilters`` reads exactly those params
+   ahead of any persisted filter; nav state has no reader there.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/events/context/EventContextPanel.tsx>`__
    · → :doc:`04-pages-and-views`
 
-The Timeline and Events buttons hand off into Flow 9 and Flow 5 respectively,
-each landing pre-filtered to the same window this panel just showed.
+The Events button hands off into Flow 5, landing pre-filtered to the same
+window this panel just showed.
 
 When you need to change something, find the nearest flow, open its ``source`` link to land on the exact
 code, and follow the ``→`` link for the chapter that explains that layer.

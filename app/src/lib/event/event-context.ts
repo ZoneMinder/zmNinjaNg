@@ -25,8 +25,8 @@ export interface EventContextWindow {
   endDateTime: string;
   /** The same two bounds as true instants. The wall-clock strings above are
    *  only readable against the owning profile's timezone, so anything handing
-   *  the window to a surface that reads dates as browser-local (the Timeline
-   *  and Events filter fields both do) has to start from these instead. */
+   *  the window to a surface that reads dates as browser-local (the Events
+   *  filter fields do) has to start from these instead. */
   startMs: number;
   endMs: number;
   /** The anchor's own instant, for offsets the list and ribbon render. */

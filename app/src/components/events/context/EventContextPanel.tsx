@@ -98,44 +98,14 @@ function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId:
     [context, effectiveScope]
   );
 
-  const openInTimeline = useCallback(() => {
-    // useTimelineFilters restores timelinePageFilters from the settings
-    // bucket keyed by currentProfileId - the aggregate id in All mode, a real
-    // profile id in single mode - not from the anchor's own profile. Writing
-    // to the anchor's bucket in All mode would land the window somewhere the
-    // Timeline page never reads it (refs #494).
-    const targetProfileId = useProfileStore.getState().currentProfileId;
-    if (targetProfileId) {
-      const store = useSettingsStore.getState();
-      const current = store.getProfileSettings(targetProfileId).timelinePageFilters;
-      store.updateProfileSettings(targetProfileId, {
-        // Browser-local `YYYY-MM-DDTHH:mm`, what every other writer of this
-        // field produces: the Timeline renders it straight into
-        // <input type="datetime-local"> (which rejects a space or seconds and
-        // shows an empty field) and re-reads it as browser-local before
-        // converting to the server's zone. The window's own strings are
-        // wall-clock in the ANCHOR's timezone, so they have to go back
-        // through the instant first (refs #494).
-        timelinePageFilters: {
-          ...current,
-          startDateTime: formatLocalDateTime(new Date(window.startMs)),
-          endDateTime: formatLocalDateTime(new Date(window.endMs)),
-        },
-      });
-    }
-    closePanel();
-    navigate('/timeline');
-  }, [window, closePanel, navigate]);
-
   const openInEvents = useCallback(() => {
     closePanel();
     // A URL deep link, not nav state: resolveInitialFilters
     // (useEventFilters.ts) reads exactly these query params ahead of any
     // persisted filter, which is the sanctioned way to land on Events
     // pre-filtered - nav state has no reader there.
-    // Browser-local, for the same reason the Timeline hatch converts: Events
-    // parses these back with `new Date(...)` in the browser's zone before
-    // converting to each profile's own.
+    // Browser-local: Events parses these back with `new Date(...)` in the
+    // browser's zone before converting to each profile's own.
     const params = new URLSearchParams({
       startDateTime: formatLocalDateTime(new Date(window.startMs)),
       endDateTime: formatLocalDateTime(new Date(window.endMs)),
@@ -179,9 +149,6 @@ function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId:
         </div>
       )}
       <SheetFooter className="flex-row gap-2 border-t p-3">
-        <Button variant="outline" size="sm" className="flex-1" onClick={openInTimeline} data-testid="event-context-open-timeline">
-          {t('events.around.timeline')}
-        </Button>
         <Button variant="outline" size="sm" className="flex-1" onClick={openInEvents} data-testid="event-context-open-events">
           {t('events.around.events')}
         </Button>

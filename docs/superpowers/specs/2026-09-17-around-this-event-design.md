@@ -24,8 +24,8 @@ Three surfaces were considered.
   controls, and dismisses without touching the route. That is the one specified
   here.
 
-The panel is a peek. Everything it shows is reachable from Events and Timeline,
-and it links to both rather than growing into either.
+The panel is a peek. Everything it shows is reachable from Events, and it
+links there rather than growing into it.
 
 ## Entry points
 
@@ -167,11 +167,8 @@ from the profile's own `canViewEvents` verdict before the panel opens.
 
 ## Escape hatches
 
-A footer with two actions, both closing the panel:
-
-- Timeline, with the window's start and end prefilled.
-- Events, with `eventFilters` prefilled from the window and the resolved monitor
-  ids.
+A footer with one action, closing the panel: Events, with `eventFilters`
+prefilled from the window and the resolved monitor ids.
 
 ## Localization
 

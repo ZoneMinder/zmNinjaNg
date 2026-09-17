@@ -53,7 +53,7 @@ export interface UseEventsAroundResult {
    *  renders this, not the request, so the pressed chip never disagrees with
    *  the rows underneath it. */
   effectiveScope: EventContextScope;
-  /** The resolved bounds, for the Timeline and Events escape hatches. */
+  /** The resolved bounds, for the Events escape hatch. */
   window: EventContextWindow;
   /** Monitor id -> name, for the ribbon's lane labels. */
   monitorNames: Map<string, string>;
