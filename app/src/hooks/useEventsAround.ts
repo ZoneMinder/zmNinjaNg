@@ -111,7 +111,11 @@ export function useEventsAround(
         direction: 'asc',
         limit: EVENT_CONTEXT.maxResults,
       }),
-    enabled: active && !monitorsQuery.isLoading && !groupsQuery.isLoading,
+    // isPending, not isLoading: a disabled query reports isLoading: false in
+    // React Query v5 (agents/project/domain-context.md), so gating on
+    // isLoading here would flip this query on before monitors/groups data
+    // (and therefore the scope's monitor ids) had actually arrived.
+    enabled: active && !monitorsQuery.isPending && !groupsQuery.isPending,
   });
 
   const rows = useMemo<EventAroundRow[]>(() => {
@@ -130,17 +134,26 @@ export function useEventsAround(
     [monitorsQuery.data]
   );
 
+  const available = useMemo(
+    () => ({ linked: linked.length > 0, group: group.length > 1 }),
+    [linked, group]
+  );
+
   return {
     rows,
     monitorNames,
     anchorMs: window.anchorMs,
-    isLoading: eventsQuery.isLoading || monitorsQuery.isLoading,
-    error: eventsQuery.error,
+    // isPending, not isLoading: the answer isn't knowable until monitors,
+    // groups AND events have all produced data, and a still-disabled events
+    // query (waiting on the other two) reports isLoading: false regardless
+    // (same v5 trap as the enabled gate above).
+    isLoading: active && (monitorsQuery.isPending || groupsQuery.isPending || eventsQuery.isPending),
+    error: monitorsQuery.error ?? groupsQuery.error ?? eventsQuery.error,
     // pagination.count reflects the slice actually returned (capped at the
     // request's own limit); totalCount is the server's real match count
     // before that slice, which is what "more than we asked for" means here.
     truncated: (eventsQuery.data?.pagination.totalCount ?? rows.length) > EVENT_CONTEXT.maxResults,
-    available: { linked: linked.length > 0, group: group.length > 1 },
+    available,
     window,
   };
 }

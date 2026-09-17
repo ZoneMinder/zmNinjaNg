@@ -113,6 +113,33 @@ describe('useEventsAround', () => {
     await waitFor(() => expect(result.current.available).toEqual({ linked: false, group: true }));
   });
 
+  it('stays loading until groups resolve, even after monitors already have', async () => {
+    seedProfiles([P]);
+    let resolveGroups: (value: unknown) => void = () => {};
+    const groupsPromise = new Promise((resolve) => {
+      resolveGroups = resolve;
+    });
+    const client = fakeApiClient({
+      '/monitors.json': { monitors: [{ Monitor: { Id: '3', Name: 'Door', LinkedMonitors: '' } }] },
+      '/groups.json': () => groupsPromise,
+      '/events/index': { events: [], pagination: { count: 0 } },
+    });
+    installApiClient(P, client);
+
+    const { result } = renderHook(
+      () => useEventsAround(anchor, P, { windowMinutes: 5, scope: 'all', enabled: true }),
+      { wrapper }
+    );
+
+    // Monitors have resolved (proof: their names are in) but groups have not.
+    await waitFor(() => expect(result.current.monitorNames.get('3')).toBe('Door'));
+    expect(result.current.isLoading).toBe(true);
+    expect(result.current.rows).toEqual([]);
+
+    resolveGroups({ groups: [] });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+  });
+
   it('asks for nothing while the panel is closed', async () => {
     seedProfiles([P]);
     const client = fakeApiClient({});
