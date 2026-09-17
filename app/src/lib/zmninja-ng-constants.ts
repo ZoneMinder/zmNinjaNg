@@ -234,6 +234,32 @@ export const EVENT_CONTEXT = {
   ribbonLaneHeight: 14,
   /** Lanes visible before the ribbon scrolls inside its own box. */
   ribbonMaxLanes: 8,
+
+  // Force-directed graph view (event-graph.ts). Nothing above this line is
+  // graph-specific; these tune the simulation only.
+  /** Thumbnail diameter, in pixels; also the minimum gap repulsion holds
+   *  between two node centres. */
+  graphNodeSize: 56,
+  /** Orbit radius, in pixels, for a node right next to the anchor. */
+  graphMinRadius: 90,
+  /** Orbit radius, in pixels, for a node at the edge of the window. */
+  graphMaxRadius: 260,
+  /** How hard the radial spring pulls a node toward its target orbit. */
+  graphRadialSpringStrength: 0.06,
+  /** How hard same-camera nodes pull toward each other. */
+  graphEdgeSpringStrength: 0.02,
+  /** Rest length, in pixels, of a same-camera edge. */
+  graphEdgeRestLength: 110,
+  /** Numerator of the inverse-square node/node repulsion. */
+  graphRepulsionStrength: 6000,
+  /** Fraction of velocity kept each step; the rest is damped away so the
+   *  simulation settles instead of oscillating. */
+  graphDamping: 0.82,
+  /** Total kinetic energy below which the simulation is considered settled. */
+  graphSettleEnergy: 0.05,
+  /** Nodes shown at once; the caller slices to the nearest N by absolute
+   *  offset and reports how many it left out. */
+  maxGraphNodes: 60,
 } as const;
 
 /**
