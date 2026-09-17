@@ -6,7 +6,10 @@
  *
  * The window/scope choice lives in local state seeded from the anchor
  * profile's settings, and is written back through `updateProfileSettings` on
- * every change so the next open starts where the last one ended.
+ * every change so the next open starts where the last one ended. That state
+ * lives in `EventContextBody`, keyed by profile+anchor, so each open mounts a
+ * fresh instance seeded from that profile's *current* setting rather than
+ * whatever was on screen the first time the (always-mounted) panel rendered.
  *
  * Task 6 mounts `<EventContextList/>`, Task 7 `<EventContextRibbon/>`, Task 8
  * the footer.
@@ -22,15 +25,9 @@ import { useSettingsStore, type EventContextSettings } from '../../../stores/set
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from '../../ui/sheet';
 import { Button } from '../../ui/button';
 import { EventContextControls } from './EventContextControls';
+import type { EventData, ProfileId } from '../../../api/types';
 
-export function EventContextPanel() {
-  const { t } = useTranslation();
-  const { anchor, open, profileId } = useEventContextStore(
-    useShallow((s) => ({ anchor: s.anchor, open: s.open, profileId: s.profileId }))
-  );
-  const closePanel = useEventContextStore((s) => s.closePanel);
-  const isMobile = useIsMobile();
-
+function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId: ProfileId | undefined }) {
   const settings = useSettingsStore(useShallow((s) => s.getProfileSettings(profileId ?? '')));
   const [context, setContext] = useState<EventContextSettings>(settings.eventContext);
   const applyContext = useCallback(
@@ -44,8 +41,19 @@ export function EventContextPanel() {
   const { available } = useEventsAround(anchor, profileId, {
     windowMinutes: context.windowMinutes,
     scope: context.scope,
-    enabled: open,
+    enabled: true,
   });
+
+  return <EventContextControls value={context} onChange={applyContext} available={available} />;
+}
+
+export function EventContextPanel() {
+  const { t } = useTranslation();
+  const { anchor, open, profileId } = useEventContextStore(
+    useShallow((s) => ({ anchor: s.anchor, open: s.open, profileId: s.profileId }))
+  );
+  const closePanel = useEventContextStore((s) => s.closePanel);
+  const isMobile = useIsMobile();
 
   if (!open || !anchor) return null;
 
@@ -62,7 +70,7 @@ export function EventContextPanel() {
             {anchor.Event.Name}
           </div>
         </SheetHeader>
-        <EventContextControls value={context} onChange={applyContext} available={available} />
+        <EventContextBody key={`${profileId ?? ''}:${anchor.Event.Id}`} anchor={anchor} profileId={profileId} />
         <SheetClose asChild>
           <Button variant="outline" size="sm" className="m-4" data-testid="event-context-close">
             {t('common.close')}
