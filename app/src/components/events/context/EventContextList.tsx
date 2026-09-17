@@ -122,18 +122,27 @@ export function EventContextList({ rows, profileId, isLoading, error, truncated,
               key={event.Id}
               data-testid={`event-context-row-${event.Id}`}
               aria-current={isAnchor ? 'true' : undefined}
-              className={cn('relative', isAnchor && 'ring-2 ring-primary/60 rounded-md')}
+              className={cn(
+                'flex items-center gap-1',
+                isAnchor && 'ring-2 ring-primary/60 rounded-md'
+              )}
             >
-              <span className="absolute right-1.5 top-1.5 z-10 text-[11px] font-medium tabular-nums px-1 py-0.5 rounded bg-background/90 text-muted-foreground">
+              {/* Its own column, not an overlay: CompactEventRow already ends
+                  in a duration chip and a delete button, and an absolutely
+                  positioned badge landed on top of both. A left column also
+                  gives the offsets one edge to scan down. */}
+              <span className="w-12 shrink-0 text-right text-[11px] font-medium tabular-nums text-muted-foreground">
                 {offsetLabel(offsetMs)}
               </span>
-              <CompactEventRow
-                event={event}
-                thumbnailUrls={urls}
-                aspectRatio={aspectRatio}
-                profileId={profileId}
-                ownerProfileId={profileId}
-              />
+              <div className="min-w-0 flex-1">
+                <CompactEventRow
+                  event={event}
+                  thumbnailUrls={urls}
+                  aspectRatio={aspectRatio}
+                  profileId={profileId}
+                  ownerProfileId={profileId}
+                />
+              </div>
             </div>
           );
         })}
