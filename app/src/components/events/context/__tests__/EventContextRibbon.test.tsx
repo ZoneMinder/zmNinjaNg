@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { buildRibbonLanes, EventContextRibbon } from '../EventContextRibbon';
+import { EventContextRibbon } from '../EventContextRibbon';
+import { buildRibbonLanes } from '../../../../lib/event/event-context-view';
 
 // Mirrors the real "{{camera}}, {{offset}}" resource string (en/translation.json)
 // so the interpolation the component relies on is actually exercised, rather

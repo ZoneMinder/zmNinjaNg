@@ -10,45 +10,11 @@
 import { useTranslation } from 'react-i18next';
 import { cn } from '../../../lib/utils';
 import { EVENT_CONTEXT } from '../../../lib/zmninja-ng-constants';
-import { offsetLabel } from './EventContextList';
-import type { EventAroundRow } from '../../../hooks/useEventsAround';
-
-export interface RibbonDot {
-  eventId: string;
-  offsetMs: number;
-  leftPercent: number;
-  isAnchor: boolean;
-}
-
-export interface RibbonLane {
-  monitorId: string;
-  monitorName: string;
-  dots: RibbonDot[];
-}
+import { offsetLabel, type RibbonLane } from '../../../lib/event/event-context-view';
 
 export interface EventContextRibbonProps {
   lanes: RibbonLane[];
   onSelect: (eventId: string) => void;
-}
-
-/** Lanes in first-seen order, each dot positioned 0-100% across the window. */
-export function buildRibbonLanes(
-  rows: EventAroundRow[],
-  monitorNames: Map<string, string>,
-  windowMs: number
-): RibbonLane[] {
-  const lanes = new Map<string, RibbonLane>();
-  for (const { event, offsetMs, isAnchor } of rows) {
-    const monitorId = event.MonitorId;
-    let lane = lanes.get(monitorId);
-    if (!lane) {
-      lane = { monitorId, monitorName: monitorNames.get(monitorId) ?? monitorId, dots: [] };
-      lanes.set(monitorId, lane);
-    }
-    const leftPercent = Math.min(100, Math.max(0, ((offsetMs + windowMs / 2) / windowMs) * 100));
-    lane.dots.push({ eventId: event.Id, offsetMs, leftPercent, isAnchor });
-  }
-  return [...lanes.values()];
 }
 
 export function EventContextRibbon({ lanes, onSelect }: EventContextRibbonProps) {

@@ -10,6 +10,6 @@
   "react-hooks/refs": 21,
   "react-hooks/set-state-in-effect": 11,
   "react-hooks/static-components": 10,
-  "react-refresh/only-export-components": 10,
+  "react-refresh/only-export-components": 8,
   "unused-eslint-disable-directive": 1
 }

@@ -11,7 +11,7 @@ import { ErrorBanner } from '../../ui/query-state';
 import { EmptyState } from '../../ui/empty-state';
 import { Button } from '../../ui/button';
 import { resolveQueryError } from '../../../lib/query/query-error';
-import { formatElapsedShort } from '../../../lib/format-date-time';
+import { offsetLabel } from '../../../lib/event/event-context-view';
 import { buildThumbnailChainForEvent, eventHasAlarmFrame } from '../../../lib/event/thumbnail-chain';
 import { calculateThumbnailDimensions, getMonitorDimensions, EVENT_GRID_CONSTANTS } from '../../../lib/event/event-utils';
 import { useProfileById } from '../../../hooks/useCurrentProfile';
@@ -59,14 +59,6 @@ export interface EventContextListProps {
   error: unknown;
   truncated: boolean;
   onWiden: (() => void) | undefined;
-}
-
-/** "−4:12" / "+0:38" / "0:00" — digits and a sign, no translation needed. */
-export function offsetLabel(offsetMs: number): string {
-  const elapsed = formatElapsedShort(Math.abs(offsetMs));
-  if (offsetMs < 0) return `−${elapsed}`;
-  if (offsetMs > 0) return `+${elapsed}`;
-  return elapsed;
 }
 
 export function EventContextList({ rows, profileId, isLoading, error, truncated, onWiden }: EventContextListProps) {

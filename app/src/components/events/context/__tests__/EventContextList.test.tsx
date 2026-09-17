@@ -2,7 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { EventContextList, offsetLabel } from '../EventContextList';
+import { EventContextList } from '../EventContextList';
+import { offsetLabel } from '../../../../lib/event/event-context-view';
 
 // CompactEventRow reads useNavigate (routing) and EventDeleteButton's
 // usePermissions reads useQuery unconditionally, so rows need a real router

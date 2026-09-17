@@ -27,7 +27,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from '../../
 import { Button } from '../../ui/button';
 import { EventContextControls } from './EventContextControls';
 import { EventContextList } from './EventContextList';
-import { EventContextRibbon, buildRibbonLanes } from './EventContextRibbon';
+import { EventContextRibbon } from './EventContextRibbon';
+import { buildRibbonLanes } from '../../../lib/event/event-context-view';
 import { EVENT_CONTEXT } from '../../../lib/zmninja-ng-constants';
 import type { EventData, ProfileId } from '../../../api/types';
 
