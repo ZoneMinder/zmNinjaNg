@@ -109,15 +109,23 @@ export const DEFAULT_EVENT_CONTEXT: EventContextSettings = {
 };
 
 /** Brings a persisted `eventContext` back inside what the UI can express: an
- *  offered window and a scope the panel has a segment for. */
+ *  offered window and a scope the panel has a segment for.
+ *
+ *  Reallocates only when a field actually needed correcting, and keeps the
+ *  persisted object's identity otherwise: `getProfileSettings` runs this on
+ *  every read, and a fresh object each time would defeat the `useShallow`
+ *  selectors that read it (the same reason `fillHoverPreviewSurfaces` writes
+ *  `hoverPreview` once at migration instead of every merge). */
 export function coerceEventContext(
   merged: { eventContext: EventContextSettings },
   defaults: { eventContext: EventContextSettings }
 ): void {
   const raw = merged.eventContext ?? defaults.eventContext;
   const windowOffered = (EVENT_CONTEXT.windowChoices as readonly number[]).includes(raw.windowMinutes);
+  const scopeKnown = EVENT_CONTEXT_SCOPES.includes(raw.scope);
+  if (raw === merged.eventContext && windowOffered && scopeKnown) return;
   merged.eventContext = {
     windowMinutes: windowOffered ? raw.windowMinutes : defaults.eventContext.windowMinutes,
-    scope: EVENT_CONTEXT_SCOPES.includes(raw.scope) ? raw.scope : defaults.eventContext.scope,
+    scope: scopeKnown ? raw.scope : defaults.eventContext.scope,
   };
 }

@@ -612,4 +612,11 @@ describe('mergeProfileSettings eventContext', () => {
     } as unknown as Partial<typeof DEFAULT_SETTINGS>);
     expect(merged.eventContext).toEqual({ windowMinutes: 10, scope: 'group' });
   });
+
+  it('keeps the persisted object identity when it is already valid', () => {
+    const eventContext = { windowMinutes: 15, scope: 'linked' as const };
+    expect(
+      mergeProfileSettings({ eventContext } as Partial<typeof DEFAULT_SETTINGS>).eventContext
+    ).toBe(eventContext);
+  });
 });
