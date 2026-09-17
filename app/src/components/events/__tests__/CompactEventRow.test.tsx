@@ -166,6 +166,28 @@ describe('CompactEventRow', () => {
     useDeleteSelectionStore.getState().clear();
   });
 
+  // refs #494: the "around this event" panel needs the offset from the
+  // anchor on the badge instead of the event's own duration.
+  it('shows a caller-supplied badge and title in place of the duration chip', () => {
+    render(
+      withQuery(
+        <MemoryRouter>
+          <CompactEventRow
+            event={base as never}
+            thumbnailUrls={['http://x/1.jpg']}
+            aspectRatio={1.6}
+            badgeLabel="-4:12"
+            badgeTitle="events.around.offset_title"
+          />
+        </MemoryRouter>
+      )
+    );
+    const badge = screen.getByText('-4:12');
+    expect(badge).toBeTruthy();
+    expect(badge.getAttribute('title')).toBe('events.around.offset_title');
+    expect(screen.queryByText('30s')).toBeNull();
+  });
+
   // refs #494: the "around this event" panel gets its own hover-preview
   // opt-out, so CompactEventRow only wraps its thumbnail when the caller
   // says so.

@@ -71,7 +71,20 @@ describe('EventContextList', () => {
 
   it('marks the anchor row so it reads as where you came from', () => {
     renderList(<EventContextList {...props} rows={[row('406', 0, true)]} />);
-    expect(screen.getByTestId('event-context-row-406')).toHaveAttribute('aria-current', 'true');
+    const anchorRow = screen.getByTestId('event-context-row-406');
+    expect(anchorRow).toHaveAttribute('aria-current', 'true');
+    expect(anchorRow.className).toContain('ring-2');
+    expect(anchorRow.className).toContain('bg-primary/5');
+  });
+
+  it('does not tint a row that is not the anchor', () => {
+    renderList(<EventContextList {...props} rows={[row('405', -252_000)]} />);
+    expect(screen.getByTestId('event-context-row-405').className).not.toContain('bg-primary/5');
+  });
+
+  it('gives the offset badge its own title, not the duration tooltip', () => {
+    renderList(<EventContextList {...props} rows={[row('406', 0, true)]} />);
+    expect(screen.getByText('0:00')).toHaveAttribute('title', 'events.around.offset_title');
   });
 
   it('offers a wider window when nothing else is in this one', () => {

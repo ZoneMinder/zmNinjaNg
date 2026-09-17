@@ -278,6 +278,7 @@
       "widen": "Élargir",
       "truncated": "Affichage des {{count}} premiers. Ouvrez Événements pour le reste.",
       "dot_label": "{{camera}}, {{offset}}",
+      "offset_title": "Écart de temps par rapport à cet événement",
       "close": "Fermer",
       "timeline": "Chronologie",
       "events": "Événements",
