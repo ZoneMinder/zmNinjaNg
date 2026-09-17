@@ -225,8 +225,10 @@ export const EVENT_CONTEXT = {
   defaultWindowMinutes: 10,
   /** Rows one window may return before the list says it truncated. */
   maxResults: 200,
-  /** Above this many monitor ids, the request drops the MonitorId filter and
-   *  narrows client-side: ZoneMinder's filter URLs cap out near 8KB. */
+  /** Above this many monitor ids the request drops the MonitorId filter and
+   *  asks for every camera in the window instead, because ZoneMinder's filter
+   *  URLs cap out near 8KB. Nothing narrows the answer afterwards: a wider
+   *  result is the deliberate trade against failing the request. */
   maxMonitorIds: 40,
   /** Ribbon lane row height, in pixels. */
   ribbonLaneHeight: 14,

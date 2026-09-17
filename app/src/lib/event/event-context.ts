@@ -23,6 +23,12 @@ export interface EventContextWindow {
   /** ZoneMinder wall-clock bounds, in the owning profile's timezone. */
   startDateTime: string;
   endDateTime: string;
+  /** The same two bounds as true instants. The wall-clock strings above are
+   *  only readable against the owning profile's timezone, so anything handing
+   *  the window to a surface that reads dates as browser-local (the Timeline
+   *  and Events filter fields both do) has to start from these instead. */
+  startMs: number;
+  endMs: number;
   /** The anchor's own instant, for offsets the list and ribbon render. */
   anchorMs: number;
 }
@@ -38,9 +44,13 @@ export function eventContextWindow(
     ? fromZonedTime(endRaw.replace(' ', 'T'), timezone).getTime()
     : anchorMs + (Number(event.Event.Length) || 0) * 1000;
   const padMs = windowMinutes * 60 * 1000;
+  const startMs = anchorMs - padMs;
+  const stopMs = endMs + padMs;
   return {
-    startDateTime: formatForServerInTz(new Date(anchorMs - padMs), timezone),
-    endDateTime: formatForServerInTz(new Date(endMs + padMs), timezone),
+    startDateTime: formatForServerInTz(new Date(startMs), timezone),
+    endDateTime: formatForServerInTz(new Date(stopMs), timezone),
+    startMs,
+    endMs: stopMs,
     anchorMs,
   };
 }

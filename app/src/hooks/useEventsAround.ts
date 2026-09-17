@@ -48,6 +48,11 @@ export interface UseEventsAroundResult {
   truncated: boolean;
   /** Which scope segments this server can actually offer. */
   available: { linked: boolean; group: boolean };
+  /** The scope the query actually ran with. Equals the requested scope unless
+   *  this anchor cannot offer it, in which case it is `'all'` - the panel
+   *  renders this, not the request, so the pressed chip never disagrees with
+   *  the rows underneath it. */
+  effectiveScope: EventContextScope;
   /** The resolved bounds, for the Timeline and Events escape hatches. */
   window: EventContextWindow;
   /** Monitor id -> name, for the ribbon's lane labels. */
@@ -94,14 +99,29 @@ export function useEventsAround(
     () =>
       anchor
         ? eventContextWindow(anchor, options.windowMinutes, timezone)
-        : { startDateTime: '', endDateTime: '', anchorMs: 0 },
+        : { startDateTime: '', endDateTime: '', startMs: 0, endMs: 0, anchorMs: 0 },
     [anchor, options.windowMinutes, timezone]
   );
 
-  const monitorIds = resolveScopeMonitorIds(options.scope, { linked, group });
+  const available = useMemo(
+    () => ({ linked: linked.length > 0, group: group.length > 1 }),
+    [linked, group]
+  );
+
+  // A scope this anchor cannot offer (no LinkedMonitors, no shared group)
+  // resolves to no MonitorId filter at all, which asks for every camera. Left
+  // as the requested scope, the panel would press the Linked chip over an
+  // all-cameras result. Fall back to `all` once monitors and groups have
+  // answered - the same gate the events query waits on, so the key settles
+  // before the first fetch rather than changing under it (refs #494).
+  const scopesKnown = !monitorsQuery.isPending && !groupsQuery.isPending;
+  const effectiveScope: EventContextScope =
+    scopesKnown && options.scope !== 'all' && !available[options.scope] ? 'all' : options.scope;
+
+  const monitorIds = resolveScopeMonitorIds(effectiveScope, { linked, group });
 
   const eventsQuery = useQuery({
-    queryKey: queryKeys.eventsAround(profileId, anchor?.Event.Id ?? '', options.windowMinutes, options.scope),
+    queryKey: queryKeys.eventsAround(profileId, anchor?.Event.Id ?? '', options.windowMinutes, effectiveScope),
     queryFn: () =>
       getEvents(getSession(profileId!).client, profileId!, {
         startDateTime: window.startDateTime,
@@ -134,11 +154,6 @@ export function useEventsAround(
     [monitorsQuery.data]
   );
 
-  const available = useMemo(
-    () => ({ linked: linked.length > 0, group: group.length > 1 }),
-    [linked, group]
-  );
-
   return {
     rows,
     monitorNames,
@@ -154,6 +169,7 @@ export function useEventsAround(
     // before that slice, which is what "more than we asked for" means here.
     truncated: (eventsQuery.data?.pagination.totalCount ?? rows.length) > EVENT_CONTEXT.maxResults,
     available,
+    effectiveScope,
     window,
   };
 }

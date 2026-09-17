@@ -28,6 +28,10 @@ export function EventContextButton({ event, profileId, className, labelled }: Ev
   const { t } = useTranslation();
   const openPanel = useEventContextStore((s) => s.openPanel);
   const { currentProfile } = useCurrentProfile();
+  // The fallback is safe on the one surface that uses it: /events/:eventId
+  // resolves its own profile through the same current-profile fallback and
+  // builds its client from it, so if an aggregate could be current there the
+  // page would already be broken before this button ran.
   const ownerProfileId = profileId ?? currentProfile?.id;
   const { permissions } = usePermissions(ownerProfileId);
 

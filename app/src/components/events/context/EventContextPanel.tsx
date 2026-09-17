@@ -32,7 +32,8 @@ import { EventContextList } from './EventContextList';
 import { EventContextRibbon } from './EventContextRibbon';
 import { buildRibbonLanes } from '../../../lib/event/event-context-view';
 import { EVENT_CONTEXT } from '../../../lib/zmninja-ng-constants';
-import type { EventData, ProfileId } from '../../../api/types';
+import { formatLocalDateTime } from '../../../lib/time';
+import { isAggregateProfileId, type EventData, type ProfileId } from '../../../api/types';
 
 function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId: ProfileId | undefined }) {
   const { t } = useTranslation();
@@ -40,19 +41,25 @@ function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId:
   const closePanel = useEventContextStore((s) => s.closePanel);
   const settings = useSettingsStore(useShallow((s) => s.getProfileSettings(profileId ?? '')));
   const [context, setContext] = useState<EventContextSettings>(settings.eventContext);
-  const applyContext = useCallback(
-    (next: EventContextSettings) => {
-      setContext(next);
-      if (profileId) useSettingsStore.getState().updateProfileSettings(profileId, { eventContext: next });
-    },
-    [profileId]
-  );
 
-  const { rows, monitorNames, available, isLoading, error, truncated, window } = useEventsAround(anchor, profileId, {
+  const { rows, monitorNames, available, effectiveScope, isLoading, error, truncated, window } = useEventsAround(anchor, profileId, {
     windowMinutes: context.windowMinutes,
     scope: context.scope,
     enabled: true,
   });
+
+  const applyContext = useCallback(
+    (next: EventContextSettings) => {
+      // The controls render `shownContext` below, so a window change reports
+      // the effective scope back rather than the saved one. Only a segment the
+      // user moved somewhere else overwrites the saved scope: a fallback this
+      // anchor forced is about the open panel, not about their default.
+      const merged = next.scope === effectiveScope ? { ...next, scope: context.scope } : next;
+      setContext(merged);
+      if (profileId) useSettingsStore.getState().updateProfileSettings(profileId, { eventContext: merged });
+    },
+    [profileId, context.scope, effectiveScope]
+  );
 
   const lanes = useMemo(
     () => buildRibbonLanes(rows, monitorNames, context.windowMinutes * 60_000 * 2),
@@ -81,6 +88,15 @@ function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId:
   // re-deriving the scope's monitor list for the Events hatch.
   const monitorIds = useMemo(() => [...new Set(rows.map((r) => r.event.MonitorId))], [rows]);
 
+  // What the controls show is the scope the query actually ran with, which is
+  // not the saved one when this anchor cannot offer it (useEventsAround). The
+  // user's own choice stays in `context` and in settings; only the pressed
+  // chip follows the result.
+  const shownContext = useMemo(
+    () => (effectiveScope === context.scope ? context : { ...context, scope: effectiveScope }),
+    [context, effectiveScope]
+  );
+
   const openInTimeline = useCallback(() => {
     // useTimelineFilters restores timelinePageFilters from the settings
     // bucket keyed by currentProfileId - the aggregate id in All mode, a real
@@ -92,7 +108,18 @@ function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId:
       const store = useSettingsStore.getState();
       const current = store.getProfileSettings(targetProfileId).timelinePageFilters;
       store.updateProfileSettings(targetProfileId, {
-        timelinePageFilters: { ...current, startDateTime: window.startDateTime, endDateTime: window.endDateTime },
+        // Browser-local `YYYY-MM-DDTHH:mm`, what every other writer of this
+        // field produces: the Timeline renders it straight into
+        // <input type="datetime-local"> (which rejects a space or seconds and
+        // shows an empty field) and re-reads it as browser-local before
+        // converting to the server's zone. The window's own strings are
+        // wall-clock in the ANCHOR's timezone, so they have to go back
+        // through the instant first (refs #494).
+        timelinePageFilters: {
+          ...current,
+          startDateTime: formatLocalDateTime(new Date(window.startMs)),
+          endDateTime: formatLocalDateTime(new Date(window.endMs)),
+        },
       });
     }
     closePanel();
@@ -105,17 +132,30 @@ function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId:
     // (useEventFilters.ts) reads exactly these query params ahead of any
     // persisted filter, which is the sanctioned way to land on Events
     // pre-filtered - nav state has no reader there.
+    // Browser-local, for the same reason the Timeline hatch converts: Events
+    // parses these back with `new Date(...)` in the browser's zone before
+    // converting to each profile's own.
     const params = new URLSearchParams({
-      startDateTime: window.startDateTime,
-      endDateTime: window.endDateTime,
+      startDateTime: formatLocalDateTime(new Date(window.startMs)),
+      endDateTime: formatLocalDateTime(new Date(window.endMs)),
     });
-    if (monitorIds.length) params.set('monitorId', monitorIds.join(','));
+    // Aggregate modes address monitors by `${profileId}:${monitorId}` token,
+    // because a bare id means a different camera on every server and
+    // resolveOwnMonitorIds hands a bare token to all of them (refs #494).
+    if (monitorIds.length) {
+      const currentProfileId = useProfileStore.getState().currentProfileId;
+      const tokens =
+        profileId && currentProfileId && isAggregateProfileId(currentProfileId)
+          ? monitorIds.map((id) => `${profileId}:${id}`)
+          : monitorIds;
+      params.set('monitorId', tokens.join(','));
+    }
     navigate(`/events?${params.toString()}`);
-  }, [window, monitorIds, closePanel, navigate]);
+  }, [window, monitorIds, profileId, closePanel, navigate]);
 
   return (
     <>
-      <EventContextControls value={context} onChange={applyContext} available={available} />
+      <EventContextControls value={shownContext} onChange={applyContext} available={available} />
       <EventContextRibbon lanes={lanes} onSelect={onSelect} />
       <div ref={listRef} className="contents">
         <EventContextList
