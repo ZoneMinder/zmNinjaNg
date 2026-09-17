@@ -25,6 +25,8 @@ import { useSettingsStore, type EventContextSettings } from '../../../stores/set
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from '../../ui/sheet';
 import { Button } from '../../ui/button';
 import { EventContextControls } from './EventContextControls';
+import { EventContextList } from './EventContextList';
+import { EVENT_CONTEXT } from '../../../lib/zmninja-ng-constants';
 import type { EventData, ProfileId } from '../../../api/types';
 
 function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId: ProfileId | undefined }) {
@@ -38,13 +40,30 @@ function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId:
     [profileId]
   );
 
-  const { available } = useEventsAround(anchor, profileId, {
+  const { rows, available, isLoading, error, truncated } = useEventsAround(anchor, profileId, {
     windowMinutes: context.windowMinutes,
     scope: context.scope,
     enabled: true,
   });
 
-  return <EventContextControls value={context} onChange={applyContext} available={available} />;
+  const widerMinutes = EVENT_CONTEXT.windowChoices.find((m) => m > context.windowMinutes);
+  const onWiden = widerMinutes
+    ? () => applyContext({ ...context, windowMinutes: widerMinutes })
+    : undefined;
+
+  return (
+    <>
+      <EventContextControls value={context} onChange={applyContext} available={available} />
+      <EventContextList
+        rows={rows}
+        profileId={profileId}
+        isLoading={isLoading}
+        error={error}
+        truncated={truncated}
+        onWiden={onWiden}
+      />
+    </>
+  );
 }
 
 export function EventContextPanel() {
