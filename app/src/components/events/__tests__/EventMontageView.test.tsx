@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 
 vi.mock('../../../api/store-gates', () => import('../../../tests/fake-store-gates'));
@@ -7,6 +8,7 @@ vi.mock('../../../lib/security/secureStorage', () => import('../../../tests/fake
 
 import { EventMontageView } from '../EventMontageView';
 import { useReturnHighlightStore } from '../../../stores/returnHighlight';
+import { useEventContextStore } from '../../../stores/eventContext';
 import { RETURN_FLASH_MS } from '../../../lib/zmninja-ng-constants';
 import { downloadEventVideo } from '../../../services/download';
 import { clearAllServerMaps, setServerMap } from '../../../lib/zm/server-resolver';
@@ -14,6 +16,8 @@ import { asProfileId, type EventData } from '../../../api/types';
 import type { ScopedEventItem } from '../EventListView';
 import { seedProfiles, resetProfileFixture, makeProfile } from '../../../tests/profile-fixture';
 import { resetFakeStoreGates } from '../../../tests/fake-store-gates';
+import { queryKeys } from '../../../lib/query/query-keys';
+import { UNRESTRICTED_PERMISSIONS } from '../../../lib/permissions/zm-permissions';
 
 const navigate = vi.fn();
 vi.mock('react-router-dom', () => ({ useNavigate: () => navigate }));
@@ -100,18 +104,27 @@ function scopedEvent(id: string, profileId: string, profileChip: string, overrid
 }
 
 function renderEvents(events: EventData[], monitors: Array<{ Monitor: { Id: string; ServerId?: string | null }; profileId?: string }> = []) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  // EventContextButton's usePermissions probes account permissions on mount.
+  // Pre-seeding the (infinitely fresh, per usePermissions) cache means that
+  // probe resolves synchronously from cache instead of settling one
+  // microtask after render, which would otherwise warn outside act().
+  client.setQueryData(queryKeys.accountPermissions(asProfileId('current')), UNRESTRICTED_PERMISSIONS);
+  client.setQueryData(queryKeys.accountPermissions(asProfileId('profile-b')), UNRESTRICTED_PERMISSIONS);
   return render(
-    <EventMontageView
-      events={events as ScopedEventItem[]}
-      monitors={monitors as never}
-      gridCols={3}
-      thumbnailFit="contain"
-      portalUrl="https://zm.example.test"
-      accessToken="current-profile-token"
-      batchSize={20}
-      onLoadMore={vi.fn()}
-      eventFilters={{ monitorId: '1' } as never}
-    />
+    <QueryClientProvider client={client}>
+      <EventMontageView
+        events={events as ScopedEventItem[]}
+        monitors={monitors as never}
+        gridCols={3}
+        thumbnailFit="contain"
+        portalUrl="https://zm.example.test"
+        accessToken="current-profile-token"
+        batchSize={20}
+        onLoadMore={vi.fn()}
+        eventFilters={{ monitorId: '1' } as never}
+      />
+    </QueryClientProvider>
   );
 }
 
@@ -269,5 +282,34 @@ describe('EventMontageView all-mode owning-profile wiring (refs #337 Task 2)', (
 
     const after = decodeURIComponent(screen.getByTestId('event-thumbnail').getAttribute('data-url') ?? '');
     expect(after).toContain('https://srv1.example.test');
+  });
+});
+
+// The around-this-event trigger (refs #494 Task 9): reuses EventContextButton
+// rather than duplicating its open/permission logic, so these tests only need
+// to prove the tile wires it to its OWN owning profile and that opening it
+// does not also navigate the tile.
+describe('EventMontageView around-this-event trigger (refs #494 Task 9)', () => {
+  afterEach(() => {
+    useEventContextStore.setState({ anchor: null, profileId: undefined, open: false });
+  });
+
+  it('offers the around-this-event button on a montage tile and opens the panel for the tile\'s own owning profile', () => {
+    renderEvents([scopedEvent('401', 'profile-b', 'Office')]);
+
+    fireEvent.click(screen.getByTestId('event-context-open'));
+
+    const state = useEventContextStore.getState();
+    expect(state.open).toBe(true);
+    expect(state.anchor?.Event.Id).toBe('401');
+    expect(state.profileId).toBe('profile-b');
+  });
+
+  it('does not navigate the tile when the around-this-event button is clicked', () => {
+    renderEvents([eventWithId('402')]);
+
+    fireEvent.click(screen.getByTestId('event-context-open'));
+
+    expect(navigate).not.toHaveBeenCalled();
   });
 });

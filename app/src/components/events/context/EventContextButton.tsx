@@ -19,9 +19,12 @@ interface EventContextButtonProps {
   event: Event;
   profileId?: ProfileId;
   className?: string;
+  /** Full-width labelled form for a surface with room for a label (event
+   *  detail's Timing card), instead of the icon-only overlay control. */
+  labelled?: boolean;
 }
 
-export function EventContextButton({ event, profileId, className }: EventContextButtonProps) {
+export function EventContextButton({ event, profileId, className, labelled }: EventContextButtonProps) {
   const { t } = useTranslation();
   const openPanel = useEventContextStore((s) => s.openPanel);
   const { currentProfile } = useCurrentProfile();
@@ -36,12 +39,18 @@ export function EventContextButton({ event, profileId, className }: EventContext
       openPanel({ Event: event } as EventData, ownerProfileId);
     },
     title: t('events.around.open'),
-    className: cn('p-1 rounded-full hover:bg-accent transition-colors', className),
+    className: cn(
+      labelled
+        ? 'w-full inline-flex items-center justify-center gap-2 border rounded-md py-2 hover:bg-accent transition-colors'
+        : 'p-1 rounded-full hover:bg-accent transition-colors',
+      className
+    ),
   });
 
   return (
     <HintButton {...props} aria-label={t('events.around.open')} data-testid="event-context-open">
       <Link2 className="h-4 w-4 sm:h-5 sm:w-5 stroke-muted-foreground hover:stroke-primary" />
+      {labelled && <span>{t('events.around.open')}</span>}
     </HintButton>
   );
 }

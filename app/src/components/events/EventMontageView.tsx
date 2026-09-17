@@ -20,6 +20,7 @@ import { Card } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { EventThumbnail } from './EventThumbnail';
+import { EventContextButton } from './context/EventContextButton';
 import { downloadEventVideo } from '../../services/download';
 import { type EventFilters } from '../../api/events';
 import { getPortalUrlForMonitor, getServerMapVersion, subscribeServerMap } from '../../lib/zm/server-resolver';
@@ -191,6 +192,7 @@ const EventMontageTile = memo(function EventMontageTile({
               {formatEventRelative(startTime, i18n.language, t)}
             </Badge>
           )}
+          <EventContextButton event={event} profileId={profileId} />
           {hasVideo && (
             <Button
               variant="secondary"
