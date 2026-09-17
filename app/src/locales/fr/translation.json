@@ -279,6 +279,8 @@
       "truncated": "Affichage des {{count}} premiers. Ouvrez Événements pour le reste.",
       "dot_label": "{{camera}}, {{offset}}",
       "close": "Fermer",
+      "timeline": "Chronologie",
+      "events": "Événements",
       "window": "Fenêtre",
       "scope": "Moniteurs",
       "minutes_one": "±{{count}} min",

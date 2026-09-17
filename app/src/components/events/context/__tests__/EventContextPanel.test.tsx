@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 vi.mock('../../../../api/store-gates', () => import('../../../../tests/fake-store-gates'));
 vi.mock('../../../../lib/security/secureStorage', () => import('../../../../tests/fake-secure-storage'));
+vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn() }));
 
 import { useEventContextStore } from '../../../../stores/eventContext';
 import { EventContextPanel } from '../EventContextPanel';

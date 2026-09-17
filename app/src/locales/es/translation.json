@@ -279,6 +279,8 @@
       "truncated": "Mostrando los primeros {{count}}. Abre Eventos para ver el resto.",
       "dot_label": "{{camera}}, {{offset}}",
       "close": "Cerrar",
+      "timeline": "Línea de Tiempo",
+      "events": "Eventos",
       "window": "Ventana",
       "scope": "Monitores",
       "minutes_one": "±{{count}} min",

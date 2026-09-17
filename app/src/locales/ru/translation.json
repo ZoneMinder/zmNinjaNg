@@ -289,6 +289,8 @@
       "truncated": "Показаны первые {{count}}. Откройте События, чтобы увидеть остальное.",
       "dot_label": "{{camera}}, {{offset}}",
       "close": "Закрыть",
+      "timeline": "Хронология",
+      "events": "События",
       "window": "Окно",
       "scope": "Мониторы",
       "minutes_one": "±{{count}} мин",

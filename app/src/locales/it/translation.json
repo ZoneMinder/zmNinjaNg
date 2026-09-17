@@ -279,6 +279,8 @@
       "truncated": "Mostrati i primi {{count}}. Apri Eventi per il resto.",
       "dot_label": "{{camera}}, {{offset}}",
       "close": "Chiudi",
+      "timeline": "Cronologia",
+      "events": "Eventi",
       "window": "Finestra",
       "scope": "Monitor",
       "minutes_one": "±{{count}} min",

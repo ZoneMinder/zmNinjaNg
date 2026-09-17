@@ -279,6 +279,8 @@
       "truncated": "Zeigt die ersten {{count}}. Alle in Ereignisse öffnen.",
       "dot_label": "{{camera}}, {{offset}}",
       "close": "Schließen",
+      "timeline": "Zeitachse",
+      "events": "Ereignisse",
       "window": "Fenster",
       "scope": "Monitore",
       "minutes_one": "±{{count}} Min.",

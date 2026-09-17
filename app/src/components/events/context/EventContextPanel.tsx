@@ -16,6 +16,7 @@
  */
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { useShallow } from 'zustand/react/shallow';
 import { cn } from '../../../lib/utils';
 import { useEventContextStore } from '../../../stores/eventContext';
@@ -23,7 +24,7 @@ import { useReturnHighlightStore } from '../../../stores/returnHighlight';
 import { useIsMobile } from '../../../hooks/useIsMobile';
 import { useEventsAround } from '../../../hooks/useEventsAround';
 import { useSettingsStore, type EventContextSettings } from '../../../stores/settings';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from '../../ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose, SheetFooter } from '../../ui/sheet';
 import { Button } from '../../ui/button';
 import { EventContextControls } from './EventContextControls';
 import { EventContextList } from './EventContextList';
@@ -33,6 +34,9 @@ import { EVENT_CONTEXT } from '../../../lib/zmninja-ng-constants';
 import type { EventData, ProfileId } from '../../../api/types';
 
 function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId: ProfileId | undefined }) {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const closePanel = useEventContextStore((s) => s.closePanel);
   const settings = useSettingsStore(useShallow((s) => s.getProfileSettings(profileId ?? '')));
   const [context, setContext] = useState<EventContextSettings>(settings.eventContext);
   const applyContext = useCallback(
@@ -43,7 +47,7 @@ function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId:
     [profileId]
   );
 
-  const { rows, monitorNames, available, isLoading, error, truncated } = useEventsAround(anchor, profileId, {
+  const { rows, monitorNames, available, isLoading, error, truncated, window } = useEventsAround(anchor, profileId, {
     windowMinutes: context.windowMinutes,
     scope: context.scope,
     enabled: true,
@@ -71,6 +75,36 @@ function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId:
     ? () => applyContext({ ...context, windowMinutes: widerMinutes })
     : undefined;
 
+  // The distinct monitor ids among the window's own rows: what the scope
+  // actually resolved to, read off data already fetched rather than
+  // re-deriving the scope's monitor list for the Events hatch.
+  const monitorIds = useMemo(() => [...new Set(rows.map((r) => r.event.MonitorId))], [rows]);
+
+  const openInTimeline = useCallback(() => {
+    if (profileId) {
+      const store = useSettingsStore.getState();
+      const current = store.getProfileSettings(profileId).timelinePageFilters;
+      store.updateProfileSettings(profileId, {
+        timelinePageFilters: { ...current, startDateTime: window.startDateTime, endDateTime: window.endDateTime },
+      });
+    }
+    closePanel();
+    navigate('/timeline');
+  }, [profileId, window, closePanel, navigate]);
+
+  const openInEvents = useCallback(() => {
+    closePanel();
+    navigate('/events', {
+      state: {
+        eventFilters: {
+          startDateTime: window.startDateTime,
+          endDateTime: window.endDateTime,
+          monitorId: monitorIds.length ? monitorIds.join(',') : undefined,
+        },
+      },
+    });
+  }, [window, monitorIds, closePanel, navigate]);
+
   return (
     <>
       <EventContextControls value={context} onChange={applyContext} available={available} />
@@ -85,6 +119,14 @@ function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId:
           onWiden={onWiden}
         />
       </div>
+      <SheetFooter className="flex-row gap-2 border-t p-3">
+        <Button variant="outline" size="sm" className="flex-1" onClick={openInTimeline} data-testid="event-context-open-timeline">
+          {t('events.around.timeline')}
+        </Button>
+        <Button variant="outline" size="sm" className="flex-1" onClick={openInEvents} data-testid="event-context-open-events">
+          {t('events.around.events')}
+        </Button>
+      </SheetFooter>
     </>
   );
 }

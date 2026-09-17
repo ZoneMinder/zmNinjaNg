@@ -279,6 +279,8 @@
       "truncated": "显示前 {{count}} 个。打开事件查看其余部分。",
       "dot_label": "{{camera}}，{{offset}}",
       "close": "关闭",
+      "timeline": "时间轴",
+      "events": "事件",
       "window": "窗口",
       "scope": "监视器",
       "minutes_one": "±{{count}}分钟",
