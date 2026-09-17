@@ -8,13 +8,16 @@
  */
 
 import { fromZonedTime } from 'date-fns-tz';
-import { EVENT_CONTEXT } from '../zmninja-ng-constants';
+import { EVENT_CONTEXT, EVENT_CONTEXT_SCOPES, type EventContextScope } from '../zmninja-ng-constants';
 import { formatForServerInTz } from '../time';
 import { eventInstant } from './event-instant';
 import type { EventData, GroupsResponse } from '../../api/types';
 
-export type EventContextScope = 'linked' | 'group' | 'all';
-export const EVENT_CONTEXT_SCOPES: readonly EventContextScope[] = ['linked', 'group', 'all'] as const;
+// Re-exported for existing consumers; the scope type and its values live in
+// zmninja-ng-constants.ts, which imports nothing, so a value import of them
+// never pulls in this module's own dependency chain (lib/time -> stores/profile).
+export type { EventContextScope } from '../zmninja-ng-constants';
+export { EVENT_CONTEXT_SCOPES };
 
 export interface EventContextWindow {
   /** ZoneMinder wall-clock bounds, in the owning profile's timezone. */

@@ -12,8 +12,12 @@
  * the same trade the date-format and thumbnail-chain types already make.
  */
 
-import { ALL_MODE_PERFORMANCE, EVENT_CONTEXT } from '../lib/zmninja-ng-constants';
-import { EVENT_CONTEXT_SCOPES, type EventContextScope } from '../lib/event/event-context';
+import {
+  ALL_MODE_PERFORMANCE,
+  EVENT_CONTEXT,
+  EVENT_CONTEXT_SCOPES,
+  type EventContextScope,
+} from '../lib/zmninja-ng-constants';
 
 /** All mode only: how much each aggregated tile's stream is dialed back.
  *  'off' streams exactly as single mode does; 'reduced' trades frame rate and
