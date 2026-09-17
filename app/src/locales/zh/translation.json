@@ -268,7 +268,14 @@
     "delete_permission_denied": "删除事件需要 Events: Edit 权限。",
     "archive_permission_denied": "归档事件需要 Events: Edit 权限。",
     "no_event_permission": "此账户没有事件权限。",
-    "event_gone": "此事件在服务器上已不存在"
+    "event_gone": "此事件在服务器上已不存在",
+    "around": {
+      "title": "附近",
+      "open": "附近事件",
+      "permission_denied": "此账户无法读取事件。",
+      "empty": "此时段内没有其他事件",
+      "close": "关闭"
+    }
   },
   "event_detail": {
     "event_id": "事件 ID",

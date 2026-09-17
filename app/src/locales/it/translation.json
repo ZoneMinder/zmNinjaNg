@@ -268,7 +268,14 @@
     "delete_permission_denied": "Per eliminare gli eventi è necessario il permesso Eventi: Modifica.",
     "archive_permission_denied": "Per archiviare gli eventi è necessario il permesso Eventi: Modifica.",
     "no_event_permission": "Questo account non dispone dei permessi per gli eventi.",
-    "event_gone": "Questo evento non esiste più sul server"
+    "event_gone": "Questo evento non esiste più sul server",
+    "around": {
+      "title": "Nei dintorni",
+      "open": "Eventi nelle vicinanze",
+      "permission_denied": "Questo account non può leggere gli eventi.",
+      "empty": "Nient'altro in questo intervallo",
+      "close": "Chiudi"
+    }
   },
   "event_detail": {
     "event_id": "ID evento",

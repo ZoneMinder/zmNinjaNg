@@ -268,7 +268,14 @@
     "delete_permission_denied": "Zum Löschen von Ereignissen wird Events: Edit benötigt.",
     "archive_permission_denied": "Zum Archivieren von Ereignissen wird Events: Edit benötigt.",
     "no_event_permission": "Dieses Konto hat keine Ereignis-Berechtigungen.",
-    "event_gone": "Dieses Ereignis existiert auf dem Server nicht mehr"
+    "event_gone": "Dieses Ereignis existiert auf dem Server nicht mehr",
+    "around": {
+      "title": "Umgebung",
+      "open": "Umgebung dieses Ereignisses",
+      "permission_denied": "Dieses Konto kann keine Ereignisse lesen.",
+      "empty": "Nichts weiter in diesem Zeitraum",
+      "close": "Schließen"
+    }
   },
   "event_detail": {
     "event_id": "Ereignis ID",

@@ -268,7 +268,14 @@
     "delete_permission_denied": "Deleting events needs Events: Edit permission.",
     "archive_permission_denied": "Archiving events needs Events: Edit permission.",
     "no_event_permission": "This account has no event permissions.",
-    "event_gone": "This event no longer exists on the server"
+    "event_gone": "This event no longer exists on the server",
+    "around": {
+      "title": "Around this",
+      "open": "Around this event",
+      "permission_denied": "This account cannot read events.",
+      "empty": "Nothing else in this window",
+      "close": "Close"
+    }
   },
   "event_detail": {
     "event_id": "Event ID",
