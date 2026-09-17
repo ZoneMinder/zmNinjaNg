@@ -266,6 +266,7 @@ function EventCardComponent({ event, monitorName, profileId, profileChip, thumbn
                     )}
                   />
                 </HintButton>
+                <EventContextButton event={event} profileId={ownerProfileId} />
                 <HintButton
                   {...archiveProps}
                   disabled={isArchiving}
@@ -289,7 +290,6 @@ function EventCardComponent({ event, monitorName, profileId, profileChip, thumbn
                     />
                   )}
                 </HintButton>
-                <EventContextButton event={event} profileId={ownerProfileId} />
                 <EventDeleteButton eventId={event.Id} profileId={ownerProfileId} />
                 {(() => {
                   const CauseIcon = getEventCauseIcon(event.Cause);
