@@ -627,6 +627,10 @@
       "twenty_four_hour": "24-Stunden",
       "tv_mode": "TV-Modus",
       "tv_mode_desc": "D-Pad-Navigation und Anzeige",
+      "event_context": {
+        "title": "Ereigniskontext",
+        "desc": "Standardfenster und Kameras für das Kontextfenster."
+      },
       "thumbnail_chain": {
         "title": "Vorschaubild-Anzeige",
         "desc": "Reihenfolge der Frames für Ereignis-Vorschaubilder. Deaktivierte werden übersprungen.",

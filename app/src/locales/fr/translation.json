@@ -627,6 +627,10 @@
       "twenty_four_hour": "24 heures",
       "tv_mode": "Mode TV",
       "tv_mode_desc": "Navigation D-pad et affichage",
+      "event_context": {
+        "title": "Contexte de l'événement",
+        "desc": "Fenêtre et caméras par défaut pour le panneau de contexte."
+      },
       "thumbnail_chain": {
         "title": "Miniatures",
         "desc": "Ordre des images à essayer pour les miniatures. Les lignes désactivées sont ignorées.",

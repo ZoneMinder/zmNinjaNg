@@ -29,6 +29,7 @@ import { validateFormatString } from '../../lib/format-date-time';
 import { Platform } from '../../lib/platform';
 import { STORAGE_KEYS } from '../../lib/zmninja-ng-constants';
 import { useLanguageOptions } from '../../hooks/useLanguageOptions';
+import { EventContextControls } from '../events/context/EventContextControls';
 import { START_SCREENS, START_SCREEN_LAST_USED } from '../../lib/navigation';
 import type {
   ProfileSettings,
@@ -261,6 +262,19 @@ export function AppearanceSection({ settings, update }: AppearanceSectionProps) 
             data-testid="settings-tv-mode"
           />
         </SettingsRow>
+      </SettingsCard>
+      <SettingsCard>
+        <div className="px-4 py-3">
+          <RowLabel
+            label={t('settings.appearance.event_context.title')}
+            desc={t('settings.appearance.event_context.desc')}
+          />
+        </div>
+        <EventContextControls
+          value={settings.eventContext}
+          onChange={(next) => update('eventContext', next)}
+          available={{ linked: true, group: true }}
+        />
       </SettingsCard>
       <SettingsCard>
         <ThumbnailFallbackChainEditor

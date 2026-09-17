@@ -627,6 +627,10 @@
       "twenty_four_hour": "24-hour",
       "tv_mode": "TV mode",
       "tv_mode_desc": "D-pad navigation and larger UI",
+      "event_context": {
+        "title": "Event context",
+        "desc": "Default window and cameras for the context panel."
+      },
       "thumbnail_chain": {
         "title": "Thumbnail display",
         "desc": "Order to try for event thumbnails. Disabled rows are skipped.",

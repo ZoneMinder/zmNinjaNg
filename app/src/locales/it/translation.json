@@ -627,6 +627,10 @@
       "twenty_four_hour": "24-hour",
       "tv_mode": "Modalità TV",
       "tv_mode_desc": "Navigazione con D-pad e interfaccia più grande",
+      "event_context": {
+        "title": "Contesto evento",
+        "desc": "Finestra e telecamere predefinite per il pannello di contesto."
+      },
       "thumbnail_chain": {
         "title": "Visualizzazione miniature",
         "desc": "Ordine da provare per le miniature degli eventi. Le righe disabilitate vengono saltate.",

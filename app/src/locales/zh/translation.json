@@ -627,6 +627,10 @@
       "twenty_four_hour": "24小时制",
       "tv_mode": "TV模式",
       "tv_mode_desc": "D-pad导航和显示",
+      "event_context": {
+        "title": "事件上下文",
+        "desc": "上下文面板的默认时间窗口和摄像头。"
+      },
       "thumbnail_chain": {
         "title": "缩略图显示",
         "desc": "事件缩略图的尝试顺序。已禁用的行将被跳过。",
