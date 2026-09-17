@@ -70,6 +70,9 @@ describe('EventContextPanel', () => {
     );
     fireEvent.click(screen.getByTestId('event-context-open'));
     expect(screen.getByTestId('event-context-anchor')).toHaveTextContent('Front Door');
+    // Close within the test (fireEvent wraps in act()) rather than leaving
+    // the panel open for afterEach's closePanel() to unmount outside act().
+    fireEvent.click(screen.getByTestId('event-context-close'));
   });
 
   it('closes again and leaves the page it opened over alone', () => {
@@ -100,6 +103,7 @@ describe('EventContextPanel', () => {
     // no state update from the resolved queries escapes act().
     await screen.findByTestId('event-context-empty');
     expect(screen.getByTestId('event-context-window-30')).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByTestId('event-context-close'));
   });
 
   it('re-seeds from the newly opened profile, not whatever the panel showed before', async () => {
@@ -128,5 +132,6 @@ describe('EventContextPanel', () => {
     fireEvent.click(openP2);
     await screen.findByTestId('event-context-empty');
     expect(screen.getByTestId('event-context-window-60')).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByTestId('event-context-close'));
   });
 });
