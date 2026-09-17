@@ -9,7 +9,7 @@
 import { formatElapsedShort } from '../format-date-time';
 import type { EventAroundRow } from '../../hooks/useEventsAround';
 
-/** "−4:12" / "+0:38" / "0:00" — digits and a sign, no translation needed. */
+/** "−4:12" / "+0:38" / "0:00": digits and a sign, no translation needed. */
 export function offsetLabel(offsetMs: number): string {
   const elapsed = formatElapsedShort(Math.abs(offsetMs));
   if (offsetMs < 0) return `−${elapsed}`;
