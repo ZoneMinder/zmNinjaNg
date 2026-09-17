@@ -14,11 +14,12 @@
  * Task 6 mounts `<EventContextList/>`, Task 7 `<EventContextRibbon/>`, Task 8
  * the footer.
  */
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useShallow } from 'zustand/react/shallow';
 import { cn } from '../../../lib/utils';
 import { useEventContextStore } from '../../../stores/eventContext';
+import { useReturnHighlightStore } from '../../../stores/returnHighlight';
 import { useIsMobile } from '../../../hooks/useIsMobile';
 import { useEventsAround } from '../../../hooks/useEventsAround';
 import { useSettingsStore, type EventContextSettings } from '../../../stores/settings';
@@ -26,6 +27,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from '../../
 import { Button } from '../../ui/button';
 import { EventContextControls } from './EventContextControls';
 import { EventContextList } from './EventContextList';
+import { EventContextRibbon, buildRibbonLanes } from './EventContextRibbon';
 import { EVENT_CONTEXT } from '../../../lib/zmninja-ng-constants';
 import type { EventData, ProfileId } from '../../../api/types';
 
@@ -40,11 +42,28 @@ function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId:
     [profileId]
   );
 
-  const { rows, available, isLoading, error, truncated } = useEventsAround(anchor, profileId, {
+  const { rows, monitorNames, available, isLoading, error, truncated } = useEventsAround(anchor, profileId, {
     windowMinutes: context.windowMinutes,
     scope: context.scope,
     enabled: true,
   });
+
+  const lanes = useMemo(
+    () => buildRibbonLanes(rows, monitorNames, context.windowMinutes * 60_000 * 2),
+    [rows, monitorNames, context.windowMinutes]
+  );
+
+  const listRef = useRef<HTMLDivElement>(null);
+  const markViewed = useReturnHighlightStore((s) => s.markViewed);
+  const onSelect = useCallback(
+    (eventId: string) => {
+      listRef.current
+        ?.querySelector<HTMLElement>(`[data-testid="event-context-row-${eventId}"]`)
+        ?.scrollIntoView({ block: 'nearest' });
+      markViewed(eventId);
+    },
+    [markViewed]
+  );
 
   const widerMinutes = EVENT_CONTEXT.windowChoices.find((m) => m > context.windowMinutes);
   const onWiden = widerMinutes
@@ -54,14 +73,17 @@ function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId:
   return (
     <>
       <EventContextControls value={context} onChange={applyContext} available={available} />
-      <EventContextList
-        rows={rows}
-        profileId={profileId}
-        isLoading={isLoading}
-        error={error}
-        truncated={truncated}
-        onWiden={onWiden}
-      />
+      <EventContextRibbon lanes={lanes} onSelect={onSelect} />
+      <div ref={listRef} className="contents">
+        <EventContextList
+          rows={rows}
+          profileId={profileId}
+          isLoading={isLoading}
+          error={error}
+          truncated={truncated}
+          onWiden={onWiden}
+        />
+      </div>
     </>
   );
 }

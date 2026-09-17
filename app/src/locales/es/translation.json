@@ -277,6 +277,7 @@
       "empty_desc": "Sin eventos de otras cámaras en este intervalo.",
       "widen": "Ampliar",
       "truncated": "Mostrando los primeros {{count}}. Abre Eventos para ver el resto.",
+      "dot_label": "{{camera}}, {{offset}}",
       "close": "Cerrar",
       "window": "Ventana",
       "scope": "Monitores",

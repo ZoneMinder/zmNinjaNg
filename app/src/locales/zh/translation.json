@@ -277,6 +277,7 @@
       "empty_desc": "此时段内没有其他摄像头的事件。",
       "widen": "扩大范围",
       "truncated": "显示前 {{count}} 个。打开事件查看其余部分。",
+      "dot_label": "{{camera}}，{{offset}}",
       "close": "关闭",
       "window": "窗口",
       "scope": "监视器",

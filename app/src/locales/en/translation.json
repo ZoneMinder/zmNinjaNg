@@ -277,6 +277,7 @@
       "empty_desc": "No events from other cameras in this window.",
       "widen": "Wider",
       "truncated": "Showing the first {{count}}. Open in Events for the rest.",
+      "dot_label": "{{camera}}, {{offset}}",
       "close": "Close",
       "window": "Window",
       "scope": "Cameras",

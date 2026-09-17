@@ -277,6 +277,7 @@
       "empty_desc": "Aucun événement d'autres caméras dans cette période.",
       "widen": "Élargir",
       "truncated": "Affichage des {{count}} premiers. Ouvrez Événements pour le reste.",
+      "dot_label": "{{camera}}, {{offset}}",
       "close": "Fermer",
       "window": "Fenêtre",
       "scope": "Moniteurs",

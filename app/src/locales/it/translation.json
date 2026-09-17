@@ -277,6 +277,7 @@
       "empty_desc": "Nessun evento da altre telecamere in questo intervallo.",
       "widen": "Allarga",
       "truncated": "Mostrati i primi {{count}}. Apri Eventi per il resto.",
+      "dot_label": "{{camera}}, {{offset}}",
       "close": "Chiudi",
       "window": "Finestra",
       "scope": "Monitor",

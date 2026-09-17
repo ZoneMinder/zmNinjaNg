@@ -277,6 +277,7 @@
       "empty_desc": "Keine Ereignisse anderer Kameras in diesem Zeitraum.",
       "widen": "Erweitern",
       "truncated": "Zeigt die ersten {{count}}. Alle in Ereignisse öffnen.",
+      "dot_label": "{{camera}}, {{offset}}",
       "close": "Schließen",
       "window": "Fenster",
       "scope": "Monitore",

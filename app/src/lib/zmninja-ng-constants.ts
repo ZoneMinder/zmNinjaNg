@@ -221,6 +221,10 @@ export const EVENT_CONTEXT = {
   /** Above this many monitor ids, the request drops the MonitorId filter and
    *  narrows client-side: ZoneMinder's filter URLs cap out near 8KB. */
   maxMonitorIds: 40,
+  /** Ribbon lane row height, in pixels. */
+  ribbonLaneHeight: 14,
+  /** Lanes visible before the ribbon scrolls inside its own box. */
+  ribbonMaxLanes: 8,
 } as const;
 
 /**
