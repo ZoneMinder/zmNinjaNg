@@ -8,6 +8,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { useGo2RTCStream } from '../useGo2RTCStream';
+import { GO2RTC_CONNECT_DELAY_MS } from '../../lib/zmninja-ng-constants';
 
 // Mock logger
 vi.mock('../../lib/logger', () => ({
@@ -297,6 +298,34 @@ describe('useGo2RTCStream', () => {
 
       const instance = mockVideoRtcInstances[0];
       expect(instance.src).toContain('token=test-token');
+    });
+
+    it('keeps a playing stream when the token is refreshed', async () => {
+      const containerRef = { current: containerElement };
+      const { rerender } = renderHook(
+        ({ token }) =>
+          useGo2RTCStream({
+            go2rtcUrl: 'http://localhost:1984',
+            monitorId: '1',
+            containerRef,
+            token,
+            enabled: true,
+          }),
+        { initialProps: { token: 'first-token' } }
+      );
+
+      await waitFor(() => {
+        expect(VideoRTC).toHaveBeenCalledTimes(1);
+      });
+      const instance = mockVideoRtcInstances[0];
+      const ondisconnect = vi.spyOn(instance, 'ondisconnect');
+      rerender({ token: 'refreshed-token' });
+      // past the connect delay: a reconnect would have torn the first instance down by now
+      await new Promise((r) => setTimeout(r, GO2RTC_CONNECT_DELAY_MS * 2));
+
+      expect(ondisconnect).not.toHaveBeenCalled();
+      expect(VideoRTC).toHaveBeenCalledTimes(1);
+      expect(instance.src).toContain('token=first-token');
     });
 
     it('cleans up on unmount', async () => {

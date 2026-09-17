@@ -124,6 +124,12 @@ export function useGo2RTCStream(options: UseGo2RTCStreamOptions): UseGo2RTCStrea
     useStun = false,
   } = options;
 
+  // The token authenticates the WebSocket handshake only; a refreshed token
+  // must not tear down a stream that is already playing, so it is read at
+  // connect time instead of being a dependency.
+  const tokenRef = useRef(token);
+  tokenRef.current = token;
+
   const [state, setState] = useState<ConnectionState>('idle');
   const [error, setError] = useState<string | null>(null);
   const [activeProtocol, setActiveProtocol] = useState<StreamingProtocol | null>(null);
@@ -205,7 +211,7 @@ export function useGo2RTCStream(options: UseGo2RTCStreamOptions): UseGo2RTCStrea
     setError(null);
 
     try {
-      const wsUrl = getGo2RTCWebSocketUrl(go2rtcUrl, monitorId, channel, { token, expectedHost, rtspServer });
+      const wsUrl = getGo2RTCWebSocketUrl(go2rtcUrl, monitorId, channel, { token: tokenRef.current, expectedHost, rtspServer });
       const videoRtc = new VideoRTC();
 
       // Style element to fill container
@@ -309,7 +315,7 @@ export function useGo2RTCStream(options: UseGo2RTCStreamOptions): UseGo2RTCStrea
       setState('error');
       setError(err instanceof Error ? err.message : 'Connection failed');
     }
-  }, [cleanup, containerRef, monitorId, go2rtcUrl, token, expectedHost, rtspServer, protocols, channel, applyMuted, handleVolumeChange, useStun]);
+  }, [cleanup, containerRef, monitorId, go2rtcUrl, expectedHost, rtspServer, protocols, channel, applyMuted, handleVolumeChange, useStun]);
 
   const retry = useCallback(() => {
     log.videoPlayer('GO2RTC: Retry requested', LogLevel.INFO, { monitorId });
@@ -366,7 +372,7 @@ export function useGo2RTCStream(options: UseGo2RTCStreamOptions): UseGo2RTCStrea
       cleanup();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, go2rtcUrl, monitorId, token, protocolsKey]);
+  }, [enabled, go2rtcUrl, monitorId, protocolsKey]);
 
   // Apply muted when prop changes
   useEffect(() => {
