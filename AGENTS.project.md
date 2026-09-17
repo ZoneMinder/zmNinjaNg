@@ -8,8 +8,8 @@ The sanctioned path is the only path; a bypass is a bug even when it works.
 ### Settings
 Owns: all profile-scoped user preferences.
 Path: `getProfileSettings` / `updateProfileSettings` (`app/src/stores/settings.ts`); every coercion or default lives in `mergeProfileSettings`.
-Never: reaching storage directly for a profile-scoped preference; non-profile-scoped preference keys; coercions outside the merge (reactive readers such as `useCurrentProfile` bypass per-getter fixes). Per-device UI state belongs in `localStorage` under `STORAGE_KEYS`.
-Gate: review.
+Never: reaching storage directly for a profile-scoped preference; non-profile-scoped preference keys; coercions outside the merge (reactive readers such as `useCurrentProfile` bypass per-getter fixes); a coercion that can rebuild a nested settings object on repeated merges of one persisted value, which loops every `useShallow` reader of the merge ("Maximum update depth exceeded") as soon as a key is added to that object; cache the repair by the persisted object's identity. Per-device UI state belongs in `localStorage` under `STORAGE_KEYS`.
+Gate: `app/src/stores/__tests__/settings.test.ts` (repaired identity is stable across merges); `app/src/components/events/context/__tests__/EventContextPanel.realstore.test.tsx`; review for the rest.
 
 ### Polling
 Owns: every recurring refresh interval.

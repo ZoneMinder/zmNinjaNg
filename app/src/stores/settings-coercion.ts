@@ -56,6 +56,11 @@ function clampSetting(value: unknown, min: number, max: number, fallback: number
  * consumer unchecked. Each consumer gets to treat its setting as already
  * valid because this runs on every read, imperative and reactive alike.
  *
+ * Every knob here is a primitive assigned onto the already-fresh `merged`, so
+ * repeated merges of one persisted value produce equal values and the
+ * `useShallow` readers compare them equal. Nothing to cache. A nested object
+ * added to this slice would need `coerceEventContext`'s treatment instead.
+ *
  * @param defaults - the shipped defaults, passed in rather than imported (see
  *                   the module comment).
  */
@@ -116,14 +121,31 @@ export const DEFAULT_EVENT_CONTEXT: EventContextSettings = {
   view: 'list',
 };
 
-/** Brings a persisted `eventContext` back inside what the UI can express: an
- *  offered window and a scope the panel has a segment for.
+/** Every repair this module has already made, keyed by the persisted object it
+ *  was made from, so the same stored value always resolves to the same
+ *  repaired object.
  *
- *  Reallocates only when a field actually needed correcting, and keeps the
- *  persisted object's identity otherwise: `getProfileSettings` runs this on
- *  every read, and a fresh object each time would defeat the `useShallow`
- *  selectors that read it (the same reason `fillHoverPreviewSurfaces` writes
- *  `hoverPreview` once at migration instead of every merge). */
+ *  `getProfileSettings` merges on every read and the panel reads the result
+ *  through `useShallow`, so a repair that allocates each time hands the
+ *  shallow compare a new nested identity every call and `useSyncExternalStore`
+ *  re-renders until React throws "Maximum update depth exceeded". Keeping the
+ *  persisted identity when nothing needs correcting is not enough on its own:
+ *  any profile written before a field existed fails that check forever, which
+ *  is how adding `view` reopened the bug a narrow fix had already closed once
+ *  (refs #494). Caching the repair closes it for whatever field comes next.
+ *
+ *  A WeakMap, not a Map: the keys are settings blobs belonging to stores that
+ *  come and go with profiles, and nothing here should keep one alive. */
+const REPAIRED_EVENT_CONTEXT = new WeakMap<object, EventContextSettings>();
+
+/** Brings a persisted `eventContext` back inside what the UI can express: an
+ *  offered window, a scope the panel has a segment for, and a view it can
+ *  render. Persisted settings are a trust boundary (I1), so the value may be
+ *  half-written, from a build with different choices, or not an object at all.
+ *
+ *  Returns the persisted object untouched when it is already valid, and
+ *  otherwise the one repaired object for that persisted value. Either way the
+ *  identity is stable across merges; see `REPAIRED_EVENT_CONTEXT`. */
 export function coerceEventContext(
   merged: { eventContext: EventContextSettings },
   defaults: { eventContext: EventContextSettings }
@@ -133,9 +155,22 @@ export function coerceEventContext(
   const scopeKnown = EVENT_CONTEXT_SCOPES.includes(raw.scope);
   const viewKnown = EVENT_CONTEXT_VIEWS.includes(raw.view);
   if (raw === merged.eventContext && windowOffered && scopeKnown && viewKnown) return;
-  merged.eventContext = {
+
+  // A hand-edited blob can hold a string or a number here, which no WeakMap
+  // will take as a key. Those all repair to the same thing, so file them
+  // under the defaults.
+  const key: object = typeof raw === 'object' ? raw : defaults.eventContext;
+  const cached = REPAIRED_EVENT_CONTEXT.get(key);
+  if (cached) {
+    merged.eventContext = cached;
+    return;
+  }
+
+  const repaired: EventContextSettings = {
     windowMinutes: windowOffered ? raw.windowMinutes : defaults.eventContext.windowMinutes,
     scope: scopeKnown ? raw.scope : defaults.eventContext.scope,
     view: viewKnown ? raw.view : defaults.eventContext.view,
   };
+  REPAIRED_EVENT_CONTEXT.set(key, repaired);
+  merged.eventContext = repaired;
 }

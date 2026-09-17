@@ -612,11 +612,12 @@ export function mergeProfileSettings(raw: Partial<ProfileSettings> | undefined):
 
 /**
  * Persisted shape version. BUMP THIS whenever `ASSISTANT.retiredModelIds`
- * gains an entry, or `HoverPreviewSettings` gains a surface: zustand only
- * calls `migrate` when the stored version is below this number, so a change
- * added without a bump never reaches anyone who already ran the app.
+ * gains an entry, or `HoverPreviewSettings` or `EventContextSettings` gains a
+ * key: zustand only calls `migrate` when the stored version is below this
+ * number, so a change added without a bump never reaches anyone who already
+ * ran the app.
  */
-export const SETTINGS_VERSION = 11;
+export const SETTINGS_VERSION = 12;
 
 /**
  * Migrate persisted settings:
@@ -631,7 +632,35 @@ export const SETTINGS_VERSION = 11;
  */
 export function migrateSettings(persistedState: unknown, version: number): unknown {
   const state = version >= 1 ? persistedState : migrateV0ToV1(persistedState);
-  return moveNativeOffOnDevice(fillHoverPreviewSurfaces(normalizeRetiredModelIds(state)));
+  return moveNativeOffOnDevice(
+    fillEventContextKeys(fillHoverPreviewSurfaces(normalizeRetiredModelIds(state)))
+  );
+}
+
+/** Fills `eventContext` keys added after a profile was last written.
+ *
+ *  `view` arrived after the panel had already saved a window and scope for
+ *  everyone using it, so those profiles hold a blob the merge has to repair on
+ *  every read. The merge does that without churning identity now, but healing
+ *  the stored value is what keeps the next added key from re-entering that
+ *  path at all. Same shape and the same reasoning as
+ *  `fillHoverPreviewSurfaces` above; profiles that never opened the panel have
+ *  no `eventContext` and get the default from `mergeProfileSettings` as
+ *  before. Refs #494. */
+function fillEventContextKeys(persistedState: unknown): unknown {
+  const state = (persistedState ?? {}) as { profileSettings?: Record<string, unknown> };
+  if (!state.profileSettings) return persistedState;
+
+  const migrated: Record<string, unknown> = {};
+  for (const [profileId, raw] of Object.entries(state.profileSettings)) {
+    const s = (raw ?? {}) as Record<string, unknown>;
+    const stored = s.eventContext;
+    migrated[profileId] =
+      stored && typeof stored === 'object'
+        ? { ...s, eventContext: { ...DEFAULT_EVENT_CONTEXT, ...stored } }
+        : s;
+  }
+  return { ...state, profileSettings: migrated };
 }
 
 /** Fills `hoverPreview` keys added after a profile was last written, so a new
