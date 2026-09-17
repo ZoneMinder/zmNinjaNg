@@ -49,9 +49,13 @@ interface CompactEventRowProps {
   /** Replaces the badge's title to match badgeLabel; defaults to the
    *  duration tooltip. */
   badgeTitle?: string;
+  /** Overrides the badge's colour classes; defaults to the muted chip. The
+   *  "around this event" panel tints the anchor row's badge blue instead
+   *  (refs #494). */
+  badgeClassName?: string;
 }
 
-export function CompactEventRow({ event, thumbnailUrls, aspectRatio, objectFit = 'cover', profileId, ownerProfileId, hoverPreview = false, badgeLabel, badgeTitle }: CompactEventRowProps) {
+export function CompactEventRow({ event, thumbnailUrls, aspectRatio, objectFit = 'cover', profileId, ownerProfileId, hoverPreview = false, badgeLabel, badgeTitle, badgeClassName }: CompactEventRowProps) {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const { fmtTime } = useDateTimeFormat();
@@ -139,7 +143,10 @@ export function CompactEventRow({ event, thumbnailUrls, aspectRatio, objectFit =
         </p>
       </div>
       <span
-        className="flex-shrink-0 text-xs font-medium tabular-nums px-1.5 py-0.5 rounded bg-muted text-muted-foreground"
+        className={cn(
+          'flex-shrink-0 text-xs font-medium tabular-nums px-1.5 py-0.5 rounded',
+          badgeClassName ?? 'bg-muted text-muted-foreground'
+        )}
         title={badgeTitle ?? t('events.duration')}
       >
         {badgeLabel ?? durationLabel}

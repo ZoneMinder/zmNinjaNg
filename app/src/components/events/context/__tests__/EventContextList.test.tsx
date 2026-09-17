@@ -47,26 +47,52 @@ const row = (id: string, offsetMs: number, isAnchor = false) => ({
 });
 
 describe('offsetLabel', () => {
-  it('signs a row before the anchor', () => {
-    expect(offsetLabel(-252_000)).toBe('−4:12');
+  it('renders a sub-minute offset in seconds only', () => {
+    expect(offsetLabel(38_000)).toBe('+38s');
   });
 
-  it('signs a row after it', () => {
-    expect(offsetLabel(38_000)).toBe('+0:38');
+  it('signs a row before the anchor, in minutes and seconds', () => {
+    expect(offsetLabel(-252_000)).toBe('−4m 12s');
+  });
+
+  it('drops the seconds when a whole-minute offset has none', () => {
+    expect(offsetLabel(1_320_000)).toBe('+22m');
+  });
+
+  it('renders hours and minutes once the window passes an hour', () => {
+    expect(offsetLabel(3_900_000)).toBe('+1h 05m');
   });
 
   it('gives the anchor itself no sign', () => {
-    expect(offsetLabel(0)).toBe('0:00');
+    expect(offsetLabel(0)).toBe('0s');
   });
 });
 
 describe('EventContextList', () => {
   const props = { profileId: undefined, isLoading: false, error: null, truncated: false, onWiden: undefined };
 
-  it('renders every row with its offset', () => {
+  it('renders a non-anchor row with its offset', () => {
     renderList(<EventContextList {...props} rows={[row('405', -252_000), row('406', 0, true)]} />);
-    expect(screen.getByTestId('event-context-row-405')).toHaveTextContent('−4:12');
-    expect(screen.getByTestId('event-context-row-406')).toHaveTextContent('0:00');
+    expect(screen.getByTestId('event-context-row-405')).toHaveTextContent('−4m 12s');
+  });
+
+  it('labels the anchor row with what it is instead of a zero offset', () => {
+    renderList(<EventContextList {...props} rows={[row('406', 0, true)]} />);
+    expect(screen.getByTestId('event-context-row-406')).toHaveTextContent('events.around.this_event');
+  });
+
+  it('tints the anchor badge blue instead of the default muted chip', () => {
+    renderList(<EventContextList {...props} rows={[row('406', 0, true)]} />);
+    const badge = screen.getByText('events.around.this_event');
+    expect(badge.className).toContain('blue');
+    expect(badge.className).not.toContain('bg-muted');
+  });
+
+  it('leaves a non-anchor badge with the default muted colours', () => {
+    renderList(<EventContextList {...props} rows={[row('405', -252_000)]} />);
+    const badge = screen.getByText('−4m 12s');
+    expect(badge.className).toContain('bg-muted');
+    expect(badge.className).not.toContain('blue');
   });
 
   it('marks the anchor row so it reads as where you came from', () => {
@@ -84,7 +110,7 @@ describe('EventContextList', () => {
 
   it('gives the offset badge its own title, not the duration tooltip', () => {
     renderList(<EventContextList {...props} rows={[row('406', 0, true)]} />);
-    expect(screen.getByText('0:00')).toHaveAttribute('title', 'events.around.offset_title');
+    expect(screen.getByText('events.around.this_event')).toHaveAttribute('title', 'events.around.offset_title');
   });
 
   it('offers a wider window when nothing else is in this one', () => {

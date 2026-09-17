@@ -6,15 +6,35 @@
  * these live here beside `event-context.ts` instead.
  */
 
-import { formatElapsedShort } from '../format-date-time';
 import type { EventAroundRow } from '../../hooks/useEventsAround';
 
-/** "−4:12" / "+0:38" / "0:00": digits and a sign, no translation needed. */
+/**
+ * "+38s" / "+22m 01s" / "+22m" / "+1h 05m" / "−4m 12s": digits and units, no
+ * translation needed (formatElapsedShort's own reasoning). Not built on
+ * formatElapsedShort: that's a fixed "m:ss"/"h:mm:ss" stopwatch reading,
+ * always shows seconds, and never grows a unit suffix, whereas this needs
+ * unit letters and drops seconds once whole minutes are enough - a
+ * `m:ss`-style badge misreads once the window reaches an hour, since
+ * "22m 01s" and "22h 01m" both look like "22:01".
+ */
 export function offsetLabel(offsetMs: number): string {
-  const elapsed = formatElapsedShort(Math.abs(offsetMs));
-  if (offsetMs < 0) return `−${elapsed}`;
-  if (offsetMs > 0) return `+${elapsed}`;
-  return elapsed;
+  const totalSeconds = Math.floor(Math.abs(offsetMs) / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  let value: string;
+  if (hours > 0) {
+    value = `${hours}h ${String(minutes).padStart(2, '0')}m`;
+  } else if (minutes > 0) {
+    value = seconds === 0 ? `${minutes}m` : `${minutes}m ${String(seconds).padStart(2, '0')}s`;
+  } else {
+    value = `${seconds}s`;
+  }
+
+  if (offsetMs < 0) return `−${value}`;
+  if (offsetMs > 0) return `+${value}`;
+  return value;
 }
 
 export interface RibbonDot {

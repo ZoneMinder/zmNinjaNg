@@ -279,6 +279,7 @@
       "truncated": "Showing the first {{count}}. Open in Events for the rest.",
       "dot_label": "{{camera}}, {{offset}}",
       "offset_title": "Time from this event",
+      "this_event": "This event",
       "close": "Close",
       "timeline": "Timeline",
       "events": "Events",

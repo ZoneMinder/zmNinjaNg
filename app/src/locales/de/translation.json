@@ -279,6 +279,7 @@
       "truncated": "Zeigt die ersten {{count}}. Alle in Ereignisse öffnen.",
       "dot_label": "{{camera}}, {{offset}}",
       "offset_title": "Zeitabstand zu diesem Ereignis",
+      "this_event": "Dieses Ereignis",
       "close": "Schließen",
       "timeline": "Zeitachse",
       "events": "Ereignisse",

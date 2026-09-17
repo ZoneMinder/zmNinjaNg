@@ -279,6 +279,7 @@
       "truncated": "显示前 {{count}} 个。打开事件查看其余部分。",
       "dot_label": "{{camera}}，{{offset}}",
       "offset_title": "与该事件的时间差",
+      "this_event": "此事件",
       "close": "关闭",
       "timeline": "时间轴",
       "events": "事件",

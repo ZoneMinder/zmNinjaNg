@@ -279,6 +279,7 @@
       "truncated": "Mostrando los primeros {{count}}. Abre Eventos para ver el resto.",
       "dot_label": "{{camera}}, {{offset}}",
       "offset_title": "Tiempo respecto a este evento",
+      "this_event": "Este evento",
       "close": "Cerrar",
       "timeline": "Línea de Tiempo",
       "events": "Eventos",

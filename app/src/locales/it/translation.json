@@ -279,6 +279,7 @@
       "truncated": "Mostrati i primi {{count}}. Apri Eventi per il resto.",
       "dot_label": "{{camera}}, {{offset}}",
       "offset_title": "Distanza temporale da questo evento",
+      "this_event": "Questo evento",
       "close": "Chiudi",
       "timeline": "Cronologia",
       "events": "Eventi",

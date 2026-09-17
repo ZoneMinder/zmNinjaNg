@@ -126,7 +126,9 @@ export function EventContextList({ rows, profileId, isLoading, error, truncated,
             >
               {/* The offset replaces CompactEventRow's own duration badge
                   rather than sitting in a column beside it, so it appears
-                  once (refs #494). */}
+                  once (refs #494). An offset of zero from itself says
+                  nothing, so the anchor gets a label instead, tinted blue
+                  to read as the event you came from. */}
               <CompactEventRow
                 event={event}
                 thumbnailUrls={urls}
@@ -134,8 +136,9 @@ export function EventContextList({ rows, profileId, isLoading, error, truncated,
                 profileId={profileId}
                 ownerProfileId={profileId}
                 hoverPreview={settings.hoverPreview.eventContext}
-                badgeLabel={offsetLabel(offsetMs)}
+                badgeLabel={isAnchor ? t('events.around.this_event') : offsetLabel(offsetMs)}
                 badgeTitle={t('events.around.offset_title')}
+                badgeClassName={isAnchor ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' : undefined}
               />
             </div>
           );

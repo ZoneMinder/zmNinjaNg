@@ -188,6 +188,27 @@ describe('CompactEventRow', () => {
     expect(screen.queryByText('30s')).toBeNull();
   });
 
+  // refs #494: the anchor row's badge is tinted blue instead of the default
+  // muted chip, so the caller needs to override its colour classes.
+  it('lets the caller override the badge colour classes', () => {
+    render(
+      withQuery(
+        <MemoryRouter>
+          <CompactEventRow
+            event={base as never}
+            thumbnailUrls={['http://x/1.jpg']}
+            aspectRatio={1.6}
+            badgeLabel="This event"
+            badgeClassName="bg-blue-500/10 text-blue-600 dark:text-blue-400"
+          />
+        </MemoryRouter>
+      )
+    );
+    const badge = screen.getByText('This event');
+    expect(badge.className).toContain('bg-blue-500/10');
+    expect(badge.className).not.toContain('bg-muted');
+  });
+
   // refs #494: the "around this event" panel gets its own hover-preview
   // opt-out, so CompactEventRow only wraps its thumbnail when the caller
   // says so.
