@@ -42,14 +42,14 @@ const event = {
   StartDateTime: '2026-09-17 21:14:03',
   EndDateTime: '2026-09-17 21:14:41',
   Length: '38.00',
-} as never;
+};
 
 function openPanel() {
   seedProfiles([makeProfile('p1')], { settings: { p1: { eventContext: { windowMinutes: 15, scope: 'all' } } } });
   installApiClient(P1, emptyServer());
   renderWithClient(
     <>
-      <EventContextButton event={event} profileId={P1} />
+      <EventContextButton event={event as never} profileId={P1} />
       <EventContextPanel />
     </>
   );
@@ -77,21 +77,55 @@ describe('EventContextPanel footer', () => {
     });
   });
 
-  it('sends the window to the events page as nav state', async () => {
+  it('sends the window to the events page as a URL deep link', async () => {
     openPanel();
     await screen.findByTestId('event-context-empty');
 
     fireEvent.click(screen.getByTestId('event-context-open-events'));
 
-    expect(navigate).toHaveBeenCalledWith('/events', {
-      state: {
-        eventFilters: {
-          startDateTime: '2026-09-17 20:59:03',
-          endDateTime: '2026-09-17 21:29:41',
-          monitorId: undefined,
+    expect(navigate).toHaveBeenCalledTimes(1);
+    const [target] = navigate.mock.calls[0] as [string];
+    const [pathname, query] = target.split('?');
+    expect(pathname).toBe('/events');
+    const params = new URLSearchParams(query);
+    expect(params.get('startDateTime')).toBe('2026-09-17 20:59:03');
+    expect(params.get('endDateTime')).toBe('2026-09-17 21:29:41');
+    // No events in the window (emptyServer): nothing resolved, so no
+    // narrowing filter goes on the URL - an all-cameras deep link, not one
+    // that (wrongly) matches nothing.
+    expect(params.has('monitorId')).toBe(false);
+  });
+
+  it('includes the resolved monitor ids on the events deep link when the window found some', async () => {
+    seedProfiles([makeProfile('p1')], { settings: { p1: { eventContext: { windowMinutes: 15, scope: 'all' } } } });
+    installApiClient(
+      P1,
+      fakeApiClient({
+        '/monitors.json': { monitors: [{ Monitor: { Id: '3', Name: 'Front Door' } }, { Monitor: { Id: '4', Name: 'Back Door' } }] },
+        '/groups.json': { groups: [] },
+        '/events/index': {
+          events: [
+            { Event: { ...event } },
+            { Event: { ...event, Id: '407', MonitorId: '4', StartDateTime: '2026-09-17 21:15:03' } },
+          ],
+          pagination: { count: 2 },
         },
-      },
-    });
+      })
+    );
+    renderWithClient(
+      <>
+        <EventContextButton event={event as never} profileId={P1} />
+        <EventContextPanel />
+      </>
+    );
+    fireEvent.click(screen.getByTestId('event-context-open'));
+    await screen.findByTestId('event-context-row-407');
+
+    fireEvent.click(screen.getByTestId('event-context-open-events'));
+
+    const [target] = navigate.mock.calls[0] as [string];
+    const params = new URLSearchParams(target.split('?')[1]);
+    expect(params.get('monitorId')).toBe('3,4');
   });
 
   it('closes the panel on the way out', async () => {

@@ -94,15 +94,16 @@ function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId:
 
   const openInEvents = useCallback(() => {
     closePanel();
-    navigate('/events', {
-      state: {
-        eventFilters: {
-          startDateTime: window.startDateTime,
-          endDateTime: window.endDateTime,
-          monitorId: monitorIds.length ? monitorIds.join(',') : undefined,
-        },
-      },
+    // A URL deep link, not nav state: resolveInitialFilters
+    // (useEventFilters.ts) reads exactly these query params ahead of any
+    // persisted filter, which is the sanctioned way to land on Events
+    // pre-filtered - nav state has no reader there.
+    const params = new URLSearchParams({
+      startDateTime: window.startDateTime,
+      endDateTime: window.endDateTime,
     });
+    if (monitorIds.length) params.set('monitorId', monitorIds.join(','));
+    navigate(`/events?${params.toString()}`);
   }, [window, monitorIds, closePanel, navigate]);
 
   return (
