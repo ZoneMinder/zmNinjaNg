@@ -41,13 +41,6 @@ export function offsetLabel(offsetMs: number): string {
   return value;
 }
 
-/** A graph edge's time gap, unsigned: two arbitrary nodes have no "before" or
- *  "after" the way an anchor offset does, so this is offsetLabel's own digits
- *  and units with the sign it would add for a positive value dropped. */
-export function edgeGapLabel(gapMs: number): string {
-  return offsetLabel(gapMs).replace(/^\+/, '');
-}
-
 export interface RowThumbnailOptions {
   portalUrl: string;
   thumbnailChain: ThumbnailFallbackEntry[];
@@ -56,9 +49,9 @@ export interface RowThumbnailOptions {
   profileId: ProfileId | undefined;
 }
 
-/** Thumbnail chain and aspect ratio for one row: the list's own rows and the
- *  graph's nodes share this so both surfaces fall back through fallback URLs
- *  identically (refs #494). Mirrors MonitorRecentEvents.tsx's buildRow. */
+/** Thumbnail chain and aspect ratio for one row, falling back through
+ *  fallback URLs the same way MonitorRecentEvents.tsx's buildRow does
+ *  (refs #494). */
 export function buildRowThumbnail(event: Event, opts: RowThumbnailOptions) {
   const { width, height } = getMonitorDimensions(undefined, event.Width, event.Height);
   const { width: tw, height: th } = calculateThumbnailDimensions(

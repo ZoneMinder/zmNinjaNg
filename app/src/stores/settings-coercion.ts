@@ -16,9 +16,7 @@ import {
   ALL_MODE_PERFORMANCE,
   EVENT_CONTEXT,
   EVENT_CONTEXT_SCOPES,
-  EVENT_CONTEXT_VIEWS,
   type EventContextScope,
-  type EventContextView,
 } from '../lib/zmninja-ng-constants';
 
 /** All mode only: how much each aggregated tile's stream is dialed back.
@@ -112,13 +110,11 @@ export function coerceAllModePerformance(
 export interface EventContextSettings {
   windowMinutes: number;
   scope: EventContextScope;
-  view: EventContextView;
 }
 
 export const DEFAULT_EVENT_CONTEXT: EventContextSettings = {
   windowMinutes: EVENT_CONTEXT.defaultWindowMinutes,
   scope: 'all',
-  view: 'list',
 };
 
 /** Every repair this module has already made, keyed by the persisted object it
@@ -131,17 +127,20 @@ export const DEFAULT_EVENT_CONTEXT: EventContextSettings = {
  *  re-renders until React throws "Maximum update depth exceeded". Keeping the
  *  persisted identity when nothing needs correcting is not enough on its own:
  *  any profile written before a field existed fails that check forever, which
- *  is how adding `view` reopened the bug a narrow fix had already closed once
- *  (refs #494). Caching the repair closes it for whatever field comes next.
+ *  is how adding a field to this shape once reopened the bug a narrow fix had
+ *  already closed (refs #494). Caching the repair closes it for whatever
+ *  field comes next.
  *
  *  A WeakMap, not a Map: the keys are settings blobs belonging to stores that
  *  come and go with profiles, and nothing here should keep one alive. */
 const REPAIRED_EVENT_CONTEXT = new WeakMap<object, EventContextSettings>();
 
 /** Brings a persisted `eventContext` back inside what the UI can express: an
- *  offered window, a scope the panel has a segment for, and a view it can
- *  render. Persisted settings are a trust boundary (I1), so the value may be
- *  half-written, from a build with different choices, or not an object at all.
+ *  offered window and a scope the panel has a segment for. Persisted settings
+ *  are a trust boundary (I1), so the value may be half-written, from a build
+ *  with different choices, or not an object at all. An unknown key such as a
+ *  retired `view` is left on the object untouched: a leftover key is
+ *  harmless, since nothing reads it.
  *
  *  Returns the persisted object untouched when it is already valid, and
  *  otherwise the one repaired object for that persisted value. Either way the
@@ -153,8 +152,7 @@ export function coerceEventContext(
   const raw = merged.eventContext ?? defaults.eventContext;
   const windowOffered = (EVENT_CONTEXT.windowChoices as readonly number[]).includes(raw.windowMinutes);
   const scopeKnown = EVENT_CONTEXT_SCOPES.includes(raw.scope);
-  const viewKnown = EVENT_CONTEXT_VIEWS.includes(raw.view);
-  if (raw === merged.eventContext && windowOffered && scopeKnown && viewKnown) return;
+  if (raw === merged.eventContext && windowOffered && scopeKnown) return;
 
   // A hand-edited blob can hold a string or a number here, which no WeakMap
   // will take as a key. Those all repair to the same thing, so file them
@@ -169,7 +167,6 @@ export function coerceEventContext(
   const repaired: EventContextSettings = {
     windowMinutes: windowOffered ? raw.windowMinutes : defaults.eventContext.windowMinutes,
     scope: scopeKnown ? raw.scope : defaults.eventContext.scope,
-    view: viewKnown ? raw.view : defaults.eventContext.view,
   };
   REPAIRED_EVENT_CONTEXT.set(key, repaired);
   merged.eventContext = repaired;

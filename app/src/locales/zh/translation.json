@@ -290,10 +290,7 @@
       "scope_group": "分组",
       "scope_all": "全部",
       "scope_unavailable_linked": "此监视器没有关联的监视器。",
-      "scope_unavailable_group": "此监视器不属于任何分组。",
-      "view_list": "列表",
-      "view_graph": "树",
-      "graph_truncated": "显示最近的 {{count}} 个。切换到列表查看其余部分。"
+      "scope_unavailable_group": "此监视器不属于任何分组。"
     }
   },
   "event_detail": {

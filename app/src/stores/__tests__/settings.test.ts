@@ -237,36 +237,12 @@ describe('settings migration v0 -> v1', () => {
     expect(migrated.profileSettings['profile-e'].hoverPreview.eventContext).toBe(true);
   });
 
-  // refs #494: `view` joined eventContext after v11 shipped, so every profile
-  // that had already opened the panel holds `{ windowMinutes, scope }`. The
-  // merge can repair that on read, but the stored blob is what a later added
-  // key would trip over again, so heal it once here.
-  it('fills eventContext keys added since the profile was written', () => {
-    const stored = {
-      profileSettings: { 'profile-c': { eventContext: { windowMinutes: 30, scope: 'linked' } } },
-    };
-    const migrated = migrateSettings(stored, 11) as {
-      profileSettings: Record<string, ProfileSettings>;
-    };
-    expect(migrated.profileSettings['profile-c'].eventContext).toEqual({
-      windowMinutes: 30,
-      scope: 'linked',
-      view: 'list',
-    });
-  });
-
   it('leaves a profile that never opened the context panel without an eventContext', () => {
     const stored = { profileSettings: { 'profile-d': { theme: 'dark' } } };
     const migrated = migrateSettings(stored, 11) as {
       profileSettings: Record<string, Partial<ProfileSettings>>;
     };
     expect('eventContext' in migrated.profileSettings['profile-d']).toBe(false);
-  });
-
-  // The migration only runs for stores below SETTINGS_VERSION, so the bump
-  // that carries it is what makes it reach anyone already at v11.
-  it('the persist version is past the release that shipped eventContext without a view', () => {
-    expect(SETTINGS_VERSION).toBeGreaterThan(11);
   });
 
   it('fills defaults when legacy fields are absent', () => {
@@ -623,51 +599,43 @@ describe('startScreen', () => {
 });
 
 describe('mergeProfileSettings eventContext', () => {
-  it('defaults to a ten minute window over every camera, list view', () => {
+  it('defaults to a ten minute window over every camera', () => {
     expect(mergeProfileSettings(undefined).eventContext).toEqual({
       windowMinutes: 10,
       scope: 'all',
-      view: 'list',
     });
   });
 
-  it('keeps a window and view the user chose', () => {
+  it('keeps a window and scope the user chose', () => {
     const merged = mergeProfileSettings({
-      eventContext: { windowMinutes: 30, scope: 'linked', view: 'graph' },
+      eventContext: { windowMinutes: 30, scope: 'linked' },
     } as Partial<typeof DEFAULT_SETTINGS>);
-    expect(merged.eventContext).toEqual({ windowMinutes: 30, scope: 'linked', view: 'graph' });
+    expect(merged.eventContext).toEqual({ windowMinutes: 30, scope: 'linked' });
   });
 
   it('replaces a window no chip offers with the default', () => {
     const merged = mergeProfileSettings({
-      eventContext: { windowMinutes: 4000, scope: 'all', view: 'list' },
+      eventContext: { windowMinutes: 4000, scope: 'all' },
     } as Partial<typeof DEFAULT_SETTINGS>);
     expect(merged.eventContext.windowMinutes).toBe(10);
   });
 
   it('replaces a scope the app does not know with the default', () => {
     const merged = mergeProfileSettings({
-      eventContext: { windowMinutes: 15, scope: 'neighbours', view: 'list' },
+      eventContext: { windowMinutes: 15, scope: 'neighbours' },
     } as unknown as Partial<typeof DEFAULT_SETTINGS>);
-    expect(merged.eventContext).toEqual({ windowMinutes: 15, scope: 'all', view: 'list' });
-  });
-
-  it('replaces a view the app does not know with the default', () => {
-    const merged = mergeProfileSettings({
-      eventContext: { windowMinutes: 15, scope: 'all', view: 'timeline' },
-    } as unknown as Partial<typeof DEFAULT_SETTINGS>);
-    expect(merged.eventContext).toEqual({ windowMinutes: 15, scope: 'all', view: 'list' });
+    expect(merged.eventContext).toEqual({ windowMinutes: 15, scope: 'all' });
   });
 
   it('survives a half-written blob', () => {
     const merged = mergeProfileSettings({
       eventContext: { scope: 'group' },
     } as unknown as Partial<typeof DEFAULT_SETTINGS>);
-    expect(merged.eventContext).toEqual({ windowMinutes: 10, scope: 'group', view: 'list' });
+    expect(merged.eventContext).toEqual({ windowMinutes: 10, scope: 'group' });
   });
 
   it('keeps the persisted object identity when it is already valid', () => {
-    const eventContext = { windowMinutes: 15, scope: 'linked' as const, view: 'graph' as const };
+    const eventContext = { windowMinutes: 15, scope: 'linked' as const };
     expect(
       mergeProfileSettings({ eventContext } as Partial<typeof DEFAULT_SETTINGS>).eventContext
     ).toBe(eventContext);
@@ -680,17 +648,21 @@ describe('mergeProfileSettings eventContext', () => {
   // exceeded"). Identity has to survive the repair, whatever needed repairing,
   // and whatever field a later release adds (refs #494).
   describe('repaired identity is stable across merges', () => {
-    it('returns the same object for a blob written before `view` existed', () => {
-      const persisted = { windowMinutes: 15, scope: 'linked' } as unknown as typeof DEFAULT_SETTINGS.eventContext;
+    // A profile that used the panel while `view` still existed carries that
+    // key forever; the merge no longer validates it, so nothing about it
+    // should trigger a rebuild (the settings contract: a leftover key is
+    // harmless, since nothing reads it).
+    it('returns the same object for a persisted value that still carries the now-unknown `view` key', () => {
+      const persisted = { windowMinutes: 15, scope: 'linked', view: 'graph' } as unknown as typeof DEFAULT_SETTINGS.eventContext;
       const raw = { eventContext: persisted } as Partial<typeof DEFAULT_SETTINGS>;
       const first = mergeProfileSettings(raw).eventContext;
-      expect(first).toEqual({ windowMinutes: 15, scope: 'linked', view: 'list' });
+      expect(first).toBe(persisted);
       expect(mergeProfileSettings(raw).eventContext).toBe(first);
     });
 
     it('returns the same object for an unoffered window', () => {
       const raw = {
-        eventContext: { windowMinutes: 4000, scope: 'all', view: 'list' },
+        eventContext: { windowMinutes: 4000, scope: 'all' },
       } as Partial<typeof DEFAULT_SETTINGS>;
       const first = mergeProfileSettings(raw).eventContext;
       expect(first.windowMinutes).toBe(10);
@@ -699,7 +671,7 @@ describe('mergeProfileSettings eventContext', () => {
 
     it('returns the same object for an unknown scope', () => {
       const raw = {
-        eventContext: { windowMinutes: 15, scope: 'neighbours', view: 'list' },
+        eventContext: { windowMinutes: 15, scope: 'neighbours' },
       } as unknown as Partial<typeof DEFAULT_SETTINGS>;
       const first = mergeProfileSettings(raw).eventContext;
       expect(first.scope).toBe('all');

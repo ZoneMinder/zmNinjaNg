@@ -290,10 +290,7 @@
       "scope_group": "Gruppo",
       "scope_all": "Tutti",
       "scope_unavailable_linked": "Questo monitor non ha monitor collegati.",
-      "scope_unavailable_group": "Questo monitor non è in nessun gruppo.",
-      "view_list": "Elenco",
-      "view_graph": "Albero",
-      "graph_truncated": "Mostrati i {{count}} più vicini. Passa a Elenco per il resto."
+      "scope_unavailable_group": "Questo monitor non è in nessun gruppo."
     }
   },
   "event_detail": {

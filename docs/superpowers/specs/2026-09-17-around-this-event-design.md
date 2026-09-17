@@ -79,9 +79,6 @@ A single control bar under the anchor header, labels one word each so they fit
   anchor monitor belongs to no group. A disabled segment states why on press
   rather than vanishing, so the setting is discoverable on a server that has not
   configured it.
-- View: segmented `List | Tree`, persisted per profile as `eventContext.view`.
-  The stored value is `'graph'` regardless of the toggle's current label - it
-  predates the tree layout and nothing depends on renaming it.
 
 Both controls write back to profile settings, so the panel sets its own default
 for next time. Settings > Events mirrors them for people who would rather set it
@@ -159,29 +156,6 @@ Empty result: `EmptyState` with a shortcut to widen the window one step. It does
 not repeat the window and scope in its copy: the control bar sits directly above
 it with both already showing, and a translated sentence naming them in seven
 locales buys nothing the chips do not.
-
-## Tree view
-
-An alternate to the list, toggled by the View control and laid out by
-`lib/event/event-tree.ts`: a pure function of the same rows and the monitor
-name map, so it is unit-testable without a DOM. Three fixed columns, left to
-right - the anchor as root, one branch per camera that has a non-anchor event
-in the window (ordered by that camera's nearest event), then that camera's
-own events as leaf thumbnails in chronological order. Every leaf edge carries
-the same unsigned gap label the list's offset badge already computes.
-
-This replaces an earlier force-directed graph, which drew an edge only
-between two events on the same camera; in a typical window most cameras have
-exactly one event, so most nodes had no edge and read as scattered dots. A
-tree gives every node a parent, so nothing is ever isolated.
-
-The canvas is fixed, not zoomable to fit: dragging pans it (there is no
-per-node dragging, since a tree's positions carry meaning) and the wheel
-zooms it, distinguishing a tap from a drag by movement distance the same way
-the list's own return-highlight tap does. Nothing animates, so
-prefers-reduced-motion has nothing to turn off. `EVENT_CONTEXT.maxGraphNodes`
-still caps how many rows it draws, nearest to the anchor by absolute offset,
-with the omitted count shown - unchanged from the graph it replaced.
 
 ## Errors
 

@@ -6,8 +6,9 @@
  * runs on every read, so a coercion that rebuilds `eventContext` each time
  * hands the shallow compare a new nested identity on every call, and
  * `useSyncExternalStore` re-renders until React throws "Maximum update depth
- * exceeded". Every profile that used the panel before `view` was added holds
- * exactly such a blob.
+ * exceeded". A profile written with a half-shaped blob, or one still
+ * carrying a retired key such as `view`, is exactly the kind of value that
+ * can trip that repair.
  *
  * Has to render against the REAL settings store, seeded the way rehydration
  * seeds it (raw, unmerged): a test double that calls `selector(state)`
@@ -71,8 +72,15 @@ afterEach(() => {
   resetFakeStoreGates();
 });
 
+function expectsNoRenderLoop(onError: ReturnType<typeof vi.spyOn>) {
+  const looped = onError.mock.calls.some((args) =>
+    args.some((a) => typeof a === 'string' && a.includes('Maximum update depth exceeded'))
+  );
+  expect(looped).toBe(false);
+}
+
 describe('EventContextPanel - real store render loop regression (refs #494)', () => {
-  it('opens on a blob persisted before `view` existed without looping', async () => {
+  it('opens on a minimal persisted blob without looping', async () => {
     seedProfiles([makeProfile('p1')]);
     seedRawEventContext({ windowMinutes: 30, scope: 'linked' });
     installApiClient(P1, emptyServer());
@@ -90,13 +98,34 @@ describe('EventContextPanel - real store render loop regression (refs #494)', ()
     fireEvent.click(screen.getByTestId('event-context-open'));
     await screen.findByTestId('event-context-empty');
 
-    // The window the user saved still comes back, and `view` falls to its
-    // default instead of the panel never settling.
+    // The window the user saved still comes back.
     expect(screen.getByTestId('event-context-window-30')).toHaveAttribute('aria-pressed', 'true');
-    const looped = onError.mock.calls.some((args) =>
-      args.some((a) => typeof a === 'string' && a.includes('Maximum update depth exceeded'))
+    expectsNoRenderLoop(onError);
+
+    fireEvent.click(screen.getByTestId('event-context-close'));
+    onError.mockRestore();
+  });
+
+  it('opens on a blob that still carries the now-unknown `view` key without looping', async () => {
+    seedProfiles([makeProfile('p1')]);
+    seedRawEventContext({ windowMinutes: 30, scope: 'linked', view: 'graph' });
+    installApiClient(P1, emptyServer());
+
+    const onError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <EventContextButton event={anchorEvent} profileId={P1} />
+          <EventContextPanel />
+        </MemoryRouter>
+      </QueryClientProvider>
     );
-    expect(looped).toBe(false);
+    fireEvent.click(screen.getByTestId('event-context-open'));
+    await screen.findByTestId('event-context-empty');
+
+    expect(screen.getByTestId('event-context-window-30')).toHaveAttribute('aria-pressed', 'true');
+    expectsNoRenderLoop(onError);
 
     fireEvent.click(screen.getByTestId('event-context-close'));
     onError.mockRestore();

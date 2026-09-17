@@ -111,7 +111,7 @@ describe('EventContextPanel', () => {
   });
 
   it('opens on the anchor profile\'s own saved window and scope', async () => {
-    seedProfiles([makeProfile('p1')], { settings: { p1: { eventContext: { windowMinutes: 30, scope: 'linked', view: 'list' } } } });
+    seedProfiles([makeProfile('p1')], { settings: { p1: { eventContext: { windowMinutes: 30, scope: 'linked' } } } });
     installApiClient(P1, emptyServer());
     renderWithClient(
       <>
@@ -131,8 +131,8 @@ describe('EventContextPanel', () => {
   it('re-seeds from the newly opened profile, not whatever the panel showed before', async () => {
     seedProfiles([makeProfile('p1'), makeProfile('p2')], {
       settings: {
-        p1: { eventContext: { windowMinutes: 10, scope: 'all', view: 'list' } },
-        p2: { eventContext: { windowMinutes: 60, scope: 'group', view: 'list' } },
+        p1: { eventContext: { windowMinutes: 10, scope: 'all' } },
+        p2: { eventContext: { windowMinutes: 60, scope: 'group' } },
       },
     });
     installApiClient(P1, emptyServer());
@@ -162,7 +162,7 @@ describe('EventContextPanel', () => {
     // has no LinkedMonitors, so resolveScopeMonitorIds drops the filter and
     // the window covers every camera. The pressed chip has to say so rather
     // than reading Linked over an all-cameras result (refs #494).
-    seedProfiles([makeProfile('p1')], { settings: { p1: { eventContext: { windowMinutes: 10, scope: 'linked', view: 'list' } } } });
+    seedProfiles([makeProfile('p1')], { settings: { p1: { eventContext: { windowMinutes: 10, scope: 'linked' } } } });
     installApiClient(
       P1,
       fakeApiClient({
@@ -189,7 +189,6 @@ describe('EventContextPanel', () => {
     expect(useSettingsStore.getState().getProfileSettings(P1).eventContext).toEqual({
       windowMinutes: 30,
       scope: 'linked',
-      view: 'list',
     });
     fireEvent.click(screen.getByTestId('event-context-close'));
   });
@@ -211,33 +210,5 @@ describe('EventContextPanel', () => {
 
     expect(useEventContextStore.getState().open).toBe(false);
     expect(screen.queryByTestId('event-context-panel')).toBeNull();
-  });
-
-  it('swaps to the graph view on toggle and persists the choice to the profile', async () => {
-    seedProfiles([makeProfile('p1')]);
-    installApiClient(
-      P1,
-      fakeApiClient({
-        '/monitors.json': { monitors: [] },
-        '/groups.json': { groups: [] },
-        '/events/index': { events: [{ Event: event }], pagination: { count: 1 } },
-      })
-    );
-    renderWithClient(
-      <>
-        <EventContextButton event={event} profileId={P1} />
-        <EventContextPanel />
-      </>
-    );
-    fireEvent.click(screen.getByTestId('event-context-open'));
-    await screen.findByTestId('event-context-row-406');
-
-    fireEvent.click(screen.getByTestId('event-context-view-graph'));
-
-    expect(screen.getByTestId('event-context-graph')).toBeTruthy();
-    expect(screen.queryByTestId('event-context-row-406')).toBeNull();
-    expect(useSettingsStore.getState().getProfileSettings(P1).eventContext.view).toBe('graph');
-
-    fireEvent.click(screen.getByTestId('event-context-close'));
   });
 });

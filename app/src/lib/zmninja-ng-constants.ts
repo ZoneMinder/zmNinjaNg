@@ -217,12 +217,6 @@ export const TIMELINE = {
 export type EventContextScope = 'linked' | 'group' | 'all';
 export const EVENT_CONTEXT_SCOPES: readonly EventContextScope[] = ['linked', 'group', 'all'] as const;
 
-/** "Around this event": list rows or the tree (refs #494). The persisted
- *  value stays 'graph' - it predates the tree and a stored enum gaining a
- *  value is what caused the settings merge loop fixed in 87b827fc. */
-export type EventContextView = 'list' | 'graph';
-export const EVENT_CONTEXT_VIEWS: readonly EventContextView[] = ['list', 'graph'] as const;
-
 /** "Around this event": the window either side of an anchor event, and the
  *  ceiling on how much of the answer one request may ask for. */
 export const EVENT_CONTEXT = {
@@ -240,20 +234,6 @@ export const EVENT_CONTEXT = {
   ribbonLaneHeight: 14,
   /** Lanes visible before the ribbon scrolls inside its own box. */
   ribbonMaxLanes: 8,
-
-  // Tree view (event-tree.ts). Nothing above this line is tree-specific.
-  /** Thumbnail diameter, in pixels, for the root and leaf nodes. */
-  graphNodeSize: 56,
-  /** Vertical space, in pixels, each leaf row occupies in the stack. */
-  treeRowHeight: 80,
-  /** Horizontal gap, in pixels, between root-to-branch and
-   *  branch-to-leaf columns. */
-  treeColumnGap: 96,
-  /** Margin, in pixels, around the tree's own canvas. */
-  treePadding: 16,
-  /** Nodes shown at once; the caller slices to the nearest N by absolute
-   *  offset and reports how many it left out. */
-  maxGraphNodes: 60,
 } as const;
 
 /**

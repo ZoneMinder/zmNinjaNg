@@ -637,16 +637,11 @@ export function migrateSettings(persistedState: unknown, version: number): unkno
   );
 }
 
-/** Fills `eventContext` keys added after a profile was last written.
- *
- *  `view` arrived after the panel had already saved a window and scope for
- *  everyone using it, so those profiles hold a blob the merge has to repair on
- *  every read. The merge does that without churning identity now, but healing
- *  the stored value is what keeps the next added key from re-entering that
- *  path at all. Same shape and the same reasoning as
- *  `fillHoverPreviewSurfaces` above; profiles that never opened the panel have
- *  no `eventContext` and get the default from `mergeProfileSettings` as
- *  before. Refs #494. */
+/** Fills `eventContext` keys added after a profile was last written, so a
+ *  later addition starts at its default instead of the merge repairing it on
+ *  every read. Same shape and the same reasoning as `fillHoverPreviewSurfaces`
+ *  above; profiles that never opened the panel have no `eventContext` and get
+ *  the default from `mergeProfileSettings` as before. Refs #494. */
 function fillEventContextKeys(persistedState: unknown): unknown {
   const state = (persistedState ?? {}) as { profileSettings?: Record<string, unknown> };
   if (!state.profileSettings) return persistedState;

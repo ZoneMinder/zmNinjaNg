@@ -62,7 +62,7 @@ const event = {
 };
 
 function openPanel() {
-  seedProfiles([makeProfile('p1')], { settings: { p1: { eventContext: { windowMinutes: 15, scope: 'all', view: 'list' } } } });
+  seedProfiles([makeProfile('p1')], { settings: { p1: { eventContext: { windowMinutes: 15, scope: 'all' } } } });
   installApiClient(P1, emptyServer());
   renderWithClient(
     <>
@@ -103,7 +103,7 @@ describe('EventContextPanel footer', () => {
   });
 
   it('includes the resolved monitor ids on the events deep link when the window found some', async () => {
-    seedProfiles([makeProfile('p1')], { settings: { p1: { eventContext: { windowMinutes: 15, scope: 'all', view: 'list' } } } });
+    seedProfiles([makeProfile('p1')], { settings: { p1: { eventContext: { windowMinutes: 15, scope: 'all' } } } });
     installApiClient(P1, twoMonitorServer());
     renderWithClient(
       <>
@@ -129,7 +129,7 @@ describe('EventContextPanel footer', () => {
     // (refs #494).
     seedProfiles([makeProfile('p1')], {
       current: ALL_PROFILES_ID,
-      settings: { p1: { eventContext: { windowMinutes: 15, scope: 'all', view: 'list' } } },
+      settings: { p1: { eventContext: { windowMinutes: 15, scope: 'all' } } },
     });
     installApiClient(P1, twoMonitorServer());
     renderWithClient(
