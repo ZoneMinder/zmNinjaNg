@@ -1,10 +1,10 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter, useNavigate } from 'react-router-dom';
 
 vi.mock('../../../../api/store-gates', () => import('../../../../tests/fake-store-gates'));
 vi.mock('../../../../lib/security/secureStorage', () => import('../../../../tests/fake-secure-storage'));
-vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn() }));
 
 import { useEventContextStore } from '../../../../stores/eventContext';
 import { EventContextPanel } from '../EventContextPanel';
@@ -16,9 +16,25 @@ import { ALL_PROFILES_ID } from '../../../../api/types';
 
 // EventContextButton reads usePermissions (useQuery) unconditionally, same as
 // the sibling event-action buttons (EventDeleteButton, EventCard tests).
+// The panel itself now reads useLocation to close on route change, so every
+// render needs a real Router - a plain MemoryRouter, not the module mock the
+// rest of the app's tests use for a no-op useNavigate.
 function renderWithClient(ui: React.ReactElement) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>{ui}</MemoryRouter>
+    </QueryClientProvider>
+  );
+}
+
+/** Test-only trigger for a route change: the panel's own footer buttons
+ *  already navigate deliberately (and are covered by EventContextFooter.test),
+ *  this stands in for back/forward, a programmatic navigate elsewhere in the
+ *  app, or a typed URL. */
+function NavigateAway() {
+  const navigate = useNavigate();
+  return <button data-testid="navigate-away" onClick={() => navigate('/elsewhere')} />;
 }
 
 /** Empty monitors/groups/events: enough for useEventsAround to settle without
@@ -60,7 +76,11 @@ afterEach(() => {
 
 describe('EventContextPanel', () => {
   it('stays closed until something opens it', () => {
-    render(<EventContextPanel />);
+    render(
+      <MemoryRouter>
+        <EventContextPanel />
+      </MemoryRouter>
+    );
     expect(screen.queryByTestId('event-context-panel')).not.toBeInTheDocument();
   });
 
@@ -159,5 +179,24 @@ describe('EventContextPanel', () => {
     const anchorFilters = useSettingsStore.getState().getProfileSettings(P1).timelinePageFilters;
     expect(aggregateFilters.startDateTime).toBe('2026-09-17 21:04:03');
     expect(anchorFilters.startDateTime).toBe('');
+  });
+
+  it('closes on a route change instead of outliving the page it opened over', async () => {
+    seedProfiles([makeProfile('p1')]);
+    installApiClient(P1, emptyServer());
+    renderWithClient(
+      <>
+        <EventContextButton event={event} profileId={P1} />
+        <EventContextPanel />
+        <NavigateAway />
+      </>
+    );
+    fireEvent.click(screen.getByTestId('event-context-open'));
+    await screen.findByTestId('event-context-empty');
+
+    fireEvent.click(screen.getByTestId('navigate-away'));
+
+    expect(useEventContextStore.getState().open).toBe(false);
+    expect(screen.queryByTestId('event-context-panel')).toBeNull();
   });
 });

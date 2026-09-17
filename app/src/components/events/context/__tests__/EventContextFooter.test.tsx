@@ -8,6 +8,8 @@ vi.mock('../../../../lib/security/secureStorage', () => import('../../../../test
 const navigate = vi.fn();
 vi.mock('react-router-dom', () => ({
   useNavigate: () => navigate,
+  // Fixed: these tests don't exercise the route-change close (EventContextPanel.test.tsx does).
+  useLocation: () => ({ pathname: '/events' }),
 }));
 
 import { useEventContextStore } from '../../../../stores/eventContext';

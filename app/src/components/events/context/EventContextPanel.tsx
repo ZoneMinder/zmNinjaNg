@@ -14,9 +14,9 @@
  * Task 6 mounts `<EventContextList/>`, Task 7 `<EventContextRibbon/>`, Task 8
  * the footer.
  */
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useShallow } from 'zustand/react/shallow';
 import { cn } from '../../../lib/utils';
 import { useEventContextStore } from '../../../stores/eventContext';
@@ -146,6 +146,25 @@ export function EventContextPanel() {
   );
   const closePanel = useEventContextStore((s) => s.closePanel);
   const isMobile = useIsMobile();
+
+  // Radix blocks background clicks but not navigation: back/forward, a
+  // programmatic navigate, or a typed URL all leave the panel mounted with a
+  // now-stale anchor. Close it on the first pathname change after it opened,
+  // but not on the initial mount (the footer's own navigate+closePanel hatches
+  // already handle their own case, this only covers everything else).
+  const pathname = useLocation().pathname;
+  const openedPathname = useRef<string | null>(null);
+  useEffect(() => {
+    if (!open) {
+      openedPathname.current = null;
+      return;
+    }
+    if (openedPathname.current === null) {
+      openedPathname.current = pathname;
+      return;
+    }
+    if (pathname !== openedPathname.current) closePanel();
+  }, [open, pathname, closePanel]);
 
   if (!open || !anchor) return null;
 
