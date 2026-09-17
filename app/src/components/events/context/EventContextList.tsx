@@ -141,6 +141,7 @@ export function EventContextList({ rows, profileId, isLoading, error, truncated,
                   aspectRatio={aspectRatio}
                   profileId={profileId}
                   ownerProfileId={profileId}
+                  hoverPreview={settings.hoverPreview.eventContext}
                 />
               </div>
             </div>

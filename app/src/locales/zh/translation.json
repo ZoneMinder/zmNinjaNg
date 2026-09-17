@@ -657,7 +657,8 @@
         "assistant": "助手卡片",
         "playback_speed": "播放速度",
         "playback_speed_desc": "事件悬停预览的播放速度。",
-        "live_activity": "实时活动图块"
+        "live_activity": "实时活动图块",
+        "event_context": "附近事件"
       }
     }
   },

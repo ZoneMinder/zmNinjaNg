@@ -224,6 +224,19 @@ describe('settings migration v0 -> v1', () => {
     expect(hover.eventsList).toBe(false);
   });
 
+  // refs #494: a profile persisted at v10, before the "around this event"
+  // panel had its own hover preview surface, must come back with it enabled
+  // by default rather than reading as off.
+  it('fills the eventContext hover preview surface for a profile persisted at v10', () => {
+    const stored = {
+      profileSettings: { 'profile-e': { hoverPreview: { eventsList: false, notifications: true } } },
+    };
+    const migrated = migrateSettings(stored, 10) as {
+      profileSettings: Record<string, ProfileSettings>;
+    };
+    expect(migrated.profileSettings['profile-e'].hoverPreview.eventContext).toBe(true);
+  });
+
   it('fills defaults when legacy fields are absent', () => {
     const legacy = { profileSettings: { 'profile-b': { theme: 'dark' } } };
     const migrated = migrateSettings(legacy, 0) as {

@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useDateTimeFormat } from '../../hooks/useDateTimeFormat';
 import { EventThumbnail } from './EventThumbnail';
+import { EventThumbnailHoverPreview } from './EventThumbnailHoverPreview';
 import { EventDeleteButton } from './EventDeleteButton';
 import { ReturnFlashArrow } from './ReturnFlashArrow';
 import { parseDetectedObjects } from '../../lib/event/event-detection';
@@ -38,9 +39,12 @@ interface CompactEventRowProps {
    * row for nothing.
    */
   ownerProfileId?: ProfileId;
+  /** Wrap the thumbnail in the hover/long-press preview (refs #494). Off by
+   *  default so the existing MonitorRecentEvents caller is unchanged. */
+  hoverPreview?: boolean;
 }
 
-export function CompactEventRow({ event, thumbnailUrls, aspectRatio, objectFit = 'cover', profileId, ownerProfileId }: CompactEventRowProps) {
+export function CompactEventRow({ event, thumbnailUrls, aspectRatio, objectFit = 'cover', profileId, ownerProfileId, hoverPreview = false }: CompactEventRowProps) {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const { fmtTime } = useDateTimeFormat();
@@ -91,15 +95,29 @@ export function CompactEventRow({ event, thumbnailUrls, aspectRatio, objectFit =
           className="w-full rounded overflow-hidden bg-card border border-border/40"
           style={{ aspectRatio: aspectRatio.toString() }}
         >
-          <EventThumbnail
-            urls={thumbnailUrls}
-            cacheKey={event.Id}
-            alt={event.Name}
-            className="w-full h-full"
-            objectFit={objectFit}
-            loading="lazy"
-            data-testid="compact-event-thumbnail"
-          />
+          {hoverPreview ? (
+            <EventThumbnailHoverPreview event={event} aspectRatio={aspectRatio} profileId={ownerProfileId}>
+              <EventThumbnail
+                urls={thumbnailUrls}
+                cacheKey={event.Id}
+                alt={event.Name}
+                className="w-full h-full"
+                objectFit={objectFit}
+                loading="lazy"
+                data-testid="compact-event-thumbnail"
+              />
+            </EventThumbnailHoverPreview>
+          ) : (
+            <EventThumbnail
+              urls={thumbnailUrls}
+              cacheKey={event.Id}
+              alt={event.Name}
+              className="w-full h-full"
+              objectFit={objectFit}
+              loading="lazy"
+              data-testid="compact-event-thumbnail"
+            />
+          )}
         </div>
       </div>
       <div className="flex-1 min-w-0">

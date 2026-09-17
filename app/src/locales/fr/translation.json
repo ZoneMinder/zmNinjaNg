@@ -657,7 +657,8 @@
         "assistant": "Cartes de l'assistant",
         "playback_speed": "Vitesse",
         "playback_speed_desc": "Vitesse des aperçus d'événement.",
-        "live_activity": "Tuiles d'activité en direct"
+        "live_activity": "Tuiles d'activité en direct",
+        "event_context": "Événements à proximité"
       }
     }
   },

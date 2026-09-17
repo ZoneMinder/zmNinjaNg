@@ -657,7 +657,8 @@
         "assistant": "Tarjetas del asistente",
         "playback_speed": "Velocidad",
         "playback_speed_desc": "Velocidad de previsualización de eventos.",
-        "live_activity": "Mosaicos de Actividad en vivo"
+        "live_activity": "Mosaicos de Actividad en vivo",
+        "event_context": "Eventos cercanos a este"
       }
     }
   },

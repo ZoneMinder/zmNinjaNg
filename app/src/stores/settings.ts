@@ -65,6 +65,8 @@ export interface HoverPreviewSettings {
   assistant: boolean;
   /** Alarm tiles on Live Activity. */
   liveActivity: boolean;
+  /** Rows in the "around this event" panel (refs #494). */
+  eventContext: boolean;
 }
 
 export const DEFAULT_HOVER_PREVIEW: HoverPreviewSettings = {
@@ -80,6 +82,7 @@ export const DEFAULT_HOVER_PREVIEW: HoverPreviewSettings = {
   // size, so a hover preview opens a second connection for a bigger copy of
   // what is on screen. Worth having on a wall of small tiles, not by default.
   liveActivity: false,
+  eventContext: true,
 };
 
 /** ZMS rate parameter (percentage). 100 = 1x real time. */
@@ -609,11 +612,11 @@ export function mergeProfileSettings(raw: Partial<ProfileSettings> | undefined):
 
 /**
  * Persisted shape version. BUMP THIS whenever `ASSISTANT.retiredModelIds`
- * gains an entry: zustand only calls `migrate` when the stored version is below
- * this number, so a retirement added without a bump never reaches anyone who
- * already ran the app.
+ * gains an entry, or `HoverPreviewSettings` gains a surface: zustand only
+ * calls `migrate` when the stored version is below this number, so a change
+ * added without a bump never reaches anyone who already ran the app.
  */
-export const SETTINGS_VERSION = 10;
+export const SETTINGS_VERSION = 11;
 
 /**
  * Migrate persisted settings:

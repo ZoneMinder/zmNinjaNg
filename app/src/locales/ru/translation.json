@@ -669,7 +669,8 @@
         "assistant": "Карточки ассистента",
         "playback_speed": "Скорость воспроизведения",
         "playback_speed_desc": "Скорость предпросмотра событий при наведении/долгом нажатии.",
-        "live_activity": "Плитки Live Activity"
+        "live_activity": "Плитки Live Activity",
+        "event_context": "События рядом с этим"
       }
     }
   },

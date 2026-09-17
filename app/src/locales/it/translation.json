@@ -657,7 +657,8 @@
         "assistant": "Schede assistente",
         "playback_speed": "Velocità di riproduzione",
         "playback_speed_desc": "Velocità delle anteprime evento al passaggio o con pressione prolungata.",
-        "live_activity": "Riquadri attività live"
+        "live_activity": "Riquadri attività live",
+        "event_context": "Eventi nelle vicinanze"
       }
     }
   },

@@ -333,6 +333,7 @@ function HoverPreviewEditor({ value, onChange, playbackRate, onPlaybackRateChang
     { key: 'notifications', labelKey: 'settings.appearance.hover_preview.notifications' },
     { key: 'assistant', labelKey: 'settings.appearance.hover_preview.assistant' },
     { key: 'liveActivity', labelKey: 'settings.appearance.hover_preview.live_activity' },
+    { key: 'eventContext', labelKey: 'settings.appearance.hover_preview.event_context' },
   ];
 
   return (

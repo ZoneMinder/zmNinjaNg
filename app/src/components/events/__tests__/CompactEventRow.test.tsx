@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -11,6 +11,8 @@ import { useReturnHighlightStore } from '../../../stores/returnHighlight';
 import { useDeleteSelectionStore, eventSelectionKey } from '../../../stores/deleteSelection';
 import { asProfileId } from '../../../api/types';
 import { useProfileStore } from '../../../stores/profile';
+import { seedProfiles, resetProfileFixture } from '../../../tests/profile-fixture';
+import { resetFakeStoreGates } from '../../../tests/fake-store-gates';
 
 const navigate = vi.fn();
 // EventDeleteButton's permission probe (usePermissions) is real here: with no
@@ -162,5 +164,44 @@ describe('CompactEventRow', () => {
 
     expect(screen.getByTestId('compact-event-row').className).toContain('bg-destructive/10');
     useDeleteSelectionStore.getState().clear();
+  });
+
+  // refs #494: the "around this event" panel gets its own hover-preview
+  // opt-out, so CompactEventRow only wraps its thumbnail when the caller
+  // says so.
+  describe('hover preview', () => {
+    afterEach(() => {
+      resetProfileFixture();
+      resetFakeStoreGates();
+    });
+
+    it('does not wrap the thumbnail when hoverPreview is off (default)', () => {
+      render1();
+      fireEvent.mouseEnter(screen.getByTestId('compact-event-thumbnail'));
+      expect(screen.queryByTestId('event-thumbnail-hover-preview')).toBeNull();
+    });
+
+    it('wraps the thumbnail and scopes it to the owning profile when hoverPreview is on', () => {
+      seedProfiles(['current-profile', 'profile-b'], { current: 'current-profile' });
+      vi.useFakeTimers();
+      render(withQuery(
+        <MemoryRouter>
+          <CompactEventRow
+            event={base as never}
+            thumbnailUrls={['http://x/1.jpg']}
+            aspectRatio={1.6}
+            ownerProfileId={asProfileId('profile-b')}
+            hoverPreview
+          />
+        </MemoryRouter>
+      ));
+      const wrapper = screen.getByTestId('compact-event-thumbnail').parentElement as HTMLElement;
+      fireEvent.mouseEnter(wrapper);
+      act(() => { vi.advanceTimersByTime(700); });
+      const img = screen.getByTestId('event-thumbnail-hover-preview').querySelector('img') as HTMLImageElement;
+      expect(img.src).toContain('profile-b.test');
+      expect(img.src).not.toContain('current-profile.test');
+      vi.useRealTimers();
+    });
   });
 });

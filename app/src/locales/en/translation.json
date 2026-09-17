@@ -657,7 +657,8 @@
         "assistant": "Assistant cards",
         "playback_speed": "Playback speed",
         "playback_speed_desc": "Speed for event hover/long-press previews.",
-        "live_activity": "Live Activity tiles"
+        "live_activity": "Live Activity tiles",
+        "event_context": "Around this event"
       }
     }
   },

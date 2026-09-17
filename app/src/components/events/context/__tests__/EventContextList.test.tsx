@@ -1,9 +1,15 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+vi.mock('../../../../api/store-gates', () => import('../../../../tests/fake-store-gates'));
+vi.mock('../../../../lib/security/secureStorage', () => import('../../../../tests/fake-secure-storage'));
+
 import { EventContextList } from '../EventContextList';
 import { offsetLabel } from '../../../../lib/event/event-context-view';
+import { seedProfiles, resetProfileFixture } from '../../../../tests/profile-fixture';
+import { resetFakeStoreGates } from '../../../../tests/fake-store-gates';
 
 // CompactEventRow reads useNavigate (routing) and EventDeleteButton's
 // usePermissions reads useQuery unconditionally, so rows need a real router
@@ -85,5 +91,36 @@ describe('EventContextList', () => {
     renderList(<EventContextList {...props} rows={[]} error={new Error('nope')} />);
     expect(screen.queryByTestId('event-context-empty')).not.toBeInTheDocument();
     expect(screen.getByTestId('event-context-error')).toHaveTextContent('nope');
+  });
+
+  // refs #494: rows get the same hover preview as the event list cards,
+  // gated by the panel's own eventContext setting, scoped to the anchor
+  // profile (not whatever profile happens to be globally current).
+  describe('hover preview', () => {
+    afterEach(() => {
+      resetProfileFixture();
+      resetFakeStoreGates();
+    });
+
+    it('wraps a row thumbnail, scoped to the anchor profile, when eventContext hover preview is on', () => {
+      const [profile] = seedProfiles(['anchor-profile']);
+      vi.useFakeTimers();
+      renderList(<EventContextList {...props} profileId={profile.id} rows={[row('406', 0, true)]} />);
+      const wrapper = screen.getByTestId('compact-event-thumbnail').parentElement as HTMLElement;
+      fireEvent.mouseEnter(wrapper);
+      act(() => { vi.advanceTimersByTime(700); });
+      const img = screen.getByTestId('event-thumbnail-hover-preview').querySelector('img') as HTMLImageElement;
+      expect(img.src).toContain('anchor-profile.test');
+      vi.useRealTimers();
+    });
+
+    it('does not wrap the thumbnail when eventContext hover preview is off', () => {
+      const [profile] = seedProfiles(['anchor-profile'], {
+        settings: { 'anchor-profile': { hoverPreview: { eventContext: false } as never } },
+      });
+      renderList(<EventContextList {...props} profileId={profile.id} rows={[row('406', 0, true)]} />);
+      fireEvent.mouseEnter(screen.getByTestId('compact-event-thumbnail'));
+      expect(screen.queryByTestId('event-thumbnail-hover-preview')).toBeNull();
+    });
   });
 });
