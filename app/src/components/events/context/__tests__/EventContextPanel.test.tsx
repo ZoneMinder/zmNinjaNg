@@ -85,7 +85,7 @@ describe('EventContextPanel', () => {
     expect(useEventContextStore.getState().anchor).toBeNull();
   });
 
-  it('opens on the anchor profile\'s own saved window and scope', () => {
+  it('opens on the anchor profile\'s own saved window and scope', async () => {
     seedProfiles([makeProfile('p1')], { settings: { p1: { eventContext: { windowMinutes: 30, scope: 'linked' } } } });
     installApiClient(P1, emptyServer());
     renderWithClient(
@@ -95,10 +95,14 @@ describe('EventContextPanel', () => {
       </>
     );
     fireEvent.click(screen.getByTestId('event-context-open'));
+    // useEventsAround's monitors/groups/events queries resolve through the
+    // real fakeApiClient; wait for them to settle (the empty-scope list) so
+    // no state update from the resolved queries escapes act().
+    await screen.findByTestId('event-context-empty');
     expect(screen.getByTestId('event-context-window-30')).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('re-seeds from the newly opened profile, not whatever the panel showed before', () => {
+  it('re-seeds from the newly opened profile, not whatever the panel showed before', async () => {
     seedProfiles([makeProfile('p1'), makeProfile('p2')], {
       settings: {
         p1: { eventContext: { windowMinutes: 10, scope: 'all' } },
@@ -117,10 +121,12 @@ describe('EventContextPanel', () => {
     const [openP1, openP2] = screen.getAllByTestId('event-context-open');
 
     fireEvent.click(openP1);
+    await screen.findByTestId('event-context-empty');
     expect(screen.getByTestId('event-context-window-10')).toHaveAttribute('aria-pressed', 'true');
     fireEvent.click(screen.getByTestId('event-context-close'));
 
     fireEvent.click(openP2);
+    await screen.findByTestId('event-context-empty');
     expect(screen.getByTestId('event-context-window-60')).toHaveAttribute('aria-pressed', 'true');
   });
 });

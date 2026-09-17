@@ -19,7 +19,38 @@ import { useFreshAccessToken } from '../../../hooks/useFreshAccessToken';
 import { resolveMinStreamingPort } from '../../../lib/monitor/multiport';
 import { cn } from '../../../lib/utils';
 import type { EventAroundRow } from '../../../hooks/useEventsAround';
-import type { ProfileId } from '../../../api/types';
+import type { Event, ProfileId } from '../../../api/types';
+import type { ThumbnailFallbackEntry } from '../../../lib/event/thumbnail-chain';
+
+interface RowThumbnailOptions {
+  portalUrl: string;
+  thumbnailChain: ThumbnailFallbackEntry[];
+  token: string | undefined;
+  minStreamingPort: number | undefined;
+  profileId: ProfileId | undefined;
+}
+
+/** Thumbnail chain and aspect ratio for one row, mirroring
+ *  MonitorRecentEvents.tsx's buildRow. */
+function buildRowThumbnail(event: Event, opts: RowThumbnailOptions) {
+  const { width, height } = getMonitorDimensions(undefined, event.Width, event.Height);
+  const { width: tw, height: th } = calculateThumbnailDimensions(
+    width,
+    height,
+    event.Orientation,
+    EVENT_GRID_CONSTANTS.LIST_VIEW_TARGET_SIZE
+  );
+  const urls = buildThumbnailChainForEvent(event.MonitorId, [], opts.portalUrl, event.Id, opts.thumbnailChain, {
+    token: opts.token,
+    width: tw,
+    height: th,
+    minStreamingPort: opts.minStreamingPort,
+    monitorId: event.MonitorId,
+    hasAlarmFrame: eventHasAlarmFrame(event),
+    profileId: opts.profileId,
+  });
+  return { urls, aspectRatio: tw / th };
+}
 
 export interface EventContextListProps {
   rows: EventAroundRow[];
@@ -87,29 +118,13 @@ export function EventContextList({ rows, profileId, isLoading, error, truncated,
       )}
       <div className="space-y-1.5 p-2">
         {rows.map(({ event, offsetMs, isAnchor }) => {
-          const { width, height } = getMonitorDimensions(undefined, event.Width, event.Height);
-          const { width: tw, height: th } = calculateThumbnailDimensions(
-            width,
-            height,
-            event.Orientation,
-            EVENT_GRID_CONSTANTS.LIST_VIEW_TARGET_SIZE
-          );
-          const urls = buildThumbnailChainForEvent(
-            event.MonitorId,
-            [],
+          const { urls, aspectRatio } = buildRowThumbnail(event, {
             portalUrl,
-            event.Id,
-            settings.thumbnailFallbackChain,
-            {
-              token: isFresh ? accessToken ?? undefined : undefined,
-              width: tw,
-              height: th,
-              minStreamingPort,
-              monitorId: event.MonitorId,
-              hasAlarmFrame: eventHasAlarmFrame(event),
-              profileId,
-            }
-          );
+            thumbnailChain: settings.thumbnailFallbackChain,
+            token: isFresh ? accessToken ?? undefined : undefined,
+            minStreamingPort,
+            profileId,
+          });
           return (
             <div
               key={event.Id}
@@ -123,7 +138,7 @@ export function EventContextList({ rows, profileId, isLoading, error, truncated,
               <CompactEventRow
                 event={event}
                 thumbnailUrls={urls}
-                aspectRatio={tw / th}
+                aspectRatio={aspectRatio}
                 profileId={profileId}
                 ownerProfileId={profileId}
               />
