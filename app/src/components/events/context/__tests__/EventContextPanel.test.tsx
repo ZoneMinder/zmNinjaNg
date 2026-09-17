@@ -11,6 +11,8 @@ import { EventContextPanel } from '../EventContextPanel';
 import { EventContextButton } from '../EventContextButton';
 import { seedProfiles, resetProfileFixture, makeProfile, asProfileId, fakeApiClient } from '../../../../tests/profile-fixture';
 import { installApiClient, resetFakeStoreGates } from '../../../../tests/fake-store-gates';
+import { useSettingsStore } from '../../../../stores/settings';
+import { ALL_PROFILES_ID } from '../../../../api/types';
 
 // EventContextButton reads usePermissions (useQuery) unconditionally, same as
 // the sibling event-action buttons (EventDeleteButton, EventCard tests).
@@ -134,5 +136,28 @@ describe('EventContextPanel', () => {
     await screen.findByTestId('event-context-empty');
     expect(screen.getByTestId('event-context-window-60')).toHaveAttribute('aria-pressed', 'true');
     fireEvent.click(screen.getByTestId('event-context-close'));
+  });
+
+  it('sends the Timeline window to the current profile\'s bucket, not the anchor\'s, in All mode', async () => {
+    // The anchor is owned by p1, but the app's current profile is the All-mode
+    // aggregate - the case this button is for. useTimelineFilters restores
+    // timelinePageFilters from currentProfileId's bucket, so that's where the
+    // window has to land or the Timeline page never sees it (refs #494).
+    seedProfiles([makeProfile('p1')], { current: ALL_PROFILES_ID });
+    installApiClient(P1, emptyServer());
+    renderWithClient(
+      <>
+        <EventContextButton event={event} profileId={P1} />
+        <EventContextPanel />
+      </>
+    );
+    fireEvent.click(screen.getByTestId('event-context-open'));
+    await screen.findByTestId('event-context-empty');
+    fireEvent.click(screen.getByTestId('event-context-open-timeline'));
+
+    const aggregateFilters = useSettingsStore.getState().getProfileSettings(ALL_PROFILES_ID).timelinePageFilters;
+    const anchorFilters = useSettingsStore.getState().getProfileSettings(P1).timelinePageFilters;
+    expect(aggregateFilters.startDateTime).toBe('2026-09-17 21:04:03');
+    expect(anchorFilters.startDateTime).toBe('');
   });
 });

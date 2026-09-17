@@ -20,6 +20,7 @@ import { useNavigate } from 'react-router-dom';
 import { useShallow } from 'zustand/react/shallow';
 import { cn } from '../../../lib/utils';
 import { useEventContextStore } from '../../../stores/eventContext';
+import { useProfileStore } from '../../../stores/profile';
 import { useReturnHighlightStore } from '../../../stores/returnHighlight';
 import { useIsMobile } from '../../../hooks/useIsMobile';
 import { useEventsAround } from '../../../hooks/useEventsAround';
@@ -81,16 +82,22 @@ function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId:
   const monitorIds = useMemo(() => [...new Set(rows.map((r) => r.event.MonitorId))], [rows]);
 
   const openInTimeline = useCallback(() => {
-    if (profileId) {
+    // useTimelineFilters restores timelinePageFilters from the settings
+    // bucket keyed by currentProfileId - the aggregate id in All mode, a real
+    // profile id in single mode - not from the anchor's own profile. Writing
+    // to the anchor's bucket in All mode would land the window somewhere the
+    // Timeline page never reads it (refs #494).
+    const targetProfileId = useProfileStore.getState().currentProfileId;
+    if (targetProfileId) {
       const store = useSettingsStore.getState();
-      const current = store.getProfileSettings(profileId).timelinePageFilters;
-      store.updateProfileSettings(profileId, {
+      const current = store.getProfileSettings(targetProfileId).timelinePageFilters;
+      store.updateProfileSettings(targetProfileId, {
         timelinePageFilters: { ...current, startDateTime: window.startDateTime, endDateTime: window.endDateTime },
       });
     }
     closePanel();
     navigate('/timeline');
-  }, [profileId, window, closePanel, navigate]);
+  }, [window, closePanel, navigate]);
 
   const openInEvents = useCallback(() => {
     closePanel();
