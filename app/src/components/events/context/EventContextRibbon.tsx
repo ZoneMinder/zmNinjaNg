@@ -19,8 +19,12 @@ export interface EventContextRibbonProps {
 
 export function EventContextRibbon({ lanes, onSelect }: EventContextRibbonProps) {
   const { t } = useTranslation();
-  // A single lane says nothing the list below it does not.
-  if (lanes.length < 2) return null;
+  // Hidden only when there is nothing to compare: a single event is its own
+  // answer. One camera with several events still earns the strip, because
+  // where they sit in the window is what the list's offsets say least
+  // directly.
+  const dotCount = lanes.reduce((total, lane) => total + lane.dots.length, 0);
+  if (dotCount < 2) return null;
 
   return (
     <div

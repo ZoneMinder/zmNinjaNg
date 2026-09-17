@@ -128,9 +128,10 @@ per event placed by its offset from the anchor, and a vertical line at the
 anchor's own time. Lane height 14px, capped around 120px, scrolling with the
 panel body.
 
-Below two lanes the ribbon renders nothing. One lane is the anchor's own camera
-repeating what the list already says, and the whole point of the strip is
-comparing cameras against each other.
+With fewer than two events the ribbon renders nothing: a single event is its
+own answer. One camera with several events still earns the strip, because
+where those events sit inside the window is what the list's offsets say least
+directly.
 
 It reuses the timeline layout maths, not `TimelineCanvas`: pan and zoom are the
 wrong affordance in a fixed window, and the canvas carries filters and live mode

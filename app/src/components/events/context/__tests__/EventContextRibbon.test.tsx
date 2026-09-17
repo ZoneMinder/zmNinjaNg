@@ -41,10 +41,19 @@ describe('buildRibbonLanes', () => {
 });
 
 describe('EventContextRibbon', () => {
-  it('renders nothing when one camera has everything', () => {
+  it('renders nothing when the window holds a single event', () => {
     const lanes = buildRibbonLanes([rows[1]], names, 600_000);
     const { container } = render(<EventContextRibbon lanes={lanes} onSelect={vi.fn()} />);
     expect(container).toBeEmptyDOMElement();
+  });
+
+  it('still plots one camera that has several events', () => {
+    const sameCamera = [rows[0], rows[2]];
+    const lanes = buildRibbonLanes(sameCamera, names, 600_000);
+    expect(lanes).toHaveLength(1);
+    render(<EventContextRibbon lanes={lanes} onSelect={vi.fn()} />);
+    expect(screen.getByTestId('event-context-dot-405')).toHaveAccessibleName(/Drive/);
+    expect(screen.getByTestId('event-context-dot-407')).toHaveAccessibleName(/Drive/);
   });
 
   it('reports the event behind a dot the user pressed', () => {
