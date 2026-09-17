@@ -8,7 +8,8 @@ vi.mock('../../../../lib/security/secureStorage', () => import('../../../../test
 import { useEventContextStore } from '../../../../stores/eventContext';
 import { EventContextPanel } from '../EventContextPanel';
 import { EventContextButton } from '../EventContextButton';
-import { seedProfiles, resetProfileFixture, makeProfile, asProfileId } from '../../../../tests/profile-fixture';
+import { seedProfiles, resetProfileFixture, makeProfile, asProfileId, fakeApiClient } from '../../../../tests/profile-fixture';
+import { installApiClient, resetFakeStoreGates } from '../../../../tests/fake-store-gates';
 
 // EventContextButton reads usePermissions (useQuery) unconditionally, same as
 // the sibling event-action buttons (EventDeleteButton, EventCard tests).
@@ -17,19 +18,15 @@ function renderWithClient(ui: React.ReactElement) {
   return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
 }
 
-// Stub the data hook: this task tests the shell, Task 5 tests the rows.
-vi.mock('../../../../hooks/useEventsAround', () => ({
-  useEventsAround: () => ({
-    rows: [],
-    monitorNames: new Map(),
-    anchorMs: 0,
-    isLoading: false,
-    error: null,
-    truncated: false,
-    available: { linked: false, group: false },
-    window: { startDateTime: '', endDateTime: '', anchorMs: 0 },
-  }),
-}));
+/** Empty monitors/groups/events: enough for useEventsAround to settle without
+ *  a scope becoming available, which isn't what these tests are checking. */
+function emptyServer() {
+  return fakeApiClient({
+    '/monitors.json': { monitors: [] },
+    '/groups.json': { groups: [] },
+    '/events/index': { events: [], pagination: { count: 0 } },
+  });
+}
 
 const event = {
   Id: '406',
@@ -55,6 +52,7 @@ const P2 = asProfileId('p2');
 afterEach(() => {
   useEventContextStore.getState().closePanel();
   resetProfileFixture();
+  resetFakeStoreGates();
 });
 
 describe('EventContextPanel', () => {
@@ -71,7 +69,6 @@ describe('EventContextPanel', () => {
       </>
     );
     fireEvent.click(screen.getByTestId('event-context-open'));
-    expect(screen.getByTestId('event-context-panel')).toBeInTheDocument();
     expect(screen.getByTestId('event-context-anchor')).toHaveTextContent('Front Door');
   });
 
@@ -90,6 +87,7 @@ describe('EventContextPanel', () => {
 
   it('opens on the anchor profile\'s own saved window and scope', () => {
     seedProfiles([makeProfile('p1')], { settings: { p1: { eventContext: { windowMinutes: 30, scope: 'linked' } } } });
+    installApiClient(P1, emptyServer());
     renderWithClient(
       <>
         <EventContextButton event={event} profileId={P1} />
@@ -107,6 +105,8 @@ describe('EventContextPanel', () => {
         p2: { eventContext: { windowMinutes: 60, scope: 'group' } },
       },
     });
+    installApiClient(P1, emptyServer());
+    installApiClient(P2, emptyServer());
     renderWithClient(
       <>
         <EventContextButton event={event} profileId={P1} />

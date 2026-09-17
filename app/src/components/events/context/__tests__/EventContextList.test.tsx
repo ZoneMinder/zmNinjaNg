@@ -1,16 +1,27 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { EventContextList, offsetLabel } from '../EventContextList';
 
 // CompactEventRow reads useNavigate (routing) and EventDeleteButton's
-// usePermissions reads useQuery (a QueryClientProvider) unconditionally, same
-// plumbing every other CompactEventRow host test provides.
-vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn() }));
+// usePermissions reads useQuery unconditionally, so rows need a real router
+// and a real QueryClient to mount - no app code is mocked for either. `t` is
+// stubbed to the key (plus any count) so the assertions below check real
+// rendered content instead of just an element's presence.
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, opts?: { count?: number }) => `${key}${opts?.count !== undefined ? `:${opts.count}` : ''}`,
+  }),
+}));
 
 function renderList(ui: React.ReactElement) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>{ui}</MemoryRouter>
+    </QueryClientProvider>
+  );
 }
 
 const row = (id: string, offsetMs: number, isAnchor = false) => ({
@@ -59,19 +70,19 @@ describe('EventContextList', () => {
   it('offers a wider window when nothing else is in this one', () => {
     const onWiden = vi.fn();
     renderList(<EventContextList {...props} rows={[]} onWiden={onWiden} />);
-    expect(screen.getByTestId('event-context-empty')).toBeInTheDocument();
+    expect(screen.getByTestId('event-context-empty')).toHaveTextContent('events.around.empty');
     screen.getByTestId('event-context-widen').click();
     expect(onWiden).toHaveBeenCalled();
   });
 
   it('says so when the server had more than one window can show', () => {
     renderList(<EventContextList {...props} rows={[row('406', 0, true)]} truncated />);
-    expect(screen.getByTestId('event-context-truncated')).toBeInTheDocument();
+    expect(screen.getByTestId('event-context-truncated')).toHaveTextContent('events.around.truncated:1');
   });
 
   it('shows the error banner instead of an empty list when the query failed', () => {
     renderList(<EventContextList {...props} rows={[]} error={new Error('nope')} />);
     expect(screen.queryByTestId('event-context-empty')).not.toBeInTheDocument();
-    expect(screen.getByTestId('event-context-error')).toBeInTheDocument();
+    expect(screen.getByTestId('event-context-error')).toHaveTextContent('nope');
   });
 });
