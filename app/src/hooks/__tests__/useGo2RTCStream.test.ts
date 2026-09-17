@@ -209,7 +209,7 @@ describe('useGo2RTCStream', () => {
       expect(instance.mode).toBe('webrtc,mse,hls');
       expect(instance.media).toBe('video,audio');
       expect(instance.src).toContain('ws://localhost:1984/ws');
-      expect(instance.src).toContain('src=1_0');
+      expect(instance.src).toMatch(/[?&]src=1(&|$)/);
     });
 
     it('clears the vendored STUN servers from pcConfig by default so no srflx DNS lookup is attempted', async () => {

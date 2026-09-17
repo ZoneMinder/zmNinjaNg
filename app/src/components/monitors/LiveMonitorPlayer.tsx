@@ -302,7 +302,8 @@ export function LiveMonitorPlayer({
   const go2rtcStream = useGo2RTCStream({
     go2rtcUrl: profile?.go2rtcUrl || '',
     monitorId: monitor.Id,
-    channel: monitor.StreamChannel || 0,
+    channel: monitor.StreamChannel,
+    rtspServer: ['1', 'true'].includes(String(monitor.RTSPServer ?? '').toLowerCase()),
     containerRef,
     protocols: rawSettings?.webrtcProtocols,
     expectedHost: portalHost,

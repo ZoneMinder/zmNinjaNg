@@ -377,51 +377,63 @@ describe('Edge Cases', () => {
 });
 
 describe('getGo2RTCWebSocketUrl', () => {
-  it('builds WebSocket URL with monitor ID and channel', () => {
+  it('names the default channel by monitor ID alone', () => {
     const result = getGo2RTCWebSocketUrl('http://zm.example.com:1984', '1', 0);
-    expect(result).toBe('ws://zm.example.com:1984/ws?src=1_0');
+    expect(result).toBe('ws://zm.example.com:1984/ws?src=1');
   });
 
   it('converts https to wss', () => {
     const result = getGo2RTCWebSocketUrl('https://zm.example.com:1984', '2', 0);
-    expect(result).toBe('wss://zm.example.com:1984/ws?src=2_0');
+    expect(result).toBe('wss://zm.example.com:1984/ws?src=2');
   });
 
-  it('builds stream name as {monitorId}_{channel}', () => {
+  it('maps legacy channel 1 to the secondary camera stream', () => {
     const result = getGo2RTCWebSocketUrl('http://zm.example.com:1984', '5', 1);
-    expect(result).toContain('src=5_1');
+    expect(result).toContain('src=5_CameraDirectSecondary');
   });
 
-  it('defaults channel to 0 when not provided', () => {
+  it('uses the monitor ID alone when no channel is given', () => {
     const result = getGo2RTCWebSocketUrl('http://zm.example.com:1984', '3');
-    expect(result).toContain('src=3_0');
+    expect(result).toContain('src=3');
+    expect(result).not.toContain('src=3_');
+  });
+
+  it('maps CameraDirectPrimary to its own stream', () => {
+    const result = getGo2RTCWebSocketUrl('http://zm.example.com:1984', '7', 'CameraDirectPrimary');
+    expect(result).toContain('src=7_CameraDirectPrimary');
+  });
+
+  it('maps Restream to the camera stream when RTSPServer is off, as ZoneMinder does', () => {
+    expect(getGo2RTCWebSocketUrl('http://zm.example.com:1984', '7', 'Restream')).toContain('src=7_CameraDirectPrimary');
+    expect(getGo2RTCWebSocketUrl('http://zm.example.com:1984', '7', 'Restream', { rtspServer: true }))
+      .toContain('src=7_ZoneMinderPrimary');
   });
 
   it('preserves explicit port', () => {
     const result = getGo2RTCWebSocketUrl('http://zm.example.com:8080', '1', 0);
-    expect(result).toBe('ws://zm.example.com:8080/ws?src=1_0');
+    expect(result).toBe('ws://zm.example.com:8080/ws?src=1');
   });
 
   it('includes auth token when provided', () => {
     const result = getGo2RTCWebSocketUrl('http://zm.example.com:1984', '1', 0, {
       token: 'mytoken123',
     });
-    expect(result).toBe('ws://zm.example.com:1984/ws?src=1_0&token=mytoken123');
+    expect(result).toBe('ws://zm.example.com:1984/ws?src=1&token=mytoken123');
   });
 
   it('handles URL with existing path (appends /ws)', () => {
     const result = getGo2RTCWebSocketUrl('http://zm.example.com/go2rtc', '1', 0);
-    expect(result).toBe('ws://zm.example.com/go2rtc/ws?src=1_0');
+    expect(result).toBe('ws://zm.example.com/go2rtc/ws?src=1');
   });
 
   it('handles URL with trailing slash in path', () => {
     const result = getGo2RTCWebSocketUrl('http://zm.example.com:1984/', '2', 0);
-    expect(result).toBe('ws://zm.example.com:1984/ws?src=2_0');
+    expect(result).toBe('ws://zm.example.com:1984/ws?src=2');
   });
 
   it('preserves embedded credentials (ZoneMinder authenticates go2rtc via them)', () => {
     const result = getGo2RTCWebSocketUrl('https://admin:pass@zm.example.com:1985/api', '4', 0);
-    expect(result).toBe('wss://admin:pass@zm.example.com:1985/api/ws?src=4_0');
+    expect(result).toBe('wss://admin:pass@zm.example.com:1985/api/ws?src=4');
     expect(result).toContain('admin');
     expect(result).toContain('pass');
   });
