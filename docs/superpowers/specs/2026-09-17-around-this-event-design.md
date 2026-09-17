@@ -52,18 +52,26 @@ The shell follows the assistant's split: `AssistantDesktopPanel` and
 shape.
 
 - Desktop: `ui/sheet` on the right, 440px, page visible behind it.
-- Mobile: the same sheet with `side="bottom"`, roughly 85vh, drag handle, safe
-  area padding.
-- Dismissal: Esc, backdrop tap, swipe down, and the Android hardware back button
-  via `useAndroidBackButton`. None of these change the route.
+- Mobile: the same sheet with `side="bottom"`, roughly 85vh.
+- Dismissal: Esc, backdrop tap, the close button, and the Android hardware back
+  button, which reaches the sheet through `hasOpenOverlay` matching the open
+  dialog Radix renders. None of these change the route.
+
+The mobile sheet ships with no drag handle and no swipe-to-dismiss, which an
+earlier draft of this section promised. Radix's sheet gives the four dismissal
+routes above for free, and a drag gesture on top of them is a second way to do
+what the backdrop already does. It is a deliberate deviation, not outstanding
+work.
 
 ## Controls
 
 A single control bar under the anchor header, labels one word each so they fit
 320px:
 
-- Window: chips for ±1, 5, 15, 30, 60 minutes, values from
-  `EVENT_CONTEXT.windowChoices` in `lib/zmninja-ng-constants.ts`.
+- Window: chips for ±5, 10, 15, 30, 60 minutes, values from
+  `EVENT_CONTEXT.windowChoices` in `lib/zmninja-ng-constants.ts`. The default
+  window is 10 minutes and a default the user cannot select back is a trap, so
+  10 is a chip; five chips is already as many as fit 320px, so ±1 is not.
 - Scope: segmented `Linked | Group | All`. Linked is disabled with a hint when
   the anchor monitor's `LinkedMonitors` is empty; Group is disabled when the
   anchor monitor belongs to no group. A disabled segment states why on press
@@ -118,6 +126,10 @@ per event placed by its offset from the anchor, and a vertical line at the
 anchor's own time. Lane height 14px, capped around 120px, scrolling with the
 panel body.
 
+Below two lanes the ribbon renders nothing. One lane is the anchor's own camera
+repeating what the list already says, and the whole point of the strip is
+comparing cameras against each other.
+
 It reuses the timeline layout maths, not `TimelineCanvas`: pan and zoom are the
 wrong affordance in a fixed window, and the canvas carries filters and live mode
 this panel has no use for.
@@ -138,14 +150,18 @@ answer.
 Opening a row navigates to that event and closes the panel. The existing return
 highlight then flashes the row the user came back to.
 
-Empty result: `EmptyState` naming the window and scope, with a shortcut to widen
-the window one step.
+Empty result: `EmptyState` with a shortcut to widen the window one step. It does
+not repeat the window and scope in its copy: the control bar sits directly above
+it with both already showing, and a translated sentence naming them in seven
+locales buys nothing the chips do not.
 
 ## Errors
 
-`ErrorBanner` with `resolveQueryError`, as everywhere else. A refusal from the
-server marks the permission denied for that profile in the existing permission
-store, which greys the trigger from then on.
+`ErrorBanner` with `resolveQueryError`, as everywhere else, including for a
+refusal from the server. The panel does not write to the permission store: a
+`PermissionSurface` is documented as one per surface that writes, so recording
+the refusal would mean adding a surface kind, and the trigger is already greyed
+from the profile's own `canViewEvents` verdict before the panel opens.
 
 ## Escape hatches
 
