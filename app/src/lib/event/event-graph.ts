@@ -30,6 +30,9 @@ export interface GraphNode {
 export interface GraphEdge {
   a: string;
   b: string;
+  /** Unsigned ms between the two endpoints' offsetMs: how far apart in time
+   *  the same-camera events are. Fixed at build time, independent of layout. */
+  gapMs: number;
 }
 
 /** Where a node wants to sit: radius grows with |offsetMs| relative to the
@@ -74,7 +77,11 @@ export function buildGraph(
   for (let i = 0; i < nodes.length; i++) {
     for (let j = i + 1; j < nodes.length; j++) {
       if (nodes[i].monitorId === nodes[j].monitorId) {
-        edges.push({ a: nodes[i].eventId, b: nodes[j].eventId });
+        edges.push({
+          a: nodes[i].eventId,
+          b: nodes[j].eventId,
+          gapMs: Math.abs(nodes[i].offsetMs - nodes[j].offsetMs),
+        });
       }
     }
   }

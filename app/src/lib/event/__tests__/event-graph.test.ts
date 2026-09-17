@@ -38,8 +38,14 @@ describe('buildGraph', () => {
   it('draws edges only between same-camera rows', () => {
     const rows = [row('anchor', '1', 0, true), row('a', '2', 3000), row('b', '2', -3000), row('c', '3', 6000)];
     const { edges } = buildGraph(rows, 20000);
-    expect(edges).toContainEqual({ a: 'a', b: 'b' });
+    expect(edges).toContainEqual({ a: 'a', b: 'b', gapMs: 6000 });
     expect(edges.some((e) => e.a === 'c' || e.b === 'c')).toBe(false);
+  });
+
+  it('records the unsigned time gap between an edge\'s two endpoints', () => {
+    const rows = [row('anchor', '1', 0, true), row('a', '2', 3000), row('b', '2', -9000)];
+    const { edges } = buildGraph(rows, 20000);
+    expect(edges).toContainEqual({ a: 'a', b: 'b', gapMs: 12000 });
   });
 });
 

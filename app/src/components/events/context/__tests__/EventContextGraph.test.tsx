@@ -38,10 +38,10 @@ const row = (id: string, offsetMs: number, isAnchor = false, monitorId = '3'): E
 
 const monitorNames = new Map([['3', 'Front Door']]);
 
-function renderGraph(rows: EventAroundRow[], windowMinutes = 10) {
+function renderGraph(rows: EventAroundRow[], windowMinutes = 10, names = monitorNames) {
   return render(
     <MemoryRouter>
-      <EventContextGraph rows={rows} monitorNames={monitorNames} windowMinutes={windowMinutes} profileId={undefined} />
+      <EventContextGraph rows={rows} monitorNames={names} windowMinutes={windowMinutes} profileId={undefined} />
     </MemoryRouter>
   );
 }
@@ -174,5 +174,49 @@ describe('EventContextGraph', () => {
     const a = screen.getByTestId('event-context-node-407');
     expect(a.getAttribute('data-node-x')).not.toBeNull();
     expect(Number.isFinite(Number(a.getAttribute('data-node-x')))).toBe(true);
+  });
+
+  it('captions each node with the monitor name, monitor id, and event id', () => {
+    stubReducedMotion(true);
+    renderGraph([row('406', 0, true), row('407', 38000)]);
+    const caption = screen.getByTestId('event-context-node-caption-407');
+    expect(caption.textContent).toContain('Front Door');
+    expect(caption.textContent).toContain('3');
+    expect(caption.textContent).toContain('407');
+  });
+
+  it('keeps the caption out of the accessible name, so it never disagrees with the aria-label', () => {
+    stubReducedMotion(true);
+    renderGraph([row('406', 0, true), row('407', 38000)]);
+    expect(screen.getByTestId('event-context-node-caption-407').getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('truncates a long monitor name in the caption but keeps the full text in a title', () => {
+    stubReducedMotion(true);
+    const longName = 'A Very Long Monitor Name That Should Not Blow Up The Node';
+    renderGraph([row('406', 0, true), row('407', 38000)], 10, new Map([['3', longName]]));
+    expect(screen.getByTestId('event-context-node-caption-407').getAttribute('title')).toContain(longName);
+  });
+
+  it('labels each edge with the unsigned time gap between its endpoints', () => {
+    stubReducedMotion(true);
+    renderGraph([row('406', 0, true), row('407', 38000)]);
+    const label = screen.getByTestId('event-context-edge-406-407').textContent ?? '';
+    expect(label).toContain('38s');
+    expect(label).not.toContain('+');
+    expect(label).not.toContain('−');
+  });
+
+  it('moves the edge label to the new midpoint when an endpoint is dragged', () => {
+    stubReducedMotion(true);
+    renderGraph([row('406', 0, true), row('407', 38000)]);
+    const edge = screen.getByTestId('event-context-edge-406-407');
+    const before = { x: edge.getAttribute('data-edge-mid-x'), y: edge.getAttribute('data-edge-mid-y') };
+    const node = screen.getByTestId('event-context-node-407');
+    fireEvent.pointerDown(node, { clientX: 0, clientY: 0, pointerId: 1 });
+    fireEvent.pointerMove(node, { clientX: 60, clientY: 16, pointerId: 1 });
+    const after = { x: edge.getAttribute('data-edge-mid-x'), y: edge.getAttribute('data-edge-mid-y') };
+    expect(after).not.toEqual(before);
+    fireEvent.pointerUp(node, { clientX: 60, clientY: 16, pointerId: 1 });
   });
 });

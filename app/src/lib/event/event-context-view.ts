@@ -41,6 +41,13 @@ export function offsetLabel(offsetMs: number): string {
   return value;
 }
 
+/** A graph edge's time gap, unsigned: two arbitrary nodes have no "before" or
+ *  "after" the way an anchor offset does, so this is offsetLabel's own digits
+ *  and units with the sign it would add for a positive value dropped. */
+export function edgeGapLabel(gapMs: number): string {
+  return offsetLabel(gapMs).replace(/^\+/, '');
+}
+
 export interface RowThumbnailOptions {
   portalUrl: string;
   thumbnailChain: ThumbnailFallbackEntry[];

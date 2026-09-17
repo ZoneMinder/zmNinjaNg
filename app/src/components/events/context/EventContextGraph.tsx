@@ -8,6 +8,13 @@
  * camera+offset label the ribbon's dots use. Dragging a node moves it via
  * pointer events (touch-action: none keeps a drag from scrolling the sheet);
  * a tap that did not drag opens the event exactly as a list row does.
+ *
+ * Each node also carries a small caption (camera, monitor id, event id) so
+ * two similar thumbnails can be told apart; it is `aria-hidden`, since the
+ * button's own aria-label already is the accessible name. Each edge is
+ * labelled with the unsigned time gap between its endpoints (event-graph.ts
+ * owns that arithmetic), redrawn from the current node positions every
+ * render so it tracks a drag exactly like the line does.
  */
 import { useCallback, useMemo, useRef, type PointerEvent as ReactPointerEvent } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -18,7 +25,7 @@ import { useMeasuredWidth } from '../../../hooks/useMeasuredWidth';
 import { useGraphSimulation } from '../../../hooks/useGraphSimulation';
 import { prefersReducedMotion } from '../../../lib/view-transition';
 import { selectGraphRows, type GraphNode } from '../../../lib/event/event-graph';
-import { buildRowThumbnail, offsetLabel } from '../../../lib/event/event-context-view';
+import { buildRowThumbnail, edgeGapLabel, offsetLabel } from '../../../lib/event/event-context-view';
 import { EventThumbnail } from '../EventThumbnail';
 import { EVENT_CONTEXT, UI_INTERACTIONS } from '../../../lib/zmninja-ng-constants';
 import { cn } from '../../../lib/utils';
@@ -136,8 +143,28 @@ export function EventContextGraph({ rows, monitorNames, windowMinutes, profileId
           const a = nodesById.get(edge.a);
           const b = nodesById.get(edge.b);
           if (!a || !b) return null;
+          // Gap text sits on its own small plate: an SVG <text> has no
+          // auto-sized background, so the box is estimated from the
+          // character count the same way ZoneOverlay sizes its name plate.
+          const midX = (a.x + b.x) / 2;
+          const midY = (a.y + b.y) / 2;
+          const gapText = edgeGapLabel(edge.gapMs);
+          const fontSize = 9;
+          const plateW = gapText.length * fontSize * 0.62 + 6;
+          const plateH = fontSize + 4;
           return (
-            <line key={`${edge.a}-${edge.b}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y} className="stroke-border" strokeWidth={1} />
+            <g
+              key={`${edge.a}-${edge.b}`}
+              data-testid={`event-context-edge-${edge.a}-${edge.b}`}
+              data-edge-mid-x={Math.round(midX)}
+              data-edge-mid-y={Math.round(midY)}
+            >
+              <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} className="stroke-border" strokeWidth={1} />
+              <rect x={midX - plateW / 2} y={midY - plateH / 2} width={plateW} height={plateH} rx={3} fill="rgba(0, 0, 0, 0.72)" />
+              <text x={midX} y={midY} textAnchor="middle" dominantBaseline="central" fill="white" fontSize={fontSize}>
+                {gapText}
+              </text>
+            </g>
           );
         })}
       </svg>
@@ -146,33 +173,52 @@ export function EventContextGraph({ rows, monitorNames, windowMinutes, profileId
         if (!event) return null;
         const { urls, aspectRatio } = buildRowThumbnail(event, thumbnailOptions);
         const size = EVENT_CONTEXT.graphNodeSize;
+        const monitorName = monitorNames.get(node.monitorId) ?? node.monitorId;
+        const caption = `${monitorName} · ${node.monitorId} · ${node.eventId}`;
         return (
-          <button
+          <div
             key={node.eventId}
-            type="button"
-            data-testid={`event-context-node-${node.eventId}`}
-            data-node-x={Math.round(node.x)}
-            data-node-y={Math.round(node.y)}
-            aria-label={nodeLabel(node)}
-            onClick={() => openEvent(node)}
-            onPointerDown={node.isAnchor ? undefined : (e) => handlePointerDown(e, node)}
-            onPointerMove={node.isAnchor ? undefined : handlePointerMove}
-            onPointerUp={node.isAnchor ? undefined : () => handlePointerUp(node)}
-            className={cn(
-              'absolute left-1/2 top-1/2 touch-none overflow-hidden rounded-full border-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-              node.isAnchor ? 'z-10 border-primary ring-2 ring-primary/40' : 'cursor-grab border-border'
-            )}
-            style={{ width: size, height: size, transform: `translate(${node.x - size / 2}px, ${node.y - size / 2}px)` }}
+            className={cn('absolute left-1/2 top-1/2', node.isAnchor && 'z-10')}
+            style={{ transform: `translate(${node.x - size / 2}px, ${node.y - size / 2}px)`, width: size }}
           >
-            <EventThumbnail
-              urls={urls}
-              cacheKey={node.eventId}
-              alt=""
-              className="h-full w-full"
-              objectFit="cover"
-              style={{ aspectRatio: aspectRatio.toString() }}
-            />
-          </button>
+            <button
+              type="button"
+              data-testid={`event-context-node-${node.eventId}`}
+              data-node-x={Math.round(node.x)}
+              data-node-y={Math.round(node.y)}
+              aria-label={nodeLabel(node)}
+              onClick={() => openEvent(node)}
+              onPointerDown={node.isAnchor ? undefined : (e) => handlePointerDown(e, node)}
+              onPointerMove={node.isAnchor ? undefined : handlePointerMove}
+              onPointerUp={node.isAnchor ? undefined : () => handlePointerUp(node)}
+              className={cn(
+                'touch-none overflow-hidden rounded-full border-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                node.isAnchor ? 'border-primary ring-2 ring-primary/40' : 'cursor-grab border-border'
+              )}
+              style={{ width: size, height: size }}
+            >
+              <EventThumbnail
+                urls={urls}
+                cacheKey={node.eventId}
+                alt=""
+                className="h-full w-full"
+                objectFit="cover"
+                style={{ aspectRatio: aspectRatio.toString() }}
+              />
+            </button>
+            {/* aria-hidden: the button's aria-label is already the full
+                accessible name (camera + offset); this caption adds the ids
+                for sighted disambiguation only, so it must never become a
+                second, disagreeing accessible name or a redundant stop. */}
+            <div
+              aria-hidden="true"
+              title={caption}
+              data-testid={`event-context-node-caption-${node.eventId}`}
+              className="w-full truncate text-center text-[8px] leading-tight text-muted-foreground"
+            >
+              {caption}
+            </div>
+          </div>
         );
       })}
     </div>
