@@ -209,6 +209,28 @@ describe('CompactEventRow', () => {
     expect(badge.className).not.toContain('bg-muted');
   });
 
+  // refs #494: the "around this event" panel mixes rows from different
+  // cameras, so it needs the monitor name as the heading instead of the
+  // cause/detection text, which moves to the detail line instead.
+  it('heads with the monitor name and keeps the event id when monitorName is given', () => {
+    render(
+      withQuery(
+        <MemoryRouter>
+          <CompactEventRow
+            event={base as never}
+            thumbnailUrls={['http://x/1.jpg']}
+            aspectRatio={1.6}
+            monitorName="Front Door"
+          />
+        </MemoryRouter>
+      )
+    );
+    const heading = screen.getByText('Front Door');
+    expect(heading.closest('div')?.textContent).toContain('#233228');
+    expect(heading.closest('div')?.textContent).not.toContain('person');
+    expect(screen.getByText('person')).toBeTruthy();
+  });
+
   // refs #494: the "around this event" panel gets its own hover-preview
   // opt-out, so CompactEventRow only wraps its thumbnail when the caller
   // says so.

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, within, fireEvent, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -69,7 +69,14 @@ describe('offsetLabel', () => {
 });
 
 describe('EventContextList', () => {
-  const props = { profileId: undefined, isLoading: false, error: null, truncated: false, onWiden: undefined };
+  const props = {
+    profileId: undefined,
+    monitorNames: new Map<string, string>(),
+    isLoading: false,
+    error: null,
+    truncated: false,
+    onWiden: undefined,
+  };
 
   it('renders a non-anchor row with its offset', () => {
     renderList(<EventContextList {...props} rows={[row('405', -252_000), row('406', 0, true)]} />);
@@ -124,6 +131,21 @@ describe('EventContextList', () => {
   it('says so when the server had more than one window can show', () => {
     renderList(<EventContextList {...props} rows={[row('406', 0, true)]} truncated />);
     expect(screen.getByTestId('event-context-truncated')).toHaveTextContent('events.around.truncated:1');
+  });
+
+  // refs #494: every row belongs to a different camera in this panel, so the
+  // heading needs to say which one instead of the cause CompactEventRow
+  // defaults to.
+  it('heads a row with its owning monitor name', () => {
+    renderList(
+      <EventContextList {...props} monitorNames={new Map([['3', 'Front Door']])} rows={[row('405', -252_000)]} />
+    );
+    expect(screen.getByTestId('event-context-row-405')).toHaveTextContent('Front Door');
+  });
+
+  it('falls back to the monitor id when its name is not known', () => {
+    renderList(<EventContextList {...props} rows={[row('405', -252_000)]} />);
+    expect(within(screen.getByTestId('event-context-row-405')).getByText('3')).toBeTruthy();
   });
 
   it('shows the error banner instead of an empty list when the query failed', () => {

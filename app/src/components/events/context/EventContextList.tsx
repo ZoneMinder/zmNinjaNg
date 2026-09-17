@@ -22,13 +22,16 @@ import type { ProfileId } from '../../../api/types';
 export interface EventContextListProps {
   rows: EventAroundRow[];
   profileId: ProfileId | undefined;
+  /** Monitor id -> name, so each row (a different camera) heads with its
+   *  own monitor rather than CompactEventRow's default cause (refs #494). */
+  monitorNames: Map<string, string>;
   isLoading: boolean;
   error: unknown;
   truncated: boolean;
   onWiden: (() => void) | undefined;
 }
 
-export function EventContextList({ rows, profileId, isLoading, error, truncated, onWiden }: EventContextListProps) {
+export function EventContextList({ rows, profileId, monitorNames, isLoading, error, truncated, onWiden }: EventContextListProps) {
   const { t } = useTranslation();
   const { profile, settings } = useProfileById(profileId);
   const { token: accessToken, isFresh } = useFreshAccessToken(profileId);
@@ -102,6 +105,7 @@ export function EventContextList({ rows, profileId, isLoading, error, truncated,
                 aspectRatio={aspectRatio}
                 profileId={profileId}
                 ownerProfileId={profileId}
+                monitorName={monitorNames.get(event.MonitorId) ?? event.MonitorId}
                 hoverPreview={settings.hoverPreview.eventContext}
                 badgeLabel={isAnchor ? t('events.around.this_event') : offsetLabel(offsetMs)}
                 badgeTitle={t('events.around.offset_title')}

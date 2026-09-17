@@ -131,6 +131,7 @@ function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId:
         <EventContextList
           rows={rows}
           profileId={profileId}
+          monitorNames={monitorNames}
           isLoading={isLoading}
           error={error}
           truncated={truncated}

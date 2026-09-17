@@ -53,9 +53,14 @@ interface CompactEventRowProps {
    *  "around this event" panel tints the anchor row's badge blue instead
    *  (refs #494). */
   badgeClassName?: string;
+  /** Heading override for a list mixing cameras: the owning monitor's name
+   *  replaces the cause/detection text in the heading, which moves to the
+   *  detail line instead. Absent, the row renders exactly as
+   *  MonitorRecentEvents relies on today (refs #494). */
+  monitorName?: string;
 }
 
-export function CompactEventRow({ event, thumbnailUrls, aspectRatio, objectFit = 'cover', profileId, ownerProfileId, hoverPreview = false, badgeLabel, badgeTitle, badgeClassName }: CompactEventRowProps) {
+export function CompactEventRow({ event, thumbnailUrls, aspectRatio, objectFit = 'cover', profileId, ownerProfileId, hoverPreview = false, badgeLabel, badgeTitle, badgeClassName, monitorName }: CompactEventRowProps) {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const { fmtTime } = useDateTimeFormat();
@@ -66,8 +71,13 @@ export function CompactEventRow({ event, thumbnailUrls, aspectRatio, objectFit =
   const startTime = new Date(event.StartDateTime.replace(' ', 'T'));
   const detected = parseDetectedObjects(event.Notes);
   const DetIcon = detected.length ? getObjectClassIconFromList(detected.join(',')) : null;
+  // Built once so the JSX below places this one element rather than creating
+  // a second <DetIcon/> call site for the monitorName branch (react-hooks
+  // static-components counts each call site, refs #494).
+  const detIcon = DetIcon && <DetIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />;
   const primaryText = detected.length ? detected.join(', ') : event.Cause;
   const showRelative = isWithinDays(startTime, RELATIVE_TIME_LIST_WINDOW_DAYS);
+  const timeText = `${fmtTime(startTime)}${showRelative ? ` · ${formatEventRelative(startTime, i18n.language, t)}` : ''}`;
   const durationSecs = Math.max(0, Math.round(Number(event.Length) || 0));
   const durationLabel =
     durationSecs >= 60
@@ -133,14 +143,19 @@ export function CompactEventRow({ event, thumbnailUrls, aspectRatio, objectFit =
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1 min-w-0">
-          {DetIcon && <DetIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
-          <span className="text-sm truncate" title={primaryText}>{primaryText}</span>
+          {!monitorName && detIcon}
+          <span className="text-sm truncate" title={monitorName ?? primaryText}>{monitorName ?? primaryText}</span>
           <span className="text-[11px] text-muted-foreground shrink-0">· #{event.Id}</span>
         </div>
-        <p className="text-xs text-muted-foreground truncate">
-          {fmtTime(startTime)}
-          {showRelative && ` · ${formatEventRelative(startTime, i18n.language, t)}`}
-        </p>
+        {monitorName ? (
+          <p className="text-xs text-muted-foreground truncate flex items-center gap-1 min-w-0">
+            <span className="shrink-0">{timeText} ·</span>
+            {detIcon}
+            <span className="truncate min-w-0" title={primaryText}>{primaryText}</span>
+          </p>
+        ) : (
+          <p className="text-xs text-muted-foreground truncate">{timeText}</p>
+        )}
       </div>
       <span
         className={cn(
