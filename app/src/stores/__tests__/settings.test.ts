@@ -1,5 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { useSettingsStore, ALL_GROUPS_KEY, migrateSettings, SETTINGS_VERSION } from '../settings';
+import {
+  useSettingsStore,
+  ALL_GROUPS_KEY,
+  migrateSettings,
+  SETTINGS_VERSION,
+  mergeProfileSettings,
+  DEFAULT_SETTINGS,
+} from '../settings';
 import type { ProfileSettings } from '../settings';
 import {
   ALL_MODE_PERFORMANCE,
@@ -567,5 +574,42 @@ describe('startScreen', () => {
   it('coerces a screen the picker does not offer back to last-used', () => {
     expect(settingsFor({ startScreen: '/gone' }).startScreen).toBe('last-used');
     expect(settingsFor({ startScreen: '/settings' }).startScreen).toBe('last-used');
+  });
+});
+
+describe('mergeProfileSettings eventContext', () => {
+  it('defaults to a ten minute window over every camera', () => {
+    expect(mergeProfileSettings(undefined).eventContext).toEqual({
+      windowMinutes: 10,
+      scope: 'all',
+    });
+  });
+
+  it('keeps a window the user chose', () => {
+    const merged = mergeProfileSettings({
+      eventContext: { windowMinutes: 30, scope: 'linked' },
+    } as Partial<typeof DEFAULT_SETTINGS>);
+    expect(merged.eventContext).toEqual({ windowMinutes: 30, scope: 'linked' });
+  });
+
+  it('replaces a window no chip offers with the default', () => {
+    const merged = mergeProfileSettings({
+      eventContext: { windowMinutes: 4000, scope: 'all' },
+    } as Partial<typeof DEFAULT_SETTINGS>);
+    expect(merged.eventContext.windowMinutes).toBe(10);
+  });
+
+  it('replaces a scope the app does not know with the default', () => {
+    const merged = mergeProfileSettings({
+      eventContext: { windowMinutes: 15, scope: 'neighbours' },
+    } as unknown as Partial<typeof DEFAULT_SETTINGS>);
+    expect(merged.eventContext).toEqual({ windowMinutes: 15, scope: 'all' });
+  });
+
+  it('survives a half-written blob', () => {
+    const merged = mergeProfileSettings({
+      eventContext: { scope: 'group' },
+    } as unknown as Partial<typeof DEFAULT_SETTINGS>);
+    expect(merged.eventContext).toEqual({ windowMinutes: 10, scope: 'group' });
   });
 });

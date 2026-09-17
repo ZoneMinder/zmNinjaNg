@@ -21,7 +21,10 @@ import { START_SCREENS, START_SCREEN_LAST_USED } from '../lib/navigation';
 import {
   ALL_MODE_STREAM_TUNING_VALUES,
   coerceAllModePerformance,
+  coerceEventContext,
+  DEFAULT_EVENT_CONTEXT,
   type AllModeStreamTuning,
+  type EventContextSettings,
 } from './settings-coercion';
 
 export type ViewMode = 'snapshot' | 'streaming';
@@ -45,6 +48,8 @@ export const ALL_MODE_NOTIFICATIONS_VALUES: readonly AllModeNotifications[] = ['
 // this store (refs #281). Re-exported for the existing callers.
 export type { AllModeStreamTuning };
 export { ALL_MODE_STREAM_TUNING_VALUES };
+export type { EventContextSettings };
+export { DEFAULT_EVENT_CONTEXT };
 export type { DateFormatPreset, TimeFormatPreset };
 export type { ThumbnailFallbackType, ThumbnailFallbackEntry };
 
@@ -311,6 +316,10 @@ export interface ProfileSettings {
    *  fullscreen" under Settings > Playback, and nowhere else: entering
    *  fullscreen on the player is a session change (refs #462, #463, #476). */
   eventPlaybackFullscreen: boolean;
+  /** "Around this event": the window either side of an anchor, and which
+   *  cameras the window covers. Written by the panel's own controls, so the
+   *  last answer becomes the next default (refs #494). */
+  eventContext: EventContextSettings;
   // Desktop sidebar width in pixels (60–320, persisted across sessions)
   sidebarWidth: number;
   // TV mode: enables D-pad navigation and larger UI
@@ -526,6 +535,7 @@ export const DEFAULT_SETTINGS: ProfileSettings = {
   eventPlaybackRate: DEFAULT_EVENT_PLAYBACK_RATE,
   eventPlaybackMuted: true,
   eventPlaybackFullscreen: false,
+  eventContext: DEFAULT_EVENT_CONTEXT,
   sidebarWidth: 256,
   tvMode: false,
   showProtocolLabel: true,
@@ -593,6 +603,7 @@ export function mergeProfileSettings(raw: Partial<ProfileSettings> | undefined):
     merged.startScreen = START_SCREEN_LAST_USED;
   }
   coerceAllModePerformance(merged, DEFAULT_SETTINGS);
+  coerceEventContext(merged, DEFAULT_SETTINGS);
   return merged;
 }
 

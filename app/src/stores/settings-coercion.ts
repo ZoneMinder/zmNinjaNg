@@ -12,7 +12,8 @@
  * the same trade the date-format and thumbnail-chain types already make.
  */
 
-import { ALL_MODE_PERFORMANCE } from '../lib/zmninja-ng-constants';
+import { ALL_MODE_PERFORMANCE, EVENT_CONTEXT } from '../lib/zmninja-ng-constants';
+import { EVENT_CONTEXT_SCOPES, type EventContextScope } from '../lib/event/event-context';
 
 /** All mode only: how much each aggregated tile's stream is dialed back.
  *  'off' streams exactly as single mode does; 'reduced' trades frame rate and
@@ -95,4 +96,28 @@ export function coerceAllModePerformance(
   if (typeof merged.allModeViewportGating !== 'boolean') {
     merged.allModeViewportGating = defaults.allModeViewportGating;
   }
+}
+
+export interface EventContextSettings {
+  windowMinutes: number;
+  scope: EventContextScope;
+}
+
+export const DEFAULT_EVENT_CONTEXT: EventContextSettings = {
+  windowMinutes: EVENT_CONTEXT.defaultWindowMinutes,
+  scope: 'all',
+};
+
+/** Brings a persisted `eventContext` back inside what the UI can express: an
+ *  offered window and a scope the panel has a segment for. */
+export function coerceEventContext(
+  merged: { eventContext: EventContextSettings },
+  defaults: { eventContext: EventContextSettings }
+): void {
+  const raw = merged.eventContext ?? defaults.eventContext;
+  const windowOffered = (EVENT_CONTEXT.windowChoices as readonly number[]).includes(raw.windowMinutes);
+  merged.eventContext = {
+    windowMinutes: windowOffered ? raw.windowMinutes : defaults.eventContext.windowMinutes,
+    scope: EVENT_CONTEXT_SCOPES.includes(raw.scope) ? raw.scope : defaults.eventContext.scope,
+  };
 }
