@@ -10,6 +10,9 @@ vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, opts?: Record<string, unknown>) =>
       key === 'events.around.dot_label' ? `${opts?.camera}, ${opts?.offset}` : key,
+    // A partial stub of this hook is a trap: a component reading i18n.language
+    // only on some branches crashes the day that branch starts running.
+    i18n: { language: 'en' },
   }),
 }));
 
