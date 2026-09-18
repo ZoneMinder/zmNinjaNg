@@ -11,7 +11,7 @@
 import { memo, useMemo, useSyncExternalStore } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Download, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { getObjectClassIconFromList } from '../../lib/event/object-class-icons';
 import { useDateTimeFormat } from '../../hooks/useDateTimeFormat';
 import { formatEventRelative, isWithinDays } from '../../lib/relative-time';
@@ -24,7 +24,7 @@ import { EventContextButton } from './context/EventContextButton';
 import { EventFavoriteButton } from './EventFavoriteButton';
 import { EventArchiveButton } from './EventArchiveButton';
 import { EventDeleteButton } from './EventDeleteButton';
-import { downloadEventVideo } from '../../services/download';
+import { EventDownloadButton } from './EventDownloadButton';
 import { type EventFilters } from '../../api/events';
 import { getPortalUrlForMonitor, getServerMapVersion, subscribeServerMap } from '../../lib/zm/server-resolver';
 import { buildThumbnailChain, eventHasAlarmFrame } from '../../lib/event/thumbnail-chain';
@@ -36,26 +36,14 @@ import { buildMonitorMap, calculateThumbnailDimensions, getMonitorDimensions } f
 import { ZM_INTEGRATION, RELATIVE_TIME_LIST_WINDOW_DAYS } from '../../lib/zmninja-ng-constants';
 import type { Event, Monitor, ProfileId, Tag } from '../../api/types';
 import type { ThumbnailFallbackEntry } from '../../stores/settings';
-import { Platform } from '../../lib/platform';
 import { TagChipList } from './TagChip';
 import { ReturnFlashArrow } from './ReturnFlashArrow';
 import { useReturnFlash } from '../../hooks/useReturnFlash';
 import { useReturnHighlightStore } from '../../stores/returnHighlight';
+import { useDeleteSelectionStore, eventSelectionKey } from '../../stores/deleteSelection';
 import { cn } from '../../lib/utils';
 import type { ScopedEventItem } from './EventListView';
 import { scopedEventKey } from '../../lib/event/scoped-event-key';
-
-// Haptic feedback helper
-const triggerHaptic = async () => {
-  if (Platform.isNative) {
-    try {
-      const { Haptics, ImpactStyle } = await import('@capacitor/haptics');
-      await Haptics.impact({ style: ImpactStyle.Light });
-    } catch {
-      // Haptics not available, silently ignore
-    }
-  }
-};
 
 interface EventMontageTileProps {
   event: Event;
@@ -127,6 +115,8 @@ const EventMontageTile = memo(function EventMontageTile({
   const monitorData = monitorMap.get(profileId ? `${profileId}:${event.MonitorId}` : event.MonitorId);
   const monitorName = monitorData?.Name || `Camera ${event.MonitorId}`;
   const startTime = new Date(event.StartDateTime.replace(' ', 'T'));
+  const selectedForDelete = useDeleteSelectionStore((s) =>
+    s.selectedKeys.includes(eventSelectionKey(ownerProfileId, event.Id)));
 
   const { width: monitorWidth, height: monitorHeight } = getMonitorDimensions(monitorData, event.Width, event.Height);
 
@@ -147,7 +137,6 @@ const EventMontageTile = memo(function EventMontageTile({
     hasAlarmFrame: eventHasAlarmFrame(event),
   });
 
-  const hasVideo = event.Videoed === '1';
   const isArchived = event.Archived === '1';
   const aspectRatio = thumbnailWidth / thumbnailHeight;
 
@@ -166,10 +155,20 @@ const EventMontageTile = memo(function EventMontageTile({
         data-testid="event-montage-tile"
         data-event-id={event.Id}
         className={cn(
-          'overflow-hidden cursor-pointer hover:ring-2 hover:ring-primary transition-all',
-          flash && 'ring-2 ring-primary/60'
+          'overflow-hidden cursor-pointer hover:ring-2 hover:ring-primary transition-all focus:outline-none focus:ring-2 focus:ring-primary',
+          flash && 'ring-2 ring-primary/60',
+          selectedForDelete && 'bg-destructive/10 opacity-60'
         )}
         onClick={openEvent}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            openEvent();
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        aria-label={`${t('common.view')}: ${event.Name}`}
       >
         <div className="relative bg-card" style={{ aspectRatio: aspectRatio.toString() }}>
           {showHover ? (
@@ -207,7 +206,7 @@ const EventMontageTile = memo(function EventMontageTile({
         <div className="font-medium text-sm truncate" title={event.Name}>
           {event.Name}
         </div>
-        <div className="text-xs text-muted-foreground truncate">{monitorName}</div>
+        <div className="text-xs text-muted-foreground truncate" title={monitorName} data-testid="event-monitor-name">{monitorName}</div>
         {profileChip && (
           <span
             className="inline-block text-[10px] px-1.5 py-0 rounded bg-muted text-muted-foreground truncate max-w-[100px]"
@@ -220,6 +219,18 @@ const EventMontageTile = memo(function EventMontageTile({
         <div className="text-xs text-muted-foreground truncate">
           {fmtDateTimeShort(startTime)}
           <span data-testid="event-montage-duration">{` · ${event.Length}s`}</span>
+        </div>
+        {/* Frames/alarm/score: same figures as EventCard, one compact line
+            instead of the card's wider spread (refs #494). */}
+        <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground">
+          <span data-testid="event-frames">{event.Frames} {t('events.frames')}</span>
+          <span data-testid="event-alarm-frames">{event.AlarmFrames} {t('events.alarm')}</span>
+          <span data-testid="event-score">{t('events.score')}: {event.AvgScore}/{event.MaxScore}</span>
+          {isArchived && (
+            <Badge variant="secondary" className="text-[10px] h-4" data-testid="event-archived-badge">
+              {t('events.archived')}
+            </Badge>
+          )}
         </div>
         {event.Cause && <EventCauseBadge cause={event.Cause} className="text-xs" />}
         {event.Notes && (() => {
@@ -247,24 +258,7 @@ const EventMontageTile = memo(function EventMontageTile({
             together, delete set apart from them (mirrors EventCard). */}
         <div className="flex items-center gap-2 pt-1">
           <EventArchiveButton eventId={event.Id} isArchived={isArchived} profileId={ownerProfileId} />
-          {hasVideo && (
-            <Button
-              variant="secondary"
-              size="icon"
-              className="h-8 w-8"
-              onClick={async (e) => {
-                e.stopPropagation();
-                await triggerHaptic();
-                downloadEventVideo(eventPortalUrl, event.Id, event.Name, effectiveAccessToken, effectiveMinStreamingPort, event.MonitorId);
-                // Background task drawer will show download progress
-              }}
-              title={t('eventMontage.download_video')}
-              aria-label={t('eventMontage.download_video')}
-              data-testid="event-download-button"
-            >
-              <Download className="h-4 w-4" />
-            </Button>
-          )}
+          <EventDownloadButton event={event} profileId={ownerProfileId} monitorServerId={monitorData?.ServerId} />
           <span className="ml-1">
             <EventDeleteButton eventId={event.Id} profileId={ownerProfileId} />
           </span>

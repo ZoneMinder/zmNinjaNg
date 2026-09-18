@@ -139,6 +139,7 @@ const EventItem = memo(function EventItem({
         monitorName={monitorName}
         profileId={profileId}
         profileChip={profileChip}
+        monitorServerId={monitorData?.ServerId}
         thumbnailUrls={thumbnailUrls}
         largeThumbnailUrls={largeThumbnailUrls}
         objectFit={thumbnailFit}

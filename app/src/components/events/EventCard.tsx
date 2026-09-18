@@ -17,6 +17,7 @@ import { EventCauseBadge } from './EventCauseBadge';
 import { EventDeleteButton } from './EventDeleteButton';
 import { EventFavoriteButton } from './EventFavoriteButton';
 import { EventArchiveButton } from './EventArchiveButton';
+import { EventDownloadButton } from './EventDownloadButton';
 import { EventContextButton } from './context/EventContextButton';
 import { Video, Calendar, Clock, Hourglass } from 'lucide-react';
 import { getObjectClassIconFromList } from '../../lib/event/object-class-icons';
@@ -42,7 +43,7 @@ import { useDeleteSelectionStore, eventSelectionKey } from '../../stores/deleteS
  * @param props.monitorName - Name of the monitor that recorded the event
  * @param props.thumbnailUrl - URL for the event thumbnail image
  */
-function EventCardComponent({ event, monitorName, profileId, profileChip, thumbnailUrls, largeThumbnailUrls, objectFit = 'contain', thumbnailWidth, thumbnailHeight, tags, eventFilters }: EventCardProps) {
+function EventCardComponent({ event, monitorName, profileId, profileChip, monitorServerId, thumbnailUrls, largeThumbnailUrls, objectFit = 'contain', thumbnailWidth, thumbnailHeight, tags, eventFilters }: EventCardProps) {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const { fmtDate, fmtTime } = useDateTimeFormat();
@@ -172,6 +173,7 @@ function EventCardComponent({ event, monitorName, profileId, profileChip, thumbn
               </h3>
               <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
                 <EventArchiveButton eventId={event.Id} isArchived={isArchived} profileId={ownerProfileId} />
+                <EventDownloadButton event={event} profileId={ownerProfileId} monitorServerId={monitorServerId} className="h-7 w-7 sm:h-8 sm:w-8" />
                 {/* Destructive action set apart from the rest: at these sizes
                     an 8px gap is the difference between archiving and deleting. */}
                 <span className="ml-1 sm:ml-1.5">
@@ -220,17 +222,17 @@ function EventCardComponent({ event, monitorName, profileId, profileChip, thumbn
           </div>
 
           <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-2 text-[10px] sm:text-xs text-muted-foreground">
-            <span>{event.Frames} {t('events.frames')}</span>
+            <span data-testid="event-frames">{event.Frames} {t('events.frames')}</span>
             <span className="hidden sm:inline">•</span>
-            <span>{event.AlarmFrames} {t('events.alarm')}</span>
+            <span data-testid="event-alarm-frames">{event.AlarmFrames} {t('events.alarm')}</span>
             <span className="hidden sm:inline">•</span>
-            <span className="hidden md:inline">
+            <span className="hidden md:inline" data-testid="event-score">
               {t('events.score')}: {event.AvgScore}/{event.MaxScore}
             </span>
-            {event.Archived === '1' && (
+            {isArchived && (
               <>
                 <span className="hidden sm:inline">•</span>
-                <Badge variant="secondary" className="text-[10px] sm:text-xs h-4 sm:h-5">
+                <Badge variant="secondary" className="text-[10px] sm:text-xs h-4 sm:h-5" data-testid="event-archived-badge">
                   {t('events.archived')}
                 </Badge>
               </>
