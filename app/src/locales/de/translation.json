@@ -270,8 +270,8 @@
     "no_event_permission": "Dieses Konto hat keine Ereignis-Berechtigungen.",
     "event_gone": "Dieses Ereignis existiert auf dem Server nicht mehr",
     "around": {
-      "title": "Umgebung",
-      "open": "Umgebung dieses Ereignisses",
+      "title": "Ereignisse in der Nähe",
+      "open": "In der Nähe",
       "permission_denied": "Dieses Konto kann keine Ereignisse lesen.",
       "empty": "Nichts weiter in diesem Zeitraum",
       "empty_desc": "Keine Ereignisse anderer Kameras in diesem Zeitraum.",
@@ -629,8 +629,8 @@
       "tv_mode": "TV-Modus",
       "tv_mode_desc": "D-Pad-Navigation und Anzeige",
       "event_context": {
-        "title": "Ereigniskontext",
-        "desc": "Standardfenster und Kameras für das Kontextfenster."
+        "title": "Ereignisse in der Nähe",
+        "desc": "Standardfenster und Kameras für Ereignisse in der Nähe."
       },
       "thumbnail_chain": {
         "title": "Vorschaubild-Anzeige",
@@ -659,7 +659,7 @@
         "playback_speed": "Geschwindigkeit",
         "playback_speed_desc": "Tempo der Ereignis-Vorschau bei Hover/Druck.",
         "live_activity": "Live-Aktivität-Kacheln",
-        "event_context": "Umgebung dieses Ereignisses"
+        "event_context": "Ereignisse in der Nähe"
       }
     }
   },

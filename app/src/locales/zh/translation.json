@@ -270,8 +270,8 @@
     "no_event_permission": "此账户没有事件权限。",
     "event_gone": "此事件在服务器上已不存在",
     "around": {
-      "title": "附近",
-      "open": "附近事件",
+      "title": "附近事件",
+      "open": "附近",
       "permission_denied": "此账户无法读取事件。",
       "empty": "此时段内没有其他事件",
       "empty_desc": "此时段内没有其他摄像头的事件。",
@@ -629,8 +629,8 @@
       "tv_mode": "TV模式",
       "tv_mode_desc": "D-pad导航和显示",
       "event_context": {
-        "title": "事件上下文",
-        "desc": "上下文面板的默认时间窗口和摄像头。"
+        "title": "附近事件",
+        "desc": "附近事件的默认时间窗口和摄像头。"
       },
       "thumbnail_chain": {
         "title": "缩略图显示",

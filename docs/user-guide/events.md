@@ -111,9 +111,9 @@ The Continue button (list-video icon, next to All Events) plays events back-to-b
 
 The toggle is remembered per profile: once turned on it stays on for future events. The playback speed you pick is also remembered and reused for each event in a run, on both the MP4 and ZMS players. So is the MP4 player's mute state: unmute once and every event you open afterwards on that profile starts with audio on, until you mute again. Fullscreen is not remembered: entering or leaving it changes only the event you are watching. To have every event open fullscreen, turn on **Open events in fullscreen** under Playback in {doc}`settings`. Turning a phone to landscape also plays the event fullscreen for as long as it stays landscape. Either way the page itself goes fullscreen, MP4 or ZMS: the picture fills the screen with the player controls below it and a translucent close button in the top corner, and pinch to zoom keeps working. The MP4 player's own fullscreen button still uses the device's native fullscreen for the event you are watching.
 
-## Around This Event
+## Nearby
 
-Every event card, montage tile, and the Timing card on the event detail page carry a link icon labeled "Around this event". Tapping it opens a panel - on the right on desktop, from the bottom on mobile - listing every event from other cameras that happened close to the one you tapped, useful for seeing what the rest of your cameras caught at the same moment.
+Every event card, montage tile, and the Timing card on the event detail page carry a link icon labeled "Nearby". Tapping it opens a panel - on the right on desktop, from the bottom on mobile - listing every event from other cameras that happened close to the one you tapped, useful for seeing what the rest of your cameras caught at the same moment.
 
 Two controls at the top of the panel narrow what "close to" means:
 

@@ -270,8 +270,8 @@
     "no_event_permission": "Esta cuenta no tiene permisos de eventos.",
     "event_gone": "Este evento ya no existe en el servidor",
     "around": {
-      "title": "Alrededor",
-      "open": "Eventos cercanos a este",
+      "title": "Eventos cercanos",
+      "open": "Cercanos",
       "permission_denied": "Esta cuenta no puede leer eventos.",
       "empty": "Nada más en este intervalo",
       "empty_desc": "Sin eventos de otras cámaras en este intervalo.",
@@ -629,8 +629,8 @@
       "tv_mode": "Modo TV",
       "tv_mode_desc": "Navegacion D-pad y pantalla",
       "event_context": {
-        "title": "Contexto del evento",
-        "desc": "Ventana y cámaras predeterminadas para el panel de contexto."
+        "title": "Eventos cercanos",
+        "desc": "Ventana y cámaras predeterminadas para eventos cercanos."
       },
       "thumbnail_chain": {
         "title": "Miniaturas",
@@ -659,7 +659,7 @@
         "playback_speed": "Velocidad",
         "playback_speed_desc": "Velocidad de previsualización de eventos.",
         "live_activity": "Mosaicos de Actividad en vivo",
-        "event_context": "Eventos cercanos a este"
+        "event_context": "Eventos cercanos"
       }
     }
   },

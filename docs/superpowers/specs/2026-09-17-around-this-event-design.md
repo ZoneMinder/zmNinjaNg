@@ -1,4 +1,4 @@
-# Around this event
+# Nearby
 
 A button on an event that answers "what did my other cameras see at that
 moment". It opens a panel over the current view showing every event within a

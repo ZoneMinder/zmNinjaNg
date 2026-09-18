@@ -270,8 +270,8 @@
     "no_event_permission": "This account has no event permissions.",
     "event_gone": "This event no longer exists on the server",
     "around": {
-      "title": "Around this",
-      "open": "Around this event",
+      "title": "Nearby events",
+      "open": "Nearby",
       "permission_denied": "This account cannot read events.",
       "empty": "Nothing else in this window",
       "empty_desc": "No events from other cameras in this window.",
@@ -629,8 +629,8 @@
       "tv_mode": "TV mode",
       "tv_mode_desc": "D-pad navigation and larger UI",
       "event_context": {
-        "title": "Event context",
-        "desc": "Default window and cameras for the context panel."
+        "title": "Nearby events",
+        "desc": "Default window and cameras for nearby events."
       },
       "thumbnail_chain": {
         "title": "Thumbnail display",
@@ -659,7 +659,7 @@
         "playback_speed": "Playback speed",
         "playback_speed_desc": "Speed for event hover/long-press previews.",
         "live_activity": "Live Activity tiles",
-        "event_context": "Around this event"
+        "event_context": "Nearby events"
       }
     }
   },

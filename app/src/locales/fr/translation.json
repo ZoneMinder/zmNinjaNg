@@ -270,8 +270,8 @@
     "no_event_permission": "Ce compte n'a aucune permission sur les événements.",
     "event_gone": "Cet évènement n'existe plus sur le serveur",
     "around": {
-      "title": "Aux alentours",
-      "open": "Événements à proximité",
+      "title": "Événements à proximité",
+      "open": "À proximité",
       "permission_denied": "Ce compte ne peut pas lire les événements.",
       "empty": "Rien d'autre dans cette période",
       "empty_desc": "Aucun événement d'autres caméras dans cette période.",
@@ -629,8 +629,8 @@
       "tv_mode": "Mode TV",
       "tv_mode_desc": "Navigation D-pad et affichage",
       "event_context": {
-        "title": "Contexte de l'événement",
-        "desc": "Fenêtre et caméras par défaut pour le panneau de contexte."
+        "title": "Événements à proximité",
+        "desc": "Fenêtre et caméras par défaut pour les événements à proximité."
       },
       "thumbnail_chain": {
         "title": "Miniatures",

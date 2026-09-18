@@ -77,7 +77,7 @@ If you already know the symptom, jump straight to its flow:
     toasts stop, or an event lands under the wrong server.
 24. Opening a monitor's settings on a restricted account: the settings gear
     shows for an account that cannot use it, or hides for one that can.
-25. Around this event: the panel shows the wrong monitors, or widening the
+25. Nearby: the panel shows the wrong monitors, or widening the
     window fetches nothing new.
 
 Flow 1: Cold start to an authenticated session
@@ -3247,8 +3247,8 @@ that hides a surface on ``unknown``. Flow 6 covers the token lifecycle this
 flow steps around; Flow 17 is the PTZ path, and ``PTZControls``
 hides its pad when the account's ``Control`` permission is denied.
 
-Flow 25: Around this event
---------------------------
+Flow 25: Nearby
+---------------
 
 Every event card, montage tile, and the Timing card on the event detail page
 carry a link-icon button asking one question: what did the other monitors
@@ -3268,7 +3268,7 @@ queries, and two of them exist only to work out what the third should ask for.
        participant Hook as useEventsAround
        participant ZM as ZoneMinder
 
-       User->>Button: taps "Around this event" on a card, tile, or Timing card
+       User->>Button: taps "Nearby" on a card, tile, or Timing card
        Button->>Store: openPanel(anchor, profileId)
        Store-->>Panel: open=true, anchor, profileId
        Panel->>Body: mount, key=profileId:anchor.Event.Id
