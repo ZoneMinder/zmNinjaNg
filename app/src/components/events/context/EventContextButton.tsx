@@ -53,8 +53,8 @@ export function EventContextButton({ event, profileId, className, labelled }: Ev
 
   return (
     <HintButton {...props} aria-label={t('events.around.open')} data-testid="event-context-open">
-      <Link2 className="h-4 w-4 sm:h-5 sm:w-5 stroke-muted-foreground hover:stroke-primary" />
-      {labelled && <span>{t('events.around.open')}</span>}
+      <Link2 className="h-4 w-4 sm:h-5 sm:w-5 shrink-0 stroke-muted-foreground hover:stroke-primary" />
+      {labelled && <span className="min-w-0 truncate">{t('events.around.open')}</span>}
     </HintButton>
   );
 }

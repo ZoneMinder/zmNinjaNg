@@ -237,6 +237,7 @@ function EventCardComponent({ event, monitorName, profileId, profileChip, thumbn
             </div>
           )}
           </div>
+          <EventContextButton event={event} profileId={ownerProfileId} className="mt-1.5" labelled />
         </div>
 
         {/* Event Details */}
@@ -266,7 +267,6 @@ function EventCardComponent({ event, monitorName, profileId, profileChip, thumbn
                     )}
                   />
                 </HintButton>
-                <EventContextButton event={event} profileId={ownerProfileId} />
                 <HintButton
                   {...archiveProps}
                   disabled={isArchiving}
