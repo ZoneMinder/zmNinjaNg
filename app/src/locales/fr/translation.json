@@ -271,7 +271,7 @@
     "event_gone": "Cet évènement n'existe plus sur le serveur",
     "around": {
       "title": "Événements à proximité",
-      "open": "Proximité",
+      "open": "À proximité",
       "permission_denied": "Ce compte ne peut pas lire les événements.",
       "empty": "Rien d'autre dans cette période",
       "empty_desc": "Aucun événement d'autres caméras dans cette période.",

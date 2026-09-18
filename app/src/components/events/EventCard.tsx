@@ -257,7 +257,7 @@ function EventCardComponent({ event, monitorName, profileId, profileChip, thumbn
                 )}
               />
             </HintButton>
-            <EventContextButton event={event} profileId={ownerProfileId} className="flex-1 min-w-0" labelled iconless />
+            <EventContextButton event={event} profileId={ownerProfileId} />
           </div>
         </div>
 

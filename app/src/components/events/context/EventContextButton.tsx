@@ -22,13 +22,9 @@ interface EventContextButtonProps {
   /** Full-width labelled form for a surface with room for a label (event
    *  detail's Timing card), instead of the icon-only overlay control. */
   labelled?: boolean;
-  /** Drop the Link2 icon and show only the word: the event card's thumbnail
-   *  column is too narrow at 96px for icon + word next to the favourite
-   *  button beside it. */
-  iconless?: boolean;
 }
 
-export function EventContextButton({ event, profileId, className, labelled, iconless }: EventContextButtonProps) {
+export function EventContextButton({ event, profileId, className, labelled }: EventContextButtonProps) {
   const { t } = useTranslation();
   const openPanel = useEventContextStore((s) => s.openPanel);
   const { currentProfile } = useCurrentProfile();
@@ -57,7 +53,7 @@ export function EventContextButton({ event, profileId, className, labelled, icon
 
   return (
     <HintButton {...props} aria-label={t('events.around.open')} data-testid="event-context-open">
-      {!iconless && <Link2 className="h-4 w-4 sm:h-5 sm:w-5 shrink-0 stroke-muted-foreground hover:stroke-primary" />}
+      <Link2 className="h-4 w-4 sm:h-5 sm:w-5 shrink-0 stroke-muted-foreground hover:stroke-primary" />
       {labelled && <span className="min-w-0 truncate">{t('events.around.open')}</span>}
     </HintButton>
   );
