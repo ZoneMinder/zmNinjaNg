@@ -237,7 +237,28 @@ function EventCardComponent({ event, monitorName, profileId, profileChip, thumbn
             </div>
           )}
           </div>
-          <EventContextButton event={event} profileId={ownerProfileId} className="mt-1.5" labelled />
+          <div className="mt-1.5 flex items-center gap-1">
+            <HintButton
+              onClick={handleFavoriteClick}
+              className={cn(
+                "shrink-0 p-1 rounded-full hover:bg-accent transition-colors",
+                "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              )}
+              title={isFav ? t('events.unfavorite') : t('events.favorite')}
+              aria-label={isFav ? t('events.unfavorite') : t('events.favorite')}
+              data-testid="event-favorite-button"
+            >
+              <Star
+                className={cn(
+                  "h-4 w-4 sm:h-5 sm:w-5 transition-colors",
+                  isFav
+                    ? "fill-yellow-500 stroke-yellow-500"
+                    : "stroke-muted-foreground hover:stroke-yellow-500"
+                )}
+              />
+            </HintButton>
+            <EventContextButton event={event} profileId={ownerProfileId} className="flex-1 min-w-0" labelled iconless />
+          </div>
         </div>
 
         {/* Event Details */}
@@ -248,25 +269,6 @@ function EventCardComponent({ event, monitorName, profileId, profileChip, thumbn
                 {event.Name}
               </h3>
               <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-                <HintButton
-                  onClick={handleFavoriteClick}
-                  className={cn(
-                    "p-1 rounded-full hover:bg-accent transition-colors",
-                    "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                  )}
-                  title={isFav ? t('events.unfavorite') : t('events.favorite')}
-                  aria-label={isFav ? t('events.unfavorite') : t('events.favorite')}
-                  data-testid="event-favorite-button"
-                >
-                  <Star
-                    className={cn(
-                      "h-4 w-4 sm:h-5 sm:w-5 transition-colors",
-                      isFav
-                        ? "fill-yellow-500 stroke-yellow-500"
-                        : "stroke-muted-foreground hover:stroke-yellow-500"
-                    )}
-                  />
-                </HintButton>
                 <HintButton
                   {...archiveProps}
                   disabled={isArchiving}
