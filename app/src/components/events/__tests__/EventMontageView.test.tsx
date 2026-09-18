@@ -345,8 +345,15 @@ describe('EventMontageView around-this-event trigger (refs #494 Task 9)', () => 
 // render per control, to keep this suite's tile-mount count down.
 describe('EventMontageView grid action parity (refs #494)', () => {
   afterEach(() => {
-    useEventFavoritesStore.setState({ profileFavorites: {} });
-    useDeleteSelectionStore.getState().clear();
+    // Wrapped: the tile now also subscribes to both stores (for the
+    // favourite-driven re-render and the delete-selection highlight,
+    // refs #494), so resetting them while a tile from the just-finished test
+    // is still mounted (this runs before the outer afterEach's cleanup())
+    // re-renders it outside any act() otherwise.
+    act(() => {
+      useEventFavoritesStore.setState({ profileFavorites: {} });
+      useDeleteSelectionStore.getState().clear();
+    });
     vi.mocked(setEventArchived).mockReset();
   });
 
