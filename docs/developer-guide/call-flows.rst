@@ -3253,8 +3253,9 @@ Flow 25: Nearby
 Every event card, montage tile, and the Timing card on the event detail page
 carry a link-icon button asking one question: what did the other monitors
 record around this moment? The panel that answers it is mounted once in the
-app shell and driven by a two-field Zustand store. Its data hook runs three
-queries, and two of them exist only to work out what the third should ask for.
+app shell and its open state is a router history entry, not a store flag. Its
+data hook runs three queries, and two of them exist only to work out what the
+third should ask for.
 
 .. mermaid::
 
@@ -3263,6 +3264,7 @@ queries, and two of them exist only to work out what the third should ask for.
        participant User as User
        participant Button as EventContextButton
        participant Store as eventContext store
+       participant Router as history entry
        participant Panel as EventContextPanel
        participant Body as EventContextBody
        participant Hook as useEventsAround
@@ -3270,7 +3272,8 @@ queries, and two of them exist only to work out what the third should ask for.
 
        User->>Button: taps "Nearby" on a card, tile, or Timing card
        Button->>Store: openPanel(anchor, profileId)
-       Store-->>Panel: open=true, anchor, profileId
+       Button->>Router: navigate(currentPath, {state: {eventContextAnchor}})
+       Router-->>Panel: location.state carries the anchor id
        Panel->>Body: mount, key=profileId:anchor.Event.Id
        Body->>Hook: useEventsAround(anchor, profileId, {windowMinutes, scope})
        Hook->>ZM: GET monitors.json, GET groups.json
@@ -3279,6 +3282,9 @@ queries, and two of them exist only to work out what the third should ask for.
        ZM-->>Hook: events in the window
        Hook-->>Body: rows (offset from anchor), ribbon lanes, truncated, error
        Body-->>User: controls, ribbon, and rows rendered in the sheet
+       User->>Panel: Escape, backdrop, close button, or Android back
+       Panel->>Router: navigate(-1)
+       Router-->>Panel: location.state no longer carries the anchor, unmounts
 
 #. **The trigger is one button, reused on three surfaces.** ``EventContextButton``
    wraps the row's ``Event`` into an ``EventData`` and calls
@@ -3292,11 +3298,16 @@ queries, and two of them exist only to work out what the third should ask for.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/events/context/EventContextButton.tsx>`__
    · → :doc:`05-component-architecture`
 
-#. **One store and one panel serve every card.** ``useEventContextStore`` holds
-   only ``anchor``, ``profileId`` and ``open``, with no per-card state. ``EventContextPanel``
-   is mounted once in the app shell and renders ``null`` whenever ``!open || !anchor``,
-   so a page of two hundred event cards costs two hundred small buttons and one
-   sheet, not two hundred sheets.
+#. **One store and one panel serve every card, but the store no longer says
+   whether the panel is open.** ``useEventContextStore`` holds only ``anchor``
+   and ``profileId``, the payload an open panel needs. Whether it is showing
+   comes from ``location.state.eventContextAnchor`` on the current history
+   entry instead: a store field is invisible to back/forward navigation, and
+   a history entry is exactly the thing that already restores itself when the
+   user goes back. ``EventContextPanel`` renders ``null`` whenever that entry
+   is missing or the store has no matching anchor, so a page of two hundred
+   event cards costs two hundred small buttons and one sheet, not two hundred
+   sheets.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/events/context/EventContextPanel.tsx>`__
    · → :doc:`03-state-management-zustand`
 
@@ -3370,18 +3381,24 @@ queries, and two of them exist only to work out what the third should ask for.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/hooks/useEventsAround.ts>`__
    · → :doc:`07-api-and-data-fetching`
 
-#. **The ribbon and the list are two views over the same rows.**
-   ``buildRibbonLanes`` groups rows by ``MonitorId`` into one lane per monitor and
-   positions each dot 0-100% across the window from its offset; it renders nothing
-   for a single lane, since one monitor's dots say nothing the list below does not.
-   Tapping a dot scrolls that event's row into view in the list below and marks it
-   viewed through the return-highlight store.
+#. **The ribbon and the list are two views over the same rows, and the ribbon
+   collapses.** ``buildRibbonLanes`` groups rows by ``MonitorId`` into one lane
+   per monitor and positions each dot 0-100% across the window from its
+   offset; it renders nothing for a single lane, since one monitor's dots say
+   nothing the list below does not. Tapping a dot scrolls that event's row
+   into view in the list below and marks it viewed through the
+   return-highlight store. A header row above the lanes toggles them
+   collapsed, showing the lane count instead; the choice persists per device
+   in ``localStorage`` under ``STORAGE_KEYS.eventContextRibbonOpen``.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/events/context/EventContextRibbon.tsx>`__
    · → :doc:`05-component-architecture`
 
 The panel has no footer. Opening a row is the only way out besides closing
-the panel: ``CompactEventRow`` navigates to that Monitor's event, and the
-panel's own pathname-change effect closes it in response.
+the panel: ``CompactEventRow`` navigates to that Monitor's event, pushing
+forward over the panel's own history entry, which is what closes it. Back
+from that event returns to the panel's entry and reopens it on the same
+anchor, with the window and scope it already had - those come back from the
+anchor profile's own settings, not from anything the history entry carries.
 
 When you need to change something, find the nearest flow, open its ``source`` link to land on the exact
 code, and follow the ``→`` link for the chapter that explains that layer.

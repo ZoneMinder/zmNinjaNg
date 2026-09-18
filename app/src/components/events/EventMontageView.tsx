@@ -12,15 +12,18 @@ import { memo, useMemo, useSyncExternalStore } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Download, Loader2 } from 'lucide-react';
-import { getEventCauseIcon } from '../../lib/event/event-icons';
 import { getObjectClassIconFromList } from '../../lib/event/object-class-icons';
 import { useDateTimeFormat } from '../../hooks/useDateTimeFormat';
 import { formatEventRelative, isWithinDays } from '../../lib/relative-time';
 import { Card } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
+import { EventCauseBadge } from './EventCauseBadge';
 import { EventThumbnail } from './EventThumbnail';
 import { EventContextButton } from './context/EventContextButton';
+import { EventFavoriteButton } from './EventFavoriteButton';
+import { EventArchiveButton } from './EventArchiveButton';
+import { EventDeleteButton } from './EventDeleteButton';
 import { downloadEventVideo } from '../../services/download';
 import { type EventFilters } from '../../api/events';
 import { getPortalUrlForMonitor, getServerMapVersion, subscribeServerMap } from '../../lib/zm/server-resolver';
@@ -111,6 +114,9 @@ const EventMontageTile = memo(function EventMontageTile({
   // undefined, both hooks fall back to the current profile, matching prior
   // behavior exactly (same pattern as EventListView's EventItem, refs #337).
   const { profile: ownerProfile, settings: ownerSettings } = useProfileById(profileId);
+  // Owning profile for this tile's actions: the tile's own profileId in All
+  // mode, the current profile in single mode (mirrors EventCard, refs #337).
+  const ownerProfileId = ownerProfile?.id;
   const { token: ownerToken, isFresh: ownerTokenFresh } = useFreshAccessToken(profileId);
   const effectivePortalUrl = profileId ? (ownerProfile?.portalUrl || portalUrl) : portalUrl;
   const effectiveAccessToken = profileId ? (ownerTokenFresh ? ownerToken ?? undefined : undefined) : accessToken;
@@ -142,6 +148,7 @@ const EventMontageTile = memo(function EventMontageTile({
   });
 
   const hasVideo = event.Videoed === '1';
+  const isArchived = event.Archived === '1';
   const aspectRatio = thumbnailWidth / thumbnailHeight;
 
   const openEvent = () => {
@@ -192,25 +199,8 @@ const EventMontageTile = memo(function EventMontageTile({
               {formatEventRelative(startTime, i18n.language, t)}
             </Badge>
           )}
+          <EventFavoriteButton eventId={event.Id} profileId={ownerProfileId} />
           <EventContextButton event={event} profileId={profileId} />
-          {hasVideo && (
-            <Button
-              variant="secondary"
-              size="icon"
-              className="h-8 w-8"
-              onClick={async (e) => {
-                e.stopPropagation();
-                await triggerHaptic();
-                downloadEventVideo(eventPortalUrl, event.Id, event.Name, effectiveAccessToken, effectiveMinStreamingPort, event.MonitorId);
-                // Background task drawer will show download progress
-              }}
-              title={t('eventMontage.download_video')}
-              aria-label={t('eventMontage.download_video')}
-              data-testid="event-download-button"
-            >
-              <Download className="h-4 w-4" />
-            </Button>
-          )}
         </div>
       </div>
       <div className="p-3 space-y-1">
@@ -231,15 +221,7 @@ const EventMontageTile = memo(function EventMontageTile({
           {fmtDateTimeShort(startTime)}
           <span data-testid="event-montage-duration">{` · ${event.Length}s`}</span>
         </div>
-        {event.Cause && (() => {
-          const CauseIcon = getEventCauseIcon(event.Cause);
-          return (
-            <Badge variant="outline" className="text-xs gap-1">
-              <CauseIcon className="h-3 w-3" />
-              {event.Cause}
-            </Badge>
-          );
-        })()}
+        {event.Cause && <EventCauseBadge cause={event.Cause} className="text-xs" />}
         {event.Notes && (() => {
           const noteText = event.Notes.split('|')[0].trim();
           const isDetection = noteText.startsWith('detected:');
@@ -261,6 +243,32 @@ const EventMontageTile = memo(function EventMontageTile({
             overflowText={(count) => t('events.tags.moreCount', { count })}
           />
         )}
+        {/* Actions that change or remove the event: archive and download sit
+            together, delete set apart from them (mirrors EventCard). */}
+        <div className="flex items-center gap-2 pt-1">
+          <EventArchiveButton eventId={event.Id} isArchived={isArchived} profileId={ownerProfileId} />
+          {hasVideo && (
+            <Button
+              variant="secondary"
+              size="icon"
+              className="h-8 w-8"
+              onClick={async (e) => {
+                e.stopPropagation();
+                await triggerHaptic();
+                downloadEventVideo(eventPortalUrl, event.Id, event.Name, effectiveAccessToken, effectiveMinStreamingPort, event.MonitorId);
+                // Background task drawer will show download progress
+              }}
+              title={t('eventMontage.download_video')}
+              aria-label={t('eventMontage.download_video')}
+              data-testid="event-download-button"
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+          )}
+          <span className="ml-1">
+            <EventDeleteButton eventId={event.Id} profileId={ownerProfileId} />
+          </span>
+        </div>
         </div>
       </Card>
     </div>
