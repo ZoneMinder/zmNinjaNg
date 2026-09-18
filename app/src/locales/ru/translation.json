@@ -301,7 +301,11 @@
       "scope_group": "Группа",
       "scope_all": "Все",
       "scope_unavailable_linked": "У этого монитора нет связанных мониторов.",
-      "scope_unavailable_group": "Этот монитор не состоит ни в одной группе."
+      "scope_unavailable_group": "Этот монитор не состоит ни в одной группе.",
+      "ribbon_count_one": "{{count}} монитор",
+      "ribbon_count_few": "{{count}} монитора",
+      "ribbon_count_many": "{{count}} мониторов",
+      "ribbon_count_other": "{{count}} монитора"
     }
   },
   "event_detail": {

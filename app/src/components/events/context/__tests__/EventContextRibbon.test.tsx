@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { EventContextRibbon } from '../EventContextRibbon';
 import { buildRibbonLanes } from '../../../../lib/event/event-context-view';
 
@@ -8,8 +8,11 @@ import { buildRibbonLanes } from '../../../../lib/event/event-context-view';
 // than the no-instance fallback that hands back the raw key.
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string, opts?: Record<string, unknown>) =>
-      key === 'events.around.dot_label' ? `${opts?.camera}, ${opts?.offset}` : key,
+    t: (key: string, opts?: Record<string, unknown>) => {
+      if (key === 'events.around.dot_label') return `${opts?.camera}, ${opts?.offset}`;
+      if (key === 'events.around.ribbon_count') return `${opts?.count} cameras`;
+      return key;
+    },
     // A partial stub of this hook is a trap: a component reading i18n.language
     // only on some branches crashes the day that branch starts running.
     i18n: { language: 'en' },
@@ -69,5 +72,56 @@ describe('EventContextRibbon', () => {
   it('labels each dot with its camera and offset for a screen reader', () => {
     render(<EventContextRibbon lanes={buildRibbonLanes(rows, names, 600_000)} onSelect={vi.fn()} />);
     expect(screen.getByTestId('event-context-dot-405')).toHaveAccessibleName(/Drive/);
+  });
+});
+
+describe('EventContextRibbon collapse (refs #494)', () => {
+  const lanes = buildRibbonLanes(rows, names, 600_000);
+
+  afterEach(() => {
+    localStorage.clear();
+    vi.restoreAllMocks();
+  });
+
+  it('starts expanded with every lane visible', () => {
+    render(<EventContextRibbon lanes={lanes} onSelect={vi.fn()} />);
+    expect(screen.getByTestId('event-context-ribbon-toggle')).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByTestId('event-context-dot-405')).toBeInTheDocument();
+  });
+
+  it('collapsing hides the lanes and shows the lane count instead', () => {
+    render(<EventContextRibbon lanes={lanes} onSelect={vi.fn()} />);
+    fireEvent.click(screen.getByTestId('event-context-ribbon-toggle'));
+    const toggle = screen.getByTestId('event-context-ribbon-toggle');
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(toggle).toHaveTextContent('2 cameras');
+    expect(screen.queryByTestId('event-context-dot-405')).toBeNull();
+  });
+
+  it('remembers a collapsed choice across a remount', () => {
+    const { unmount } = render(<EventContextRibbon lanes={lanes} onSelect={vi.fn()} />);
+    fireEvent.click(screen.getByTestId('event-context-ribbon-toggle'));
+    unmount();
+
+    render(<EventContextRibbon lanes={lanes} onSelect={vi.fn()} />);
+    expect(screen.getByTestId('event-context-ribbon-toggle')).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByTestId('event-context-dot-405')).toBeNull();
+  });
+
+  it('defaults to expanded when the stored choice cannot be read', () => {
+    vi.spyOn(localStorage, 'getItem').mockImplementation(() => {
+      throw new Error('blocked');
+    });
+    render(<EventContextRibbon lanes={lanes} onSelect={vi.fn()} />);
+    expect(screen.getByTestId('event-context-ribbon-toggle')).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('still collapses when the choice cannot be saved', () => {
+    vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
+      throw new Error('blocked');
+    });
+    render(<EventContextRibbon lanes={lanes} onSelect={vi.fn()} />);
+    expect(() => fireEvent.click(screen.getByTestId('event-context-ribbon-toggle'))).not.toThrow();
+    expect(screen.getByTestId('event-context-ribbon-toggle')).toHaveAttribute('aria-expanded', 'false');
   });
 });

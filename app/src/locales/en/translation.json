@@ -289,7 +289,9 @@
       "scope_group": "Group",
       "scope_all": "All",
       "scope_unavailable_linked": "This camera has no linked cameras.",
-      "scope_unavailable_group": "This camera is in no group."
+      "scope_unavailable_group": "This camera is in no group.",
+      "ribbon_count_one": "{{count}} camera",
+      "ribbon_count_other": "{{count}} cameras"
     }
   },
   "event_detail": {

@@ -289,7 +289,9 @@
       "scope_group": "Grupo",
       "scope_all": "Todas",
       "scope_unavailable_linked": "Este monitor no tiene monitores vinculados.",
-      "scope_unavailable_group": "Este monitor no está en ningún grupo."
+      "scope_unavailable_group": "Este monitor no está en ningún grupo.",
+      "ribbon_count_one": "{{count}} monitor",
+      "ribbon_count_other": "{{count}} monitores"
     }
   },
   "event_detail": {

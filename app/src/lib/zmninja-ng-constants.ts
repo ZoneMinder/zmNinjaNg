@@ -485,6 +485,7 @@ export const STORAGE_KEYS = {
   // UI section open/closed state
   hoverPreviewOpen: 'zmng-hover-preview-open',
   thumbnailChainOpen: 'zmng-thumbnail-chain-open',
+  eventContextRibbonOpen: 'zmng-event-context-ribbon-open',
   // Prefix, completed with a settings section id (see CollapsibleSection).
   settingsSectionOpenPrefix: 'zmng-settings-section-open-',
 
