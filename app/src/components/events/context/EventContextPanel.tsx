@@ -12,13 +12,18 @@
  * whatever was on screen the first time the (always-mounted) panel rendered.
  *
  * Task 6 mounts `<EventContextList/>`, Task 7 `<EventContextRibbon/>`.
+ *
+ * The open panel is itself a history entry (refs #494): EventContextButton
+ * pushes it, so back/forward, the Android back button and this panel's own
+ * dismissal controls all agree on whether it is showing. See
+ * stores/eventContext.ts for the state that entry carries.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useShallow } from 'zustand/react/shallow';
 import { cn } from '../../../lib/utils';
-import { useEventContextStore } from '../../../stores/eventContext';
+import { useEventContextStore, type EventContextHistoryState } from '../../../stores/eventContext';
 import { useReturnHighlightStore } from '../../../stores/returnHighlight';
 import { useIsMobile } from '../../../hooks/useIsMobile';
 import { useEventsAround } from '../../../hooks/useEventsAround';
@@ -107,35 +112,24 @@ function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId:
 
 export function EventContextPanel() {
   const { t } = useTranslation();
-  const { anchor, open, profileId } = useEventContextStore(
-    useShallow((s) => ({ anchor: s.anchor, open: s.open, profileId: s.profileId }))
+  const { anchor, profileId } = useEventContextStore(
+    useShallow((s) => ({ anchor: s.anchor, profileId: s.profileId }))
   );
-  const closePanel = useEventContextStore((s) => s.closePanel);
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
 
-  // Radix blocks background clicks but not navigation: back/forward, a
-  // programmatic navigate, or a typed URL all leave the panel mounted with a
-  // now-stale anchor. Close it on the first pathname change after it opened,
-  // but not on the initial mount. This is what closes the panel when a row's
-  // own navigate (CompactEventRow) takes the user to that event.
-  const pathname = useLocation().pathname;
-  const openedPathname = useRef<string | null>(null);
-  useEffect(() => {
-    if (!open) {
-      openedPathname.current = null;
-      return;
-    }
-    if (openedPathname.current === null) {
-      openedPathname.current = pathname;
-      return;
-    }
-    if (pathname !== openedPathname.current) closePanel();
-  }, [open, pathname, closePanel]);
+  // The open panel is a history entry (refs #494), not a store flag: this is
+  // what back/forward, a programmatic navigate elsewhere, and a typed URL all
+  // already handle correctly without a dedicated effect. EventContextButton
+  // pushes the entry that carries `eventContextAnchor`; it disappears the
+  // moment that entry is no longer current, by any route away from it.
+  const historyAnchor = (useLocation().state as EventContextHistoryState | null)?.eventContextAnchor;
+  const open = Boolean(historyAnchor);
 
   if (!open || !anchor) return null;
 
   return (
-    <Sheet open onOpenChange={(next) => { if (!next) closePanel(); }}>
+    <Sheet open onOpenChange={(next) => { if (!next) navigate(-1); }}>
       <SheetContent
         side={isMobile ? 'bottom' : 'right'}
         className={cn('flex flex-col gap-0 p-0', isMobile ? 'h-[85vh] rounded-t-2xl' : 'w-[440px] sm:max-w-[440px]')}

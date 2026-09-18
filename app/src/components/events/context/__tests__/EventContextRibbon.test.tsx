@@ -86,7 +86,9 @@ describe('EventContextRibbon collapse (refs #494)', () => {
   it('starts expanded with every lane visible', () => {
     render(<EventContextRibbon lanes={lanes} onSelect={vi.fn()} />);
     expect(screen.getByTestId('event-context-ribbon-toggle')).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByTestId('event-context-dot-405')).toBeInTheDocument();
+    // The dot is there AND it is the one it claims to be: existence alone is
+    // not an assertion that can fail for the right reason (C6).
+    expect(screen.getByTestId('event-context-dot-405')).toHaveAccessibleName(/Drive/);
   });
 
   it('collapsing hides the lanes and shows the lane count instead', () => {

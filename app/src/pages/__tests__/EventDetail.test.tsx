@@ -620,7 +620,7 @@ describe('EventDetail around-this-event trigger (refs #494 Task 9)', () => {
   });
 
   afterEach(() => {
-    useEventContextStore.setState({ anchor: null, profileId: undefined, open: false });
+    useEventContextStore.setState({ anchor: null, profileId: undefined });
   });
 
   it('opens the panel for the current profile from the Timing card in single mode', () => {
@@ -631,7 +631,6 @@ describe('EventDetail around-this-event trigger (refs #494 Task 9)', () => {
     fireEvent.click(button);
 
     const state = useEventContextStore.getState();
-    expect(state.open).toBe(true);
     expect(state.anchor?.Event.Id).toBe('101');
     expect(state.profileId).toBe('profile-1');
   });

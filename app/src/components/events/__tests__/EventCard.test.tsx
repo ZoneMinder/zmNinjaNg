@@ -30,6 +30,10 @@ vi.mock('sonner', () => ({ toast: Object.assign(vi.fn(), { error: vi.fn(), succe
 
 vi.mock('react-router-dom', () => ({
   useNavigate: () => navigate,
+  // EventContextButton (the "Nearby" trigger) also reads useLocation to push
+  // a history entry when it opens the panel (refs #494); a stub missing it
+  // throws the moment that button mounts, not just when it's clicked.
+  useLocation: () => ({ pathname: '/events', search: '', state: null }),
 }));
 
 vi.mock('react-i18next', () => ({

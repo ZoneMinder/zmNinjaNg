@@ -42,10 +42,13 @@ working is the thing that explains itself.
 
 ## Panel shell
 
-One `<EventContextPanel />` mounted in `AppLayout`, opened through a small
-Zustand store (`stores/eventContext.ts`) holding `{ anchor, profileId, open }`.
-A single mounted panel, rather than one per card, keeps dismissal logic in one
-place and stops a long event list from carrying a sheet per row.
+One `<EventContextPanel />` mounted in `AppLayout`, driven by a small Zustand
+store (`stores/eventContext.ts`) holding `{ anchor, profileId }` - the anchor
+payload an open panel needs. Whether the panel is open is not store state: the
+open panel is itself a history entry, carrying the anchor id in `location.state`,
+pushed by the trigger and read back by the panel. A single mounted panel,
+rather than one per card, keeps that logic in one place and stops a long event
+list from carrying a sheet per row.
 
 The shell follows the assistant's split: `AssistantDesktopPanel` and
 `AssistantMobileSheet` are two shells over one chrome hook, and this reuses that
@@ -55,7 +58,9 @@ shape.
 - Mobile: the same sheet with `side="bottom"`, roughly 85vh.
 - Dismissal: Esc, backdrop tap, the close button, and the Android hardware back
   button, which reaches the sheet through `hasOpenOverlay` matching the open
-  dialog Radix renders. None of these change the route.
+  dialog Radix renders. All four go back one history entry rather than closing
+  in place, which is what lets a row's own navigation return to the panel
+  instead of dropping the user on the page underneath it with no way back.
 
 The mobile sheet ships with no drag handle and no swipe-to-dismiss, which an
 earlier draft of this section promised. Radix's sheet gives the four dismissal
@@ -132,6 +137,13 @@ own answer. One camera with several events still earns the strip, because
 where those events sit inside the window is what the list's offsets say least
 directly.
 
+A header row above the lanes collapses and expands the strip (chevron,
+`aria-expanded`, the lane count in one line - "5 cameras" - while collapsed),
+for a window with enough cameras to fill most of the panel. The choice is
+remembered per device in `localStorage`, the same way `AppearanceSection`
+remembers its hover-preview section, not per profile: it is about how much of
+the panel someone wants to look at, not a server-side preference.
+
 It reuses the timeline layout maths, not `TimelineCanvas`: pan and zoom are the
 wrong affordance in a fixed window, and the canvas carries filters and live mode
 this panel has no use for.
@@ -149,8 +161,11 @@ the camera name. The anchor appears inline in its own position, highlighted and
 marked, rather than being hidden — its place in the sequence is part of the
 answer.
 
-Opening a row navigates to that event and closes the panel. The existing return
-highlight then flashes the row the user came back to.
+Opening a row navigates to that event, pushing forward over the panel's own
+history entry, which is what closes it. Back from that event returns to the
+panel's entry, reopening it on the same anchor with the same window and scope
+(both already persist per profile, so they come back on their own). The
+existing return highlight then flashes the row the user came back to.
 
 Empty result: `EmptyState` with a shortcut to widen the window one step. It does
 not repeat the window and scope in its copy: the control bar sits directly above

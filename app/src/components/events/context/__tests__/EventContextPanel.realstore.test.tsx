@@ -16,7 +16,7 @@
  * See the testing playbook, "Regression tests for store-subscription bugs".
  */
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act, cleanup } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 
@@ -67,6 +67,12 @@ function seedRawEventContext(raw: unknown) {
 }
 
 afterEach(() => {
+  // react-router wraps every location update in startTransition; unmounting
+  // outside act() (resetProfileFixture's own plain cleanup(), which runs
+  // after this) reports one as never having been wrapped, even though every
+  // interaction above went through fireEvent. Force it here, first, so it
+  // lands inside an act() this suite controls (refs #494).
+  act(() => { cleanup(); });
   useEventContextStore.getState().closePanel();
   resetProfileFixture();
   resetFakeStoreGates();
@@ -102,7 +108,9 @@ describe('EventContextPanel - real store render loop regression (refs #494)', ()
     expect(screen.getByTestId('event-context-window-30')).toHaveAttribute('aria-pressed', 'true');
     expectsNoRenderLoop(onError);
 
-    fireEvent.click(screen.getByTestId('event-context-close'));
+    // Closing now goes back a history entry, and react-router wraps a
+    // location update in startTransition; act() keeps that inside the test.
+    act(() => { fireEvent.click(screen.getByTestId('event-context-close')); });
     onError.mockRestore();
   });
 
@@ -127,7 +135,9 @@ describe('EventContextPanel - real store render loop regression (refs #494)', ()
     expect(screen.getByTestId('event-context-window-30')).toHaveAttribute('aria-pressed', 'true');
     expectsNoRenderLoop(onError);
 
-    fireEvent.click(screen.getByTestId('event-context-close'));
+    // Closing now goes back a history entry, and react-router wraps a
+    // location update in startTransition; act() keeps that inside the test.
+    act(() => { fireEvent.click(screen.getByTestId('event-context-close')); });
     onError.mockRestore();
   });
 });

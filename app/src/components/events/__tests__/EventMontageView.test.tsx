@@ -20,7 +20,13 @@ import { queryKeys } from '../../../lib/query/query-keys';
 import { UNRESTRICTED_PERMISSIONS } from '../../../lib/permissions/zm-permissions';
 
 const navigate = vi.fn();
-vi.mock('react-router-dom', () => ({ useNavigate: () => navigate }));
+vi.mock('react-router-dom', () => ({
+  useNavigate: () => navigate,
+  // EventContextButton (the "Nearby" trigger) also reads useLocation to push
+  // a history entry when it opens the panel (refs #494); a stub missing it
+  // throws the moment that button mounts, not just when it's clicked.
+  useLocation: () => ({ pathname: '/events', search: '', state: null }),
+}));
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key, i18n: { language: 'en' } }),
@@ -288,10 +294,11 @@ describe('EventMontageView all-mode owning-profile wiring (refs #337 Task 2)', (
 // The around-this-event trigger (refs #494 Task 9): reuses EventContextButton
 // rather than duplicating its open/permission logic, so these tests only need
 // to prove the tile wires it to its OWN owning profile and that opening it
-// does not also navigate the tile.
+// pushes a history entry for the current location rather than routing the
+// tile to the event (refs #494 navigation follow-up).
 describe('EventMontageView around-this-event trigger (refs #494 Task 9)', () => {
   afterEach(() => {
-    useEventContextStore.setState({ anchor: null, profileId: undefined, open: false });
+    useEventContextStore.setState({ anchor: null, profileId: undefined });
   });
 
   it('offers the around-this-event button on a montage tile and opens the panel for the tile\'s own owning profile', () => {
@@ -300,16 +307,18 @@ describe('EventMontageView around-this-event trigger (refs #494 Task 9)', () => 
     fireEvent.click(screen.getByTestId('event-context-open'));
 
     const state = useEventContextStore.getState();
-    expect(state.open).toBe(true);
     expect(state.anchor?.Event.Id).toBe('401');
     expect(state.profileId).toBe('profile-b');
   });
 
-  it('does not navigate the tile when the around-this-event button is clicked', () => {
+  it('pushes a history entry for the anchor instead of routing the tile to the event', () => {
     renderEvents([eventWithId('402')]);
 
     fireEvent.click(screen.getByTestId('event-context-open'));
 
-    expect(navigate).not.toHaveBeenCalled();
+    expect(navigate).toHaveBeenCalledWith(
+      { pathname: '/events', search: '' },
+      { state: { eventContextAnchor: { eventId: '402', profileId: 'current' } } }
+    );
   });
 });

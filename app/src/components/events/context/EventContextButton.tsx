@@ -3,11 +3,16 @@
  * `Event` into the `EventData` shape the panel's data hook expects, stops the
  * click from reaching the card underneath, and greys itself when the owning
  * profile may not read events, the same way the archive button does.
+ *
+ * Opening pushes a history entry for the current location carrying the
+ * anchor, so the panel is real back-navigation state rather than a store flag
+ * navigation can't see (refs #494). EventContextPanel derives `open` from it.
  */
 import { Link2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '../../../lib/utils';
-import { useEventContextStore } from '../../../stores/eventContext';
+import { useEventContextStore, type EventContextHistoryState } from '../../../stores/eventContext';
 import { useCurrentProfile } from '../../../hooks/useCurrentProfile';
 import { usePermissions } from '../../../hooks/usePermissions';
 import { canViewEvents } from '../../../lib/permissions/zm-permissions';
@@ -27,6 +32,8 @@ interface EventContextButtonProps {
 export function EventContextButton({ event, profileId, className, labelled }: EventContextButtonProps) {
   const { t } = useTranslation();
   const openPanel = useEventContextStore((s) => s.openPanel);
+  const navigate = useNavigate();
+  const location = useLocation();
   const { currentProfile } = useCurrentProfile();
   // The fallback is safe on the one surface that uses it: /events/:eventId
   // resolves its own profile through the same current-profile fallback and
@@ -41,6 +48,11 @@ export function EventContextButton({ event, profileId, className, labelled }: Ev
     onClick: (e: React.MouseEvent) => {
       e.stopPropagation();
       openPanel({ Event: event } as EventData, ownerProfileId);
+      const state: EventContextHistoryState = {
+        ...(location.state as EventContextHistoryState | null),
+        eventContextAnchor: { eventId: event.Id, profileId: ownerProfileId },
+      };
+      navigate({ pathname: location.pathname, search: location.search }, { state });
     },
     title: t('events.around.open'),
     className: cn(
