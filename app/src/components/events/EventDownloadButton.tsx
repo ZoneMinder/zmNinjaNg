@@ -61,7 +61,7 @@ export function EventDownloadButton({ event, profileId, monitorServerId, classNa
     <Button
       variant="secondary"
       size="icon"
-      className={cn('h-8 w-8', className)}
+      className={cn('h-7 w-7', className)}
       onClick={handleDownload}
       title={t('eventMontage.download_video')}
       aria-label={t('eventMontage.download_video')}

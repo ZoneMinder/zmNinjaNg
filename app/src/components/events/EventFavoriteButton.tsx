@@ -47,7 +47,7 @@ export function EventFavoriteButton({ eventId, profileId, className }: EventFavo
     >
       <Star
         className={cn(
-          "h-4 w-4 sm:h-5 sm:w-5 transition-colors",
+          "h-4 w-4 transition-colors",
           isFav
             ? "fill-yellow-500 stroke-yellow-500"
             : "stroke-muted-foreground hover:stroke-yellow-500"

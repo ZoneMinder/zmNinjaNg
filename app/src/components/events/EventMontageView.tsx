@@ -198,8 +198,13 @@ const EventMontageTile = memo(function EventMontageTile({
               {formatEventRelative(startTime, i18n.language, t)}
             </Badge>
           )}
-          <EventFavoriteButton eventId={event.Id} profileId={ownerProfileId} />
-          <EventContextButton event={event} profileId={profileId} />
+          {/* A plate behind them: a muted stroke on top of a photograph is
+              invisible, which is why these two read as missing. The relative
+              time badge beside them has always had one. */}
+          <div className="flex items-center gap-1 rounded-full bg-background/80 px-1 backdrop-blur-sm">
+            <EventFavoriteButton eventId={event.Id} profileId={ownerProfileId} />
+            <EventContextButton event={event} profileId={profileId} />
+          </div>
         </div>
       </div>
       <div className="p-3 space-y-1">

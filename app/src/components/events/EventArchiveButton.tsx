@@ -104,12 +104,12 @@ export function EventArchiveButton({ eventId, isArchived, profileId, className }
           what the label already says. */}
       {isArchived ? (
         <ArchiveRestore
-          className="h-4 w-4 sm:h-5 sm:w-5 transition-colors stroke-primary"
+          className="h-4 w-4 transition-colors stroke-primary"
           data-testid="event-archive-icon-on"
         />
       ) : (
         <Archive
-          className="h-4 w-4 sm:h-5 sm:w-5 transition-colors stroke-muted-foreground hover:stroke-primary"
+          className="h-4 w-4 transition-colors stroke-muted-foreground hover:stroke-primary"
           data-testid="event-archive-icon-off"
         />
       )}

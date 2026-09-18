@@ -166,7 +166,7 @@ export function CompactEventRow({ event, thumbnailUrls, aspectRatio, objectFit =
       >
         {badgeLabel ?? durationLabel}
       </span>
-      <EventDeleteButton eventId={event.Id} profileId={ownerProfileId} size="sm" className="flex-shrink-0" />
+      <EventDeleteButton eventId={event.Id} profileId={ownerProfileId} className="flex-shrink-0" />
     </div>
   );
 }

@@ -19,16 +19,15 @@ interface EventDeleteButtonProps {
   /** Owning profile. Raw ZM event ids collide across servers, so the selection
    *  is keyed by profile too (refs #337). */
   profileId?: ProfileId;
-  size?: 'sm' | 'md';
   className?: string;
 }
 
-export function EventDeleteButton({ eventId, profileId, size = 'md', className }: EventDeleteButtonProps) {
+export function EventDeleteButton({ eventId, profileId, className }: EventDeleteButtonProps) {
   const { t } = useTranslation();
   const selectionKey = eventSelectionKey(profileId, eventId);
   const selected = useDeleteSelectionStore((s) => s.selectedKeys.includes(selectionKey));
   const toggle = useDeleteSelectionStore((s) => s.toggle);
-  const iconSize = size === 'sm' ? 'h-4 w-4' : 'h-4 w-4 sm:h-5 sm:w-5';
+  const iconSize = 'h-4 w-4';
 
   // Deleting needs Events: Edit. Greyed rather than hidden, so an
   // administrator can see which permission their account is missing (refs #344).
