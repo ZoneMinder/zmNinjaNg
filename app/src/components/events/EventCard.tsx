@@ -268,7 +268,7 @@ function EventCardComponent({ event, monitorName, profileId, profileChip, thumbn
               <h3 className="font-semibold text-sm sm:text-base truncate" title={event.Name}>
                 {event.Name}
               </h3>
-              <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+              <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
                 <HintButton
                   {...archiveProps}
                   disabled={isArchiving}
@@ -292,16 +292,11 @@ function EventCardComponent({ event, monitorName, profileId, profileChip, thumbn
                     />
                   )}
                 </HintButton>
-                <EventDeleteButton eventId={event.Id} profileId={ownerProfileId} />
-                {(() => {
-                  const CauseIcon = getEventCauseIcon(event.Cause);
-                  return (
-                    <Badge variant="outline" className="text-[10px] sm:text-xs gap-1">
-                      <CauseIcon className="h-3 w-3" />
-                      {event.Cause}
-                    </Badge>
-                  );
-                })()}
+                {/* Destructive action set apart from the rest: at these sizes
+                    an 8px gap is the difference between archiving and deleting. */}
+                <span className="ml-1 sm:ml-1.5">
+                  <EventDeleteButton eventId={event.Id} profileId={ownerProfileId} />
+                </span>
               </div>
             </div>
 
@@ -312,6 +307,18 @@ function EventCardComponent({ event, monitorName, profileId, profileChip, thumbn
                   {monitorName}
                 </span>
               </div>
+              {/* The cause sits with the metadata rather than in the title row:
+                  there it competed with the name and the actions for the same
+                  width, which is what squeezed the buttons together. */}
+              {(() => {
+                const CauseIcon = getEventCauseIcon(event.Cause);
+                return (
+                  <Badge variant="outline" className="text-[10px] sm:text-xs gap-1">
+                    <CauseIcon className="h-3 w-3" />
+                    {event.Cause}
+                  </Badge>
+                );
+              })()}
               {profileChip && (
                 <span
                   className="text-[10px] px-1.5 py-0 rounded bg-muted text-muted-foreground truncate max-w-[100px]"
