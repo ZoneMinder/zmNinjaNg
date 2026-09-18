@@ -5,6 +5,8 @@
  */
 import { Link2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useLocation } from 'react-router-dom';
+import { useScrollRestoration } from '../../../hooks/useScrollRestoration';
 import { CompactEventRow } from '../CompactEventRow';
 import { Skeleton } from '../../ui/skeleton';
 import { ErrorBanner } from '../../ui/query-state';
@@ -37,6 +39,12 @@ export function EventContextList({ rows, profileId, monitorNames, isLoading, err
   const { token: accessToken, isFresh } = useFreshAccessToken(profileId);
   const minStreamingPort = resolveMinStreamingPort(profile?.minStreamingPort, settings.forceDisableMultiPort);
   const portalUrl = profile?.portalUrl || '';
+  // Opening a row navigates away and unmounts this list, so without this the
+  // panel comes back scrolled to the top and the user has lost the row they
+  // were looking at. `location.key` is the panel's own history entry, so back
+  // restores the position while a fresh open starts at the top (refs #197 is
+  // the same fix for the Events page).
+  const restoreScrollRef = useScrollRestoration(useLocation().key, rows.length > 0);
 
   if (isLoading) {
     return (
@@ -72,7 +80,7 @@ export function EventContextList({ rows, profileId, monitorNames, isLoading, err
   }
 
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="flex-1 overflow-y-auto" ref={restoreScrollRef}>
       {truncated && (
         <div data-testid="event-context-truncated" className="px-4 py-2 text-xs text-muted-foreground">
           {t('events.around.truncated', { count: rows.length })}

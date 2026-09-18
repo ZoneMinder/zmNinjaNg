@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, within, fireEvent, act } from '@testing-library/react';
+import { render, screen, within, fireEvent, act, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -116,6 +116,20 @@ describe('EventContextList', () => {
   it('does not tint a row that is not the anchor', () => {
     renderList(<EventContextList {...props} rows={[row('405', -252_000)]} />);
     expect(screen.getByTestId('event-context-row-405').className).not.toContain('bg-primary/5');
+  });
+
+  it('comes back scrolled where the user left it, not at the top', async () => {
+    // Opening a row unmounts this list; browser back returns to the same
+    // history entry, so the position saved on the way out must come back.
+    const rows = Array.from({ length: 20 }, (_, i) => row(String(500 + i), i * 1000));
+    const first = renderList(<EventContextList {...props} rows={rows} />);
+    const container = first.container.querySelector('.overflow-y-auto') as HTMLElement;
+    container.scrollTop = 240;
+    first.unmount();
+
+    const second = renderList(<EventContextList {...props} rows={rows} />);
+    const restored = second.container.querySelector('.overflow-y-auto') as HTMLElement;
+    await waitFor(() => expect(restored.scrollTop).toBe(240));
   });
 
   it('gives the offset badge its own title, not the duration tooltip', () => {
