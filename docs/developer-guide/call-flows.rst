@@ -3379,15 +3379,9 @@ queries, and two of them exist only to work out what the third should ask for.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/events/context/EventContextRibbon.tsx>`__
    · → :doc:`05-component-architecture`
 
-#. **The footer button pushes the window as URL query params.**
-   ``openInEvents`` pushes the window and monitor ids as URL query params and
-   navigates, because ``resolveInitialFilters`` reads exactly those params
-   ahead of any persisted filter; nav state has no reader there.
-   `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/events/context/EventContextPanel.tsx>`__
-   · → :doc:`04-pages-and-views`
-
-The Events button hands off into Flow 5, landing pre-filtered to the same
-window this panel just showed.
+The panel has no footer. Opening a row is the only way out besides closing
+the panel: ``CompactEventRow`` navigates to that Monitor's event, and the
+panel's own pathname-change effect closes it in response.
 
 When you need to change something, find the nearest flow, open its ``source`` link to land on the exact
 code, and follow the ``→`` link for the chapter that explains that layer.

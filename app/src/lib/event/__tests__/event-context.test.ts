@@ -33,15 +33,6 @@ describe('eventContextWindow', () => {
     expect(ny.anchorMs - utc.anchorMs).toBe(4 * 60 * 60 * 1000);
   });
 
-  it('reports the same two bounds as instants, independent of any timezone', () => {
-    // The wall-clock strings above only mean something read against the
-    // profile's own zone. Anything handing the window to a surface that reads
-    // dates as browser-local starts from these instead (refs #494).
-    const w = eventContextWindow(anchor(), 15, 'America/New_York');
-    expect(w.startMs).toBe(Date.parse('2026-09-18T00:59:03Z'));
-    expect(w.endMs).toBe(Date.parse('2026-09-18T01:29:41Z'));
-  });
-
   it('extends past a long anchor event instead of clipping its tail', () => {
     const long = anchor({ EndDateTime: '2026-09-17 21:44:03', Length: '1800.00' });
     expect(eventContextWindow(long, 5, 'UTC').endDateTime).toBe('2026-09-17 21:49:03');

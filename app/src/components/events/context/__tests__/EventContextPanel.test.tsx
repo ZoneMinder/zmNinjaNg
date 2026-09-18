@@ -27,10 +27,8 @@ function renderWithClient(ui: React.ReactElement) {
   );
 }
 
-/** Test-only trigger for a route change: the panel's own footer buttons
- *  already navigate deliberately (and are covered by EventContextFooter.test),
- *  this stands in for back/forward, a programmatic navigate elsewhere in the
- *  app, or a typed URL. */
+/** Test-only trigger for a route change: stands in for back/forward, a
+ *  programmatic navigate elsewhere in the app, or a typed URL. */
 function NavigateAway() {
   const navigate = useNavigate();
   return <button data-testid="navigate-away" onClick={() => navigate('/elsewhere')} />;

@@ -11,38 +11,32 @@
  * fresh instance seeded from that profile's *current* setting rather than
  * whatever was on screen the first time the (always-mounted) panel rendered.
  *
- * Task 6 mounts `<EventContextList/>`, Task 7 `<EventContextRibbon/>`, Task 8
- * the footer.
+ * Task 6 mounts `<EventContextList/>`, Task 7 `<EventContextRibbon/>`.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { useShallow } from 'zustand/react/shallow';
 import { cn } from '../../../lib/utils';
 import { useEventContextStore } from '../../../stores/eventContext';
-import { useProfileStore } from '../../../stores/profile';
 import { useReturnHighlightStore } from '../../../stores/returnHighlight';
 import { useIsMobile } from '../../../hooks/useIsMobile';
 import { useEventsAround } from '../../../hooks/useEventsAround';
 import { useSettingsStore, type EventContextSettings } from '../../../stores/settings';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose, SheetFooter } from '../../ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from '../../ui/sheet';
 import { Button } from '../../ui/button';
 import { EventContextControls } from './EventContextControls';
 import { EventContextList } from './EventContextList';
 import { EventContextRibbon } from './EventContextRibbon';
 import { buildRibbonLanes } from '../../../lib/event/event-context-view';
 import { EVENT_CONTEXT } from '../../../lib/zmninja-ng-constants';
-import { formatLocalDateTime } from '../../../lib/time';
-import { isAggregateProfileId, type EventData, type ProfileId } from '../../../api/types';
+import type { EventData, ProfileId } from '../../../api/types';
 
 function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId: ProfileId | undefined }) {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-  const closePanel = useEventContextStore((s) => s.closePanel);
   const settings = useSettingsStore(useShallow((s) => s.getProfileSettings(profileId ?? '')));
   const [context, setContext] = useState<EventContextSettings>(settings.eventContext);
 
-  const { rows, monitorNames, available, effectiveScope, isLoading, error, truncated, window } = useEventsAround(anchor, profileId, {
+  const { rows, monitorNames, available, effectiveScope, isLoading, error, truncated } = useEventsAround(anchor, profileId, {
     windowMinutes: context.windowMinutes,
     scope: context.scope,
     enabled: true,
@@ -83,11 +77,6 @@ function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId:
     ? () => applyContext({ ...context, windowMinutes: widerMinutes })
     : undefined;
 
-  // The distinct monitor ids among the window's own rows: what the scope
-  // actually resolved to, read off data already fetched rather than
-  // re-deriving the scope's monitor list for the Events hatch.
-  const monitorIds = useMemo(() => [...new Set(rows.map((r) => r.event.MonitorId))], [rows]);
-
   // What the controls show is the scope the query actually ran with, which is
   // not the saved one when this anchor cannot offer it (useEventsAround). The
   // user's own choice stays in `context` and in settings; only the pressed
@@ -96,32 +85,6 @@ function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId:
     () => (effectiveScope === context.scope ? context : { ...context, scope: effectiveScope }),
     [context, effectiveScope]
   );
-
-  const openInEvents = useCallback(() => {
-    closePanel();
-    // A URL deep link, not nav state: resolveInitialFilters
-    // (useEventFilters.ts) reads exactly these query params ahead of any
-    // persisted filter, which is the sanctioned way to land on Events
-    // pre-filtered - nav state has no reader there.
-    // Browser-local: Events parses these back with `new Date(...)` in the
-    // browser's zone before converting to each profile's own.
-    const params = new URLSearchParams({
-      startDateTime: formatLocalDateTime(new Date(window.startMs)),
-      endDateTime: formatLocalDateTime(new Date(window.endMs)),
-    });
-    // Aggregate modes address monitors by `${profileId}:${monitorId}` token,
-    // because a bare id means a different camera on every server and
-    // resolveOwnMonitorIds hands a bare token to all of them (refs #494).
-    if (monitorIds.length) {
-      const currentProfileId = useProfileStore.getState().currentProfileId;
-      const tokens =
-        profileId && currentProfileId && isAggregateProfileId(currentProfileId)
-          ? monitorIds.map((id) => `${profileId}:${id}`)
-          : monitorIds;
-      params.set('monitorId', tokens.join(','));
-    }
-    navigate(`/events?${params.toString()}`);
-  }, [window, monitorIds, profileId, closePanel, navigate]);
 
   return (
     <>
@@ -138,11 +101,6 @@ function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId:
           onWiden={onWiden}
         />
       </div>
-      <SheetFooter className="flex-row gap-2 border-t p-3">
-        <Button variant="outline" size="sm" className="flex-1" onClick={openInEvents} data-testid="event-context-open-events">
-          {t('events.around.events')}
-        </Button>
-      </SheetFooter>
     </>
   );
 }
@@ -158,8 +116,8 @@ export function EventContextPanel() {
   // Radix blocks background clicks but not navigation: back/forward, a
   // programmatic navigate, or a typed URL all leave the panel mounted with a
   // now-stale anchor. Close it on the first pathname change after it opened,
-  // but not on the initial mount (the footer's own navigate+closePanel hatches
-  // already handle their own case, this only covers everything else).
+  // but not on the initial mount. This is what closes the panel when a row's
+  // own navigate (CompactEventRow) takes the user to that event.
   const pathname = useLocation().pathname;
   const openedPathname = useRef<string | null>(null);
   useEffect(() => {

@@ -24,8 +24,8 @@ Three surfaces were considered.
   controls, and dismisses without touching the route. That is the one specified
   here.
 
-The panel is a peek. Everything it shows is reachable from Events, and it
-links there rather than growing into it.
+The panel is a peek. Everything it shows is reachable from Events; it does
+not grow into a second Events list.
 
 ## Entry points
 
@@ -112,8 +112,7 @@ A `useEventsAround(anchor, { windowMinutes, scope, enabled })` hook.
 - Key: `queryKeys.eventsAround(profileId, anchorId, windowMinutes, scope)`,
   profile id wrapped with `asProfileId`.
 - `limit: EVENT_CONTEXT.maxResults`. When the server reports more than that, the
-  list ends with a line naming the count and the "Show in Events" link, rather
-  than silently truncating.
+  list ends with a line naming the count, rather than silently truncating.
 - The query is enabled only while the panel is open.
 
 `LinkedMonitors` is a free-text ZoneMinder field. The parser extracts numeric
@@ -168,8 +167,8 @@ from the profile's own `canViewEvents` verdict before the panel opens.
 
 ## Escape hatches
 
-A footer with one action, closing the panel: Events, with `eventFilters`
-prefilled from the window and the resolved monitor ids.
+None. The panel ends with its list; opening a row is the only way out,
+besides closing the panel.
 
 ## Localization
 

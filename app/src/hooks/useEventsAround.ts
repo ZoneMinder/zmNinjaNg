@@ -26,7 +26,6 @@ import {
   parseLinkedMonitorIds,
   resolveScopeMonitorIds,
   type EventContextScope,
-  type EventContextWindow,
 } from '../lib/event/event-context';
 import { eventInstant } from '../lib/event/event-instant';
 import { resolveProfileTimezone } from '../lib/time';
@@ -53,8 +52,6 @@ export interface UseEventsAroundResult {
    *  renders this, not the request, so the pressed chip never disagrees with
    *  the rows underneath it. */
   effectiveScope: EventContextScope;
-  /** The resolved bounds, for the Events escape hatch. */
-  window: EventContextWindow;
   /** Monitor id -> name, for the ribbon's lane labels. */
   monitorNames: Map<string, string>;
 }
@@ -99,7 +96,7 @@ export function useEventsAround(
     () =>
       anchor
         ? eventContextWindow(anchor, options.windowMinutes, timezone)
-        : { startDateTime: '', endDateTime: '', startMs: 0, endMs: 0, anchorMs: 0 },
+        : { startDateTime: '', endDateTime: '', anchorMs: 0 },
     [anchor, options.windowMinutes, timezone]
   );
 
@@ -170,6 +167,5 @@ export function useEventsAround(
     truncated: (eventsQuery.data?.pagination.totalCount ?? rows.length) > EVENT_CONTEXT.maxResults,
     available,
     effectiveScope,
-    window,
   };
 }
