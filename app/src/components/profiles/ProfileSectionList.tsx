@@ -50,25 +50,25 @@ export function ProfileSectionList<T>({
   const { t } = useTranslation();
   const sectionRefs = useRef(new Map<ProfileId, HTMLElement>());
 
-  // One entry per section that is closed. Seeded from storage on first
-  // render, so a section the user folded away stays folded across a reload
-  // and a trip into an event.
-  const [closed, setClosed] = useState<Set<ProfileId>>(() => {
-    const stored = new Set<ProfileId>();
-    for (const [profileId] of sections) {
-      if (!readStoredOpen(storageKeyFor(surface, scopeId, profileId), true)) stored.add(profileId);
-    }
-    return stored;
-  });
+  // This session's toggles, keyed by the same storage key the write uses, so
+  // switching to another group (or to another surface) never carries one
+  // group's folds onto another's sections. Anything not toggled here is read
+  // through to storage below.
+  const [toggled, setToggled] = useState<Map<string, boolean>>(new Map());
+
+  // Read-through rather than state seeded at mount: the section list grows
+  // while a group's servers answer, and scopeId changes under a mounted page
+  // when the user switches groups, both of which a mount-time seed misses.
+  // It costs one getItem per section per render, for a handful of sections.
+  const isOpen = (profileId: ProfileId): boolean => {
+    const key = storageKeyFor(surface, scopeId, profileId);
+    return toggled.get(key) ?? readStoredOpen(key, true);
+  };
 
   const setOpen = useCallback((profileId: ProfileId, open: boolean) => {
-    writeStoredOpen(storageKeyFor(surface, scopeId, profileId), open);
-    setClosed((previous) => {
-      const next = new Set(previous);
-      if (open) next.delete(profileId);
-      else next.add(profileId);
-      return next;
-    });
+    const key = storageKeyFor(surface, scopeId, profileId);
+    writeStoredOpen(key, open);
+    setToggled((previous) => new Map(previous).set(key, open));
   }, [surface, scopeId]);
 
   // Jumping to a collapsed section would scroll to a header with nothing
@@ -101,7 +101,7 @@ export function ProfileSectionList<T>({
 
       <div className={className}>
         {sections.map(([profileId, section]) => {
-          const open = !closed.has(profileId);
+          const open = isOpen(profileId);
           return (
             <div
               key={profileId}

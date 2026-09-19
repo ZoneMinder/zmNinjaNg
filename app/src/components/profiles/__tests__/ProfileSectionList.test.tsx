@@ -129,4 +129,67 @@ describe('ProfileSectionList', () => {
 
     expect(screen.getByTestId('events-group-toggle-profile-1')).toHaveAttribute('aria-expanded', 'true');
   });
+
+  // Switching groups from the profile switcher changes scopeId under a page
+  // that stays mounted. The fold belongs to the group it was made in.
+  it('drops a fold when the group changes without a remount', () => {
+    const view = render(
+      <ProfileSectionList
+        sections={sections()}
+        surface="events-group"
+        scopeId={scopeId}
+        renderItems={(items) => <span data-testid="item">{items.length}</span>}
+      />
+    );
+    fireEvent.click(screen.getByTestId('events-group-toggle-profile-1'));
+    expect(screen.getByTestId('events-group-toggle-profile-1')).toHaveAttribute('aria-expanded', 'false');
+
+    view.rerender(
+      <ProfileSectionList
+        sections={sections()}
+        surface="events-group"
+        scopeId={asProfileId('group-2')}
+        renderItems={(items) => <span data-testid="item">{items.length}</span>}
+      />
+    );
+
+    expect(screen.getByTestId('events-group-toggle-profile-1')).toHaveAttribute('aria-expanded', 'true');
+
+    view.rerender(
+      <ProfileSectionList
+        sections={sections()}
+        surface="events-group"
+        scopeId={scopeId}
+        renderItems={(items) => <span data-testid="item">{items.length}</span>}
+      />
+    );
+
+    expect(screen.getByTestId('events-group-toggle-profile-1')).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  // A group's servers answer one after another, so a section can appear after
+  // the first render; its stored fold still applies.
+  it('folds a section that appears after the first render', () => {
+    const view = render(
+      <ProfileSectionList
+        sections={[sections()[0]]}
+        surface="events-group"
+        scopeId={scopeId}
+        renderItems={(items) => <span data-testid="item">{items.length}</span>}
+      />
+    );
+    localStorage.setItem('zmng-profile-section-open-events-group-group-1-profile-2', 'false');
+
+    view.rerender(
+      <ProfileSectionList
+        sections={sections()}
+        surface="events-group"
+        scopeId={scopeId}
+        renderItems={(items) => <span data-testid="item">{items.length}</span>}
+      />
+    );
+
+    expect(screen.getByTestId('events-group-toggle-profile-2')).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.getByTestId('events-group-toggle-profile-1')).toHaveAttribute('aria-expanded', 'true');
+  });
 });
