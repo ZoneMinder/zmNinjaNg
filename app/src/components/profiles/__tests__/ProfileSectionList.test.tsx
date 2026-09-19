@@ -63,7 +63,7 @@ describe('ProfileSectionList', () => {
   it('keeps each server name a heading', () => {
     renderList();
 
-    expect(screen.getAllByRole('heading').map((h) => h.textContent)).toEqual(['Home2', 'Office1']);
+    expect(screen.getAllByRole('heading').map((h) => h.textContent)).toEqual(['Home(2)', 'Office(1)']);
   });
 
   it('puts focus on the section it jumped to', () => {
@@ -79,7 +79,7 @@ describe('ProfileSectionList', () => {
 
     const bar = screen.getByTestId('events-group-jump-bar');
     const buttons = within(bar).getAllByRole('button');
-    expect(buttons.map((b) => b.textContent)).toEqual(['Home2', 'Office1']);
+    expect(buttons.map((b) => b.textContent)).toEqual(['Home(2)', 'Office(1)']);
   });
 
   it('scrolls a section into view when its jump button is pressed', () => {

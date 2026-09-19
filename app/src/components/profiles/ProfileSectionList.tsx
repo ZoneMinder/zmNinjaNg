@@ -105,7 +105,7 @@ export function ProfileSectionList<T>({
             data-testid={`${surface}-jump-${profileId}`}
           >
             <span className="truncate max-w-[10rem]" title={section.profileName}>{section.profileName}</span>
-            <span className="text-muted-foreground">{section.items.length}</span>
+            <span className="text-muted-foreground">({section.items.length})</span>
           </button>
         ))}
       </nav>
@@ -133,7 +133,7 @@ export function ProfileSectionList<T>({
                   >
                     <ChevronDown className={cn('h-4 w-4 shrink-0 transition-transform', !open && '-rotate-90')} />
                     <span className="truncate" title={section.profileName}>{section.profileName}</span>
-                    <span className="font-normal">{section.items.length}</span>
+                    <span className="font-normal">({section.items.length})</span>
                   </CollapsibleTrigger>
                 </h2>
                 <CollapsibleContent>{renderItems(section.items, profileId)}</CollapsibleContent>

@@ -758,7 +758,7 @@ describe('Events Page', () => {
       render(<Events />);
 
       const bar = screen.getByTestId('events-group-jump-bar');
-      expect(within(bar).getAllByRole('button').map((b) => b.textContent)).toEqual(['Home2', 'Office1']);
+      expect(within(bar).getAllByRole('button').map((b) => b.textContent)).toEqual(['Home(2)', 'Office(1)']);
     });
 
     it('collapsing a server section hides its events and keeps the rest', () => {
