@@ -701,7 +701,7 @@ export default function Montage() {
           <MontageGridSections
             cappedMonitors={cappedMonitors}
             groupedSections={groupedSections}
-          scopeId={currentProfileId ?? undefined}
+            scopeId={currentProfileId}
             layout={layout}
             gridCols={gridCols}
             isEditMode={isEditMode}

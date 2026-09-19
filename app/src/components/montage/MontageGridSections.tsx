@@ -85,8 +85,9 @@ export function MontageErrorStrips({ errors, onRetry }: MontageErrorStripsProps)
 interface MontageGridSectionsProps {
   cappedMonitors: MontageTileItem[];
   groupedSections: MontageGroupedSections | null;
-  /** The aggregate the sections belong to; scopes their collapse state. */
-  scopeId?: ProfileId;
+  /** The aggregate the sections belong to; scopes their collapse state. Null
+   *  only before a profile is current, when there are no sections either. */
+  scopeId: ProfileId | null;
   layout: Layout[];
   gridCols: number;
   isEditMode: boolean;

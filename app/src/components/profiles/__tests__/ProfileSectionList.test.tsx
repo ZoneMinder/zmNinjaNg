@@ -60,6 +60,20 @@ describe('ProfileSectionList', () => {
     expect(screen.getByTestId('events-group-toggle-profile-2')).toHaveTextContent('Office');
   });
 
+  it('keeps each server name a heading', () => {
+    renderList();
+
+    expect(screen.getAllByRole('heading').map((h) => h.textContent)).toEqual(['Home2', 'Office1']);
+  });
+
+  it('puts focus on the section it jumped to', () => {
+    renderList();
+
+    fireEvent.click(screen.getByTestId('events-group-jump-profile-2'));
+
+    expect(document.activeElement).toBe(screen.getByTestId('events-group-toggle-profile-2'));
+  });
+
   it('offers one jump button per section, carrying the same counts', () => {
     renderList();
 

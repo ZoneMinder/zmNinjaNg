@@ -21,13 +21,16 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/colla
 import { cn } from '../../lib/utils';
 import { readStoredOpen, writeStoredOpen } from '../../lib/collapse-storage';
 import { STORAGE_KEYS } from '../../lib/zmninja-ng-constants';
+import { prefersReducedMotion } from '../../lib/view-transition';
 import type { ProfileSections } from '../../lib/profile/profile-sections';
 import type { ProfileId } from '../../api/types';
 
 interface ProfileSectionListProps<T> {
   sections: ProfileSections<T>;
   /** Names this surface in the testids and the storage keys, e.g.
-   *  `events-group`, so two surfaces never share a section's state. */
+   *  `events-group`. The Events list and the Events grid pass the same name
+   *  on purpose: they are one screen behind a view toggle, so a folded server
+   *  stays folded across it. */
   surface: string;
   /** The aggregate these sections belong to. */
   scopeId: ProfileId;
@@ -72,10 +75,18 @@ export function ProfileSectionList<T>({
   }, [surface, scopeId]);
 
   // Jumping to a collapsed section would scroll to a header with nothing
-  // under it, so open it on the way.
+  // under it, so open it on the way. Focus lands on the section's own header
+  // so a keyboard or screen-reader user arrives where the page scrolled to,
+  // and preventScroll leaves the scrolling to the line below.
   const jumpTo = (profileId: ProfileId) => {
     setOpen(profileId, true);
-    sectionRefs.current.get(profileId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const section = sectionRefs.current.get(profileId);
+    section?.querySelector<HTMLElement>(`[data-testid="${surface}-toggle-${profileId}"]`)
+      ?.focus({ preventScroll: true });
+    section?.scrollIntoView({
+      behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+      block: 'start',
+    });
   };
 
   return (
@@ -112,14 +123,19 @@ export function ProfileSectionList<T>({
               data-testid={`${surface}-section-${profileId}`}
             >
               <Collapsible open={open} onOpenChange={(next) => setOpen(profileId, next)}>
-                <CollapsibleTrigger
-                  className="flex w-full items-center gap-1.5 mb-2 px-1 text-sm font-semibold text-muted-foreground min-w-0"
-                  data-testid={`${surface}-toggle-${profileId}`}
-                >
-                  <ChevronDown className={cn('h-4 w-4 shrink-0 transition-transform', !open && '-rotate-90')} />
-                  <span className="truncate" title={section.profileName}>{section.profileName}</span>
-                  <span className="font-normal">{section.items.length}</span>
-                </CollapsibleTrigger>
+                {/* The server name stays a heading, as it was before the
+                    section became collapsible: it is how a screen reader
+                    moves from one server to the next. */}
+                <h2 className="mb-2">
+                  <CollapsibleTrigger
+                    className="flex w-full items-center gap-1.5 px-1 text-sm font-semibold text-muted-foreground min-w-0"
+                    data-testid={`${surface}-toggle-${profileId}`}
+                  >
+                    <ChevronDown className={cn('h-4 w-4 shrink-0 transition-transform', !open && '-rotate-90')} />
+                    <span className="truncate" title={section.profileName}>{section.profileName}</span>
+                    <span className="font-normal">{section.items.length}</span>
+                  </CollapsibleTrigger>
+                </h2>
                 <CollapsibleContent>{renderItems(section.items, profileId)}</CollapsibleContent>
               </Collapsible>
             </div>
