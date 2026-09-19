@@ -752,6 +752,9 @@ export interface EventCardProps {
   profileId?: ProfileId;
   /** All mode only: the owning profile's display name, for a chip. */
   profileChip?: string;
+  /** The event's monitor's ServerId, for the download button's multi-server
+   *  portal routing (refs #494). */
+  monitorServerId?: string | null;
   thumbnailUrls: string[];
   largeThumbnailUrls?: string[];
   objectFit?: React.CSSProperties['objectFit'];

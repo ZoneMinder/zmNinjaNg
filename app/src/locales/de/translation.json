@@ -268,7 +268,31 @@
     "delete_permission_denied": "Zum Löschen von Ereignissen wird Events: Edit benötigt.",
     "archive_permission_denied": "Zum Archivieren von Ereignissen wird Events: Edit benötigt.",
     "no_event_permission": "Dieses Konto hat keine Ereignis-Berechtigungen.",
-    "event_gone": "Dieses Ereignis existiert auf dem Server nicht mehr"
+    "event_gone": "Dieses Ereignis existiert auf dem Server nicht mehr",
+    "around": {
+      "title": "Ereignisse in der Nähe",
+      "open": "In der Nähe",
+      "permission_denied": "Dieses Konto kann keine Ereignisse lesen.",
+      "empty": "Nichts weiter in diesem Zeitraum",
+      "empty_desc": "Keine Ereignisse anderer Kameras in diesem Zeitraum.",
+      "widen": "Erweitern",
+      "truncated": "Zeigt die ersten {{count}}. Fenster verkleinern oder ein Ereignis öffnen, um mehr zu sehen.",
+      "dot_label": "{{camera}}, {{offset}}",
+      "offset_title": "Zeitabstand zu diesem Ereignis",
+      "this_event": "Dieses Ereignis",
+      "close": "Schließen",
+      "window": "Fenster",
+      "scope": "Monitore",
+      "minutes_one": "±{{count}} Min.",
+      "minutes_other": "±{{count}} Min.",
+      "scope_linked": "Verknüpft",
+      "scope_group": "Gruppe",
+      "scope_all": "Alle",
+      "scope_unavailable_linked": "Dieser Monitor hat keine verknüpften Monitore.",
+      "scope_unavailable_group": "Dieser Monitor ist in keiner Gruppe.",
+      "ribbon_count_one": "{{count}} Monitor",
+      "ribbon_count_other": "{{count}} Monitore"
+    }
   },
   "event_detail": {
     "event_id": "Ereignis ID",
@@ -605,6 +629,10 @@
       "twenty_four_hour": "24-Stunden",
       "tv_mode": "TV-Modus",
       "tv_mode_desc": "D-Pad-Navigation und Anzeige",
+      "event_context": {
+        "title": "Ereignisse in der Nähe",
+        "desc": "Standardfenster und Kameras für Ereignisse in der Nähe."
+      },
       "thumbnail_chain": {
         "title": "Vorschaubild-Anzeige",
         "desc": "Reihenfolge der Frames für Ereignis-Vorschaubilder. Deaktivierte werden übersprungen.",
@@ -631,7 +659,8 @@
         "assistant": "Assistent-Karten",
         "playback_speed": "Geschwindigkeit",
         "playback_speed_desc": "Tempo der Ereignis-Vorschau bei Hover/Druck.",
-        "live_activity": "Live-Aktivität-Kacheln"
+        "live_activity": "Live-Aktivität-Kacheln",
+        "event_context": "Ereignisse in der Nähe"
       }
     }
   },

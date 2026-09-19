@@ -115,6 +115,24 @@ The Continue button (list-video icon, next to All Events) plays events back-to-b
 
 The toggle is remembered per profile: once turned on it stays on for future events. The playback speed you pick is also remembered and reused for each event in a run, on both the MP4 and ZMS players. So is the MP4 player's mute state: unmute once and every event you open afterwards on that profile starts with audio on, until you mute again. Fullscreen is not remembered: entering or leaving it changes only the event you are watching. To have every event open fullscreen, turn on **Open events in fullscreen** under Playback in {doc}`settings`. Turning a phone to landscape also plays the event fullscreen for as long as it stays landscape. Either way the page itself goes fullscreen, MP4 or ZMS: the picture fills the screen with the player controls below it and a translucent close button in the top corner, and pinch to zoom keeps working. The MP4 player's own fullscreen button still uses the device's native fullscreen for the event you are watching.
 
+## Nearby
+
+Every event card, montage tile, and the Timing card on the event detail page carry a link icon labeled "Nearby". Tapping it opens a panel - on the right on desktop, from the bottom on mobile - listing every event from other cameras that happened close to the one you tapped, useful for seeing what the rest of your cameras caught at the same moment.
+
+Two controls at the top of the panel narrow what "close to" means:
+
+- **Window** - How far either side of the event to look: ±5, ±10, ±15, ±30, or ±60 minutes.
+- **Cameras** - Which cameras to include:
+  - **Linked** - The event's own camera plus any cameras ZoneMinder has linked to it.
+  - **Group** - Every camera in any ZoneMinder group the event's camera belongs to.
+  - **All** - Every camera on the server.
+
+A camera scope with nothing to offer (the camera has no linked cameras, or belongs to no group) stays visible but greyed out rather than disappearing, so you can see why it is not an option. If the window comes up empty, a **Wider** link steps up to the next window size.
+
+A ribbon above the list shows one row per camera with a dot for each of its events in the window, so you can see at a glance which cameras were also busy; tapping a dot jumps to that event in the list below. From there, **Events** opens the same window and cameras on that page.
+
+The window and camera choice you last picked is remembered per profile and used the next time you open the panel.
+
 ## Event Montage
 
 View events from multiple cameras at the same time, useful for reviewing an incident across several camera angles.

@@ -1,0 +1,72 @@
+/**
+ * Trigger for the "around this event" panel (refs #494). Wraps the row's
+ * `Event` into the `EventData` shape the panel's data hook expects, stops the
+ * click from reaching the card underneath, and greys itself when the owning
+ * profile may not read events, the same way the archive button does.
+ *
+ * Opening pushes a history entry for the current location carrying the
+ * anchor, so the panel is real back-navigation state rather than a store flag
+ * navigation can't see (refs #494). EventContextPanel derives `open` from it.
+ */
+import { Link2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { cn } from '../../../lib/utils';
+import { useEventContextStore, type EventContextHistoryState } from '../../../stores/eventContext';
+import { useCurrentProfile } from '../../../hooks/useCurrentProfile';
+import { usePermissions } from '../../../hooks/usePermissions';
+import { canViewEvents } from '../../../lib/permissions/zm-permissions';
+import { useDeniedControl } from '../../../hooks/useDeniedControl';
+import { HintButton } from '../../ui/button';
+import type { Event, EventData, ProfileId } from '../../../api/types';
+
+interface EventContextButtonProps {
+  event: Event;
+  profileId?: ProfileId;
+  className?: string;
+  /** Full-width labelled form for a surface with room for a label (event
+   *  detail's Timing card), instead of the icon-only overlay control. */
+  labelled?: boolean;
+}
+
+export function EventContextButton({ event, profileId, className, labelled }: EventContextButtonProps) {
+  const { t } = useTranslation();
+  const openPanel = useEventContextStore((s) => s.openPanel);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { currentProfile } = useCurrentProfile();
+  // The fallback is safe on the one surface that uses it: /events/:eventId
+  // resolves its own profile through the same current-profile fallback and
+  // builds its client from it, so if an aggregate could be current there the
+  // page would already be broken before this button ran.
+  const ownerProfileId = profileId ?? currentProfile?.id;
+  const { permissions } = usePermissions(ownerProfileId);
+
+  const props = useDeniedControl({
+    denied: canViewEvents(permissions) === 'denied',
+    message: t('events.around.permission_denied'),
+    onClick: (e: React.MouseEvent) => {
+      e.stopPropagation();
+      openPanel({ Event: event } as EventData, ownerProfileId);
+      const state: EventContextHistoryState = {
+        ...(location.state as EventContextHistoryState | null),
+        eventContextAnchor: { eventId: event.Id, profileId: ownerProfileId },
+      };
+      navigate({ pathname: location.pathname, search: location.search }, { state });
+    },
+    title: t('events.around.open'),
+    className: cn(
+      labelled
+        ? 'w-full inline-flex items-center justify-center gap-2 border rounded-md py-2 hover:bg-accent transition-colors'
+        : 'p-1 rounded-full hover:bg-accent transition-colors',
+      className
+    ),
+  });
+
+  return (
+    <HintButton {...props} aria-label={t('events.around.open')} data-testid="event-context-open">
+      <Link2 className="h-4 w-4 shrink-0 stroke-muted-foreground hover:stroke-primary" />
+      {labelled && <span className="min-w-0 truncate">{t('events.around.open')}</span>}
+    </HintButton>
+  );
+}

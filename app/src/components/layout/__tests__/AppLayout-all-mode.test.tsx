@@ -45,6 +45,9 @@ vi.mock('../../CertTrustDialog', () => ({ CertTrustDialog: () => null }));
 vi.mock('../../CertTrustBanner', () => ({ CertTrustBanner: () => null }));
 vi.mock('../../events/DeleteBatchBar', () => ({ DeleteBatchBar: () => null }));
 vi.mock('../../assistant/AssistantWidget', () => ({ AssistantWidget: () => null }));
+// Reads events via react-query (refs #494); this file renders AppLayout with
+// no QueryClientProvider, same as the other mocked children above.
+vi.mock('../../events/context/EventContextPanel', () => ({ EventContextPanel: () => null }));
 
 // The overlay only renders while locked; expose its unlock callback directly so
 // the restore path is reachable without driving the PIN pad.

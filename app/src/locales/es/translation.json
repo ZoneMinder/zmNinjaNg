@@ -268,7 +268,31 @@
     "delete_permission_denied": "Eliminar eventos requiere el permiso Events: Edit.",
     "archive_permission_denied": "Archivar eventos requiere el permiso Events: Edit.",
     "no_event_permission": "Esta cuenta no tiene permisos de eventos.",
-    "event_gone": "Este evento ya no existe en el servidor"
+    "event_gone": "Este evento ya no existe en el servidor",
+    "around": {
+      "title": "Eventos cercanos",
+      "open": "Cercanos",
+      "permission_denied": "Esta cuenta no puede leer eventos.",
+      "empty": "Nada más en este intervalo",
+      "empty_desc": "Sin eventos de otras cámaras en este intervalo.",
+      "widen": "Ampliar",
+      "truncated": "Mostrando los primeros {{count}}. Reduce la ventana o abre un evento para ver más.",
+      "dot_label": "{{camera}}, {{offset}}",
+      "offset_title": "Tiempo respecto a este evento",
+      "this_event": "Este evento",
+      "close": "Cerrar",
+      "window": "Ventana",
+      "scope": "Monitores",
+      "minutes_one": "±{{count}} min",
+      "minutes_other": "±{{count}} min",
+      "scope_linked": "Vinculadas",
+      "scope_group": "Grupo",
+      "scope_all": "Todas",
+      "scope_unavailable_linked": "Este monitor no tiene monitores vinculados.",
+      "scope_unavailable_group": "Este monitor no está en ningún grupo.",
+      "ribbon_count_one": "{{count}} monitor",
+      "ribbon_count_other": "{{count}} monitores"
+    }
   },
   "event_detail": {
     "event_id": "ID de Evento",
@@ -605,6 +629,10 @@
       "twenty_four_hour": "24 horas",
       "tv_mode": "Modo TV",
       "tv_mode_desc": "Navegacion D-pad y pantalla",
+      "event_context": {
+        "title": "Eventos cercanos",
+        "desc": "Ventana y cámaras predeterminadas para eventos cercanos."
+      },
       "thumbnail_chain": {
         "title": "Miniaturas",
         "desc": "Orden de fotogramas para miniaturas. Se omiten las filas desactivadas.",
@@ -631,7 +659,8 @@
         "assistant": "Tarjetas del asistente",
         "playback_speed": "Velocidad",
         "playback_speed_desc": "Velocidad de previsualización de eventos.",
-        "live_activity": "Mosaicos de Actividad en vivo"
+        "live_activity": "Mosaicos de Actividad en vivo",
+        "event_context": "Eventos cercanos"
       }
     }
   },

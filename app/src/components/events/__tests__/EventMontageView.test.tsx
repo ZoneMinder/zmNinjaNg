@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 
 vi.mock('../../../api/store-gates', () => import('../../../tests/fake-store-gates'));
@@ -7,6 +8,7 @@ vi.mock('../../../lib/security/secureStorage', () => import('../../../tests/fake
 
 import { EventMontageView } from '../EventMontageView';
 import { useReturnHighlightStore } from '../../../stores/returnHighlight';
+import { useEventContextStore } from '../../../stores/eventContext';
 import { RETURN_FLASH_MS } from '../../../lib/zmninja-ng-constants';
 import { downloadEventVideo } from '../../../services/download';
 import { clearAllServerMaps, setServerMap } from '../../../lib/zm/server-resolver';
@@ -14,9 +16,20 @@ import { asProfileId, type EventData } from '../../../api/types';
 import type { ScopedEventItem } from '../EventListView';
 import { seedProfiles, resetProfileFixture, makeProfile } from '../../../tests/profile-fixture';
 import { resetFakeStoreGates } from '../../../tests/fake-store-gates';
+import { queryKeys } from '../../../lib/query/query-keys';
+import { UNRESTRICTED_PERMISSIONS } from '../../../lib/permissions/zm-permissions';
+import { setEventArchived } from '../../../api/events';
+import { useEventFavoritesStore } from '../../../stores/eventFavorites';
+import { useDeleteSelectionStore, eventSelectionKey } from '../../../stores/deleteSelection';
 
 const navigate = vi.fn();
-vi.mock('react-router-dom', () => ({ useNavigate: () => navigate }));
+vi.mock('react-router-dom', () => ({
+  useNavigate: () => navigate,
+  // EventContextButton (the "Nearby" trigger) also reads useLocation to push
+  // a history entry when it opens the panel (refs #494); a stub missing it
+  // throws the moment that button mounts, not just when it's clicked.
+  useLocation: () => ({ pathname: '/events', search: '', state: null }),
+}));
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key, i18n: { language: 'en' } }),
@@ -43,6 +56,11 @@ vi.mock('../EventThumbnailHoverPreview', () => ({
 }));
 
 vi.mock('../../../services/download', () => ({ downloadEventVideo: vi.fn() }));
+vi.mock('../../../api/events', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../api/events')>();
+  return { ...actual, setEventArchived: vi.fn() };
+});
+vi.mock('sonner', () => ({ toast: Object.assign(vi.fn(), { error: vi.fn(), success: vi.fn() }) }));
 
 // EventData is a wrapper: { Event: {...} }. These are the inner Event fields.
 const baseEventFields = {
@@ -100,18 +118,27 @@ function scopedEvent(id: string, profileId: string, profileChip: string, overrid
 }
 
 function renderEvents(events: EventData[], monitors: Array<{ Monitor: { Id: string; ServerId?: string | null }; profileId?: string }> = []) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  // EventContextButton's usePermissions probes account permissions on mount.
+  // Pre-seeding the (infinitely fresh, per usePermissions) cache means that
+  // probe resolves synchronously from cache instead of settling one
+  // microtask after render, which would otherwise warn outside act().
+  client.setQueryData(queryKeys.accountPermissions(asProfileId('current')), UNRESTRICTED_PERMISSIONS);
+  client.setQueryData(queryKeys.accountPermissions(asProfileId('profile-b')), UNRESTRICTED_PERMISSIONS);
   return render(
-    <EventMontageView
-      events={events as ScopedEventItem[]}
-      monitors={monitors as never}
-      gridCols={3}
-      thumbnailFit="contain"
-      portalUrl="https://zm.example.test"
-      accessToken="current-profile-token"
-      batchSize={20}
-      onLoadMore={vi.fn()}
-      eventFilters={{ monitorId: '1' } as never}
-    />
+    <QueryClientProvider client={client}>
+      <EventMontageView
+        events={events as ScopedEventItem[]}
+        monitors={monitors as never}
+        gridCols={3}
+        thumbnailFit="contain"
+        portalUrl="https://zm.example.test"
+        accessToken="current-profile-token"
+        batchSize={20}
+        onLoadMore={vi.fn()}
+        eventFilters={{ monitorId: '1' } as never}
+      />
+    </QueryClientProvider>
   );
 }
 
@@ -133,6 +160,11 @@ beforeEach(() => {
 // Server maps are module-global state (server-resolver.ts); clear after
 // every test so a later test never sees a map a previous one registered.
 afterEach(() => {
+  // Unmount inside act() before the fixture's own plain cleanup() runs: a tile
+  // subscribes to the favourite and delete-selection stores, and tearing it
+  // down outside act reports the unsubscribe-time render as an unwrapped
+  // update even though every interaction went through fireEvent (refs #494).
+  act(() => { cleanup(); });
   clearAllServerMaps();
   resetProfileFixture();
   resetFakeStoreGates();
@@ -272,11 +304,108 @@ describe('EventMontageView all-mode owning-profile wiring (refs #337 Task 2)', (
   });
 });
 
+// The around-this-event trigger (refs #494 Task 9): reuses EventContextButton
+// rather than duplicating its open/permission logic, so these tests only need
+// to prove the tile wires it to its OWN owning profile and that opening it
+// pushes a history entry for the current location rather than routing the
+// tile to the event (refs #494 navigation follow-up).
+describe('EventMontageView around-this-event trigger (refs #494 Task 9)', () => {
+  afterEach(() => {
+    useEventContextStore.setState({ anchor: null, profileId: undefined });
+  });
+
+  it('offers the around-this-event button on a montage tile and opens the panel for the tile\'s own owning profile', () => {
+    renderEvents([scopedEvent('401', 'profile-b', 'Office')]);
+
+    fireEvent.click(screen.getByTestId('event-context-open'));
+
+    const state = useEventContextStore.getState();
+    expect(state.anchor?.Event.Id).toBe('401');
+    expect(state.profileId).toBe('profile-b');
+  });
+
+  it('pushes a history entry for the anchor instead of routing the tile to the event', () => {
+    renderEvents([eventWithId('402')]);
+
+    fireEvent.click(screen.getByTestId('event-context-open'));
+
+    expect(navigate).toHaveBeenCalledWith(
+      { pathname: '/events', search: '' },
+      { state: { eventContextAnchor: { eventId: '402', profileId: 'current' } } }
+    );
+  });
+});
+
+// Grid action parity (refs #494): favourite, archive and delete are now
+// composed from the same EventFavoriteButton/EventArchiveButton/
+// EventDeleteButton components EventCard uses, so each guards on the
+// tile's OWN event and owning profile, not the page-level default, and
+// none of them route the tile to the event underneath. One tile per mode
+// (all-mode, single-mode) exercises every new control, rather than a
+// render per control, to keep this suite's tile-mount count down.
+describe('EventMontageView grid action parity (refs #494)', () => {
+  afterEach(() => {
+    // Wrapped: the tile now also subscribes to both stores (for the
+    // favourite-driven re-render and the delete-selection highlight,
+    // refs #494), so resetting them while a tile from the just-finished test
+    // is still mounted (this runs before the outer afterEach's cleanup())
+    // re-renders it outside any act() otherwise.
+    act(() => {
+      useEventFavoritesStore.setState({ profileFavorites: {} });
+      useDeleteSelectionStore.getState().clear();
+    });
+    vi.mocked(setEventArchived).mockReset();
+  });
+
+  it("favourites, deletes and archives this tile's own event under its own owning profile without navigating", async () => {
+    vi.mocked(setEventArchived).mockResolvedValue(undefined);
+    renderEvents([scopedEvent('501', 'profile-b', 'Office')]);
+
+    // Archive first: it is the only one of the three that goes through an
+    // async call, so it is checked with waitFor while favourite and delete
+    // (both synchronous store writes) are checked immediately after.
+    // act() around each click: these controls write to a store the tile
+    // subscribes to, and the archive call resolves into a re-render after the
+    // click returns, which React reports as an unwrapped update otherwise.
+    await act(async () => { fireEvent.click(screen.getByTestId('event-archive-button')); });
+    await waitFor(() => expect(setEventArchived).toHaveBeenCalledTimes(1));
+    const [, eventId, next] = vi.mocked(setEventArchived).mock.calls[0];
+    expect(eventId).toBe('501');
+    expect(next).toBe(true);
+
+    await act(async () => { fireEvent.click(screen.getByTestId('event-favorite-button')); });
+    expect(useEventFavoritesStore.getState().isFavorited(asProfileId('profile-b'), '501')).toBe(true);
+
+    await act(async () => { fireEvent.click(screen.getByTestId('event-delete-button')); });
+    expect(useDeleteSelectionStore.getState().selectedKeys).toEqual([eventSelectionKey(asProfileId('profile-b'), '501')]);
+
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it('falls back to the current profile for favourite and delete in single mode', async () => {
+    renderEvents([eventWithId('504')]);
+
+    await act(async () => { fireEvent.click(screen.getByTestId('event-favorite-button')); });
+    await act(async () => { fireEvent.click(screen.getByTestId('event-delete-button')); });
+
+    expect(useEventFavoritesStore.getState().isFavorited(asProfileId('current'), '504')).toBe(true);
+    expect(useDeleteSelectionStore.getState().selectedKeys).toEqual([eventSelectionKey(asProfileId('current'), '504')]);
+    expect(navigate).not.toHaveBeenCalled();
+  });
+});
+
 // Sectioning by owning server (refs #501). The page turns this on only in an
 // aggregate, where every row carries a profileId and a profileChip.
 describe('EventMontageView server sections (grid view)', () => {
   function renderGrouped(events: ScopedEventItem[], grouped: boolean) {
+    // Same pre-seeded client as renderEvents: every tile mounts
+    // EventContextButton, whose permission probe would otherwise settle
+    // outside act() (refs #494).
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    client.setQueryData(queryKeys.accountPermissions(asProfileId('current')), UNRESTRICTED_PERMISSIONS);
+    client.setQueryData(queryKeys.accountPermissions(asProfileId('profile-b')), UNRESTRICTED_PERMISSIONS);
     return render(
+      <QueryClientProvider client={client}>
       <EventMontageView
         events={events}
         monitors={[]}
@@ -288,6 +417,7 @@ describe('EventMontageView server sections (grid view)', () => {
         onLoadMore={vi.fn()}
         groupByScopeId={grouped ? asProfileId('group-1') : undefined}
       />
+      </QueryClientProvider>
     );
   }
 

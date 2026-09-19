@@ -268,7 +268,31 @@
     "delete_permission_denied": "Supprimer des événements exige la permission Events: Edit.",
     "archive_permission_denied": "Archiver des événements exige la permission Events: Edit.",
     "no_event_permission": "Ce compte n'a aucune permission sur les événements.",
-    "event_gone": "Cet évènement n'existe plus sur le serveur"
+    "event_gone": "Cet évènement n'existe plus sur le serveur",
+    "around": {
+      "title": "Événements à proximité",
+      "open": "À proximité",
+      "permission_denied": "Ce compte ne peut pas lire les événements.",
+      "empty": "Rien d'autre dans cette période",
+      "empty_desc": "Aucun événement d'autres caméras dans cette période.",
+      "widen": "Élargir",
+      "truncated": "Affichage des {{count}} premiers. Réduisez la fenêtre ou ouvrez un événement pour en voir plus.",
+      "dot_label": "{{camera}}, {{offset}}",
+      "offset_title": "Écart de temps par rapport à cet événement",
+      "this_event": "Cet événement",
+      "close": "Fermer",
+      "window": "Fenêtre",
+      "scope": "Moniteurs",
+      "minutes_one": "±{{count}} min",
+      "minutes_other": "±{{count}} min",
+      "scope_linked": "Liés",
+      "scope_group": "Groupe",
+      "scope_all": "Tous",
+      "scope_unavailable_linked": "Ce moniteur n'a aucun moniteur lié.",
+      "scope_unavailable_group": "Ce moniteur n'appartient à aucun groupe.",
+      "ribbon_count_one": "{{count}} moniteur",
+      "ribbon_count_other": "{{count}} moniteurs"
+    }
   },
   "event_detail": {
     "event_id": "ID Événement",
@@ -605,6 +629,10 @@
       "twenty_four_hour": "24 heures",
       "tv_mode": "Mode TV",
       "tv_mode_desc": "Navigation D-pad et affichage",
+      "event_context": {
+        "title": "Événements à proximité",
+        "desc": "Fenêtre et caméras par défaut pour les événements à proximité."
+      },
       "thumbnail_chain": {
         "title": "Miniatures",
         "desc": "Ordre des images à essayer pour les miniatures. Les lignes désactivées sont ignorées.",
@@ -631,7 +659,8 @@
         "assistant": "Cartes de l'assistant",
         "playback_speed": "Vitesse",
         "playback_speed_desc": "Vitesse des aperçus d'événement.",
-        "live_activity": "Tuiles d'activité en direct"
+        "live_activity": "Tuiles d'activité en direct",
+        "event_context": "Événements à proximité"
       }
     }
   },

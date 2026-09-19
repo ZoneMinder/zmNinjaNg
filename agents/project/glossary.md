@@ -47,6 +47,12 @@ _Avoid_: live view
 A ZoneMinder recording with frames, alarm frames, and scores.
 _Avoid_: recording, clip
 
+**Nearby**:
+The user-facing name for events from other monitors near an anchor event's
+time, shown in `EventContextPanel`. Internal names (`EventContextPanel`,
+`events.around.*` keys, `event-context-*` testids) stay as they are.
+_Avoid_: around this event, context panel
+
 **Zone**:
 A motion-detection region on a monitor, in pixel or percent coordinates.
 

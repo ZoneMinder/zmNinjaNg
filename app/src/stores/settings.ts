@@ -21,7 +21,10 @@ import { START_SCREENS, START_SCREEN_LAST_USED } from '../lib/navigation';
 import {
   ALL_MODE_STREAM_TUNING_VALUES,
   coerceAllModePerformance,
+  coerceEventContext,
+  DEFAULT_EVENT_CONTEXT,
   type AllModeStreamTuning,
+  type EventContextSettings,
 } from './settings-coercion';
 
 export type ViewMode = 'snapshot' | 'streaming';
@@ -45,6 +48,8 @@ export const ALL_MODE_NOTIFICATIONS_VALUES: readonly AllModeNotifications[] = ['
 // this store (refs #281). Re-exported for the existing callers.
 export type { AllModeStreamTuning };
 export { ALL_MODE_STREAM_TUNING_VALUES };
+export type { EventContextSettings };
+export { DEFAULT_EVENT_CONTEXT };
 export type { DateFormatPreset, TimeFormatPreset };
 export type { ThumbnailFallbackType, ThumbnailFallbackEntry };
 
@@ -60,6 +65,8 @@ export interface HoverPreviewSettings {
   assistant: boolean;
   /** Alarm tiles on Live Activity. */
   liveActivity: boolean;
+  /** Rows in the "around this event" panel (refs #494). */
+  eventContext: boolean;
 }
 
 export const DEFAULT_HOVER_PREVIEW: HoverPreviewSettings = {
@@ -75,6 +82,7 @@ export const DEFAULT_HOVER_PREVIEW: HoverPreviewSettings = {
   // size, so a hover preview opens a second connection for a bigger copy of
   // what is on screen. Worth having on a wall of small tiles, not by default.
   liveActivity: false,
+  eventContext: true,
 };
 
 /** ZMS rate parameter (percentage). 100 = 1x real time. */
@@ -316,6 +324,10 @@ export interface ProfileSettings {
    *  fullscreen" under Settings > Playback, and nowhere else: entering
    *  fullscreen on the player is a session change (refs #462, #463, #476). */
   eventPlaybackFullscreen: boolean;
+  /** "Around this event": the window either side of an anchor, and which
+   *  cameras the window covers. Written by the panel's own controls, so the
+   *  last answer becomes the next default (refs #494). */
+  eventContext: EventContextSettings;
   // Desktop sidebar width in pixels (60–320, persisted across sessions)
   sidebarWidth: number;
   // TV mode: enables D-pad navigation and larger UI
@@ -532,6 +544,7 @@ export const DEFAULT_SETTINGS: ProfileSettings = {
   eventPlaybackRate: DEFAULT_EVENT_PLAYBACK_RATE,
   eventPlaybackMuted: true,
   eventPlaybackFullscreen: false,
+  eventContext: DEFAULT_EVENT_CONTEXT,
   sidebarWidth: 256,
   tvMode: false,
   showProtocolLabel: true,
@@ -599,16 +612,18 @@ export function mergeProfileSettings(raw: Partial<ProfileSettings> | undefined):
     merged.startScreen = START_SCREEN_LAST_USED;
   }
   coerceAllModePerformance(merged, DEFAULT_SETTINGS);
+  coerceEventContext(merged, DEFAULT_SETTINGS);
   return merged;
 }
 
 /**
  * Persisted shape version. BUMP THIS whenever `ASSISTANT.retiredModelIds`
- * gains an entry: zustand only calls `migrate` when the stored version is below
- * this number, so a retirement added without a bump never reaches anyone who
- * already ran the app.
+ * gains an entry, or `HoverPreviewSettings` or `EventContextSettings` gains a
+ * key: zustand only calls `migrate` when the stored version is below this
+ * number, so a change added without a bump never reaches anyone who already
+ * ran the app.
  */
-export const SETTINGS_VERSION = 10;
+export const SETTINGS_VERSION = 12;
 
 /**
  * Migrate persisted settings:
@@ -623,7 +638,30 @@ export const SETTINGS_VERSION = 10;
  */
 export function migrateSettings(persistedState: unknown, version: number): unknown {
   const state = version >= 1 ? persistedState : migrateV0ToV1(persistedState);
-  return moveNativeOffOnDevice(fillHoverPreviewSurfaces(normalizeRetiredModelIds(state)));
+  return moveNativeOffOnDevice(
+    fillEventContextKeys(fillHoverPreviewSurfaces(normalizeRetiredModelIds(state)))
+  );
+}
+
+/** Fills `eventContext` keys added after a profile was last written, so a
+ *  later addition starts at its default instead of the merge repairing it on
+ *  every read. Same shape and the same reasoning as `fillHoverPreviewSurfaces`
+ *  above; profiles that never opened the panel have no `eventContext` and get
+ *  the default from `mergeProfileSettings` as before. Refs #494. */
+function fillEventContextKeys(persistedState: unknown): unknown {
+  const state = (persistedState ?? {}) as { profileSettings?: Record<string, unknown> };
+  if (!state.profileSettings) return persistedState;
+
+  const migrated: Record<string, unknown> = {};
+  for (const [profileId, raw] of Object.entries(state.profileSettings)) {
+    const s = (raw ?? {}) as Record<string, unknown>;
+    const stored = s.eventContext;
+    migrated[profileId] =
+      stored && typeof stored === 'object'
+        ? { ...s, eventContext: { ...DEFAULT_EVENT_CONTEXT, ...stored } }
+        : s;
+  }
+  return { ...state, profileSettings: migrated };
 }
 
 /** Fills `hoverPreview` keys added after a profile was last written, so a new

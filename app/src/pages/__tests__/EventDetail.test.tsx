@@ -15,6 +15,7 @@ import { useSettingsStore } from '../../stores/settings';
 import { getEvent } from '../../api/events';
 import { seedProfiles, resetProfileFixture, fakeApiClient, asProfileId, type FakeApiClient } from '../../tests/profile-fixture';
 import { installApiClient, resetFakeStoreGates } from '../../tests/fake-store-gates';
+import { useEventContextStore } from '../../stores/eventContext';
 
 vi.mock('../../api/store-gates', () => import('../../tests/fake-store-gates'));
 vi.mock('../../lib/security/secureStorage', () => import('../../tests/fake-secure-storage'));
@@ -599,5 +600,48 @@ describe('EventDetail All-mode deep route (refs #337)', () => {
     render(<EventDetail />);
 
     expect(screen.getByText('event_detail.load_error')).toBeTruthy();
+  });
+});
+
+// The around-this-event trigger, added to the Timing card as a full-width
+// labelled button (refs #494 Task 9). Reuses EventContextButton rather than
+// duplicating its open/permission logic, so these tests only need to prove
+// the page wires it to its OWN route profile and that it reads as a labelled
+// control, not an icon-only one.
+describe('EventDetail around-this-event trigger (refs #494 Task 9)', () => {
+  beforeEach(() => {
+    h.routeParams = { id: '101' };
+    useQueryMock.mockReset();
+    useQueryMock.mockImplementation(({ queryKey }: { queryKey: readonly unknown[] }) => {
+      if (queryKey[0] === 'event') return { data: event, isLoading: false, error: null };
+      if (queryKey[0] === 'monitor') return { data: monitorData, isLoading: false, error: null };
+      return { data: null, isLoading: false, error: null };
+    });
+  });
+
+  afterEach(() => {
+    useEventContextStore.setState({ anchor: null, profileId: undefined });
+  });
+
+  it('opens the panel for the current profile from the Timing card in single mode', () => {
+    render(<EventDetail />);
+
+    const button = screen.getByTestId('event-context-open');
+    expect(button).toHaveTextContent('events.around.open');
+    fireEvent.click(button);
+
+    const state = useEventContextStore.getState();
+    expect(state.anchor?.Event.Id).toBe('101');
+    expect(state.profileId).toBe('profile-1');
+  });
+
+  it('opens the panel for the route profile on the All-mode deep route', () => {
+    h.routeParams = { profileId: 'profile-b', eventId: '101' };
+
+    render(<EventDetail />);
+
+    fireEvent.click(screen.getByTestId('event-context-open'));
+
+    expect(useEventContextStore.getState().profileId).toBe('profile-b');
   });
 });

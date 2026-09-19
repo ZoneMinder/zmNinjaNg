@@ -268,7 +268,31 @@
     "delete_permission_denied": "Deleting events needs Events: Edit permission.",
     "archive_permission_denied": "Archiving events needs Events: Edit permission.",
     "no_event_permission": "This account has no event permissions.",
-    "event_gone": "This event no longer exists on the server"
+    "event_gone": "This event no longer exists on the server",
+    "around": {
+      "title": "Nearby events",
+      "open": "Nearby",
+      "permission_denied": "This account cannot read events.",
+      "empty": "Nothing else in this window",
+      "empty_desc": "No events from other cameras in this window.",
+      "widen": "Wider",
+      "truncated": "Showing the first {{count}}. Narrow the window, or open an event to see more.",
+      "dot_label": "{{camera}}, {{offset}}",
+      "offset_title": "Time from this event",
+      "this_event": "This event",
+      "close": "Close",
+      "window": "Window",
+      "scope": "Cameras",
+      "minutes_one": "±{{count}}m",
+      "minutes_other": "±{{count}}m",
+      "scope_linked": "Linked",
+      "scope_group": "Group",
+      "scope_all": "All",
+      "scope_unavailable_linked": "This camera has no linked cameras.",
+      "scope_unavailable_group": "This camera is in no group.",
+      "ribbon_count_one": "{{count}} camera",
+      "ribbon_count_other": "{{count}} cameras"
+    }
   },
   "event_detail": {
     "event_id": "Event ID",
@@ -605,6 +629,10 @@
       "twenty_four_hour": "24-hour",
       "tv_mode": "TV mode",
       "tv_mode_desc": "D-pad navigation and larger UI",
+      "event_context": {
+        "title": "Nearby events",
+        "desc": "Default window and cameras for nearby events."
+      },
       "thumbnail_chain": {
         "title": "Thumbnail display",
         "desc": "Order to try for event thumbnails. Disabled rows are skipped.",
@@ -631,7 +659,8 @@
         "assistant": "Assistant cards",
         "playback_speed": "Playback speed",
         "playback_speed_desc": "Speed for event hover/long-press previews.",
-        "live_activity": "Live Activity tiles"
+        "live_activity": "Live Activity tiles",
+        "event_context": "Nearby events"
       }
     }
   },

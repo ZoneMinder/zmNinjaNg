@@ -92,6 +92,13 @@ export const queryKeys = {
   /** A single event by id. */
   event: (profileId: MaybeProfileId, eventId: string | undefined) =>
     ['event', profileId, eventId] as const,
+  /** Events within a window either side of one anchor event. */
+  eventsAround: (
+    profileId: MaybeProfileId,
+    anchorId: string,
+    windowMinutes: number,
+    scope: string,
+  ) => ['events', profileId, 'around', anchorId, windowMinutes, scope] as const,
   /** Recent events for a single monitor (monitor detail list). */
   monitorRecentEvents: (
     profileId: MaybeProfileId,

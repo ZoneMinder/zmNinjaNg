@@ -268,7 +268,31 @@
     "delete_permission_denied": "Per eliminare gli eventi è necessario il permesso Eventi: Modifica.",
     "archive_permission_denied": "Per archiviare gli eventi è necessario il permesso Eventi: Modifica.",
     "no_event_permission": "Questo account non dispone dei permessi per gli eventi.",
-    "event_gone": "Questo evento non esiste più sul server"
+    "event_gone": "Questo evento non esiste più sul server",
+    "around": {
+      "title": "Eventi vicini",
+      "open": "Vicini",
+      "permission_denied": "Questo account non può leggere gli eventi.",
+      "empty": "Nient'altro in questo intervallo",
+      "empty_desc": "Nessun evento da altre telecamere in questo intervallo.",
+      "widen": "Allarga",
+      "truncated": "Mostrati i primi {{count}}. Riduci la finestra o apri un evento per vederne altri.",
+      "dot_label": "{{camera}}, {{offset}}",
+      "offset_title": "Distanza temporale da questo evento",
+      "this_event": "Questo evento",
+      "close": "Chiudi",
+      "window": "Finestra",
+      "scope": "Monitor",
+      "minutes_one": "±{{count}} min",
+      "minutes_other": "±{{count}} min",
+      "scope_linked": "Collegati",
+      "scope_group": "Gruppo",
+      "scope_all": "Tutti",
+      "scope_unavailable_linked": "Questo monitor non ha monitor collegati.",
+      "scope_unavailable_group": "Questo monitor non è in nessun gruppo.",
+      "ribbon_count_one": "{{count}} monitor",
+      "ribbon_count_other": "{{count}} monitor"
+    }
   },
   "event_detail": {
     "event_id": "ID evento",
@@ -605,6 +629,10 @@
       "twenty_four_hour": "24-hour",
       "tv_mode": "Modalità TV",
       "tv_mode_desc": "Navigazione con D-pad e interfaccia più grande",
+      "event_context": {
+        "title": "Eventi vicini",
+        "desc": "Finestra e telecamere predefinite per gli eventi vicini."
+      },
       "thumbnail_chain": {
         "title": "Visualizzazione miniature",
         "desc": "Ordine da provare per le miniature degli eventi. Le righe disabilitate vengono saltate.",
@@ -631,7 +659,8 @@
         "assistant": "Schede assistente",
         "playback_speed": "Velocità di riproduzione",
         "playback_speed_desc": "Velocità delle anteprime evento al passaggio o con pressione prolungata.",
-        "live_activity": "Riquadri attività live"
+        "live_activity": "Riquadri attività live",
+        "event_context": "Eventi vicini"
       }
     }
   },

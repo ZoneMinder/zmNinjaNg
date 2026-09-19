@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useDateTimeFormat } from '../../hooks/useDateTimeFormat';
 import { EventThumbnail } from './EventThumbnail';
+import { EventThumbnailHoverPreview } from './EventThumbnailHoverPreview';
 import { EventDeleteButton } from './EventDeleteButton';
 import { ReturnFlashArrow } from './ReturnFlashArrow';
 import { parseDetectedObjects } from '../../lib/event/event-detection';
@@ -38,9 +39,28 @@ interface CompactEventRowProps {
    * row for nothing.
    */
   ownerProfileId?: ProfileId;
+  /** Wrap the thumbnail in the hover/long-press preview (refs #494). Off by
+   *  default so the existing MonitorRecentEvents caller is unchanged. */
+  hoverPreview?: boolean;
+  /** Replaces the trailing badge's content; defaults to the event's own
+   *  duration. The "around this event" panel puts the offset from the
+   *  anchor there instead (refs #494). */
+  badgeLabel?: string;
+  /** Replaces the badge's title to match badgeLabel; defaults to the
+   *  duration tooltip. */
+  badgeTitle?: string;
+  /** Overrides the badge's colour classes; defaults to the muted chip. The
+   *  "around this event" panel tints the anchor row's badge blue instead
+   *  (refs #494). */
+  badgeClassName?: string;
+  /** Heading override for a list mixing cameras: the owning monitor's name
+   *  replaces the cause/detection text in the heading, which moves to the
+   *  detail line instead. Absent, the row renders exactly as
+   *  MonitorRecentEvents relies on today (refs #494). */
+  monitorName?: string;
 }
 
-export function CompactEventRow({ event, thumbnailUrls, aspectRatio, objectFit = 'cover', profileId, ownerProfileId }: CompactEventRowProps) {
+export function CompactEventRow({ event, thumbnailUrls, aspectRatio, objectFit = 'cover', profileId, ownerProfileId, hoverPreview = false, badgeLabel, badgeTitle, badgeClassName, monitorName }: CompactEventRowProps) {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const { fmtTime } = useDateTimeFormat();
@@ -51,8 +71,13 @@ export function CompactEventRow({ event, thumbnailUrls, aspectRatio, objectFit =
   const startTime = new Date(event.StartDateTime.replace(' ', 'T'));
   const detected = parseDetectedObjects(event.Notes);
   const DetIcon = detected.length ? getObjectClassIconFromList(detected.join(',')) : null;
+  // Built once so the JSX below places this one element rather than creating
+  // a second <DetIcon/> call site for the monitorName branch (react-hooks
+  // static-components counts each call site, refs #494).
+  const detIcon = DetIcon && <DetIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />;
   const primaryText = detected.length ? detected.join(', ') : event.Cause;
   const showRelative = isWithinDays(startTime, RELATIVE_TIME_LIST_WINDOW_DAYS);
+  const timeText = `${fmtTime(startTime)}${showRelative ? ` · ${formatEventRelative(startTime, i18n.language, t)}` : ''}`;
   const durationSecs = Math.max(0, Math.round(Number(event.Length) || 0));
   const durationLabel =
     durationSecs >= 60
@@ -91,35 +116,57 @@ export function CompactEventRow({ event, thumbnailUrls, aspectRatio, objectFit =
           className="w-full rounded overflow-hidden bg-card border border-border/40"
           style={{ aspectRatio: aspectRatio.toString() }}
         >
-          <EventThumbnail
-            urls={thumbnailUrls}
-            cacheKey={event.Id}
-            alt={event.Name}
-            className="w-full h-full"
-            objectFit={objectFit}
-            loading="lazy"
-            data-testid="compact-event-thumbnail"
-          />
+          {hoverPreview ? (
+            <EventThumbnailHoverPreview event={event} aspectRatio={aspectRatio} profileId={ownerProfileId}>
+              <EventThumbnail
+                urls={thumbnailUrls}
+                cacheKey={event.Id}
+                alt={event.Name}
+                className="w-full h-full"
+                objectFit={objectFit}
+                loading="lazy"
+                data-testid="compact-event-thumbnail"
+              />
+            </EventThumbnailHoverPreview>
+          ) : (
+            <EventThumbnail
+              urls={thumbnailUrls}
+              cacheKey={event.Id}
+              alt={event.Name}
+              className="w-full h-full"
+              objectFit={objectFit}
+              loading="lazy"
+              data-testid="compact-event-thumbnail"
+            />
+          )}
         </div>
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1 min-w-0">
-          {DetIcon && <DetIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
-          <span className="text-sm truncate" title={primaryText}>{primaryText}</span>
+          {!monitorName && detIcon}
+          <span className="text-sm truncate" title={monitorName ?? primaryText}>{monitorName ?? primaryText}</span>
           <span className="text-[11px] text-muted-foreground shrink-0">· #{event.Id}</span>
         </div>
-        <p className="text-xs text-muted-foreground truncate">
-          {fmtTime(startTime)}
-          {showRelative && ` · ${formatEventRelative(startTime, i18n.language, t)}`}
-        </p>
+        {monitorName ? (
+          <p className="text-xs text-muted-foreground truncate flex items-center gap-1 min-w-0">
+            <span className="shrink-0">{timeText} ·</span>
+            {detIcon}
+            <span className="truncate min-w-0" title={primaryText}>{primaryText}</span>
+          </p>
+        ) : (
+          <p className="text-xs text-muted-foreground truncate">{timeText}</p>
+        )}
       </div>
       <span
-        className="flex-shrink-0 text-xs font-medium tabular-nums px-1.5 py-0.5 rounded bg-muted text-muted-foreground"
-        title={t('events.duration')}
+        className={cn(
+          'flex-shrink-0 text-xs font-medium tabular-nums px-1.5 py-0.5 rounded',
+          badgeClassName ?? 'bg-muted text-muted-foreground'
+        )}
+        title={badgeTitle ?? t('events.duration')}
       >
-        {durationLabel}
+        {badgeLabel ?? durationLabel}
       </span>
-      <EventDeleteButton eventId={event.Id} profileId={ownerProfileId} size="sm" className="flex-shrink-0" />
+      <EventDeleteButton eventId={event.Id} profileId={ownerProfileId} className="flex-shrink-0" />
     </div>
   );
 }

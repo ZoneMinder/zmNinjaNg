@@ -268,7 +268,31 @@
     "delete_permission_denied": "删除事件需要 Events: Edit 权限。",
     "archive_permission_denied": "归档事件需要 Events: Edit 权限。",
     "no_event_permission": "此账户没有事件权限。",
-    "event_gone": "此事件在服务器上已不存在"
+    "event_gone": "此事件在服务器上已不存在",
+    "around": {
+      "title": "附近事件",
+      "open": "附近",
+      "permission_denied": "此账户无法读取事件。",
+      "empty": "此时段内没有其他事件",
+      "empty_desc": "此时段内没有其他摄像头的事件。",
+      "widen": "扩大范围",
+      "truncated": "显示前 {{count}} 个。缩小窗口或打开事件以查看更多。",
+      "dot_label": "{{camera}}，{{offset}}",
+      "offset_title": "与该事件的时间差",
+      "this_event": "此事件",
+      "close": "关闭",
+      "window": "窗口",
+      "scope": "监视器",
+      "minutes_one": "±{{count}}分钟",
+      "minutes_other": "±{{count}}分钟",
+      "scope_linked": "关联",
+      "scope_group": "分组",
+      "scope_all": "全部",
+      "scope_unavailable_linked": "此监视器没有关联的监视器。",
+      "scope_unavailable_group": "此监视器不属于任何分组。",
+      "ribbon_count_one": "{{count}} 个监视器",
+      "ribbon_count_other": "{{count}} 个监视器"
+    }
   },
   "event_detail": {
     "event_id": "事件 ID",
@@ -605,6 +629,10 @@
       "twenty_four_hour": "24小时制",
       "tv_mode": "TV模式",
       "tv_mode_desc": "D-pad导航和显示",
+      "event_context": {
+        "title": "附近事件",
+        "desc": "附近事件的默认时间窗口和摄像头。"
+      },
       "thumbnail_chain": {
         "title": "缩略图显示",
         "desc": "事件缩略图的尝试顺序。已禁用的行将被跳过。",
@@ -631,7 +659,8 @@
         "assistant": "助手卡片",
         "playback_speed": "播放速度",
         "playback_speed_desc": "事件悬停预览的播放速度。",
-        "live_activity": "实时活动图块"
+        "live_activity": "实时活动图块",
+        "event_context": "附近事件"
       }
     }
   },

@@ -125,6 +125,16 @@ failures that all passed serially, and chasing them cost a session. That is
   that leaked this way made a timezone test pass in UTC-5 and fail in
   CI's UTC for weeks (75c89db3). Use `mockReturnValueOnce`, or reset the
   mock in `beforeEach`.
+- A `vi.mock` of a third-party module replaces ALL of it, so a stub must
+  carry every member the component reads on any branch, not just the
+  branch today's fixture happens to take. Two files stubbed
+  `react-i18next` with `t` alone; the components read `i18n.language`
+  only when an event falls inside the relative-time window, and their
+  fixtures were timestamped a few hours ahead of the clock. Both files
+  passed for a day and broke, with no code change, the moment the clock
+  passed the fixture (refs #494). Stub the whole surface, and date a
+  fixture far enough from now that the branch it takes does not depend on
+  when the suite runs.
 
 ## Regression tests for store-subscription bugs
 

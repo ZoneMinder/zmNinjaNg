@@ -43,6 +43,7 @@ import { useReconcileDeletedMonitors } from '../../hooks/useReconcileDeletedMoni
 import { CertTrustBanner } from '../CertTrustBanner';
 import { DeleteBatchBar } from '../events/DeleteBatchBar';
 import { AssistantWidget } from '../assistant/AssistantWidget';
+import { EventContextPanel } from '../events/context/EventContextPanel';
 
 
 /**
@@ -326,6 +327,9 @@ export default function AppLayout() {
           assistant "Open" card, or its own `navigate` tool call) never
           unmounts the conversation underneath it (refs #246). */}
       <AssistantWidget />
+
+      {/* "Around this event" panel, opened from any event row (refs #494). */}
+      <EventContextPanel />
     </div>
   );
 }

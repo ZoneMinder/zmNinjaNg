@@ -11,6 +11,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import * as fs from 'node:fs';
+import * as os from 'node:os';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -23,8 +24,14 @@ const srcDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
  * compiler and reaches no module at runtime, so it cannot form a cycle and is
  * skipped. An inline `import { type A, b }` still pulls the module in and is
  * counted, which is why only the leading keyword is matched.
+ *
+ * The body between the keyword and `from '...'` allows newlines: an import
+ * list wrapped across multiple lines (prettier's usual output once it stops
+ * fitting one line) is a real statement, and excluding `\n` here used to make
+ * the whole match fail silently on those, hiding the edge from the graph
+ * rather than merely misclassifying it.
  */
-const SPECIFIER = /(?:^|\n)\s*(?:import|export)\b\s*(type\b)?[^'"\n]*?(?:from\s*)?['"]([^'"]+)['"]/g;
+const SPECIFIER = /(?:^|\n)\s*(?:import|export)\b\s*(type\b)?[^'"]*?(?:from\s*)?['"]([^'"]+)['"]/g;
 
 function collectFiles(dir: string): string[] {
   const out: string[] = [];
@@ -94,5 +101,22 @@ describe('module graph', () => {
   it('has no circular dependencies under app/src', () => {
     const cycles = findCycles(buildGraph(collectFiles(srcDir)));
     expect(cycles, `Circular imports found (AGENTS.md rule 28):\n${cycles.join('\n')}`).toEqual([]);
+  });
+
+  it('catches a cycle formed through a multi-line import list', () => {
+    // Regression for a cycle (c71737bd) that this walker missed: the closing
+    // edge was a `{ ... } from '...'` import list wrapped across lines, and
+    // the old SPECIFIER regex excluded '\n' from the body it scans, so the
+    // whole statement silently failed to match and the edge never reached the
+    // graph.
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'no-circular-deps-fixture-'));
+    try {
+      fs.writeFileSync(path.join(dir, 'a.ts'), "import {\n  b,\n} from './b';\nexport const a = 1;\n");
+      fs.writeFileSync(path.join(dir, 'b.ts'), "import { a } from './a';\nexport const b = 1;\n");
+      const cycles = findCycles(buildGraph(collectFiles(dir)));
+      expect(cycles).not.toEqual([]);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

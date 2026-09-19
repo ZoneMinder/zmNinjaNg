@@ -35,6 +35,7 @@ import { Mp4EventPlayer } from '../components/events/Mp4EventPlayer';
 import { ZmsEventPlayer } from '../components/events/ZmsEventPlayer';
 import { EventFrameCarousel } from '../components/events/EventFrameCarousel';
 import { TagChip } from '../components/events/TagChip';
+import { EventContextButton } from '../components/events/context/EventContextButton';
 import { ArrowLeft, Calendar, Clock, HardDrive, AlertTriangle, Download, Archive, ArchiveRestore, Video, Star, Timer, Tag, ChevronLeft, ChevronRight, ChevronsUpDown, Loader2, ListVideo } from 'lucide-react';
 import { getEventCauseIcon } from '../lib/event/event-icons';
 import { getObjectClassIconFromList } from '../lib/event/object-class-icons';
@@ -832,6 +833,7 @@ export default function EventDetail() {
                   </div>
                 </div>
               </div>
+              <EventContextButton event={event.Event} profileId={routeProfileId} labelled />
             </Card>
 
             <Card className="p-6 space-y-4">

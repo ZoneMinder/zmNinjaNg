@@ -1,5 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { useSettingsStore, ALL_GROUPS_KEY, migrateSettings, SETTINGS_VERSION } from '../settings';
+import {
+  useSettingsStore,
+  ALL_GROUPS_KEY,
+  migrateSettings,
+  SETTINGS_VERSION,
+  mergeProfileSettings,
+  DEFAULT_SETTINGS,
+} from '../settings';
 import type { ProfileSettings } from '../settings';
 import {
   ALL_MODE_PERFORMANCE,
@@ -215,6 +222,27 @@ describe('settings migration v0 -> v1', () => {
     const hover = migrated.profileSettings['profile-h'].hoverPreview;
     expect(hover.assistant).toBe(true);
     expect(hover.eventsList).toBe(false);
+  });
+
+  // refs #494: a profile persisted at v10, before the "around this event"
+  // panel had its own hover preview surface, must come back with it enabled
+  // by default rather than reading as off.
+  it('fills the eventContext hover preview surface for a profile persisted at v10', () => {
+    const stored = {
+      profileSettings: { 'profile-e': { hoverPreview: { eventsList: false, notifications: true } } },
+    };
+    const migrated = migrateSettings(stored, 10) as {
+      profileSettings: Record<string, ProfileSettings>;
+    };
+    expect(migrated.profileSettings['profile-e'].hoverPreview.eventContext).toBe(true);
+  });
+
+  it('leaves a profile that never opened the context panel without an eventContext', () => {
+    const stored = { profileSettings: { 'profile-d': { theme: 'dark' } } };
+    const migrated = migrateSettings(stored, 11) as {
+      profileSettings: Record<string, Partial<ProfileSettings>>;
+    };
+    expect('eventContext' in migrated.profileSettings['profile-d']).toBe(false);
   });
 
   it('fills defaults when legacy fields are absent', () => {
@@ -567,5 +595,98 @@ describe('startScreen', () => {
   it('coerces a screen the picker does not offer back to last-used', () => {
     expect(settingsFor({ startScreen: '/gone' }).startScreen).toBe('last-used');
     expect(settingsFor({ startScreen: '/settings' }).startScreen).toBe('last-used');
+  });
+});
+
+describe('mergeProfileSettings eventContext', () => {
+  it('defaults to a ten minute window over every camera', () => {
+    expect(mergeProfileSettings(undefined).eventContext).toEqual({
+      windowMinutes: 10,
+      scope: 'all',
+    });
+  });
+
+  it('keeps a window and scope the user chose', () => {
+    const merged = mergeProfileSettings({
+      eventContext: { windowMinutes: 30, scope: 'linked' },
+    } as Partial<typeof DEFAULT_SETTINGS>);
+    expect(merged.eventContext).toEqual({ windowMinutes: 30, scope: 'linked' });
+  });
+
+  it('replaces a window no chip offers with the default', () => {
+    const merged = mergeProfileSettings({
+      eventContext: { windowMinutes: 4000, scope: 'all' },
+    } as Partial<typeof DEFAULT_SETTINGS>);
+    expect(merged.eventContext.windowMinutes).toBe(10);
+  });
+
+  it('replaces a scope the app does not know with the default', () => {
+    const merged = mergeProfileSettings({
+      eventContext: { windowMinutes: 15, scope: 'neighbours' },
+    } as unknown as Partial<typeof DEFAULT_SETTINGS>);
+    expect(merged.eventContext).toEqual({ windowMinutes: 15, scope: 'all' });
+  });
+
+  it('survives a half-written blob', () => {
+    const merged = mergeProfileSettings({
+      eventContext: { scope: 'group' },
+    } as unknown as Partial<typeof DEFAULT_SETTINGS>);
+    expect(merged.eventContext).toEqual({ windowMinutes: 10, scope: 'group' });
+  });
+
+  it('keeps the persisted object identity when it is already valid', () => {
+    const eventContext = { windowMinutes: 15, scope: 'linked' as const };
+    expect(
+      mergeProfileSettings({ eventContext } as Partial<typeof DEFAULT_SETTINGS>).eventContext
+    ).toBe(eventContext);
+  });
+
+  // A repair that allocates on every merge is the render-loop bug, not a
+  // cosmetic one: `getProfileSettings` runs the merge on every read and the
+  // panel reads it through `useShallow`, so a fresh nested identity each call
+  // makes the shallow compare report "changed" forever ("Maximum update depth
+  // exceeded"). Identity has to survive the repair, whatever needed repairing,
+  // and whatever field a later release adds (refs #494).
+  describe('repaired identity is stable across merges', () => {
+    // A profile that used the panel while `view` still existed carries that
+    // key forever; the merge no longer validates it, so nothing about it
+    // should trigger a rebuild (the settings contract: a leftover key is
+    // harmless, since nothing reads it).
+    it('returns the same object for a persisted value that still carries the now-unknown `view` key', () => {
+      const persisted = { windowMinutes: 15, scope: 'linked', view: 'graph' } as unknown as typeof DEFAULT_SETTINGS.eventContext;
+      const raw = { eventContext: persisted } as Partial<typeof DEFAULT_SETTINGS>;
+      const first = mergeProfileSettings(raw).eventContext;
+      expect(first).toBe(persisted);
+      expect(mergeProfileSettings(raw).eventContext).toBe(first);
+    });
+
+    it('returns the same object for an unoffered window', () => {
+      const raw = {
+        eventContext: { windowMinutes: 4000, scope: 'all' },
+      } as Partial<typeof DEFAULT_SETTINGS>;
+      const first = mergeProfileSettings(raw).eventContext;
+      expect(first.windowMinutes).toBe(10);
+      expect(mergeProfileSettings(raw).eventContext).toBe(first);
+    });
+
+    it('returns the same object for an unknown scope', () => {
+      const raw = {
+        eventContext: { windowMinutes: 15, scope: 'neighbours' },
+      } as unknown as Partial<typeof DEFAULT_SETTINGS>;
+      const first = mergeProfileSettings(raw).eventContext;
+      expect(first.scope).toBe('all');
+      expect(mergeProfileSettings(raw).eventContext).toBe(first);
+    });
+
+    it('returns the same object when nothing was persisted at all', () => {
+      expect(mergeProfileSettings(undefined).eventContext).toBe(
+        mergeProfileSettings(undefined).eventContext
+      );
+    });
+
+    it('survives a persisted value that is not an object', () => {
+      const raw = { eventContext: 7 } as unknown as Partial<typeof DEFAULT_SETTINGS>;
+      expect(mergeProfileSettings(raw).eventContext).toEqual(DEFAULT_SETTINGS.eventContext);
+    });
   });
 });

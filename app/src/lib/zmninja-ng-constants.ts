@@ -210,6 +210,32 @@ export const TIMELINE = {
   liveArrivalTtlMs: 5000,
 } as const;
 
+/** "Around this event" scope: which cameras the context window covers. Lives
+ *  here (not lib/event/event-context.ts, which re-exports it) so that module
+ *  and its dependents can be value-imported without pulling the profile/store
+ *  graph through it - this file imports nothing at all. */
+export type EventContextScope = 'linked' | 'group' | 'all';
+export const EVENT_CONTEXT_SCOPES: readonly EventContextScope[] = ['linked', 'group', 'all'] as const;
+
+/** "Around this event": the window either side of an anchor event, and the
+ *  ceiling on how much of the answer one request may ask for. */
+export const EVENT_CONTEXT = {
+  /** Selectable windows, in minutes. Rendered as chips, so keep them few. */
+  windowChoices: [1, 5, 10, 15, 30, 60] as const,
+  defaultWindowMinutes: 10,
+  /** Rows one window may return before the list says it truncated. */
+  maxResults: 200,
+  /** Above this many monitor ids the request drops the MonitorId filter and
+   *  asks for every camera in the window instead, because ZoneMinder's filter
+   *  URLs cap out near 8KB. Nothing narrows the answer afterwards: a wider
+   *  result is the deliberate trade against failing the request. */
+  maxMonitorIds: 40,
+  /** Ribbon lane row height, in pixels. */
+  ribbonLaneHeight: 14,
+  /** Lanes visible before the ribbon scrolls inside its own box. */
+  ribbonMaxLanes: 8,
+} as const;
+
 /**
  * Notification Service Constants
  *
@@ -459,6 +485,7 @@ export const STORAGE_KEYS = {
   // UI section open/closed state
   hoverPreviewOpen: 'zmng-hover-preview-open',
   thumbnailChainOpen: 'zmng-thumbnail-chain-open',
+  eventContextRibbonOpen: 'zmng-event-context-ribbon-open',
   // Prefix, completed with a settings section id (see CollapsibleSection).
   settingsSectionOpenPrefix: 'zmng-settings-section-open-',
 

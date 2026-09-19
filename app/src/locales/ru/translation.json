@@ -278,7 +278,35 @@
     "delete_permission_denied": "Для удаления событий нужно право «События: Редактирование».",
     "archive_permission_denied": "Для архивирования событий нужно право «События: Редактирование».",
     "no_event_permission": "У этой учётной записи нет прав на события.",
-    "event_gone": "Этого события больше нет на сервере"
+    "event_gone": "Этого события больше нет на сервере",
+    "around": {
+      "title": "События рядом",
+      "open": "Рядом",
+      "permission_denied": "Эта учётная запись не может читать события.",
+      "empty": "Больше ничего в этом периоде",
+      "empty_desc": "Нет событий с других камер в этом периоде.",
+      "widen": "Расширить",
+      "truncated": "Показаны первые {{count}}. Сузьте окно или откройте событие, чтобы увидеть больше.",
+      "dot_label": "{{camera}}, {{offset}}",
+      "offset_title": "Время относительно этого события",
+      "this_event": "Это событие",
+      "close": "Закрыть",
+      "window": "Окно",
+      "scope": "Мониторы",
+      "minutes_one": "±{{count}} мин",
+      "minutes_few": "±{{count}} мин",
+      "minutes_many": "±{{count}} мин",
+      "minutes_other": "±{{count}} мин",
+      "scope_linked": "Связанные",
+      "scope_group": "Группа",
+      "scope_all": "Все",
+      "scope_unavailable_linked": "У этого монитора нет связанных мониторов.",
+      "scope_unavailable_group": "Этот монитор не состоит ни в одной группе.",
+      "ribbon_count_one": "{{count}} монитор",
+      "ribbon_count_few": "{{count}} монитора",
+      "ribbon_count_many": "{{count}} мониторов",
+      "ribbon_count_other": "{{count}} монитора"
+    }
   },
   "event_detail": {
     "event_id": "ID события",
@@ -615,6 +643,10 @@
       "twenty_four_hour": "24-часовой",
       "tv_mode": "ТВ-режим",
       "tv_mode_desc": "Навигация с помощью D-pad и более крупный интерфейс пользователя.",
+      "event_context": {
+        "title": "События рядом",
+        "desc": "Окно и камеры по умолчанию для событий рядом."
+      },
       "thumbnail_chain": {
         "title": "Отображение миниатюр",
         "desc": "Порядок вывода миниатюр событий. Отключенные строки пропускаются.",
@@ -641,7 +673,8 @@
         "assistant": "Карточки ассистента",
         "playback_speed": "Скорость воспроизведения",
         "playback_speed_desc": "Скорость предпросмотра событий при наведении/долгом нажатии.",
-        "live_activity": "Плитки Live Activity"
+        "live_activity": "Плитки Live Activity",
+        "event_context": "События рядом"
       }
     }
   },
