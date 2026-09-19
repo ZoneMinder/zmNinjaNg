@@ -79,6 +79,8 @@ vi.mock('../../../hooks/useGo2RTCStream', () => ({
   },
 }));
 
+import { useVisibilityResume } from '../../../hooks/useVisibilityResume';
+
 vi.mock('../../../hooks/useVisibilityResume', () => ({
   useVisibilityResume: vi.fn(),
 }));
@@ -221,6 +223,73 @@ describe('LiveMonitorPlayer MJPEG recovery', () => {
       expect(recovered).toBeVisible();
       expect(recovered).toHaveAttribute('src', `https://t/stream?connkey=${connkey}`);
     }
+  });
+});
+
+describe('LiveMonitorPlayer waiting vs failed', () => {
+  // A browser allows six connections per host, so on a 76-tile montage most
+  // tiles wait a long time for their first picture. That wait used to render as
+  // the same VideoOff icon an errored tile shows, so a slow grid was
+  // indistinguishable from a broken one (refs #507). The <img> itself stays
+  // hidden throughout - revealing a half-loaded element is what paints WebKit's
+  // broken-image glyph, which is the thing #352 was about.
+  it('shows a skeleton, not the VideoOff placeholder, while the first frame is on its way', () => {
+    mockMjpegReturn = {
+      streamUrl: 'https://t/stream?connkey=1',
+      imageSrc: 'https://t/stream?connkey=1',
+      imgRef: { current: null },
+      regenerateConnection: vi.fn(),
+      reportStreamError: vi.fn(),
+      reportStreamLoad: vi.fn(),
+      hasFrame: false,
+    };
+
+    render(withQuery(<LiveMonitorPlayer monitor={monitor} profile={profile} />));
+
+    // Visible skeleton, and no VideoOff icon: a waiting tile must not read as
+    // a failed one.
+    expect(screen.getByTestId('video-player-awaiting-frame')).toBeVisible();
+    expect(screen.queryByTestId('video-player-loading')).toBeNull();
+    // The element is mounted so it can load at all, but must not paint yet -
+    // a half-loaded <img> is what draws the broken-image glyph.
+    expect(screen.getByTestId('video-player-mjpeg')).toHaveStyle({ visibility: 'hidden' });
+  });
+
+  it('falls back to the VideoOff placeholder once the stream errors', () => {
+    mockMjpegReturn = {
+      streamUrl: 'https://t/stream?connkey=1',
+      imageSrc: 'https://t/stream?connkey=1',
+      imgRef: { current: null },
+      regenerateConnection: vi.fn(),
+      reportStreamError: vi.fn(),
+      reportStreamLoad: vi.fn(),
+      hasFrame: false,
+    };
+
+    render(withQuery(<LiveMonitorPlayer monitor={monitor} profile={profile} />));
+    fireEvent.error(screen.getByTestId('video-player-mjpeg'));
+
+    expect(screen.getByTestId('video-player-loading')).toBeVisible();
+    expect(screen.queryByTestId('video-player-awaiting-frame')).toBeNull();
+    // Still never the glyph: the errored element is unmounted outright.
+    expect(screen.queryByTestId('video-player-mjpeg')).toBeNull();
+  });
+});
+
+describe('LiveMonitorPlayer visibility-resume registration', () => {
+  // The WebRTC resume used to register on every tile and only bail inside the
+  // callback, so each MJPEG tile still took out a Capacitor appStateChange
+  // listener. A 76-tile montage made 76 bridge registrations and one
+  // background round trip came back 76 times, each one regenerating a stream
+  // (refs #507). Only a tile actually playing WebRTC needs the listener.
+  it('does not arm the WebRTC resume for an MJPEG tile', () => {
+    vi.mocked(useVisibilityResume).mockClear();
+    render(withQuery(<LiveMonitorPlayer monitor={monitor} profile={profile} />));
+
+    const armed = vi
+      .mocked(useVisibilityResume)
+      .mock.calls.filter(([, opts]) => opts?.enabled !== false);
+    expect(armed).toEqual([]);
   });
 });
 
@@ -597,7 +666,8 @@ describe('LiveMonitorPlayer MJPEG frame gating', () => {
     const img = screen.getByTestId('video-player-mjpeg');
     expect(img).toHaveAttribute('src', 'https://t/stream?connkey=1');
     expect(img).not.toBeVisible();
-    expect(screen.getByTestId('video-player-loading')).toBeInTheDocument();
+    // Waiting, not failed: the skeleton, never the VideoOff icon (refs #507).
+    expect(screen.getByTestId('video-player-awaiting-frame')).toBeVisible();
   });
 
   it('paints the <img> and drops the placeholder once a frame arrives', () => {
@@ -607,7 +677,7 @@ describe('LiveMonitorPlayer MJPEG frame gating', () => {
     rerender(withQuery(<LiveMonitorPlayer monitor={monitor} profile={profile} />));
 
     expect(screen.getByTestId('video-player-mjpeg')).toBeVisible();
-    expect(screen.queryByTestId('video-player-loading')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('video-player-awaiting-frame')).toBeNull();
   });
 
   it('hides the picture again when the stream loses its frame', () => {
@@ -621,7 +691,8 @@ describe('LiveMonitorPlayer MJPEG frame gating', () => {
     rerender(withQuery(<LiveMonitorPlayer monitor={monitor} profile={profile} />));
 
     expect(screen.getByTestId('video-player-mjpeg')).not.toBeVisible();
-    expect(screen.getByTestId('video-player-loading')).toBeInTheDocument();
+    // A resume is a tile waiting on a replacement, not a tile that failed.
+    expect(screen.getByTestId('video-player-awaiting-frame')).toBeVisible();
   });
 
   // A failing load with alt text makes WebKit draw its glyph next to the text.

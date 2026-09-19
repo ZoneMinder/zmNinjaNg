@@ -106,6 +106,13 @@ matching reality, fixing it is a protocol change like any rule edit.
 - Electron background/occlusion process switches do not fix MJPEG going
   blank on occluded windows; tried and reverted (69990402). The fix is
   stream-level reconnect on focus or visibility return (f7a8292e).
+- Hiding the `<img>` until it loads (#352) is what keeps WebKit's broken-image
+  glyph off screen, so never reveal a half-loaded element to show progress.
+  Change the placeholder behind it instead: a tile waiting on a picture renders
+  a skeleton, and only a tile that has errored renders the VideoOff icon. The
+  two were the same icon until #507, which made a montage that was merely slow
+  (six connections per host, ~76 tiles) indistinguishable from a broken one.
+  `derivePlayerViewState` carries this as `awaiting-frame` vs `no-video`.
 - A minted connkey is not a frame. Gate an `<img>`'s visibility on a `load`
   for the src it currently holds, never on the URL existing: the element
   keeps a dead stream's last frame (which may be half written) with no error

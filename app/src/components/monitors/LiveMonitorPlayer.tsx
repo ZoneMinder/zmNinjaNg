@@ -35,6 +35,7 @@ import {
 } from '../../lib/zmninja-ng-constants';
 import { ZMS_FULL_SCALE } from '../../lib/zm/zm-constants';
 import { Button } from '../ui/button';
+import { Skeleton } from '../ui/skeleton';
 import { VideoOff, ShieldOff } from 'lucide-react';
 import { usePermissions } from '../../hooks/usePermissions';
 import { canViewStream } from '../../lib/permissions/zm-permissions';
@@ -99,18 +100,27 @@ export type PlayerViewState =
   | 'mjpeg-placeholder'
   | 'mse-playing'
   | 'mjpeg'
+  | 'awaiting-frame'
   | 'no-video';
 
 export function derivePlayerViewState(input: {
   isWebRTC: boolean;
   hasVideoFrames: boolean;
   hasMjpegFrame: boolean;
+  /**
+   * The MJPEG element is mounted on a src and nothing has errored, so a picture
+   * is still on its way - either the first one, or a replacement after a resume
+   * withdrew the last. Separates a tile that is waiting from one that has
+   * failed; they used to render identically (refs #507).
+   */
+  isAwaitingFrame?: boolean;
 }): PlayerViewState {
   if (input.isWebRTC) {
     if (input.hasVideoFrames) return 'mse-playing';
     return input.hasMjpegFrame ? 'mjpeg-placeholder' : 'connecting';
   }
-  return input.hasMjpegFrame ? 'mjpeg' : 'no-video';
+  if (input.hasMjpegFrame) return 'mjpeg';
+  return input.isAwaitingFrame ? 'awaiting-frame' : 'no-video';
 }
 
 export interface LiveMonitorPlayerProps {
@@ -518,6 +528,10 @@ export function LiveMonitorPlayer({
   // Reset the freeze counters, clear any latched permanent MJPEG fallback,
   // and nudge the WebRTC stream to retry. The MJPEG visibility resume is
   // handled inside useMonitorStream. refs #150
+  // Gated, not just short-circuited in the body. Without the gate every tile
+  // registered a Capacitor appStateChange listener whatever it was playing,
+  // so a montage of 76 tiles made 76 bridge registrations and one
+  // background round trip was delivered 76 times over (refs #507).
   const go2rtcRetry = go2rtcStream.retry;
   useVisibilityResume(() => {
     if (streamingMethod !== 'webrtc') return;
@@ -537,7 +551,7 @@ export function LiveMonitorPlayer({
     if (go2rtcStream.state === 'error' || go2rtcStream.state === 'disconnected') {
       go2rtcRetry();
     }
-  });
+  }, { enabled: streamingMethod === 'webrtc' });
 
   const mjpegStream = useMonitorStream({
     monitorId: monitor.Id,
@@ -705,10 +719,17 @@ export function LiveMonitorPlayer({
   // PlayerViewState doc comment for the state machine and what drives each
   // transition. showMjpegPlaceholder (used above by the stream hooks/effects)
   // is retained as an input; the error overlay stays a direct status check.
+  // The element is on a src and has not errored, so bytes are still coming. The
+  // <img> itself stays hidden until it loads - revealing a half-loaded element
+  // is exactly what paints WebKit's broken-image glyph - so only the
+  // placeholder behind it changes (refs #507, #352).
+  const isAwaitingFrame = showMjpegElement && !hasMjpegFrame;
+
   const viewState = derivePlayerViewState({
     isWebRTC,
     hasVideoFrames: hasLiveVideoFrames,
     hasMjpegFrame,
+    isAwaitingFrame,
   });
 
   if (streamDenied) {
@@ -725,8 +746,21 @@ export function LiveMonitorPlayer({
 
   return (
     <div className="relative w-full h-full" data-testid="video-player">
-      {/* VideoOff placeholder: waiting for video (WebRTC negotiating with no
-          placeholder frame, or MJPEG with no frame yet / errored). */}
+      {/* Still waiting on the first picture: a quiet skeleton, never the VideoOff
+          icon an errored tile shows. On a montage of many tiles the browser
+          allows six connections per host, so most tiles wait a long time, and
+          rendering that wait as the failure state made a slow grid read as a
+          broken one (refs #507). The <img> above stays hidden until it loads -
+          showing a half-loaded element is what paints the broken-image glyph. */}
+      {viewState === 'awaiting-frame' && (
+        <Skeleton
+          className="absolute inset-0 rounded-none bg-muted/30"
+          data-testid="video-player-awaiting-frame"
+        />
+      )}
+
+      {/* VideoOff placeholder: no video to show (WebRTC negotiating with no
+          placeholder frame, or MJPEG that has errored). */}
       {(viewState === 'connecting' || viewState === 'no-video') && (
         <div className="absolute inset-0 flex items-center justify-center bg-muted/30" data-testid="video-player-loading">
           <VideoOff className="h-8 w-8 text-muted-foreground/40" />
