@@ -292,7 +292,11 @@
       "scope_unavailable_group": "Ce moniteur n'appartient à aucun groupe.",
       "ribbon_count_one": "{{count}} moniteur",
       "ribbon_count_other": "{{count}} moniteurs"
-    }
+    },
+    "linked_events": "Événements liés",
+    "linked_all": "Tous",
+    "linked_only": "Seuls",
+    "linked_hide": "Masquer"
   },
   "event_detail": {
     "event_id": "ID Événement",

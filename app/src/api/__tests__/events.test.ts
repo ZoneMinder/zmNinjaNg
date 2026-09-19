@@ -258,6 +258,44 @@ describe('Events API', () => {
     expect(call).toContain('Cause%20REGEXP%3AContinuous');
   });
 
+  // Excluding a cause is how "hide linked recordings" is expressed: a linked
+  // monitor records whenever its partner alarms, and those events crowd out
+  // the ones a person went looking for (refs #493). Verified against ZM
+  // 1.38.3: NOT REGEXP partitions the set exactly, and an operator ZM does not
+  // know fails with a 500 rather than silently returning everything.
+  it('adds a NOT REGEXP segment when a cause is excluded', async () => {
+    mockGet.mockResolvedValue({
+      data: {
+        events: [],
+        pagination: {
+          page: 1, current: 0, count: 0, prevPage: false, nextPage: false, limit: 100,
+        },
+      },
+    });
+
+    await getEvents(mockClient, pid, { causeExclude: 'Linked' });
+
+    const call = mockGet.mock.calls[0][0] as string;
+    expect(call).toContain('Cause%20NOT%20REGEXP%3ALinked');
+  });
+
+  it('can ask for one cause and exclude another in the same query', async () => {
+    mockGet.mockResolvedValue({
+      data: {
+        events: [],
+        pagination: {
+          page: 1, current: 0, count: 0, prevPage: false, nextPage: false, limit: 100,
+        },
+      },
+    });
+
+    await getEvents(mockClient, pid, { cause: 'Motion', causeExclude: 'Linked' });
+
+    const call = mockGet.mock.calls[0][0] as string;
+    expect(call).toContain('Cause%20REGEXP%3AMotion');
+    expect(call).toContain('Cause%20NOT%20REGEXP%3ALinked');
+  });
+
   it('adds the Archived segment when archived is set', async () => {
     mockGet.mockResolvedValue({
       data: {

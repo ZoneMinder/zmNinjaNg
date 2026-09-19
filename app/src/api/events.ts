@@ -166,6 +166,9 @@ export async function getEvents(client: ApiClient, profileId: ProfileId, filters
   if (filters.cause) {
     addFilterSegment(`Cause REGEXP:${filters.cause}`);
   }
+  if (filters.causeExclude) {
+    addFilterSegment(`Cause NOT REGEXP:${filters.causeExclude}`);
+  }
   if (filters.archived) {
     addFilterSegment('Archived:1');
   }

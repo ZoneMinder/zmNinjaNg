@@ -62,6 +62,8 @@ function baseProps() {
     onQuickRangeSelect: vi.fn(),
     onApplyFilters: vi.fn(),
     onClearFilters: vi.fn(),
+    linkedFilter: 'all' as const,
+    onLinkedFilterChange: vi.fn(),
   };
 }
 
@@ -70,6 +72,44 @@ function baseProps() {
 // no rows, swapped in its loading skeleton and tore this panel down mid-edit -
 // so a character was lost, and moving from the start field to the end field
 // reloaded the page under the user (refs #495).
+// ZoneMinder records a linked monitor whenever its partner alarms. Some people
+// want only those events, most want them out of the way (refs #493).
+describe('EventsFilterPopover linked events row (refs #493)', () => {
+  it('marks the chosen option pressed and the others not', () => {
+    render(<EventsFilterPopover {...baseProps()} linkedFilter="hide" />);
+
+    expect(screen.getByTestId('events-linked-hide')).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByTestId('events-linked-all')).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByTestId('events-linked-only')).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('reports the option that was pressed', async () => {
+    const onLinkedFilterChange = vi.fn();
+    render(<EventsFilterPopover {...baseProps()} onLinkedFilterChange={onLinkedFilterChange} />);
+
+    const user = userEvent.setup();
+    await user.click(screen.getByTestId('events-linked-only'));
+
+    expect(onLinkedFilterChange).toHaveBeenCalledWith('only');
+  });
+
+  it('does not report the option that is already chosen', async () => {
+    const onLinkedFilterChange = vi.fn();
+    render(
+      <EventsFilterPopover
+        {...baseProps()}
+        linkedFilter="only"
+        onLinkedFilterChange={onLinkedFilterChange}
+      />
+    );
+
+    const user = userEvent.setup();
+    await user.click(screen.getByTestId('events-linked-only'));
+
+    expect(onLinkedFilterChange).not.toHaveBeenCalled();
+  });
+});
+
 describe('EventsFilterPopover date editing (refs #495)', () => {
   it('reports nothing while a date is typed', async () => {
     const onStartDateChange = vi.fn();

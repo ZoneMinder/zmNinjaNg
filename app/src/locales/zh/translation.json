@@ -292,7 +292,11 @@
       "scope_unavailable_group": "此监视器不属于任何分组。",
       "ribbon_count_one": "{{count}} 个监视器",
       "ribbon_count_other": "{{count}} 个监视器"
-    }
+    },
+    "linked_events": "关联事件",
+    "linked_all": "全部",
+    "linked_only": "仅",
+    "linked_hide": "隐藏"
   },
   "event_detail": {
     "event_id": "事件 ID",

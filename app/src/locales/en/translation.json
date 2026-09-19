@@ -292,7 +292,11 @@
       "scope_unavailable_group": "This camera is in no group.",
       "ribbon_count_one": "{{count}} camera",
       "ribbon_count_other": "{{count}} cameras"
-    }
+    },
+    "linked_events": "Linked events",
+    "linked_all": "All",
+    "linked_only": "Only",
+    "linked_hide": "Hide"
   },
   "event_detail": {
     "event_id": "Event ID",

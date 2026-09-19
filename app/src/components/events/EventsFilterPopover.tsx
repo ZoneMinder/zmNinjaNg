@@ -5,11 +5,12 @@
  * Provides filtering UI for events by monitors, favorites, tags, and date range.
  */
 
-import { Archive, Star, Tag, X, Loader2, ScanSearch } from 'lucide-react';
+import { Archive, Star, Tag, X, Loader2, ScanSearch, Link2 } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { MonitorData, Tag as TagType } from '../../api/types';
 import { ALL_TAGS_FILTER_ID } from '../../hooks/useEventFilters';
+import type { LinkedEventFilter } from '../../stores/settings';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -51,7 +52,17 @@ interface EventsFilterPopoverProps {
   // Object detection filter
   onlyDetectedObjects?: boolean;
   onOnlyDetectedObjectsChange?: (value: boolean) => void;
+  /** Linked recordings: every event, only the linked ones, or none of them
+   *  (refs #493). */
+  linkedFilter: LinkedEventFilter;
+  onLinkedFilterChange: (value: LinkedEventFilter) => void;
 }
+
+const LINKED_FILTER_OPTIONS: Array<{ value: LinkedEventFilter; labelKey: string }> = [
+  { value: 'all', labelKey: 'events.linked_all' },
+  { value: 'only', labelKey: 'events.linked_only' },
+  { value: 'hide', labelKey: 'events.linked_hide' },
+];
 
 export function EventsFilterPopover({
   monitors,
@@ -76,6 +87,8 @@ export function EventsFilterPopover({
   isLoadingTags = false,
   onlyDetectedObjects = false,
   onOnlyDetectedObjectsChange,
+  linkedFilter,
+  onLinkedFilterChange,
 }: EventsFilterPopoverProps) {
   const { t } = useTranslation();
 
@@ -251,6 +264,31 @@ export function EventsFilterPopover({
             onCheckedChange={onOnlyDetectedObjectsChange}
             data-testid="events-detected-objects-toggle"
           />
+        </div>
+
+        {/* Linked recordings: a monitor linked to another records whenever that
+            one alarms, so these crowd a list someone is reading. Three states
+            rather than a switch: people ask for both directions (refs #493). */}
+        <div className="flex items-center justify-between gap-2 p-3 rounded-md border bg-card">
+          <div className="flex items-center gap-2 min-w-0">
+            <Link2 className="h-4 w-4 text-muted-foreground shrink-0" />
+            <Label className="truncate">{t('events.linked_events')}</Label>
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            {LINKED_FILTER_OPTIONS.map(({ value, labelKey }) => (
+              <Button
+                key={value}
+                variant={linkedFilter === value ? 'default' : 'outline'}
+                size="sm"
+                className="h-7 px-2 text-xs"
+                aria-pressed={linkedFilter === value}
+                onClick={() => { if (linkedFilter !== value) onLinkedFilterChange(value); }}
+                data-testid={`events-linked-${value}`}
+              >
+                {t(labelKey)}
+              </Button>
+            ))}
+          </div>
         </div>
 
         {/* Tags filter - only show if tags are supported */}

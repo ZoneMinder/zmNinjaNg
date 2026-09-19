@@ -135,6 +135,9 @@ export const DEFAULT_EVENT_MONTAGE_GROUP_LAYOUT: EventMontageGroupLayout = {
   gridCols: 2,
 };
 
+/** Events list treatment of ZoneMinder's linked recordings (refs #493). */
+export type LinkedEventFilter = 'all' | 'only' | 'hide';
+
 export interface ProfileSettings {
   viewMode: ViewMode;
   /**
@@ -253,6 +256,11 @@ export interface ProfileSettings {
     archivedOnly: boolean;
     onlyDetectedObjects: boolean;
     activeQuickRange: number | null;
+    /** Linked recordings: show every event, only the linked ones, or none of
+     *  them (refs #493). Read with a `?? 'all'` fallback, like archivedOnly:
+     *  a bucket persisted before this key existed has no value for it, and
+     *  this object is spread rather than deep-merged. */
+    linkedFilter: LinkedEventFilter;
   };
   disableLogRedaction: boolean;
   lastRoute: string; // Last visited route for this profile
@@ -500,6 +508,7 @@ export const DEFAULT_SETTINGS: ProfileSettings = {
     archivedOnly: false,
     onlyDetectedObjects: false,
     activeQuickRange: null,
+    linkedFilter: 'all',
   },
   disableLogRedaction: false,
   lastRoute: '/monitors',

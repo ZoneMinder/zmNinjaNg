@@ -42,6 +42,7 @@ Filter events using the controls at the top:
 
 - **Date range** - Select a start and end date. A date you type applies when you press Apply or Enter, so you can finish typing it and move between the two fields first. The quick range buttons below apply as soon as you press them.
 - **Monitor** - Show events from a specific camera only. In a {doc}`profiles` group the picker groups cameras by server, and picking from one server narrows the list to that server's events - the other servers drop out rather than showing everything they have.
+- **Linked events** - ZoneMinder records a monitor whenever a monitor it is linked to alarms, and writes `Linked` as the cause. Choose **All** to leave those events in place, **Only** to see nothing else, or **Hide** to keep them out of the list. The choice is remembered for that server.
 - **Groups** - Filter by monitor group
 - **Favorites only** - Show only events you have starred. This works across all your favorites, including ones older than the first page of results.
 - **Tags** - Show only events carrying the tags you pick (if your server supports tags). Select several tags to see events with any of them, or "All" for events with any tag. Like favorites, this covers tagged events older than the first page. In a {doc}`profiles` group the list offers each tag name once, however many servers in it define it, and picking one matches that name on every server. A server that has no tag by that name contributes no events, so filtering by a tag only one of your servers uses shows you only that server's events.

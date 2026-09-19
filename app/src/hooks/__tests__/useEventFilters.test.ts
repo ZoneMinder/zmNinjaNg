@@ -718,3 +718,80 @@ describe('useEventFilters in All Servers mode', () => {
     expect(inSingleMode.result.current.selectedMonitorIds).toEqual([]);
   });
 });
+
+// Linked recordings: a monitor linked to another records whenever that one
+// alarms. Some people want only those, most want them out of the way, and the
+// two directions map to ZoneMinder's REGEXP and NOT REGEXP on Cause (refs
+// #493).
+describe('useEventFilters - linked event cause', () => {
+  it('asks for no cause at all by default', () => {
+    setupMocks();
+    const { result } = renderHook(() => useEventFilters());
+
+    expect(result.current.linkedFilter).toBe('all');
+    expect(result.current.filters.cause).toBeUndefined();
+    expect(result.current.filters.causeExclude).toBeUndefined();
+    expect(result.current.activeFilterCount).toBe(0);
+  });
+
+  it('asks only for linked events, and counts as an active filter', () => {
+    setupMocks();
+    const { result } = renderHook(() => useEventFilters());
+
+    act(() => result.current.setLinkedFilter('only'));
+
+    expect(result.current.filters.cause).toBe('Linked');
+    expect(result.current.filters.causeExclude).toBeUndefined();
+    expect(result.current.activeFilterCount).toBe(1);
+  });
+
+  it('excludes linked events, and counts as an active filter', () => {
+    setupMocks();
+    const { result } = renderHook(() => useEventFilters());
+
+    act(() => result.current.setLinkedFilter('hide'));
+
+    expect(result.current.filters.causeExclude).toBe('Linked');
+    expect(result.current.filters.cause).toBeUndefined();
+    expect(result.current.activeFilterCount).toBe(1);
+  });
+
+  it('persists the choice to the profile bucket and restores it', () => {
+    setupMocks();
+    const { result } = renderHook(() => useEventFilters());
+
+    act(() => result.current.setLinkedFilter('hide'));
+
+    expect(
+      useSettingsStore.getState().getProfileSettings(asProfileId('profile-1')).eventsPageFilters.linkedFilter
+    ).toBe('hide');
+
+    const restored = renderHook(() => useEventFilters());
+    expect(restored.result.current.linkedFilter).toBe('hide');
+  });
+
+  it('treats a bucket saved before this filter existed as no filter', () => {
+    setupMocks();
+    const stored = useSettingsStore.getState().getProfileSettings(asProfileId('profile-1')).eventsPageFilters;
+    const { linkedFilter: _dropped, ...withoutLinked } = stored;
+    useSettingsStore.getState().updateProfileSettings(asProfileId('profile-1'), {
+      eventsPageFilters: withoutLinked as typeof stored,
+    });
+
+    const { result } = renderHook(() => useEventFilters());
+
+    expect(result.current.linkedFilter).toBe('all');
+    expect(result.current.filters.cause).toBeUndefined();
+  });
+
+  it('clearing the filters puts it back to all', () => {
+    setupMocks({ linkedFilter: 'hide' });
+    const { result } = renderHook(() => useEventFilters());
+    expect(result.current.linkedFilter).toBe('hide');
+
+    act(() => result.current.clearFilters());
+
+    expect(result.current.linkedFilter).toBe('all');
+    expect(result.current.filters.causeExclude).toBeUndefined();
+  });
+});
