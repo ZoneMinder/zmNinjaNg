@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 
 vi.mock('../../../api/store-gates', () => import('../../../tests/fake-store-gates'));
@@ -269,5 +269,64 @@ describe('EventMontageView all-mode owning-profile wiring (refs #337 Task 2)', (
 
     const after = decodeURIComponent(screen.getByTestId('event-thumbnail').getAttribute('data-url') ?? '');
     expect(after).toContain('https://srv1.example.test');
+  });
+});
+
+// Sectioning by owning server (refs #501). The page turns this on only in an
+// aggregate, where every row carries a profileId and a profileChip.
+describe('EventMontageView server sections (grid view)', () => {
+  function renderGrouped(events: ScopedEventItem[], groupByProfile: boolean) {
+    return render(
+      <EventMontageView
+        events={events}
+        monitors={[]}
+        gridCols={3}
+        thumbnailFit="contain"
+        portalUrl="https://zm.example.test"
+        accessToken="current-profile-token"
+        batchSize={20}
+        onLoadMore={vi.fn()}
+        groupByProfile={groupByProfile}
+      />
+    );
+  }
+
+  const interleaved = () => [
+    scopedEvent('1', 'current', 'Home'),
+    scopedEvent('2', 'profile-b', 'Office'),
+    scopedEvent('3', 'current', 'Home'),
+  ];
+
+  it('renders one grid per owning server, keeping each section in arrival order', () => {
+    renderGrouped(interleaved(), true);
+
+    const sections = screen.getAllByTestId(/^events-group-section-/);
+    expect(sections.map((s) => s.getAttribute('data-testid'))).toEqual([
+      'events-group-section-current',
+      'events-group-section-profile-b',
+    ]);
+    expect(within(sections[0]).getByRole('heading')).toHaveTextContent('Home');
+    expect(
+      within(sections[0])
+        .getAllByTestId('event-montage-tile')
+        .map((t) => t.getAttribute('data-event-id'))
+    ).toEqual(['1', '3']);
+    expect(within(sections[1]).getByRole('heading')).toHaveTextContent('Office');
+    expect(
+      within(sections[1])
+        .getAllByTestId('event-montage-tile')
+        .map((t) => t.getAttribute('data-event-id'))
+    ).toEqual(['2']);
+    // One count header for the view, not one per section.
+    expect(screen.getAllByText('events.showing_events')).toHaveLength(1);
+  });
+
+  it('renders a single grid when grouping is off', () => {
+    renderGrouped(interleaved(), false);
+
+    expect(screen.queryAllByTestId(/^events-group-section-/)).toHaveLength(0);
+    expect(
+      screen.getAllByTestId('event-montage-tile').map((t) => t.getAttribute('data-event-id'))
+    ).toEqual(['1', '2', '3']);
   });
 });

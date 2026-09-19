@@ -165,6 +165,11 @@ export interface ProfileSettings {
    *  null = every profile in scope (default). Stored under the active
    *  aggregate's own settings bucket. */
   eventsServerFilter: ProfileId[] | null;
+  /** All mode only: section the Events list and grid by owning server instead
+   *  of one time-ordered stream. Its own key rather than a shared one with
+   *  `monitorsGroupByServer`: the two surfaces are toggled independently.
+   *  Stored under the active aggregate's own settings bucket. */
+  eventsGroupByServer: boolean;
   /** Aggregating only: 'live' runs every scope profile's connection and
    *  shows toasts/sound; 'muted' keeps every connection running but
    *  suppresses toasts/sound (badge counts and history still update); 'off'
@@ -444,6 +449,7 @@ export const DEFAULT_SETTINGS: ProfileSettings = {
   monitorsViewMode: 'list' as const,
   monitorsGroupByServer: false,
   eventsServerFilter: null,
+  eventsGroupByServer: false,
   allModeNotifications: 'live',
   allModeViewMode: 'per-server',
   // Each All-mode guardrail starts at the value its consumer used to hardcode,

@@ -17,6 +17,8 @@ Events from the last 7 days also show how long ago they occurred, displayed next
 
 Older events load automatically as you scroll.
 
+In a {doc}`profiles` group, the stacking button in the toolbar splits the list, and the grid, into one section per server, with the server's name above each section. Events inside a section stay in time order, and the count at the top still covers every server. Turn the button off to go back to a single list sorted by time across all of them.
+
 On desktop, hovering over a thumbnail for a moment shows a 400px-wide preview anchored next to the row. The preview loads a higher-resolution image from the server. The underlying card remains clickable while the preview is visible, so you can still click to open the event.
 
 ## Deleting Multiple Events

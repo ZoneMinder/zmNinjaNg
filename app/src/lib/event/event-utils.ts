@@ -124,6 +124,30 @@ export function buildMonitorMap(
 }
 
 /**
+ * Section scoped events by their owning profile, preserving the order each
+ * profile's events arrived in. Shared by EventListView and EventMontageView,
+ * which render the same sections with different item layouts (refs #501).
+ *
+ * Only called in an aggregate, where every item carries a profileId and the
+ * profile's display name in profileChip.
+ */
+export function groupEventsByProfile<T extends { profileId?: ProfileId; profileChip?: string }>(
+  events: T[]
+): Array<[ProfileId, { profileName: string; items: T[] }]> {
+  const byProfile = new Map<ProfileId, { profileName: string; items: T[] }>();
+  for (const event of events) {
+    const key = event.profileId as ProfileId;
+    const section = byProfile.get(key);
+    if (section) {
+      section.items.push(event);
+    } else {
+      byProfile.set(key, { profileName: event.profileChip ?? '', items: [event] });
+    }
+  }
+  return Array.from(byProfile);
+}
+
+/**
  * Grid layout constants for event montage views.
  */
 export const EVENT_GRID_CONSTANTS = {

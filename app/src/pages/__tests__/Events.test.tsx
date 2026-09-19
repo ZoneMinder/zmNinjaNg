@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import userEvent from '@testing-library/user-event';
 import Events from '../Events';
@@ -690,5 +690,86 @@ describe('Events Page', () => {
       expect(screen.queryByTestId('events-empty-state')).toBeNull();
       expect(screen.getByTestId('events-all-failed-state')).toHaveTextContent('events.all_failed_title');
     });
+
+    it('persists the group-by-server toggle to the aggregate bucket', () => {
+      allScope();
+      scopedEvents({
+        events: [{ profileId: 'profile-1', profileName: 'Home', item: { Event: { Id: '1', MonitorId: '1', StartDateTime: '2026-08-03 10:00:00' } } }],
+      });
+
+      render(<Events />);
+
+      const toggle = screen.getByTestId('events-group-by-server');
+      expect(toggle).toHaveAttribute('aria-pressed', 'false');
+
+      fireEvent.click(toggle);
+
+      expect(useSettingsStore.getState().getProfileSettings(ALL_PROFILES_ID).eventsGroupByServer).toBe(true);
+      expect(screen.getByTestId('events-group-by-server')).toHaveAttribute('aria-pressed', 'true');
+      // Separate key from the monitors/montage toggle: one must not move the
+      // other.
+      expect(useSettingsStore.getState().getProfileSettings(ALL_PROFILES_ID).monitorsGroupByServer).toBe(false);
+    });
+
+    it('sections the list by owning server when the toggle is on', () => {
+      allScope();
+      useSettingsStore.getState().updateProfileSettings(ALL_PROFILES_ID, { eventsGroupByServer: true });
+      scopedEvents({
+        events: [
+          { profileId: 'profile-1', profileName: 'Home', item: { Event: { Id: '1', MonitorId: '1', StartDateTime: '2026-08-03 12:00:00' } } },
+          { profileId: 'profile-2', profileName: 'Office', item: { Event: { Id: '2', MonitorId: '1', StartDateTime: '2026-08-03 11:00:00' } } },
+          { profileId: 'profile-1', profileName: 'Home', item: { Event: { Id: '3', MonitorId: '1', StartDateTime: '2026-08-03 10:00:00' } } },
+        ],
+      });
+
+      render(<Events />);
+
+      const sections = screen.getAllByTestId(/^events-group-section-/);
+      expect(sections.map((s) => s.getAttribute('data-testid'))).toEqual([
+        'events-group-section-profile-1',
+        'events-group-section-profile-2',
+      ]);
+      expect(within(sections[0]).getByRole('heading')).toHaveTextContent('Home');
+      // Interleaved input: event 3 belongs with event 1 under Home, in the
+      // time order it arrived, and event 2 sits alone under Office.
+      expect(within(sections[0]).getAllByTestId('event-card-item').map((c) => c.textContent)).toEqual([
+        '1-Camera 1Home',
+        '3-Camera 1Home',
+      ]);
+      expect(within(sections[1]).getByRole('heading')).toHaveTextContent('Office');
+      expect(within(sections[1]).getAllByTestId('event-card-item').map((c) => c.textContent)).toEqual([
+        '2-Camera 1Office',
+      ]);
+      // One count header for the whole view, not one per section.
+      expect(screen.getAllByText('events.showing_events:{"count":3}')).toHaveLength(1);
+    });
+
+    it('leaves the list unsectioned when the toggle is off', () => {
+      allScope();
+      scopedEvents({
+        events: [
+          { profileId: 'profile-1', profileName: 'Home', item: { Event: { Id: '1', MonitorId: '1', StartDateTime: '2026-08-03 12:00:00' } } },
+          { profileId: 'profile-2', profileName: 'Office', item: { Event: { Id: '2', MonitorId: '1', StartDateTime: '2026-08-03 11:00:00' } } },
+        ],
+      });
+
+      render(<Events />);
+
+      expect(screen.queryAllByTestId(/^events-group-section-/)).toHaveLength(0);
+      expect(screen.getAllByTestId('event-card-item')).toHaveLength(2);
+    });
+  });
+
+  it('single profile has no group-by-server toggle', () => {
+    scopedEvents({
+      events: [{ profileId: 'profile-1', profileName: 'Home', item: { Event: { Id: '1', MonitorId: '1', StartDateTime: '2026-08-03 10:00:00' } } }],
+    });
+
+    render(<Events />);
+
+    // The toolbar rendered (the view toggle is always there); the server
+    // toggle is the one that must be absent outside an aggregate.
+    expect(screen.getByTestId('events-view-toggle')).toHaveAttribute('aria-label', 'events.view_montage');
+    expect(screen.queryByTestId('events-group-by-server')).toBeNull();
   });
 });

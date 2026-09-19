@@ -28,7 +28,7 @@ import { useCurrentProfile, useProfileById } from '../../hooks/useCurrentProfile
 import { useFreshAccessToken } from '../../hooks/useFreshAccessToken';
 import { resolveMinStreamingPort } from '../../lib/monitor/multiport';
 import { EventThumbnailHoverPreview } from './EventThumbnailHoverPreview';
-import { buildMonitorMap, calculateThumbnailDimensions, getMonitorDimensions } from '../../lib/event/event-utils';
+import { buildMonitorMap, calculateThumbnailDimensions, getMonitorDimensions, groupEventsByProfile } from '../../lib/event/event-utils';
 import { ZM_INTEGRATION, RELATIVE_TIME_LIST_WINDOW_DAYS } from '../../lib/zmninja-ng-constants';
 import type { Event, Monitor, ProfileId, Tag } from '../../api/types';
 import type { ThumbnailFallbackEntry } from '../../stores/settings';
@@ -284,6 +284,9 @@ interface EventMontageViewProps {
   eventTagMap?: Map<string, Tag[]>;
   eventFilters?: EventFilters;
   minStreamingPort?: number;
+  /** All mode only: section the grid by owning server instead of one
+   *  time-ordered grid (refs #501). */
+  groupByProfile?: boolean;
 }
 
 export const EventMontageView = ({
@@ -300,6 +303,7 @@ export const EventMontageView = ({
   eventTagMap,
   eventFilters,
   minStreamingPort,
+  groupByProfile = false,
 }: EventMontageViewProps) => {
   const { t } = useTranslation();
   const { settings } = useCurrentProfile();
@@ -317,6 +321,30 @@ export const EventMontageView = ({
   const hasMore = totalCount !== undefined ? events.length < totalCount : false;
   const remaining = totalCount !== undefined ? Math.min(batchSize, totalCount - events.length) : batchSize;
 
+  const gridStyle = { gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` };
+
+  const renderTile = (eventData: ScopedEventItem) => (
+    <EventMontageTile
+      key={scopedEventKey(eventData.profileId, eventData.Event.Id)}
+      event={eventData.Event}
+      profileId={eventData.profileId}
+      profileChip={eventData.profileChip}
+      monitorMap={monitorMap}
+      thumbnailFit={thumbnailFit}
+      thumbnailChain={thumbnailChain}
+      showHover={showHover}
+      portalUrl={portalUrl}
+      accessToken={accessToken}
+      tags={eventTagMap?.get(scopedEventKey(eventData.profileId, eventData.Event.Id))}
+      eventFilters={eventFilters}
+      minStreamingPort={minStreamingPort}
+    />
+  );
+
+  // One grid per owning server, in first-seen order; the count header and
+  // Load More stay one per view so paging is unchanged (refs #501).
+  const sections = groupByProfile ? groupEventsByProfile(events) : null;
+
   return (
     <div className="min-h-0" data-testid="events-montage-grid">
       {/* Status header */}
@@ -327,25 +355,27 @@ export const EventMontageView = ({
           : t('events.showing_events', { count: events.length })}
       </div>
 
-      <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }}>
-        {events.map((eventData) => (
-          <EventMontageTile
-            key={scopedEventKey(eventData.profileId, eventData.Event.Id)}
-            event={eventData.Event}
-            profileId={eventData.profileId}
-            profileChip={eventData.profileChip}
-            monitorMap={monitorMap}
-            thumbnailFit={thumbnailFit}
-            thumbnailChain={thumbnailChain}
-            showHover={showHover}
-            portalUrl={portalUrl}
-            accessToken={accessToken}
-            tags={eventTagMap?.get(scopedEventKey(eventData.profileId, eventData.Event.Id))}
-            eventFilters={eventFilters}
-            minStreamingPort={minStreamingPort}
-          />
-        ))}
-      </div>
+      {sections ? (
+        <div className="space-y-6">
+          {sections.map(([profileId, section]) => (
+            <div key={profileId} data-testid={`events-group-section-${profileId}`}>
+              <h2
+                className="text-sm font-semibold text-muted-foreground mb-2 truncate px-1"
+                title={section.profileName}
+              >
+                {section.profileName}
+              </h2>
+              <div className="grid gap-4" style={gridStyle}>
+                {section.items.map(renderTile)}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid gap-4" style={gridStyle}>
+          {events.map(renderTile)}
+        </div>
+      )}
 
       {/* Load More button */}
       {hasMore && (
