@@ -1,10 +1,11 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Monitors from '../Monitors';
 import { ALL_PROFILES_ID } from '../../api/types';
 import { seedProfiles, resetProfileFixture, makeProfile } from '../../tests/profile-fixture';
 import { resetFakeStoreGates } from '../../tests/fake-store-gates';
+import { useSettingsStore } from '../../stores/settings';
 
 vi.mock('../../api/store-gates', () => import('../../tests/fake-store-gates'));
 vi.mock('../../lib/security/secureStorage', () => import('../../tests/fake-secure-storage'));
@@ -186,6 +187,30 @@ describe('Monitors Page', () => {
     expect(screen.getByTestId('monitor-card-2')).toHaveTextContent('Lobby Cam');
     const chips = screen.getAllByTestId('monitor-profile-chip');
     expect(chips.map((c) => c.textContent)).toEqual(['Home', 'Office']);
+  });
+
+  it('sections the grid by server, and collapsing one hides only its cards', () => {
+    allMode(2);
+    useSettingsStore.getState().updateProfileSettings(ALL_PROFILES_ID, { monitorsGroupByServer: true });
+    useScopedMonitorsMock.mockReturnValue({
+      monitors: [
+        { profileId: 'profile-1', profileName: 'Home', item: { Monitor: { Id: '1', Name: 'Front Door', Deleted: false }, Monitor_Status: { Status: 'Connected' } } },
+        { profileId: 'profile-2', profileName: 'Office', item: { Monitor: { Id: '2', Name: 'Lobby Cam', Deleted: false }, Monitor_Status: { Status: 'Connected' } } },
+      ],
+      errors: [],
+      isLoading: false,
+      refetchProfile: vi.fn(),
+    });
+
+    renderPage();
+    expect(screen.getByTestId('monitors-group-toggle-profile-1')).toHaveTextContent('Home');
+    expect(screen.getByTestId('monitor-card-1')).toHaveTextContent('Front Door');
+
+    fireEvent.click(screen.getByTestId('monitors-group-toggle-profile-1'));
+
+    expect(screen.queryByTestId('monitor-card-1')).toBeNull();
+    expect(screen.getByTestId('monitor-card-2')).toHaveTextContent('Lobby Cam');
+    expect(screen.getByTestId('monitors-group-toggle-profile-1')).toHaveAttribute('aria-expanded', 'false');
   });
 
   it('All mode renders a distinct new-event count per owning profile for a colliding monitor id', () => {

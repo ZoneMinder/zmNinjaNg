@@ -1418,9 +1418,36 @@ describe('Montage Page', () => {
 
     render(<Montage />);
 
-    expect(screen.getByRole('heading', { name: 'Home' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Office' })).toBeInTheDocument();
+    expect(screen.getByTestId('montage-group-toggle-profile-1')).toHaveTextContent('Home');
+    expect(screen.getByTestId('montage-group-toggle-profile-2')).toHaveTextContent('Office');
     expect(screen.getByTestId('montage-monitor-profile-1:1')).toHaveTextContent('Front Door');
     expect(screen.getByTestId('montage-monitor-profile-2:2')).toHaveTextContent('Lobby Cam');
+  });
+
+  // Collapsing takes the section's tiles out of the tree, which is what stops
+  // their streams; the other server keeps playing (refs #503).
+  it('collapsing a montage section unmounts that server\'s tiles only', () => {
+    allMode([{ id: 'profile-1', name: 'Home' }, { id: 'profile-2', name: 'Office' }], {
+      monitorsGroupByServer: true,
+    });
+    useScopedMonitorsMock.mockReturnValue({
+      monitors: [
+        { profileId: 'profile-1', profileName: 'Home', item: monitor('1', 'Front Door') },
+        { profileId: 'profile-2', profileName: 'Office', item: monitor('2', 'Lobby Cam') },
+      ],
+      errors: [],
+      isLoading: false,
+      refetchProfile: vi.fn(),
+    });
+
+    render(<Montage />);
+
+    fireEvent.click(screen.getByTestId('montage-group-toggle-profile-1'));
+
+    expect(screen.queryByTestId('montage-monitor-profile-1:1')).toBeNull();
+    expect(screen.getByTestId('montage-monitor-profile-2:2')).toHaveTextContent('Lobby Cam');
+    // The section itself, and its count, stay: this is not the server filter.
+    expect(screen.getByTestId('montage-group-toggle-profile-1')).toHaveTextContent('Home');
+    expect(screen.getByTestId('montage-group-toggle-profile-1')).toHaveAttribute('aria-expanded', 'false');
   });
 });

@@ -86,6 +86,19 @@ Feature: Aggregating across servers with a virtual profile group
     And I turn on grouping events by server
     Then every event card sits in its own server section
 
+  # Folding a server away is not the server filter: its events go off screen,
+  # its count stays, and the jump button brings it back (refs #503).
+  @web
+  Scenario: a server section folds away and its jump button brings it back
+    When I navigate to the "Profiles" page
+    And I switch to a group holding every profile
+    When I navigate to the "Events" page
+    And I turn on grouping events by server
+    And I collapse the first server section
+    Then the folded section shows no events while the others still do
+    When I press the jump button for that server
+    Then that server section shows its events again
+
   @web
   Scenario: deep-linking into a monitor from all mode does not switch the active profile
     When I navigate to the "Profiles" page

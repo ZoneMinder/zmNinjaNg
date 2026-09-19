@@ -778,7 +778,7 @@ export default function Events() {
             eventTagMap={eventTagMap}
             eventFilters={serverFilters}
             minStreamingPort={resolveMinStreamingPort(currentProfile?.minStreamingPort, settings.forceDisableMultiPort)}
-            groupByProfile={isAllMode && settings.eventsGroupByServer}
+            groupByScopeId={isAllMode && settings.eventsGroupByServer ? currentProfileId ?? undefined : undefined}
           />
         ) : (
           <EventListView
@@ -794,7 +794,7 @@ export default function Events() {
             eventTagMap={eventTagMap}
             eventFilters={serverFilters}
             minStreamingPort={resolveMinStreamingPort(currentProfile?.minStreamingPort, settings.forceDisableMultiPort)}
-            groupByProfile={isAllMode && settings.eventsGroupByServer}
+            groupByScopeId={isAllMode && settings.eventsGroupByServer ? currentProfileId ?? undefined : undefined}
           />
         )}
       </div>

@@ -1100,7 +1100,8 @@
     "delete_group_error": "删除虚拟配置组失败",
     "group_no_active_members": "该分组中没有启用的服务器",
     "details": "详情",
-    "more_actions": "更多操作"
+    "more_actions": "更多操作",
+    "jump_to_server": "跳转到服务器"
   },
   "profile_picker": {
     "label": "配置"

@@ -19,6 +19,8 @@ Older events load automatically as you scroll.
 
 In a {doc}`profiles` group, the group-by-server toggle in the toolbar splits the list, and the grid, into one section per server, with the server's name above each section. Events inside a section stay in time order, and the count at the top still covers every server. Turn the button off to go back to a single list sorted by time across all of them.
 
+Above the sections is a row of server buttons, each with the number of that server's events on screen. Press one to jump to its section. Pressing a section's own header folds that server away and pressing it again brings it back; the header keeps its count while folded, and the totals and filters do not change. This is not the server filter, which drops a server's events from the page altogether. Folded sections are remembered on this device, so they stay folded when you open an event and come back, or reload the app. Jumping to a folded server unfolds it first.
+
 On desktop, hovering over a thumbnail for a moment shows a 400px-wide preview anchored next to the row. The preview loads a higher-resolution image from the server. The underlying card remains clickable while the preview is visible, so you can still click to open the event.
 
 ## Deleting Multiple Events

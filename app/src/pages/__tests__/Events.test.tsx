@@ -729,19 +729,60 @@ describe('Events Page', () => {
         'events-group-section-profile-1',
         'events-group-section-profile-2',
       ]);
-      expect(within(sections[0]).getByRole('heading')).toHaveTextContent('Home');
+      expect(within(sections[0]).getByTestId('events-group-toggle-profile-1')).toHaveTextContent('Home');
       // Interleaved input: event 3 belongs with event 1 under Home, in the
       // time order it arrived, and event 2 sits alone under Office.
       expect(within(sections[0]).getAllByTestId('event-card-item').map((c) => c.textContent)).toEqual([
         '1-Camera 1Home',
         '3-Camera 1Home',
       ]);
-      expect(within(sections[1]).getByRole('heading')).toHaveTextContent('Office');
+      expect(within(sections[1]).getByTestId('events-group-toggle-profile-2')).toHaveTextContent('Office');
       expect(within(sections[1]).getAllByTestId('event-card-item').map((c) => c.textContent)).toEqual([
         '2-Camera 1Office',
       ]);
       // One count header for the whole view, not one per section.
       expect(screen.getAllByText('events.showing_events:{"count":3}')).toHaveLength(1);
+    });
+
+    it('offers a jump button per server, carrying that server\'s count', () => {
+      allScope();
+      useSettingsStore.getState().updateProfileSettings(ALL_PROFILES_ID, { eventsGroupByServer: true });
+      scopedEvents({
+        events: [
+          { profileId: 'profile-1', profileName: 'Home', item: { Event: { Id: '1', MonitorId: '1', StartDateTime: '2026-08-03 12:00:00' } } },
+          { profileId: 'profile-2', profileName: 'Office', item: { Event: { Id: '2', MonitorId: '1', StartDateTime: '2026-08-03 11:00:00' } } },
+          { profileId: 'profile-1', profileName: 'Home', item: { Event: { Id: '3', MonitorId: '1', StartDateTime: '2026-08-03 10:00:00' } } },
+        ],
+      });
+
+      render(<Events />);
+
+      const bar = screen.getByTestId('events-group-jump-bar');
+      expect(within(bar).getAllByRole('button').map((b) => b.textContent)).toEqual(['Home2', 'Office1']);
+    });
+
+    it('collapsing a server section hides its events and keeps the rest', () => {
+      allScope();
+      useSettingsStore.getState().updateProfileSettings(ALL_PROFILES_ID, { eventsGroupByServer: true });
+      scopedEvents({
+        events: [
+          { profileId: 'profile-1', profileName: 'Home', item: { Event: { Id: '1', MonitorId: '1', StartDateTime: '2026-08-03 12:00:00' } } },
+          { profileId: 'profile-2', profileName: 'Office', item: { Event: { Id: '2', MonitorId: '1', StartDateTime: '2026-08-03 11:00:00' } } },
+        ],
+      });
+
+      render(<Events />);
+
+      fireEvent.click(screen.getByTestId('events-group-toggle-profile-1'));
+
+      expect(screen.getAllByTestId('event-card-item').map((c) => c.textContent)).toEqual([
+        '2-Camera 1Office',
+      ]);
+      // Collapsing is not filtering: the header, its count and the page total
+      // still cover both servers.
+      expect(screen.getByTestId('events-group-toggle-profile-1')).toHaveTextContent('Home');
+      expect(screen.getByTestId('events-group-toggle-profile-1')).toHaveTextContent('1');
+      expect(screen.getAllByText('events.showing_events:{"count":2}')).toHaveLength(1);
     });
 
     it('leaves the list unsectioned when the toggle is off', () => {

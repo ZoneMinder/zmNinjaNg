@@ -30,6 +30,7 @@ import { resolveMinStreamingPort } from '../../lib/monitor/multiport';
 import { EventThumbnailHoverPreview } from './EventThumbnailHoverPreview';
 import { buildMonitorMap, calculateThumbnailDimensions, getMonitorDimensions } from '../../lib/event/event-utils';
 import { groupByOwningProfile } from '../../lib/profile/profile-sections';
+import { ProfileSectionList } from '../profiles/ProfileSectionList';
 import { ZM_INTEGRATION, RELATIVE_TIME_LIST_WINDOW_DAYS } from '../../lib/zmninja-ng-constants';
 import type { Event, Monitor, ProfileId, Tag } from '../../api/types';
 import type { ThumbnailFallbackEntry } from '../../stores/settings';
@@ -285,9 +286,10 @@ interface EventMontageViewProps {
   eventTagMap?: Map<string, Tag[]>;
   eventFilters?: EventFilters;
   minStreamingPort?: number;
-  /** Aggregate only: section the grid by owning server instead of one
-   *  time-ordered grid (refs #501). */
-  groupByProfile?: boolean;
+  /** Aggregate only: the aggregate's own id sections the grid by owning
+   *  server instead of one time-ordered grid; undefined leaves it flat
+   *  (refs #501). The id also scopes each section's collapse state. */
+  groupByScopeId?: ProfileId;
 }
 
 export const EventMontageView = ({
@@ -304,7 +306,7 @@ export const EventMontageView = ({
   eventTagMap,
   eventFilters,
   minStreamingPort,
-  groupByProfile = false,
+  groupByScopeId,
 }: EventMontageViewProps) => {
   const { t } = useTranslation();
   const { settings } = useCurrentProfile();
@@ -344,7 +346,7 @@ export const EventMontageView = ({
 
   // One grid per owning server, in first-seen order; the count header and
   // Load More stay one per view so paging is unchanged (refs #501).
-  const sections = groupByProfile ? groupByOwningProfile(events) : null;
+  const sections = groupByScopeId ? groupByOwningProfile(events) : null;
 
   return (
     <div className="min-h-0" data-testid="events-montage-grid">
@@ -356,22 +358,18 @@ export const EventMontageView = ({
           : t('events.showing_events', { count: events.length })}
       </div>
 
-      {sections ? (
-        <div className="space-y-6">
-          {sections.map(([profileId, section]) => (
-            <div key={profileId} data-testid={`events-group-section-${profileId}`}>
-              <h2
-                className="text-sm font-semibold text-muted-foreground mb-2 truncate px-1"
-                title={section.profileName}
-              >
-                {section.profileName}
-              </h2>
-              <div className="grid gap-4" style={gridStyle}>
-                {section.items.map(renderTile)}
-              </div>
+      {sections && groupByScopeId ? (
+        <ProfileSectionList
+          sections={sections}
+          surface="events-group"
+          scopeId={groupByScopeId}
+          className="space-y-6"
+          renderItems={(items) => (
+            <div className="grid gap-4" style={gridStyle}>
+              {items.map(renderTile)}
             </div>
-          ))}
-        </div>
+          )}
+        />
       ) : (
         <div className="grid gap-4" style={gridStyle}>
           {events.map(renderTile)}
