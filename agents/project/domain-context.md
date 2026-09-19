@@ -89,6 +89,12 @@ matching reality, fixing it is a protocol change like any rule edit.
   development (January 2024), after `Decoding` did, hence the version floor
   as well. Snapshot requests carry no connkey: nothing commands them, and a
   connkey makes a `frames=1` request open a socket per poll.
+- ZM answers a CMD_QUIT with HTTP 200 and puts the fault in the body, so a
+  discarded response hides a plain-language diagnosis. "Socket
+  /run/zm/zms-<connkey>s.sock does not exist ... either zms did not run, or zms
+  exited early" means no `zms` process stood behind that connkey. All three
+  quit paths route through `quitAndReport` and log it at WARN; never log the
+  control URL, which carries the access token. #507.
 - `zms` answers 503 once its streaming daemon is saturated, and a profile
   switch is when that happens: the outgoing profile's quits are awaited but
   their replies time out at 3s (`cmdQuitTimeoutSeconds`), so the incoming

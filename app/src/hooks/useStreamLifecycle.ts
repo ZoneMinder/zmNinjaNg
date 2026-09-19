@@ -44,6 +44,37 @@ interface StreamCleanupParams {
 }
 
 /**
+ * Send one CMD_QUIT and surface what ZM says about it.
+ *
+ * ZM answers with 200 and puts the fault in the body, so discarding the
+ * response hides a plain-language server diagnosis. "Socket ... does not exist
+ * ... either zms did not run, or zms exited early" means nothing was streaming
+ * behind this connkey, which is what separates a client-side queueing problem
+ * from a server that never started zms; six rounds of #507 went on inferring
+ * it. Never log `controlUrl`: it carries the access token.
+ */
+async function quitAndReport(
+  controlUrl: string,
+  timeoutMs: number | undefined,
+  logFn: ComponentLogger,
+  monitorId: string | undefined,
+  connKey: number,
+): Promise<void> {
+  try {
+    const response = await httpGet<{ message?: string }>(controlUrl, { timeoutMs });
+    const message = response.data?.message;
+    if (message) {
+      logFn(`zms rejected CMD_QUIT: ${message}`, LogLevel.WARN, {
+        monitorId,
+        connkey: connKey,
+      });
+    }
+  } catch {
+    // Silently ignore - server connection may already be closed
+  }
+}
+
+/**
  * Send CMD_QUIT for a stream and clear its stored connkey. Shared by the
  * unmount cleanup and the profile-switch teardown registry so both build the
  * exact same per-server quit URL. `reason` only affects the log line. Resolves
@@ -88,11 +119,13 @@ async function quitStreamForParams(
     store.clearConnKey(params.cacheKey);
   }
 
-  try {
-    await httpGet(controlUrl, { timeoutMs: params.cmdQuitTimeoutMs });
-  } catch {
-    // Silently ignore - server connection may already be closed
-  }
+  await quitAndReport(
+    controlUrl,
+    params.cmdQuitTimeoutMs,
+    logFn,
+    params.monitorId,
+    params.connKey,
+  );
 }
 
 export interface UseStreamLifecycleOptions {
@@ -254,9 +287,13 @@ export function useStreamLifecycle({
         }),
       );
 
-      httpGet(controlUrl, { timeoutMs: cmdQuitTimeoutMs }).catch(() => {
-        // Silently ignore errors - connection may already be closed
-      });
+      void quitAndReport(
+        controlUrl,
+        cmdQuitTimeoutMs,
+        logFn,
+        monitorId,
+        prevConnKeyRef.current,
+      );
     }
 
     isInitialMountRef.current = false;
@@ -450,9 +487,7 @@ export function useStreamLifecycle({
       key.toString(),
       { token: accessToken || undefined, minStreamingPort, monitorId },
     );
-    httpGet(controlUrl, { timeoutMs: cmdQuitTimeoutMs }).catch(() => {
-      // Silently ignore - server connection may already be closed
-    });
+    void quitAndReport(controlUrl, cmdQuitTimeoutMs, logFn, monitorId, key);
   };
 
   // Force-regenerate. Optionally sends CMD_QUIT for the previous connkey first
