@@ -291,6 +291,26 @@ When('I type a month into the start date field', async ({ page }) => {
   await input.pressSequentially('12', { delay: 200 });
 });
 
+When('I move focus to the end date field', async ({ page }) => {
+  // Marked so the next step can tell a surviving panel from a rebuilt one:
+  // the page used to tear this panel down and hand focus back to Apply.
+  await page.evaluate(() => {
+    const panel = document.querySelector('[data-testid="events-filter-panel"]') as HTMLElement | null;
+    if (panel) panel.dataset.e2eMark = 'kept';
+  });
+  await page.getByTestId('events-end-date').click();
+});
+
+Then('the panel should still be the one I was editing, with the end date focused', async ({ page }) => {
+  const state = await page.evaluate(() => {
+    const panel = document.querySelector('[data-testid="events-filter-panel"]') as HTMLElement | null;
+    const active = document.activeElement as HTMLElement | null;
+    return { mark: panel?.dataset.e2eMark ?? 'REBUILT', active: active?.getAttribute('data-testid') ?? 'none' };
+  });
+  expect(state.mark).toBe('kept');
+  expect(state.active).toBe('events-end-date');
+});
+
 Then('the start date field should hold the month I typed', async ({ page }) => {
   await expect(page.getByTestId('events-start-date')).toHaveValue(/^\d{4}-12-/);
 });

@@ -51,6 +51,8 @@ Feature: Event Browsing and Management
     And I open the events filter panel
     And I type a month into the start date field
     Then the start date field should hold the month I typed
+    When I move focus to the end date field
+    Then the panel should still be the one I was editing, with the end date focused
 
   @all
   Scenario: Clearing the quick time filter keeps the events list usable

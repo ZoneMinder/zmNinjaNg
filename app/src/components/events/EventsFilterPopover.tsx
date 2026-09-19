@@ -6,6 +6,7 @@
  */
 
 import { Archive, Star, Tag, X, Loader2, ScanSearch } from 'lucide-react';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { MonitorData, Tag as TagType } from '../../api/types';
 import { ALL_TAGS_FILTER_ID } from '../../hooks/useEventFilters';
@@ -36,7 +37,10 @@ interface EventsFilterPopoverProps {
   endDateInput: string;
   onEndDateChange: (value: string) => void;
   onQuickRangeSelect: (range: { start: Date; end: Date }) => void;
-  onApplyFilters: () => void;
+  /** The dates are passed explicitly: applying reads them out of the fields,
+   *  and the page's own applyFilters still closes over its pre-commit state
+   *  (refs #193). */
+  onApplyFilters: (overrides?: { startDateTime?: string; endDateTime?: string }) => void;
   onClearFilters: () => void;
   // Tags filter props
   tagsSupported?: boolean;
@@ -75,18 +79,37 @@ export function EventsFilterPopover({
 }: EventsFilterPopoverProps) {
   const { t } = useTranslation();
 
-  // The two date fields below hold their own value while being typed into and
-  // report it when the field is left. Reporting every keystroke made the page
+  // The two date fields keep what is typed to themselves until Apply or Enter.
+  // Reporting sooner - on every keystroke, or on every blur - made the page
   // start a new events query, which arrives pending with no rows, so
-  // Events.tsx swapped in its loading skeleton and unmounted this panel
-  // mid-edit: the field lost focus after one character and the remaining
-  // digits went to the Apply button (refs #495).
+  // Events.tsx swapped in its loading skeleton and unmounted this panel: a
+  // character was lost mid-edit, and moving from one date field to the other
+  // reloaded the page underneath the user (refs #495).
   //
-  // They are uncontrolled, keyed by the page's value: typing never rewrites
+  // They are uncontrolled, keyed by the page's value, so typing never rewrites
   // the DOM value, and a date the page sets - a quick range, Clear, a deep
-  // link - replaces the field as it always did.
-  const commit = (next: string, current: string, report: (value: string) => void) => {
-    if (next !== current) report(next);
+  // link - still replaces the field.
+  const startRef = useRef<HTMLInputElement>(null);
+  const endRef = useRef<HTMLInputElement>(null);
+
+  // Compared as instants, not strings: a field can report the same moment in a
+  // different shape than the page holds (a browser with step="1" reports
+  // seconds, a deep link may not), and reporting that as a change would run a
+  // query for a date nobody touched.
+  const dateChanged = (next: string, current: string): boolean => {
+    if (next === current) return false;
+    const nextMs = new Date(next).getTime();
+    const currentMs = new Date(current).getTime();
+    if (Number.isFinite(nextMs) && Number.isFinite(currentMs)) return nextMs !== currentMs;
+    return true;
+  };
+
+  const applyDates = () => {
+    const start = startRef.current?.value ?? startDateInput;
+    const end = endRef.current?.value ?? endDateInput;
+    if (dateChanged(start, startDateInput)) onStartDateChange(start);
+    if (dateChanged(end, endDateInput)) onEndDateChange(end);
+    onApplyFilters({ startDateTime: start || undefined, endDateTime: end || undefined });
   };
 
   const isAllTagsSelected = selectedTagIds.includes(ALL_TAGS_FILTER_ID);
@@ -123,7 +146,7 @@ export function EventsFilterPopover({
     >
       {/* Action buttons at top for mobile accessibility */}
       <div className="flex gap-2 mb-2 pb-2 border-b sticky top-0 bg-popover z-10">
-        <Button onClick={onApplyFilters} size="sm" className="flex-1" data-testid="events-apply-filters">
+        <Button onClick={applyDates} size="sm" className="flex-1" data-testid="events-apply-filters">
           {t('common.filter')}
         </Button>
         <Button
@@ -338,11 +361,11 @@ export function EventsFilterPopover({
             </Label>
             <Input
               key={startDateInput}
+              ref={startRef}
               id="start-date"
               type="datetime-local"
               defaultValue={startDateInput}
-              onBlur={(e) => commit(e.target.value, startDateInput, onStartDateChange)}
-              onKeyDown={(e) => { if (e.key === 'Enter') commit(e.currentTarget.value, startDateInput, onStartDateChange); }}
+              onKeyDown={(e) => { if (e.key === 'Enter') applyDates(); }}
               step="1"
               data-testid="events-start-date"
             />
@@ -353,11 +376,11 @@ export function EventsFilterPopover({
             </Label>
             <Input
               key={endDateInput}
+              ref={endRef}
               id="end-date"
               type="datetime-local"
               defaultValue={endDateInput}
-              onBlur={(e) => commit(e.target.value, endDateInput, onEndDateChange)}
-              onKeyDown={(e) => { if (e.key === 'Enter') commit(e.currentTarget.value, endDateInput, onEndDateChange); }}
+              onKeyDown={(e) => { if (e.key === 'Enter') applyDates(); }}
               step="1"
               data-testid="events-end-date"
             />

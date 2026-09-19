@@ -65,13 +65,13 @@ function baseProps() {
   };
 }
 
-// Typing a date used to reach the page on every keystroke. Each one made a new
-// events query, which came back pending with no rows, so the page swapped in
-// its loading skeleton and tore the open panel down mid-edit: the field lost
-// focus after one character and the next digit went to the Apply button
-// (refs #495).
+// Typing a date used to reach the page on every keystroke, and later on every
+// blur. Either way the page started a new events query, came back pending with
+// no rows, swapped in its loading skeleton and tore this panel down mid-edit -
+// so a character was lost, and moving from the start field to the end field
+// reloaded the page under the user (refs #495).
 describe('EventsFilterPopover date editing (refs #495)', () => {
-  it('holds the typed date locally and reports it once, on blur', async () => {
+  it('reports nothing while a date is typed', async () => {
     const onStartDateChange = vi.fn();
     render(
       <EventsFilterPopover
@@ -88,11 +88,79 @@ describe('EventsFilterPopover date editing (refs #495)', () => {
 
     expect(onStartDateChange).not.toHaveBeenCalled();
     expect(input.value).toContain('2026-12-12');
+  });
 
-    await user.tab();
+  it('reports nothing when focus moves from the start field to the end field', async () => {
+    const onStartDateChange = vi.fn();
+    const onEndDateChange = vi.fn();
+    render(
+      <EventsFilterPopover
+        {...baseProps()}
+        startDateInput="2026-09-12T09:35:40"
+        endDateInput="2026-09-13T09:35:40"
+        onStartDateChange={onStartDateChange}
+        onEndDateChange={onEndDateChange}
+      />
+    );
 
-    expect(onStartDateChange).toHaveBeenCalledTimes(1);
+    const user = userEvent.setup();
+    const start = screen.getByTestId('events-start-date') as HTMLInputElement;
+    await user.clear(start);
+    await user.type(start, '2026-12-12T09:35:40');
+    await user.click(screen.getByTestId('events-end-date'));
+
+    expect(onStartDateChange).not.toHaveBeenCalled();
+    expect(onEndDateChange).not.toHaveBeenCalled();
+  });
+
+  it('reports both dates when Apply is pressed, and applies that range', async () => {
+    const onStartDateChange = vi.fn();
+    const onEndDateChange = vi.fn();
+    const onApplyFilters = vi.fn();
+    render(
+      <EventsFilterPopover
+        {...baseProps()}
+        startDateInput="2026-09-12T09:35:40"
+        endDateInput="2026-09-13T09:35:40"
+        onStartDateChange={onStartDateChange}
+        onEndDateChange={onEndDateChange}
+        onApplyFilters={onApplyFilters}
+      />
+    );
+
+    const user = userEvent.setup();
+    const start = screen.getByTestId('events-start-date') as HTMLInputElement;
+    await user.clear(start);
+    await user.type(start, '2026-12-12T09:35:40');
+    await user.click(screen.getByTestId('events-apply-filters'));
+
     expect(onStartDateChange).toHaveBeenCalledWith(expect.stringContaining('2026-12-12'));
+    expect(onEndDateChange).not.toHaveBeenCalled();
+    expect(onApplyFilters).toHaveBeenCalledWith({
+      startDateTime: expect.stringContaining('2026-12-12'),
+      endDateTime: expect.stringContaining('2026-09-13'),
+    });
+  });
+
+  it('reports the date when Enter is pressed in the field', async () => {
+    const onStartDateChange = vi.fn();
+    const onApplyFilters = vi.fn();
+    render(
+      <EventsFilterPopover
+        {...baseProps()}
+        startDateInput="2026-09-12T09:35:40"
+        onStartDateChange={onStartDateChange}
+        onApplyFilters={onApplyFilters}
+      />
+    );
+
+    const user = userEvent.setup();
+    const start = screen.getByTestId('events-start-date') as HTMLInputElement;
+    await user.clear(start);
+    await user.type(start, '2026-12-12T09:35:40{Enter}');
+
+    expect(onStartDateChange).toHaveBeenCalledWith(expect.stringContaining('2026-12-12'));
+    expect(onApplyFilters).toHaveBeenCalled();
   });
 
   it('shows a date the page sets while the field is not being edited', () => {
