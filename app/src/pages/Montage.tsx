@@ -32,6 +32,7 @@ import { useGroupFilter } from '../hooks/useGroupFilter';
 import { useMontageGroupState } from '../hooks/useMontageGroupState';
 import { GroupFilterSelect } from '../components/filters/GroupFilterSelect';
 import { cn } from '../lib/utils';
+import { groupByOwningProfile } from '../lib/profile/profile-sections';
 import { useTranslation } from 'react-i18next';
 import { usePinchZoom } from '../hooks/usePinchZoom';
 import { useInsomnia } from '../hooks/useInsomnia';
@@ -548,18 +549,7 @@ export default function Montage() {
   // refs #337 Phase 4 Task 1 fix round 1); this stays here since it depends
   // on isAllMode/settings the same way visibleErrors above does.
   const groupedSections: MontageGroupedSections | null = isAllMode && settings.monitorsGroupByServer
-    ? Array.from(
-        cappedMonitors.reduce((byProfile, item) => {
-          const key = item.profileId as ProfileId;
-          const existing = byProfile.get(key);
-          if (existing) {
-            existing.items.push(item);
-          } else {
-            byProfile.set(key, { profileName: item.profileChip ?? '', items: [item] });
-          }
-          return byProfile;
-        }, new Map<ProfileId, { profileName: string; items: MontageTileItem[] }>())
-      )
+    ? groupByOwningProfile(cappedMonitors)
     : null;
 
   return (

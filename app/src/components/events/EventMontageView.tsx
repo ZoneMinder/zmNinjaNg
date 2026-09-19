@@ -28,7 +28,8 @@ import { useCurrentProfile, useProfileById } from '../../hooks/useCurrentProfile
 import { useFreshAccessToken } from '../../hooks/useFreshAccessToken';
 import { resolveMinStreamingPort } from '../../lib/monitor/multiport';
 import { EventThumbnailHoverPreview } from './EventThumbnailHoverPreview';
-import { buildMonitorMap, calculateThumbnailDimensions, getMonitorDimensions, groupEventsByProfile } from '../../lib/event/event-utils';
+import { buildMonitorMap, calculateThumbnailDimensions, getMonitorDimensions } from '../../lib/event/event-utils';
+import { groupByOwningProfile } from '../../lib/profile/profile-sections';
 import { ZM_INTEGRATION, RELATIVE_TIME_LIST_WINDOW_DAYS } from '../../lib/zmninja-ng-constants';
 import type { Event, Monitor, ProfileId, Tag } from '../../api/types';
 import type { ThumbnailFallbackEntry } from '../../stores/settings';
@@ -284,7 +285,7 @@ interface EventMontageViewProps {
   eventTagMap?: Map<string, Tag[]>;
   eventFilters?: EventFilters;
   minStreamingPort?: number;
-  /** All mode only: section the grid by owning server instead of one
+  /** Aggregate only: section the grid by owning server instead of one
    *  time-ordered grid (refs #501). */
   groupByProfile?: boolean;
 }
@@ -343,7 +344,7 @@ export const EventMontageView = ({
 
   // One grid per owning server, in first-seen order; the count header and
   // Load More stay one per view so paging is unchanged (refs #501).
-  const sections = groupByProfile ? groupEventsByProfile(events) : null;
+  const sections = groupByProfile ? groupByOwningProfile(events) : null;
 
   return (
     <div className="min-h-0" data-testid="events-montage-grid">

@@ -12,7 +12,8 @@ import { EventCard } from './EventCard';
 import { type EventFilters } from '../../api/events';
 import { getPortalUrlForMonitor, getServerMapVersion, subscribeServerMap } from '../../lib/zm/server-resolver';
 import { buildThumbnailChain, eventHasAlarmFrame } from '../../lib/event/thumbnail-chain';
-import { buildMonitorMap, calculateThumbnailDimensions, EVENT_GRID_CONSTANTS, getMonitorDimensions, groupEventsByProfile } from '../../lib/event/event-utils';
+import { buildMonitorMap, calculateThumbnailDimensions, EVENT_GRID_CONSTANTS, getMonitorDimensions } from '../../lib/event/event-utils';
+import { groupByOwningProfile } from '../../lib/profile/profile-sections';
 import { useCurrentProfile, useProfileById } from '../../hooks/useCurrentProfile';
 import { useFreshAccessToken } from '../../hooks/useFreshAccessToken';
 import { resolveMinStreamingPort } from '../../lib/monitor/multiport';
@@ -42,7 +43,7 @@ interface EventListViewProps {
   eventTagMap?: Map<string, Tag[]>;
   eventFilters?: EventFilters;
   minStreamingPort?: number;
-  /** All mode only: section the list by owning server instead of one
+  /** Aggregate only: section the list by owning server instead of one
    *  time-ordered stream (refs #501). */
   groupByProfile?: boolean;
 }
@@ -234,7 +235,7 @@ export const EventListView = ({
 
   // One section per owning server, in first-seen order; the count header and
   // Load More stay one per view so paging is unchanged (refs #501).
-  const sections = groupByProfile ? groupEventsByProfile(events) : null;
+  const sections = groupByProfile ? groupByOwningProfile(events) : null;
 
   return (
     <div className="min-h-0" data-testid="event-list">

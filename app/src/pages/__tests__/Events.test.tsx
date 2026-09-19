@@ -756,7 +756,10 @@ describe('Events Page', () => {
       render(<Events />);
 
       expect(screen.queryAllByTestId(/^events-group-section-/)).toHaveLength(0);
-      expect(screen.getAllByTestId('event-card-item')).toHaveLength(2);
+      expect(screen.getAllByTestId('event-card-item').map((c) => c.textContent)).toEqual([
+        '1-Camera 1Home',
+        '2-Camera 1Office',
+      ]);
     });
   });
 

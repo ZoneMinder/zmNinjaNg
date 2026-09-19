@@ -165,7 +165,7 @@ export interface ProfileSettings {
    *  null = every profile in scope (default). Stored under the active
    *  aggregate's own settings bucket. */
   eventsServerFilter: ProfileId[] | null;
-  /** All mode only: section the Events list and grid by owning server instead
+  /** Aggregate only: section the Events list and grid by owning server instead
    *  of one time-ordered stream. Its own key rather than a shared one with
    *  `monitorsGroupByServer`: the two surfaces are toggled independently.
    *  Stored under the active aggregate's own settings bucket. */
