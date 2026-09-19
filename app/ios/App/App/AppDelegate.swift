@@ -7,7 +7,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        // Keep the cookie jar empty. Capacitor's HTTP plugin ends every response
+        // in syncCookiesToWebView(), which walks the whole shared jar and sends
+        // one WKHTTPCookieStore.setCookie IPC message per cookie it holds. ZM
+        // sets ZMSESSID on every reply, so the jar fills and each later response
+        // re-pushes all of it: a montage makes one event-count request per tile,
+        // and 74 of those queued 129 cookie messages at the WebKit networking
+        // process, which is the same process serving every <img> MJPEG load
+        // (refs #507). The plugin has no flag for this, and nothing in the app
+        // reads a cookie - ZM auth is a token in the query string - so refusing
+        // them at the jar leaves that loop nothing to walk.
+        HTTPCookieStorage.shared.cookieAcceptPolicy = .never
         return true
     }
 
