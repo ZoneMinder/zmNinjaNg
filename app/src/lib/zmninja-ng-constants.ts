@@ -362,6 +362,15 @@ export const RETURN_FLASH_MS = 4000;
  *
  * Configuration for the events list display.
  */
+/**
+ * The most bars the event heatmap will draw. A half-typed year in the date
+ * filter (typing the first digit of 2026 leaves 0002) asks it to bucket two
+ * thousand years; the bars would be unreadable long before that, and the
+ * bucket map took the page down with a stack overflow (refs #495). Roughly
+ * five and a half years of daily bars.
+ */
+export const HEATMAP_MAX_BUCKETS = 2000;
+
 export const EVENT_LIST = {
   // Only virtualize lists larger than this threshold.
   // Smaller lists render directly to avoid scroll margin calculation complexity

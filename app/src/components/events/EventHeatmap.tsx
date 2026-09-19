@@ -20,6 +20,7 @@ import { startOfHour, startOfDay, differenceInDays, addHours, addDays } from 'da
 import type { EventData } from '../../api/types';
 import { activateOnEnterOrSpace } from '../../lib/utils';
 import { eventInstant } from '../../lib/event/event-instant';
+import { HEATMAP_MAX_BUCKETS } from '../../lib/zmninja-ng-constants';
 
 /** One event tagged with its OWNING profile's IANA timezone, so bucketing
  * uses the real chronological instant (eventInstant) rather than a naive
@@ -71,6 +72,16 @@ export function EventHeatmap({
     // Determine bucket size based on time range
     const useDailyBuckets = daysDiff > 7;
 
+    // A date filter mid-edit hands this an unusable range: a backwards one, an
+    // unparseable one, or a year like 0002 from a part-typed 2026. Bucketing
+    // that made hundreds of thousands of entries and crashed the page, so draw
+    // nothing until the range is one a person could read (refs #495).
+    const spanMs = endDate.getTime() - startDate.getTime();
+    const bucketMs = useDailyBuckets ? 24 * 60 * 60 * 1000 : 60 * 60 * 1000;
+    if (!Number.isFinite(spanMs) || spanMs < 0 || spanMs / bucketMs > HEATMAP_MAX_BUCKETS) {
+      return { buckets: [], maxCount: 0 };
+    }
+
     // Create buckets
     const bucketMap = new Map<string, number>();
     let current = useDailyBuckets ? startOfDay(startDate) : startOfHour(startDate);
@@ -93,8 +104,13 @@ export function EventHeatmap({
       }
     });
 
-    // Find max count for normalization
-    const maxCount = Math.max(...Array.from(bucketMap.values()), 1);
+    // Find max count for normalization. Folded rather than spread into
+    // Math.max: the spread passes one argument per bucket and overflows the
+    // stack on a long range (refs #495).
+    let maxCount = 1;
+    for (const count of bucketMap.values()) {
+      if (count > maxCount) maxCount = count;
+    }
 
     // Create bucket objects
     const buckets: HeatmapBucket[] = Array.from(bucketMap.entries()).map(([key, count]) => ({
