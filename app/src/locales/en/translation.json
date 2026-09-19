@@ -1100,7 +1100,8 @@
     "delete_group_error": "Failed to delete virtual profile group",
     "group_no_active_members": "No enabled servers in this group",
     "details": "Details",
-    "more_actions": "More actions"
+    "more_actions": "More actions",
+    "jump_to_server": "Jump to server"
   },
   "profile_picker": {
     "label": "Profile"

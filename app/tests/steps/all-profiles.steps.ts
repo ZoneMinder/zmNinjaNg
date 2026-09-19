@@ -201,7 +201,10 @@ Then('every event card sits in its own server section', async ({ page }) => {
   const headings = new Set<string>();
   let cardsInSections = 0;
   for (const section of await sections.all()) {
-    const heading = (await section.locator('h2').first().textContent())?.trim() ?? '';
+    const heading = (await section
+      .locator('[data-testid^="events-group-toggle-"] span')
+      .first()
+      .textContent())?.trim() ?? '';
     expect(heading).not.toBe('');
     headings.add(heading);
     const sectionCards = await section.getByTestId('event-card').count();
@@ -212,6 +215,47 @@ Then('every event card sits in its own server section', async ({ page }) => {
   }
   expect(cardsInSections).toBe(totalCards);
   expect(headings.size).toBe((await sections.count()));
+});
+
+// Collapse state for the folded-section scenario: which section was folded
+// and how many cards it held, so the jump step can prove they came back.
+let collapsedSectionId = '';
+let collapsedSectionCards = 0;
+
+When('I collapse the first server section', async ({ page }) => {
+  const firstSection = page.locator('[data-testid^="events-group-section-"]').first();
+  const testId = await firstSection.getAttribute('data-testid');
+  collapsedSectionId = (testId ?? '').replace('events-group-section-', '');
+  expect(collapsedSectionId).not.toBe('');
+  collapsedSectionCards = await firstSection.getByTestId('event-card').count();
+  expect(collapsedSectionCards).toBeGreaterThan(0);
+
+  await page.getByTestId(`events-group-toggle-${collapsedSectionId}`).click();
+});
+
+Then('the folded section shows no events while the others still do', async ({ page }) => {
+  const folded = page.getByTestId(`events-group-section-${collapsedSectionId}`);
+  await expect.poll(async () => folded.getByTestId('event-card').count(), {
+    timeout: testConfig.timeouts.pageLoad,
+  }).toBe(0);
+  await expect(page.getByTestId(`events-group-toggle-${collapsedSectionId}`)).toHaveAttribute('aria-expanded', 'false');
+  // Folding is not filtering: the rest of the page still shows its events,
+  // and the folded server keeps its own count in the header.
+  expect(await page.getByTestId('event-card').count()).toBeGreaterThan(0);
+  await expect(page.getByTestId(`events-group-toggle-${collapsedSectionId}`))
+    .toContainText(String(collapsedSectionCards));
+});
+
+When('I press the jump button for that server', async ({ page }) => {
+  await page.getByTestId(`events-group-jump-${collapsedSectionId}`).click();
+});
+
+Then('that server section shows its events again', async ({ page }) => {
+  const folded = page.getByTestId(`events-group-section-${collapsedSectionId}`);
+  await expect.poll(async () => folded.getByTestId('event-card').count(), {
+    timeout: testConfig.timeouts.pageLoad,
+  }).toBe(collapsedSectionCards);
+  await expect(page.getByTestId(`events-group-toggle-${collapsedSectionId}`)).toHaveAttribute('aria-expanded', 'true');
 });
 
 Then('I should see an event profile chip on every event card', async ({ page }) => {

@@ -275,7 +275,7 @@ describe('EventMontageView all-mode owning-profile wiring (refs #337 Task 2)', (
 // Sectioning by owning server (refs #501). The page turns this on only in an
 // aggregate, where every row carries a profileId and a profileChip.
 describe('EventMontageView server sections (grid view)', () => {
-  function renderGrouped(events: ScopedEventItem[], groupByProfile: boolean) {
+  function renderGrouped(events: ScopedEventItem[], grouped: boolean) {
     return render(
       <EventMontageView
         events={events}
@@ -286,7 +286,7 @@ describe('EventMontageView server sections (grid view)', () => {
         accessToken="current-profile-token"
         batchSize={20}
         onLoadMore={vi.fn()}
-        groupByProfile={groupByProfile}
+        groupByScopeId={grouped ? asProfileId('group-1') : undefined}
       />
     );
   }
@@ -305,13 +305,13 @@ describe('EventMontageView server sections (grid view)', () => {
       'events-group-section-current',
       'events-group-section-profile-b',
     ]);
-    expect(within(sections[0]).getByRole('heading')).toHaveTextContent('Home');
+    expect(within(sections[0]).getByTestId('events-group-toggle-current')).toHaveTextContent('Home');
     expect(
       within(sections[0])
         .getAllByTestId('event-montage-tile')
         .map((t) => t.getAttribute('data-event-id'))
     ).toEqual(['1', '3']);
-    expect(within(sections[1]).getByRole('heading')).toHaveTextContent('Office');
+    expect(within(sections[1]).getByTestId('events-group-toggle-profile-b')).toHaveTextContent('Office');
     expect(
       within(sections[1])
         .getAllByTestId('event-montage-tile')

@@ -1100,7 +1100,8 @@
     "delete_group_error": "No se pudo eliminar el grupo virtual de perfiles",
     "group_no_active_members": "Ningún servidor activo en este grupo",
     "details": "Detalles",
-    "more_actions": "Más acciones"
+    "more_actions": "Más acciones",
+    "jump_to_server": "Ir al servidor"
   },
   "profile_picker": {
     "label": "Perfil"
