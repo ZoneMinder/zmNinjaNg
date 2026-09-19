@@ -315,6 +315,20 @@ Then('the start date field should hold the month I typed', async ({ page }) => {
   await expect(page.getByTestId('events-start-date')).toHaveValue(/^\d{4}-12-/);
 });
 
+When('I hide linked events', async ({ page }) => {
+  const hide = page.getByTestId('events-linked-hide');
+  await hide.scrollIntoViewIfNeeded();
+  await hide.click();
+  await expect(hide).toHaveAttribute('aria-pressed', 'true');
+});
+
+Then('linked events should still be hidden', async ({ page }) => {
+  const hide = page.getByTestId('events-linked-hide');
+  await hide.waitFor({ state: 'visible', timeout: testConfig.timeouts.element });
+  await expect(hide).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('events-linked-all')).toHaveAttribute('aria-pressed', 'false');
+});
+
 When('I close the events filter panel', async ({ page }) => {
   const panel = page.getByTestId('events-filter-panel');
   // Escape is also the global back shortcut, so it only gets pressed when

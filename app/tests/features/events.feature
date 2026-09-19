@@ -54,6 +54,18 @@ Feature: Event Browsing and Management
     When I move focus to the end date field
     Then the panel should still be the one I was editing, with the end date focused
 
+  # A linked monitor records whenever its partner alarms, so people ask to keep
+  # those events out of the list. The choice belongs to the profile, not the
+  # page, so it has to survive a reload (refs #493).
+  @web
+  Scenario: Hiding linked events sticks across a reload
+    When I open the events filter panel
+    And I hide linked events
+    And I close the events filter panel
+    And I reload the current page
+    And I open the events filter panel
+    Then linked events should still be hidden
+
   @all
   Scenario: Clearing the quick time filter keeps the events list usable
     When I select the past week quick time filter

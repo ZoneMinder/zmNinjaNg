@@ -11,6 +11,13 @@ export interface EventFilters {
   minAlarmFrames?: number;
   notesRegexp?: string; // REGEXP filter on Notes field (e.g., "detected:" for object detection)
   cause?: string; // Filter by event cause (e.g., "Motion", "Continuous", "Signal", "Forced")
+  /** Drop events whose Cause matches, via ZoneMinder's `Cause NOT REGEXP:`.
+   *  Its own field rather than a sign on `cause`, so a query can keep one
+   *  cause and drop another (refs #493). ZM 1.38.3 partitions a set exactly
+   *  between REGEXP and NOT REGEXP; an unknown operator fails with a 500
+   *  rather than returning everything. A row with a null Cause is dropped by
+   *  an exclusion, since `NULL NOT REGEXP 'x'` is not true in MySQL. */
+  causeExclude?: string;
   // Restrict results to these event IDs via ZM's "Id IN:" filter. Used for the
   // locally-stored favorites concept, which must compose with pagination:
   // passing the IDs to the server keeps totalCount and "Load More" accurate

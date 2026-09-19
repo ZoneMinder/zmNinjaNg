@@ -202,3 +202,10 @@ export const ZM_API_DATETIME_FORMAT = 'yyyy-MM-dd HH:mm:ss';
  * so anything drawing zone coordinates decides the same way.
  */
 export const ZONE_PERCENT_MAX = 100;
+
+/**
+ * The Cause ZoneMinder writes on a recording a linked monitor triggered. A
+ * monitor linked to another records whenever that one alarms, so these are the
+ * events people ask to see on their own or to hide (refs #493).
+ */
+export const ZM_LINKED_CAUSE = 'Linked';

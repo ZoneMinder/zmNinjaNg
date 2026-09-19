@@ -101,6 +101,8 @@ export default function Events() {
     setArchivedOnly,
     onlyDetectedObjects,
     setOnlyDetectedObjects,
+    linkedFilter,
+    setLinkedFilter,
     activeQuickRange,
     setActiveQuickRange,
     applyFilters,
@@ -638,6 +640,8 @@ export default function Events() {
                   onTagSelectionChange={setSelectedTagIds}
                   isLoadingTags={isLoadingTags}
                   onlyDetectedObjects={onlyDetectedObjects}
+                  linkedFilter={linkedFilter}
+                  onLinkedFilterChange={setLinkedFilter}
                   onOnlyDetectedObjectsChange={setOnlyDetectedObjects}
                 />
               </Popover>

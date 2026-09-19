@@ -10,9 +10,10 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams, useLocation } from 'react-router-dom';
 import { useCurrentProfile } from './useCurrentProfile';
 import { useProfileStore } from '../stores/profile';
-import { useSettingsStore, type ProfileSettings } from '../stores/settings';
+import { useSettingsStore, type LinkedEventFilter, type ProfileSettings } from '../stores/settings';
 import type { EventFilters } from '../api/events';
 import { log, LogLevel } from '../lib/logger';
+import { ZM_LINKED_CAUSE } from '../lib/zm/zm-constants';
 
 /** Sentinel value for the "All tagged events" filter option */
 export const ALL_TAGS_FILTER_ID = '__all_tags__';
@@ -38,6 +39,8 @@ interface UseEventFiltersReturn {
   favoritesOnly: boolean;
   archivedOnly: boolean;
   onlyDetectedObjects: boolean;
+  /** Linked recordings: every event, only linked ones, or none (refs #493). */
+  linkedFilter: LinkedEventFilter;
   activeQuickRange: number | null;
   setSelectedMonitorIds: (ids: string[]) => void;
   setSelectedTagIds: (ids: string[]) => void;
@@ -46,6 +49,7 @@ interface UseEventFiltersReturn {
   setFavoritesOnly: (enabled: boolean) => void;
   setArchivedOnly: (enabled: boolean) => void;
   setOnlyDetectedObjects: (enabled: boolean) => void;
+  setLinkedFilter: (value: LinkedEventFilter) => void;
   setActiveQuickRange: (hours: number | null) => void;
   applyFilters: (overrides?: DateRangeOverrides) => void;
   clearFilters: () => void;
@@ -119,6 +123,7 @@ interface InitialFilterState {
   favoritesOnly: boolean;
   archivedOnly: boolean;
   onlyDetectedObjects: boolean;
+  linkedFilter: LinkedEventFilter;
   activeQuickRange: number | null;
 }
 
@@ -146,6 +151,7 @@ function resolveInitialFilters(
       favoritesOnly: url.favorites === 'true',
       archivedOnly: url.archived === 'true',
       onlyDetectedObjects: false,
+      linkedFilter: 'all',
       activeQuickRange: null,
     };
   }
@@ -157,6 +163,9 @@ function resolveInitialFilters(
     favoritesOnly: saved?.favoritesOnly ?? false,
     archivedOnly: saved?.archivedOnly ?? false,
     onlyDetectedObjects: saved?.onlyDetectedObjects ?? false,
+    // A bucket persisted before this key existed has no value for it, and the
+    // settings object is spread rather than deep-merged (refs #493).
+    linkedFilter: saved?.linkedFilter ?? 'all',
     activeQuickRange: saved?.activeQuickRange ?? null,
   };
 }
@@ -193,6 +202,7 @@ export function useEventFilters(): UseEventFiltersReturn {
   const [archivedOnly, _setArchivedOnly] = useState(initial.archivedOnly);
   const [selectedTagIds, _setTagIds] = useState<string[]>(initial.tagIds);
   const [onlyDetectedObjects, _setOnlyDetected] = useState(initial.onlyDetectedObjects);
+  const [linkedFilter, _setLinkedFilter] = useState<LinkedEventFilter>(initial.linkedFilter);
   const [activeQuickRange, _setActiveQuickRange] = useState<number | null>(initial.activeQuickRange);
 
   // Wrapped setters that also save to settings store immediately.
@@ -235,6 +245,11 @@ export function useEventFilters(): UseEventFiltersReturn {
     if (profileIdRef.current) saveFilterField(profileIdRef.current, 'onlyDetectedObjects', enabled);
   }, []);
 
+  const setLinkedFilter = useCallback((value: LinkedEventFilter) => {
+    _setLinkedFilter(value);
+    if (profileIdRef.current) saveFilterField(profileIdRef.current, 'linkedFilter', value);
+  }, []);
+
   const setActiveQuickRange = useCallback((hours: number | null) => {
     _setActiveQuickRange(hours);
     if (profileIdRef.current) saveFilterField(profileIdRef.current, 'activeQuickRange', hours);
@@ -267,6 +282,7 @@ export function useEventFilters(): UseEventFiltersReturn {
     _setFavoritesOnly(saved.favoritesOnly);
     _setArchivedOnly(saved.archivedOnly ?? false);
     _setOnlyDetected(saved.onlyDetectedObjects);
+    _setLinkedFilter(saved.linkedFilter ?? 'all');
     _setActiveQuickRange(saved.activeQuickRange ?? null);
   }, [currentProfileId, settings.eventsPageFilters, searchParams]);
 
@@ -310,8 +326,13 @@ export function useEventFilters(): UseEventFiltersReturn {
       endDateTime: endDateInput || undefined,
       notesRegexp: onlyDetectedObjects ? 'detected:' : undefined,
       archived: archivedOnly || undefined,
+      // One cause, two directions: ZoneMinder matches Cause REGEXP for the
+      // events a linked monitor recorded, and Cause NOT REGEXP for everything
+      // else (refs #493).
+      cause: linkedFilter === 'only' ? ZM_LINKED_CAUSE : undefined,
+      causeExclude: linkedFilter === 'hide' ? ZM_LINKED_CAUSE : undefined,
     }),
-    [searchParams, settings.defaultEventLimit, selectedMonitorIds, startDateInput, endDateInput, onlyDetectedObjects, archivedOnly]
+    [searchParams, settings.defaultEventLimit, selectedMonitorIds, startDateInput, endDateInput, onlyDetectedObjects, archivedOnly, linkedFilter]
   );
 
   // "Apply" syncs current filters to URL for deep linking / sharing.
@@ -381,6 +402,7 @@ export function useEventFilters(): UseEventFiltersReturn {
     setFavoritesOnly(false);
     setArchivedOnly(false);
     setOnlyDetectedObjects(false);
+    setLinkedFilter('all');
     setActiveQuickRange(null);
 
     const newParams = new URLSearchParams(searchParams);
@@ -393,7 +415,7 @@ export function useEventFilters(): UseEventFiltersReturn {
     newParams.delete('favorites');
     newParams.delete('archived');
     setSearchParams(newParams, { replace: true, state: location.state });
-  }, [searchParams, setSearchParams, location.state, setSelectedMonitorIds, setSelectedTagIds, setStartDateInput, setEndDateInput, setFavoritesOnly, setArchivedOnly, setOnlyDetectedObjects]);
+  }, [searchParams, setSearchParams, location.state, setSelectedMonitorIds, setSelectedTagIds, setStartDateInput, setEndDateInput, setFavoritesOnly, setArchivedOnly, setOnlyDetectedObjects, setLinkedFilter]);
 
   // Clear only the time filter, leaving monitor/tag/favorite scope intact.
   // The "x" beside the quick-range chips uses this so removing the time window
@@ -439,13 +461,14 @@ export function useEventFilters(): UseEventFiltersReturn {
         favoritesOnly ? 1 : null,
         archivedOnly ? 1 : null,
         onlyDetectedObjects ? 1 : null,
+        linkedFilter !== 'all' ? 1 : null,
       ].filter(Boolean).length,
-    [selectedMonitorIds.length, selectedTagIds.length, startDateInput, endDateInput, favoritesOnly, archivedOnly, onlyDetectedObjects]
+    [selectedMonitorIds.length, selectedTagIds.length, startDateInput, endDateInput, favoritesOnly, archivedOnly, onlyDetectedObjects, linkedFilter]
   );
 
   return {
-    filters, selectedMonitorIds, selectedTagIds, startDateInput, endDateInput, favoritesOnly, archivedOnly, onlyDetectedObjects, activeQuickRange,
-    setSelectedMonitorIds, setSelectedTagIds, setStartDateInput, setEndDateInput, setFavoritesOnly, setArchivedOnly, setOnlyDetectedObjects, setActiveQuickRange,
+    filters, selectedMonitorIds, selectedTagIds, startDateInput, endDateInput, favoritesOnly, archivedOnly, onlyDetectedObjects, linkedFilter, activeQuickRange,
+    setSelectedMonitorIds, setSelectedTagIds, setStartDateInput, setEndDateInput, setFavoritesOnly, setArchivedOnly, setOnlyDetectedObjects, setLinkedFilter, setActiveQuickRange,
     applyFilters, clearFilters, clearDateRange, toggleMonitorSelection, toggleTagSelection, activeFilterCount,
   };
 }
