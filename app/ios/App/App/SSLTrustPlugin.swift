@@ -87,7 +87,16 @@ public class SSLTrustPlugin: CAPPlugin, CAPBridgedPlugin {
         task.resume()
     }
 
-    // MARK: - WebView Navigation Delegate (covers <img src>, MJPEG, WSS)
+    // MARK: - WebView Navigation Delegate
+    //
+    // WKWebView routes server-trust challenges here for main-frame navigation
+    // only. A subresource load - the <img> carrying an MJPEG stream, a WSS
+    // connection - fails its handshake in the network process with no callback
+    // to answer, so a self-signed server that CapacitorHttp reaches through
+    // SSLTrustURLProtocol can still leave every live tile blank. Android has no
+    // such gap: onReceivedSslError fires for subresources too. Suspected cause
+    // of issue #507; the same limitation is documented for rich-push images in
+    // docs/developer-guide/12-shared-services-and-components.rst.
 
     private var sslDelegate: SSLTrustNavigationDelegate?
 

@@ -11,9 +11,14 @@ const config: CapacitorConfig = {
     // via static config (Android per-domain config / iOS NSExceptionDomains).
     // Accepted risk for a self-hosted-NVR client. ZM resources load via
     // img/fetch/websocket, not top-level navigation.
+    //
+    // No iosScheme: WKWebView reserves http, and Capacitor's
+    // CAPInstanceDescriptor.normalize() drops any scheme
+    // WKWebView.handlesURLScheme() claims and falls back to its default, so
+    // the iOS origin is always capacitor://localhost whatever is set here.
+    // Cleartext on iOS comes from NSAllowsArbitraryLoads in Info.plist.
     cleartext: true,
     androidScheme: 'http',
-    iosScheme: 'http',
     // No allowNavigation wildcard: the app is a client-side-routed SPA and never
     // needs the webview to navigate to an external host. External links open in
     // the system browser (Browser plugin / setWindowOpenHandler). Omitting this
