@@ -20,6 +20,7 @@ import { useSettingsStore } from '../../stores/settings';
 import { monitorCacheKey } from '../../stores/monitors';
 import { useGo2RTCStream } from '../../hooks/useGo2RTCStream';
 import { useMonitorStream } from '../../hooks/useMonitorStream';
+import { useFreshAccessToken } from '../../hooks/useFreshAccessToken';
 import { tunedStreamOptions } from '../../lib/monitor/stream-tuning';
 import { useVisibilityResume } from '../../hooks/useVisibilityResume';
 import { log, LogLevel } from '../../lib/logger';
@@ -198,6 +199,10 @@ export function LiveMonitorPlayer({
 }: LiveMonitorPlayerProps) {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
+  // The API token rides on the go2rtc WebSocket: a server that proxies go2rtc
+  // behind ZoneMinder's authentication (ZM_GO2RTC_PATH on the web server)
+  // has nothing else to check, since the app holds no session cookie.
+  const { token: go2rtcToken, isFresh: go2rtcTokenFresh } = useFreshAccessToken(profileId ?? profile?.id);
   const rawSettings = useSettingsStore(
     useShallow((state) => state.profileSettings[profile?.id || ''])
   );
@@ -302,11 +307,13 @@ export function LiveMonitorPlayer({
   const go2rtcStream = useGo2RTCStream({
     go2rtcUrl: profile?.go2rtcUrl || '',
     monitorId: monitor.Id,
-    channel: monitor.StreamChannel || 0,
+    channel: monitor.StreamChannel,
+    rtspServer: ['1', 'true'].includes(String(monitor.RTSPServer ?? '').toLowerCase()),
+    token: go2rtcToken ?? undefined,
     containerRef,
     protocols: rawSettings?.webrtcProtocols,
     expectedHost: portalHost,
-    enabled: streamingMethod === 'webrtc' && !!profile?.go2rtcUrl && !go2rtcFailed && !paused && !streamDenied,
+    enabled: streamingMethod === 'webrtc' && !!profile?.go2rtcUrl && !go2rtcFailed && !paused && !streamDenied && go2rtcTokenFresh,
     muted,
     onMutedChange,
     controls: showControls,

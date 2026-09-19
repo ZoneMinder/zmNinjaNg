@@ -410,10 +410,37 @@ export function getZmsControlUrl(
 }
 
 /**
+ * go2rtc stream suffix for a ZoneMinder StreamChannel, as ZoneMinder's own
+ * player names it (web/js/MonitorStream.js getStreamSuffix, 1.38): zmc
+ * registers `<Id>` and `<Id>_CameraDirectPrimary`, plus
+ * `<Id>_ZoneMinderPrimary` only when the monitor's RTSPServer is on and
+ * `<Id>_CameraDirectSecondary` only when it has a secondary path.
+ */
+export function go2rtcStreamSuffix(channel: string | number | null | undefined, rtspServer = false): string {
+  const map: Record<string, string> = {
+    default: '',
+    Primary: '',
+    Secondary: '_CameraDirectSecondary',
+    CameraDirectSecondary: '_CameraDirectSecondary',
+    Restream: '_ZoneMinderPrimary',
+    ZoneMinderPrimary: '_ZoneMinderPrimary',
+    CameraDirectPrimary: '_CameraDirectPrimary',
+    '0': '',
+    '1': '_CameraDirectSecondary',
+    '2': '_ZoneMinderPrimary',
+  };
+  const key = channel === null || channel === undefined || channel === '' ? 'default' : String(channel);
+  const suffix = map[key] ?? '';
+  if (suffix === '_ZoneMinderPrimary' && !rtspServer) return '_CameraDirectPrimary';
+  return suffix;
+}
+
+/**
  * Build Go2RTC WebSocket URL for WebRTC signaling.
  *
  * Uses ZM_GO2RTC_PATH from server config and constructs WebSocket URL matching
- * ZoneMinder's official implementation. Stream name format: {monitorId}_{channel}
+ * ZoneMinder's official implementation. Stream name: `{monitorId}{suffix}`,
+ * suffix from go2rtcStreamSuffix.
  *
  * Protocol conversion:
  * - http:// → ws://
@@ -421,16 +448,17 @@ export function getZmsControlUrl(
  *
  * @param go2rtcPath - Full Go2RTC URL from ZM_GO2RTC_PATH config (e.g., "http://server:1984")
  * @param monitorId - Monitor ID (numeric)
- * @param channel - Channel number (0 = primary, 1 = secondary, default: 0)
- * @param options - Additional options
+ * @param channel - The monitor's StreamChannel (e.g. 'Restream', 'CameraDirectPrimary'; legacy 0/1/2)
+ * @param options - Additional options (token: the API access token, for a
+ *   proxy that authenticates the WebSocket; rtspServer: the monitor's RTSPServer)
  * @returns WebSocket URL for go2rtc signaling
  *
  * @example
- * getGo2RTCWebSocketUrl('http://zm.example.com:1984', '1', 0, { token: 'abc' })
- * // Returns: 'ws://zm.example.com:1984/ws?src=1_0&token=abc'
+ * getGo2RTCWebSocketUrl('http://zm.example.com:1984', '1', 'CameraDirectPrimary', { token: 'abc' })
+ * // Returns: 'ws://zm.example.com:1984/ws?src=1_CameraDirectPrimary&token=abc'
  *
- * getGo2RTCWebSocketUrl('http://zm.example.com:1984/go2rtc', '5', 1)
- * // Returns: 'ws://zm.example.com:1984/go2rtc/ws?src=5_1'
+ * getGo2RTCWebSocketUrl('http://zm.example.com:1984/go2rtc', '5')
+ * // Returns: 'ws://zm.example.com:1984/go2rtc/ws?src=5'
  */
 /**
  * Warn when the session token is being sent to a go2rtc host other than the
@@ -452,13 +480,14 @@ function hardenGo2RTCUrl(url: URL, hasToken: boolean, expectedHost?: string): vo
 export function getGo2RTCWebSocketUrl(
   go2rtcPath: string,
   monitorId: string,
-  channel: string | number = 0,
+  channel: string | number | null = 0,
   options: {
     token?: string;
     expectedHost?: string;
+    rtspServer?: boolean;
   } = {}
 ): string {
-  const { token, expectedHost } = options;
+  const { token, expectedHost, rtspServer = false } = options;
 
   // Parse the configured Go2RTC path
   const url = new URL(go2rtcPath);
@@ -470,8 +499,8 @@ export function getGo2RTCWebSocketUrl(
   // Append /ws to existing pathname (matches ZoneMinder: webrtcUrl.pathname += "/ws")
   url.pathname += url.pathname.endsWith('/') ? 'ws' : '/ws';
 
-  // Build stream name: {monitorId}_{channel} (matches ZoneMinder format)
-  const streamName = `${monitorId}_${channel}`;
+  // Build stream name the way ZoneMinder's player does
+  const streamName = `${monitorId}${go2rtcStreamSuffix(channel, rtspServer)}`;
   url.searchParams.set('src', streamName);
 
   if (token) {
