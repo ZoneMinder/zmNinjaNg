@@ -76,6 +76,16 @@ Feature: Aggregating across servers with a virtual profile group
     Then I should see an event profile chip on every event card
     And the event card count should be at least the recorded single-profile count
 
+  # Sectioning rides on the merge above: every card the aggregate shows must
+  # still be there, now under its own server's heading (refs #501).
+  @web
+  Scenario: a group sections the events list by server
+    When I navigate to the "Profiles" page
+    And I switch to a group holding every profile
+    When I navigate to the "Events" page
+    And I turn on grouping events by server
+    Then every event card sits in its own server section
+
   @web
   Scenario: deep-linking into a monitor from all mode does not switch the active profile
     When I navigate to the "Profiles" page

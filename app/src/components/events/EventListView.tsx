@@ -13,6 +13,7 @@ import { type EventFilters } from '../../api/events';
 import { getPortalUrlForMonitor, getServerMapVersion, subscribeServerMap } from '../../lib/zm/server-resolver';
 import { buildThumbnailChain, eventHasAlarmFrame } from '../../lib/event/thumbnail-chain';
 import { buildMonitorMap, calculateThumbnailDimensions, EVENT_GRID_CONSTANTS, getMonitorDimensions } from '../../lib/event/event-utils';
+import { groupByOwningProfile } from '../../lib/profile/profile-sections';
 import { useCurrentProfile, useProfileById } from '../../hooks/useCurrentProfile';
 import { useFreshAccessToken } from '../../hooks/useFreshAccessToken';
 import { resolveMinStreamingPort } from '../../lib/monitor/multiport';
@@ -42,6 +43,9 @@ interface EventListViewProps {
   eventTagMap?: Map<string, Tag[]>;
   eventFilters?: EventFilters;
   minStreamingPort?: number;
+  /** Aggregate only: section the list by owning server instead of one
+   *  time-ordered stream (refs #501). */
+  groupByProfile?: boolean;
 }
 
 // Helper to render a single event item
@@ -164,6 +168,7 @@ export const EventListView = ({
   eventTagMap,
   eventFilters,
   minStreamingPort,
+  groupByProfile = false,
 }: EventListViewProps) => {
   const { t } = useTranslation();
   const { settings } = useCurrentProfile();
@@ -213,23 +218,41 @@ export const EventListView = ({
     </div>
   ) : null;
 
+  const renderEvent = (event: ScopedEventItem) => (
+    <EventItem
+      key={scopedEventKey(event.profileId, event.Event.Id)}
+      event={event}
+      monitorMap={monitorMap}
+      thumbnailFit={thumbnailFit}
+      portalUrl={portalUrl}
+      accessToken={accessToken}
+      eventTagMap={eventTagMap}
+      eventFilters={eventFilters}
+      minStreamingPort={minStreamingPort}
+      thumbnailChain={thumbnailChain}
+    />
+  );
+
+  // One section per owning server, in first-seen order; the count header and
+  // Load More stay one per view so paging is unchanged (refs #501).
+  const sections = groupByProfile ? groupByOwningProfile(events) : null;
+
   return (
     <div className="min-h-0" data-testid="event-list">
       {header}
-      {events.map((event) => (
-        <EventItem
-          key={scopedEventKey(event.profileId, event.Event.Id)}
-          event={event}
-          monitorMap={monitorMap}
-          thumbnailFit={thumbnailFit}
-          portalUrl={portalUrl}
-          accessToken={accessToken}
-          eventTagMap={eventTagMap}
-          eventFilters={eventFilters}
-          minStreamingPort={minStreamingPort}
-          thumbnailChain={thumbnailChain}
-        />
-      ))}
+      {sections
+        ? sections.map(([profileId, section]) => (
+            <div key={profileId} data-testid={`events-group-section-${profileId}`} className="mb-2">
+              <h2
+                className="text-sm font-semibold text-muted-foreground mb-2 truncate"
+                title={section.profileName}
+              >
+                {section.profileName}
+              </h2>
+              {section.items.map(renderEvent)}
+            </div>
+          ))
+        : events.map(renderEvent)}
       {footer}
     </div>
   );

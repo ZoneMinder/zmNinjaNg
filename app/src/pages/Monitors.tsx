@@ -32,6 +32,7 @@ import { canEditMonitorSettings, canViewMonitors } from '../lib/permissions/zm-p
 import { isPermissionDenied } from '../lib/permissions/permission-error';
 import { markPermissionDenied, useIsPermissionDenied } from '../stores/permissions';
 import { filterMonitorsByGroup } from '../lib/monitor/filters';
+import { groupByOwningProfile } from '../lib/profile/profile-sections';
 import { useGroupFilter } from '../hooks/useGroupFilter';
 import { GroupFilterSelect } from '../components/filters/GroupFilterSelect';
 import type { Monitor, MonitorStatus, ProfileId } from '../api/types';
@@ -308,18 +309,7 @@ export default function Monitors() {
   // Section renderItems by owning server when the toggle is on. All mode
   // only - single mode never has more than one profile to group by.
   const groupedSections = isAllMode && settings.monitorsGroupByServer
-    ? Array.from(
-        renderItems.reduce((byProfile, item) => {
-          const key = item.profileId as ProfileId;
-          const existing = byProfile.get(key);
-          if (existing) {
-            existing.items.push(item);
-          } else {
-            byProfile.set(key, { profileName: item.profileChip ?? '', items: [item] });
-          }
-          return byProfile;
-        }, new Map<ProfileId, { profileName: string; items: MonitorGridItem[] }>())
-      )
+    ? groupByOwningProfile(renderItems)
     : null;
 
   return (

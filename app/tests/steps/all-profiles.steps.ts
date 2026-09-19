@@ -179,6 +179,41 @@ Then('I record the single-profile event card count', async ({ page }) => {
   singleProfileEventCount = await page.getByTestId('event-card').count();
 });
 
+When('I turn on grouping events by server', async ({ page }) => {
+  const toggle = page.getByTestId('events-group-by-server');
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+});
+
+// The outcome is a partition: every card the flat list showed is still on the
+// page, each one under the heading of the server it came from. Reading each
+// section's own profile chips against its heading catches a section that
+// renders the right count of the wrong server's events (refs #501).
+Then('every event card sits in its own server section', async ({ page }) => {
+  await assertEventListSettled(page);
+  const sections = page.locator('[data-testid^="events-group-section-"]');
+  await expect.poll(async () => sections.count(), {
+    timeout: testConfig.timeouts.pageLoad,
+  }).toBeGreaterThan(1);
+
+  const totalCards = await page.getByTestId('event-card').count();
+  const headings = new Set<string>();
+  let cardsInSections = 0;
+  for (const section of await sections.all()) {
+    const heading = (await section.locator('h2').first().textContent())?.trim() ?? '';
+    expect(heading).not.toBe('');
+    headings.add(heading);
+    const sectionCards = await section.getByTestId('event-card').count();
+    expect(sectionCards).toBeGreaterThan(0);
+    cardsInSections += sectionCards;
+    const chips = await section.getByTestId('event-profile-chip').allTextContents();
+    expect(new Set(chips.map((chip) => chip.trim()))).toEqual(new Set([heading]));
+  }
+  expect(cardsInSections).toBe(totalCards);
+  expect(headings.size).toBe((await sections.count()));
+});
+
 Then('I should see an event profile chip on every event card', async ({ page }) => {
   await expect.poll(async () => page.getByTestId('event-card').count(), {
     timeout: testConfig.timeouts.pageLoad,
