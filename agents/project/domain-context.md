@@ -107,6 +107,17 @@ matching reality, fixing it is a protocol change like any rule edit.
   backgrounded against connkeys that are now dead, painting its broken-image
   glyph before any error event lands. Alt text on a stream image is what the
   browser draws beside that glyph, so keep it empty (#352).
+- A browser allows six concurrent connections per host over HTTP/1.1, and
+  `ZM_MIN_STREAMING_PORT` is the only thing that spreads streams across more
+  than one pool. Measured identically in WKWebView and Chromium: of 74 `<img>`
+  pointed at one host, exactly 6 reached the server and the other 68 sat in the
+  queue with neither a `load` nor an `error`. Snapshot mode is not immune,
+  because reassigning a pending `<img src>` cancels that load silently - no
+  `error` fires - so a refresh tick that reruns every tile cancels and requeues
+  work that was about to finish. With 74 tiles, a 3s interval and a 1.2s server,
+  12 tiles painted in 14 seconds and nothing was reported; the same test against
+  a 300ms server painted 112. A snapshot tile therefore skips its tick while its
+  own request is in flight (`snapshotInFlightCeilingMs` bounds the wait). #507.
 - `visibilitychange` alone is not a reliable resume signal on native: the
   WebView suspends with the app and is not obliged to report an app state
   change as a visibility change. Pair it with Capacitor `appStateChange`.

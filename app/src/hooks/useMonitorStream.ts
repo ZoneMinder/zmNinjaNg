@@ -245,11 +245,30 @@ export function useMonitorStream({
     }
   }, [connKey]);
 
-  // Snapshot mode: periodic refresh
+  // When this tile's current src started loading, or 0 once that load has
+  // settled. A browser allows six connections per host, so a montage queues
+  // most of its snapshot requests, and reassigning a pending `<img src>`
+  // cancels the in-flight load without firing `error`. Ticking every tile on
+  // a timer therefore cancels and re-queues work that was about to finish:
+  // past the point where a sweep outlasts the interval the queue never drains
+  // and the tiles stay empty, silently (refs #507).
+  const pendingSinceRef = useRef(0);
+
+  // Snapshot mode: periodic refresh. A tile takes the tick only when its own
+  // request has settled, so the refresh rate degrades to whatever the
+  // transport sustains instead of starving itself. The ceiling keeps a feed
+  // that never answers from holding its slot for good.
   useEffect(() => {
     if (!enabled || effectiveViewMode !== 'snapshot') return;
 
     const interval = setInterval(() => {
+      const pendingSince = pendingSinceRef.current;
+      if (
+        pendingSince !== 0 &&
+        Date.now() - pendingSince < ZM_INTEGRATION.snapshotInFlightCeilingMs
+      ) {
+        return;
+      }
       setCacheBuster(Date.now());
     }, settings.snapshotRefreshInterval * 1000);
 
@@ -288,6 +307,8 @@ export function useMonitorStream({
   // <img>'s native onError handler which the consuming player wires up.
   useEffect(() => {
     setImageSrc(streamUrl);
+    // A new src is a new request in flight; an empty one is nothing loading.
+    pendingSinceRef.current = streamUrl ? Date.now() : 0;
     if (streamUrl && streamStartedAtRef.current === 0) {
       streamStartedAtRef.current = Date.now();
     }
@@ -304,6 +325,9 @@ export function useMonitorStream({
     // Whatever the element is holding, it is not a frame off a working
     // connection any more.
     setLoadedSrc('');
+    // The request settled, badly. A snapshot tile is free to take its next
+    // refresh tick rather than wait out the in-flight ceiling.
+    pendingSinceRef.current = 0;
     setHoldFrameForRestart(false);
     if (reconnectTimerRef.current) {
       clearTimeout(reconnectTimerRef.current);
@@ -335,6 +359,7 @@ export function useMonitorStream({
   const reportStreamLoad = () => {
     analysisFrames.applyOnStreamLoad();
     setLoadedSrc(imageSrc);
+    pendingSinceRef.current = 0;
     setHoldFrameForRestart(false);
     reconnectAttemptRef.current = 0;
     if (reconnectTimerRef.current) {
