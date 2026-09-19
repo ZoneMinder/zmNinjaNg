@@ -126,7 +126,7 @@ function AppRoutes() {
   // @capacitor/app may not be present in some test envs.
   //
   useCapacitorListener(
-    () => import('@capacitor/app').then((m) => m.App),
+    () => import('@capacitor/app').then((m) => ({ plugin: m.App })),
     'pause',
     () => {
       void getLogFile().flush();

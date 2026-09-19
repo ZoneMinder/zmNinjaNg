@@ -107,7 +107,7 @@ export function useNotificationDelivered({
       // The handler needs the messaging plugin; import it up front so the
       // listener is only registered when both plugins are available.
       await import('@capacitor-firebase/messaging');
-      return CapApp;
+      return { plugin: CapApp };
     },
     'appStateChange',
     async ({ isActive }: { isActive: boolean }) => {

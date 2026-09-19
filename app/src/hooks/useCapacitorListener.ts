@@ -7,9 +7,15 @@
  * checked after each await so a handle that resolves post-unmount is removed
  * immediately, and a teardown that sets the flag before removing the handle.
  *
- * The plugin getter must use a static import specifier so Vite can analyze
- * and code-split it. Pass `() => import('@capacitor/app').then((m) => m.App)`,
- * never a template-literal specifier.
+ * The getter resolves with a `{ plugin }` wrapper rather than the plugin
+ * itself, because a `registerPlugin` proxy answers every property access with
+ * a native method call: a promise resolved with one probes `.then` as a plugin
+ * method, iOS rejects it ("App.then() is not implemented on ios"), and the
+ * promise never settles, so the await below hangs and the listener is never
+ * registered (refs #507). Pass
+ * `() => import('@capacitor/app').then((m) => ({ plugin: m.App }))`. The
+ * specifier must be a static string so Vite can analyze and code-split it,
+ * never a template literal.
  *
  * The handler is kept in a ref, so callers do not need stable callback
  * identities and the listener never re-registers on handler changes. Plugin
@@ -41,6 +47,11 @@ export interface CapacitorListenerSource {
   ): Promise<CapacitorListenerHandle>;
 }
 
+/** What the getter resolves with: the plugin, wrapped so it is not a thenable. */
+export interface CapacitorPluginRef {
+  plugin: CapacitorListenerSource;
+}
+
 export interface UseCapacitorListenerOptions {
   /**
    * Register the listener only while true.
@@ -52,7 +63,7 @@ export interface UseCapacitorListenerOptions {
 }
 
 export function useCapacitorListener<TData = void>(
-  getPlugin: () => Promise<CapacitorListenerSource>,
+  getPlugin: () => Promise<CapacitorPluginRef>,
   eventName: string,
   handler: (data: TData) => void,
   opts: UseCapacitorListenerOptions = {},
@@ -78,7 +89,7 @@ export function useCapacitorListener<TData = void>(
 
     (async () => {
       try {
-        const plugin = await getPluginRef.current();
+        const { plugin } = await getPluginRef.current();
         const resolved = await plugin.addListener(eventName, (data: TData) => {
           handlerRef.current(data);
         });

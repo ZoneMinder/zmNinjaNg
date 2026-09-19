@@ -1404,7 +1404,7 @@ teardown.
 .. code:: tsx
 
    useCapacitorListener(
-     () => import('@capacitor/app').then((m) => m.App),
+     () => import('@capacitor/app').then((m) => ({ plugin: m.App })),
      'appStateChange',
      (state: { isActive: boolean }) => {
        if (!state.isActive) closePreview();
@@ -1424,9 +1424,23 @@ awaits) is removed the moment it arrives. The plugin getter must use a static
 import specifier so Vite can analyze and code-split it; never build the
 specifier from a template literal.
 
+The getter resolves with ``{ plugin }`` rather than the plugin, and that
+wrapper is load-bearing. ``registerPlugin`` hands back a ``Proxy`` that turns
+every property read into a native method call, so JavaScript's promise
+machinery sees a callable ``.then`` on it and treats it as a thenable: it
+calls ``plugin.then(resolve, reject)``, the bridge probes a native method
+named ``then``, iOS rejects with ``App.then() is not implemented on ios``, and
+the promise that adopted the proxy never settles at all. The ``await`` in the
+hook then hangs forever, the listener is never registered, and the ``catch``
+never runs. Every listener in the app sat in that state on iOS and Android
+until #507. Unit tests cannot catch it, because a mocked plugin is a plain
+object with no ``then``; the shape is gated in
+``src/tests/agents-contracts.test.ts`` instead.
+
 **Used by:** ``App.tsx`` (flush logs on pause), ``HoverPreview``,
 ``KioskOverlay``, ``Mp4EventPlayer``, ``useNetworkStatus``,
-``useNotificationAutoConnect``, ``useNotificationDelivered``.
+``useNotificationAutoConnect``, ``useNotificationDelivered``,
+``useVisibilityResume``.
 ``useAndroidBackButton`` deliberately does not: it registers its handler once
 and never re-subscribes.
 

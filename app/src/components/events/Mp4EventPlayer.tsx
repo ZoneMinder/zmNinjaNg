@@ -419,7 +419,7 @@ export function Mp4EventPlayer({
   // web/Android stub never fires this event anyway; the fallbacks below cover
   // those platforms.
   useCapacitorListener(
-    () => import('../../plugins/safe-area').then((m) => m.SafeArea),
+    () => import('../../plugins/safe-area').then((m) => ({ plugin: m.SafeArea })),
     'safeAreaInsetsChanged',
     wake,
     { enabled: Platform.isNative },

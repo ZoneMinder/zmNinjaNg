@@ -294,7 +294,7 @@ export function HoverPreview({
 
   // Dismiss when the app is backgrounded (native only, while open).
   useCapacitorListener(
-    () => import('@capacitor/app').then((m) => m.App),
+    () => import('@capacitor/app').then((m) => ({ plugin: m.App })),
     'appStateChange',
     (state: { isActive: boolean }) => {
       if (!state.isActive) closePreview();

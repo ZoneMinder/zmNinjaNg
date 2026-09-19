@@ -82,7 +82,7 @@ export function KioskOverlay({ onUnlock }: KioskOverlayProps) {
 
   // Block Android hardware back button while locked
   useCapacitorListener(
-    () => import('@capacitor/app').then((m) => m.App),
+    () => import('@capacitor/app').then((m) => ({ plugin: m.App })),
     'backButton',
     () => {
       // No-op: swallow back button while locked

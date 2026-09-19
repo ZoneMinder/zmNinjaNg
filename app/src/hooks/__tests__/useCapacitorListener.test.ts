@@ -45,7 +45,7 @@ describe('useCapacitorListener', () => {
     const handler = vi.fn();
 
     renderHook(() =>
-      useCapacitorListener(async () => fake.plugin, 'appStateChange', handler),
+      useCapacitorListener(async () => ({ plugin: fake.plugin }), 'appStateChange', handler),
     );
     await flushAsync();
 
@@ -60,11 +60,35 @@ describe('useCapacitorListener', () => {
     expect(handler).toHaveBeenCalledWith({ isActive: false });
   });
 
+  it('registers against a registerPlugin proxy, which answers every property', async () => {
+    // The real plugin is a Proxy that turns any property access into a native
+    // method call, so it looks like a thenable: a promise resolved with one
+    // adopts it, probes `.then` as a plugin method, and never settles (refs
+    // #507). The `{ plugin }` wrapper is what keeps the await below finite.
+    const remove = vi.fn();
+    const addListener = vi.fn(async () => ({ remove }));
+    const proxy = new Proxy({} as Record<string, unknown>, {
+      get: (_target, prop) =>
+        prop === 'addListener'
+          ? addListener
+          : () => Promise.reject(new Error(`App.${String(prop)}() is not implemented on ios`)),
+    }) as unknown as CapacitorListenerHandle & { addListener: typeof addListener };
+    const onError = vi.fn();
+
+    renderHook(() =>
+      useCapacitorListener(async () => ({ plugin: proxy }), 'appStateChange', vi.fn(), { onError }),
+    );
+    await flushAsync();
+
+    expect(onError).not.toHaveBeenCalled();
+    expect(addListener).toHaveBeenCalledWith('appStateChange', expect.any(Function));
+  });
+
   it('removes the listener on unmount', async () => {
     const fake = makeFakePlugin();
 
     const { unmount } = renderHook(() =>
-      useCapacitorListener(async () => fake.plugin, 'pause', vi.fn()),
+      useCapacitorListener(async () => ({ plugin: fake.plugin }), 'pause', vi.fn()),
     );
     await flushAsync();
 
@@ -83,7 +107,7 @@ describe('useCapacitorListener', () => {
     );
 
     const { unmount } = renderHook(() =>
-      useCapacitorListener(async () => ({ addListener }), 'backButton', vi.fn()),
+      useCapacitorListener(async () => ({ plugin: { addListener } }), 'backButton', vi.fn()),
     );
     await flushAsync();
 
@@ -100,7 +124,7 @@ describe('useCapacitorListener', () => {
 
   it('does nothing when disabled', async () => {
     const fake = makeFakePlugin();
-    const getPlugin = vi.fn(async () => fake.plugin);
+    const getPlugin = vi.fn(async () => ({ plugin: fake.plugin }));
 
     renderHook(() =>
       useCapacitorListener(getPlugin, 'appStateChange', vi.fn(), { enabled: false }),
@@ -116,7 +140,7 @@ describe('useCapacitorListener', () => {
 
     const { rerender } = renderHook(
       ({ enabled }: { enabled: boolean }) =>
-        useCapacitorListener(async () => fake.plugin, 'appStateChange', vi.fn(), { enabled }),
+        useCapacitorListener(async () => ({ plugin: fake.plugin }), 'appStateChange', vi.fn(), { enabled }),
       { initialProps: { enabled: false } },
     );
     await flushAsync();
@@ -138,7 +162,7 @@ describe('useCapacitorListener', () => {
 
     const { rerender } = renderHook(
       ({ handler }: { handler: (data: unknown) => void }) =>
-        useCapacitorListener(async () => fake.plugin, 'appStateChange', handler),
+        useCapacitorListener(async () => ({ plugin: fake.plugin }), 'appStateChange', handler),
       { initialProps: { handler: firstHandler } },
     );
     await flushAsync();

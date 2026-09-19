@@ -350,6 +350,42 @@ describe('contract Never clauses a grep can decide', () => {
     expect(offenders(/^import\s[^;]*?from\s+['"]@capacitor\/(?!core)/m)).toEqual([]);
   });
 
+  it('Native: no promise resolves with a registerPlugin proxy', () => {
+    // The proxy answers every property access with a native method call, so
+    // resolving a promise with it makes the runtime probe `.then` as a plugin
+    // method. iOS rejects it ("App.then() is not implemented on ios"), the
+    // promise that adopted the proxy never settles, and the awaiter hangs for
+    // good: the listener never registers and no catch ever runs (refs #507).
+    // Resolve with an object the plugin sits inside and destructure after the
+    // await. Unit tests cannot see this - a mock plugin is a plain object,
+    // which is not a thenable - so the shapes are caught here instead.
+    const plugin = String.raw`['"](?:@capacitor(?:-\w+)*\/(?!core)[^'"]+|[^'"]*\/plugins\/[^'"]+)['"]`;
+    const shapes = [
+      // .then((m) => m.App), whether the import is inline or ref-cached.
+      // A plugin export is capitalized, which keeps a data-shaped
+      // `.then((r) => r.rows)` out of the match.
+      /\.then\(\s*\(?\s*(\w+)\s*\)?\s*=>\s*\1\.[A-Z]\w*/,
+      // return (await import('@capacitor/app')).App
+      new RegExp(String.raw`(?:return|=>)\s*\(\s*await\s+import\(\s*${plugin}\s*\)\s*\)\.\w+`),
+    ];
+    // const { App } = await import('@capacitor/app'); ... return App;
+    const returnsBinding = (code: string) =>
+      [
+        ...code.matchAll(
+          new RegExp(String.raw`const\s*\{([^}]*)\}\s*=\s*await\s+import\(\s*${plugin}\s*\)`, 'g'),
+        ),
+      ]
+        .flatMap((m) => m[1].split(',').map((part) => part.split(':').pop()!.trim()))
+        .filter(Boolean)
+        .some((binding) => new RegExp(String.raw`return\s+${binding}\s*;`).test(code));
+
+    expect(
+      codeFiles()
+        .filter(([, code]) => shapes.some((s) => s.test(code)) || returnsBinding(code))
+        .map(([rel]) => rel),
+    ).toEqual([]);
+  });
+
   it('Server queries: no inline queryKey arrays outside the key factory', () => {
     expect(offenders(/queryKey:\s*\[/, (f) => f.startsWith('lib/query/'))).toEqual([]);
   });

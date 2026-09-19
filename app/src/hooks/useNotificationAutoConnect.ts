@@ -248,7 +248,7 @@ export function useNotificationAutoConnect({
 
   // On native platforms, also use Capacitor's Network plugin for faster detection
   useCapacitorListener(
-    () => import('@capacitor/network').then((m) => m.Network),
+    () => import('@capacitor/network').then((m) => ({ plugin: m.Network })),
     'networkStatusChange',
     (status: { connected: boolean }) => {
       if (status.connected) {
@@ -294,7 +294,7 @@ export function useNotificationAutoConnect({
 
   // App resume liveness check (mobile): verify WebSocket is alive when app returns to foreground
   useCapacitorListener(
-    () => import('@capacitor/app').then((m) => m.App),
+    () => import('@capacitor/app').then((m) => ({ plugin: m.App })),
     'appStateChange',
     async ({ isActive }: { isActive: boolean }) => {
       if (!isActive) return;

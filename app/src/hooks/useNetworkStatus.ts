@@ -86,7 +86,7 @@ export function useNetworkStatus(): UseNetworkStatusReturn {
 
   // Native: subscribe to connectivity transitions.
   useCapacitorListener(
-    () => getNetworkImport().then((m) => m.Network as CapacitorListenerSource),
+    () => getNetworkImport().then((m) => ({ plugin: m.Network as CapacitorListenerSource })),
     'networkStatusChange',
     (status: { connected: boolean }) => {
       setIsOnline(status.connected);

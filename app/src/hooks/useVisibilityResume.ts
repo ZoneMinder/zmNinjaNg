@@ -57,7 +57,7 @@ export function useVisibilityResume(
   // Native: the app being backgrounded and foregrounded. Inert on web and
   // desktop, where the two signals below cover it.
   useCapacitorListener<{ isActive: boolean }>(
-    () => import('@capacitor/app').then((m) => m.App),
+    () => import('@capacitor/app').then((m) => ({ plugin: m.App })),
     'appStateChange',
     ({ isActive }) => {
       if (isActive) tryResume();
