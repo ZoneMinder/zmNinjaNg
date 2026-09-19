@@ -1129,7 +1129,8 @@
     "delete_group_error": "Impossibile eliminare il gruppo di profili virtuali",
     "group_no_active_members": "Nessun server abilitato in questo gruppo",
     "details": "Dettagli",
-    "more_actions": "Altre azioni"
+    "more_actions": "Altre azioni",
+    "jump_to_server": "Vai al server"
   },
   "profile_picker": {
     "label": "Profile"

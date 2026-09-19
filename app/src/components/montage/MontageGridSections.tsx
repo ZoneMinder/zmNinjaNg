@@ -27,6 +27,7 @@ import { cn } from '../../lib/utils';
 import { GRID_LAYOUT } from '../../lib/zmninja-ng-constants';
 import { MontageMonitor } from '../monitors/MontageMonitor';
 import { MontageTileErrorBoundary } from './MontageTileErrorBoundary';
+import { ProfileSectionList } from '../profiles/ProfileSectionList';
 import { internalColsForCols, tileIdFor, type MontageTileMonitorData } from './hooks/useMontageGrid';
 
 const WrappedGridLayout = WidthProvider(GridLayout);
@@ -84,6 +85,9 @@ export function MontageErrorStrips({ errors, onRetry }: MontageErrorStripsProps)
 interface MontageGridSectionsProps {
   cappedMonitors: MontageTileItem[];
   groupedSections: MontageGroupedSections | null;
+  /** The aggregate the sections belong to; scopes their collapse state. Null
+   *  only before a profile is current, when there are no sections either. */
+  scopeId: ProfileId | null;
   layout: Layout[];
   gridCols: number;
   isEditMode: boolean;
@@ -131,6 +135,7 @@ interface MontageGridSectionsProps {
 export function MontageGridSections({
   cappedMonitors,
   groupedSections,
+  scopeId,
   layout,
   gridCols,
   isEditMode,
@@ -252,27 +257,25 @@ export function MontageGridSections({
         )}
         data-testid="montage-grid"
       >
-        {groupedSections ? (
-          <div className="space-y-6">
-            {groupedSections.map(([sectionProfileId, section]) => {
-              const sectionLayout = section.items
+        {groupedSections && scopeId ? (
+          <ProfileSectionList
+            sections={groupedSections}
+            surface="montage-group"
+            scopeId={scopeId}
+            className="space-y-6"
+            renderItems={(items) => {
+              // Collapsing unmounts the section's tiles, which stops those
+              // streams - the point of folding a server away (refs #503).
+              const sectionLayout = items
                 .map((item) => layoutByTileId.get(tileIdFor(item)))
                 .filter((item): item is Layout => !!item);
               return (
-                <div key={sectionProfileId}>
-                  <h2
-                    className="text-sm font-semibold text-muted-foreground mb-2 truncate px-1"
-                    title={section.profileName}
-                  >
-                    {section.profileName}
-                  </h2>
-                  <WrappedGridLayout layout={sectionLayout} {...sharedGridLayoutProps}>
-                    {section.items.map(renderTile)}
-                  </WrappedGridLayout>
-                </div>
+                <WrappedGridLayout layout={sectionLayout} {...sharedGridLayoutProps}>
+                  {items.map(renderTile)}
+                </WrappedGridLayout>
               );
-            })}
-          </div>
+            }}
+          />
         ) : (
           <WrappedGridLayout layout={layout} {...sharedGridLayoutProps}>
             {cappedMonitors.map(renderTile)}

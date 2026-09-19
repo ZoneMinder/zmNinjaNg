@@ -179,6 +179,85 @@ Then('I record the single-profile event card count', async ({ page }) => {
   singleProfileEventCount = await page.getByTestId('event-card').count();
 });
 
+When('I turn on grouping events by server', async ({ page }) => {
+  const toggle = page.getByTestId('events-group-by-server');
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+});
+
+// The outcome is a partition: every card the flat list showed is still on the
+// page, each one under the heading of the server it came from. Reading each
+// section's own profile chips against its heading catches a section that
+// renders the right count of the wrong server's events (refs #501).
+Then('every event card sits in its own server section', async ({ page }) => {
+  await assertEventListSettled(page);
+  const sections = page.locator('[data-testid^="events-group-section-"]');
+  await expect.poll(async () => sections.count(), {
+    timeout: testConfig.timeouts.pageLoad,
+  }).toBeGreaterThan(1);
+
+  const totalCards = await page.getByTestId('event-card').count();
+  const headings = new Set<string>();
+  let cardsInSections = 0;
+  for (const section of await sections.all()) {
+    const heading = (await section
+      .locator('[data-testid^="events-group-toggle-"] span')
+      .first()
+      .textContent())?.trim() ?? '';
+    expect(heading).not.toBe('');
+    headings.add(heading);
+    const sectionCards = await section.getByTestId('event-card').count();
+    expect(sectionCards).toBeGreaterThan(0);
+    cardsInSections += sectionCards;
+    const chips = await section.getByTestId('event-profile-chip').allTextContents();
+    expect(new Set(chips.map((chip) => chip.trim()))).toEqual(new Set([heading]));
+  }
+  expect(cardsInSections).toBe(totalCards);
+  expect(headings.size).toBe((await sections.count()));
+});
+
+// Collapse state for the folded-section scenario: which section was folded
+// and how many cards it held, so the jump step can prove they came back.
+let collapsedSectionId = '';
+let collapsedSectionCards = 0;
+
+When('I collapse the first server section', async ({ page }) => {
+  const firstSection = page.locator('[data-testid^="events-group-section-"]').first();
+  const testId = await firstSection.getAttribute('data-testid');
+  collapsedSectionId = (testId ?? '').replace('events-group-section-', '');
+  expect(collapsedSectionId).not.toBe('');
+  collapsedSectionCards = await firstSection.getByTestId('event-card').count();
+  expect(collapsedSectionCards).toBeGreaterThan(0);
+
+  await page.getByTestId(`events-group-toggle-${collapsedSectionId}`).click();
+});
+
+Then('the folded section shows no events while the others still do', async ({ page }) => {
+  const folded = page.getByTestId(`events-group-section-${collapsedSectionId}`);
+  await expect.poll(async () => folded.getByTestId('event-card').count(), {
+    timeout: testConfig.timeouts.pageLoad,
+  }).toBe(0);
+  await expect(page.getByTestId(`events-group-toggle-${collapsedSectionId}`)).toHaveAttribute('aria-expanded', 'false');
+  // Folding is not filtering: the rest of the page still shows its events,
+  // and the folded server keeps its own count in the header.
+  expect(await page.getByTestId('event-card').count()).toBeGreaterThan(0);
+  await expect(page.getByTestId(`events-group-toggle-${collapsedSectionId}`))
+    .toContainText(String(collapsedSectionCards));
+});
+
+When('I press the jump button for that server', async ({ page }) => {
+  await page.getByTestId(`events-group-jump-${collapsedSectionId}`).click();
+});
+
+Then('that server section shows its events again', async ({ page }) => {
+  const folded = page.getByTestId(`events-group-section-${collapsedSectionId}`);
+  await expect.poll(async () => folded.getByTestId('event-card').count(), {
+    timeout: testConfig.timeouts.pageLoad,
+  }).toBe(collapsedSectionCards);
+  await expect(page.getByTestId(`events-group-toggle-${collapsedSectionId}`)).toHaveAttribute('aria-expanded', 'true');
+});
+
 Then('I should see an event profile chip on every event card', async ({ page }) => {
   await expect.poll(async () => page.getByTestId('event-card').count(), {
     timeout: testConfig.timeouts.pageLoad,

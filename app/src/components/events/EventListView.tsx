@@ -13,6 +13,8 @@ import { type EventFilters } from '../../api/events';
 import { getPortalUrlForMonitor, getServerMapVersion, subscribeServerMap } from '../../lib/zm/server-resolver';
 import { buildThumbnailChain, eventHasAlarmFrame } from '../../lib/event/thumbnail-chain';
 import { buildMonitorMap, calculateThumbnailDimensions, EVENT_GRID_CONSTANTS, getMonitorDimensions } from '../../lib/event/event-utils';
+import { groupByOwningProfile } from '../../lib/profile/profile-sections';
+import { ProfileSectionList } from '../profiles/ProfileSectionList';
 import { useCurrentProfile, useProfileById } from '../../hooks/useCurrentProfile';
 import { useFreshAccessToken } from '../../hooks/useFreshAccessToken';
 import { resolveMinStreamingPort } from '../../lib/monitor/multiport';
@@ -42,6 +44,10 @@ interface EventListViewProps {
   eventTagMap?: Map<string, Tag[]>;
   eventFilters?: EventFilters;
   minStreamingPort?: number;
+  /** Aggregate only: the aggregate's own id sections the list by owning
+   *  server instead of one time-ordered stream; undefined leaves it flat
+   *  (refs #501). The id also scopes each section's collapse state. */
+  groupByScopeId?: ProfileId;
 }
 
 // Helper to render a single event item
@@ -165,6 +171,7 @@ export const EventListView = ({
   eventTagMap,
   eventFilters,
   minStreamingPort,
+  groupByScopeId,
 }: EventListViewProps) => {
   const { t } = useTranslation();
   const { settings } = useCurrentProfile();
@@ -214,23 +221,39 @@ export const EventListView = ({
     </div>
   ) : null;
 
+  const renderEvent = (event: ScopedEventItem) => (
+    <EventItem
+      key={scopedEventKey(event.profileId, event.Event.Id)}
+      event={event}
+      monitorMap={monitorMap}
+      thumbnailFit={thumbnailFit}
+      portalUrl={portalUrl}
+      accessToken={accessToken}
+      eventTagMap={eventTagMap}
+      eventFilters={eventFilters}
+      minStreamingPort={minStreamingPort}
+      thumbnailChain={thumbnailChain}
+    />
+  );
+
+  // One section per owning server, in first-seen order; the count header and
+  // Load More stay one per view so paging is unchanged (refs #501).
+  const sections = groupByScopeId ? groupByOwningProfile(events) : null;
+
   return (
     <div className="min-h-0" data-testid="event-list">
       {header}
-      {events.map((event) => (
-        <EventItem
-          key={scopedEventKey(event.profileId, event.Event.Id)}
-          event={event}
-          monitorMap={monitorMap}
-          thumbnailFit={thumbnailFit}
-          portalUrl={portalUrl}
-          accessToken={accessToken}
-          eventTagMap={eventTagMap}
-          eventFilters={eventFilters}
-          minStreamingPort={minStreamingPort}
-          thumbnailChain={thumbnailChain}
+      {sections && groupByScopeId ? (
+        <ProfileSectionList
+          sections={sections}
+          surface="events-group"
+          scopeId={groupByScopeId}
+          className="space-y-2"
+          renderItems={(items) => <>{items.map(renderEvent)}</>}
         />
-      ))}
+      ) : (
+        events.map(renderEvent)
+      )}
       {footer}
     </div>
   );

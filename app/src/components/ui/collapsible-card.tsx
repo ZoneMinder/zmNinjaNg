@@ -11,6 +11,7 @@ import { ChevronDown } from 'lucide-react';
 import { Card, CardHeader, CardContent } from './card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './collapsible';
 import { cn } from '../../lib/utils';
+import { readStoredOpen, writeStoredOpen } from '../../lib/collapse-storage';
 
 interface CollapsibleCardProps {
   /** Header content (icon + title + description) */
@@ -25,16 +26,6 @@ interface CollapsibleCardProps {
   'data-testid'?: string;
 }
 
-function readStoredOpen(key: string | undefined, fallback: boolean): boolean {
-  if (!key) return fallback;
-  try {
-    const stored = localStorage.getItem(key);
-    if (stored === 'false') return false;
-    if (stored === 'true') return true;
-  } catch { /* ignore */ }
-  return fallback;
-}
-
 export function CollapsibleCard({
   header,
   children,
@@ -46,9 +37,7 @@ export function CollapsibleCard({
 
   const handleOpenChange = (value: boolean) => {
     setOpen(value);
-    if (storageKey) {
-      try { localStorage.setItem(storageKey, String(value)); } catch { /* ignore */ }
-    }
+    writeStoredOpen(storageKey, value);
   };
 
   return (

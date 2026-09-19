@@ -1129,7 +1129,8 @@
     "delete_group_error": "Virtuelle Profilgruppe konnte nicht gelöscht werden",
     "group_no_active_members": "Keine aktiven Server in dieser Gruppe",
     "details": "Details",
-    "more_actions": "Weitere Aktionen"
+    "more_actions": "Weitere Aktionen",
+    "jump_to_server": "Zum Server springen"
   },
   "profile_picker": {
     "label": "Profil"

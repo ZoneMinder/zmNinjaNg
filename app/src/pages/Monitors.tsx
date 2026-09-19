@@ -32,6 +32,8 @@ import { canEditMonitorSettings, canViewMonitors } from '../lib/permissions/zm-p
 import { isPermissionDenied } from '../lib/permissions/permission-error';
 import { markPermissionDenied, useIsPermissionDenied } from '../stores/permissions';
 import { filterMonitorsByGroup } from '../lib/monitor/filters';
+import { groupByOwningProfile } from '../lib/profile/profile-sections';
+import { ProfileSectionList } from '../components/profiles/ProfileSectionList';
 import { useGroupFilter } from '../hooks/useGroupFilter';
 import { GroupFilterSelect } from '../components/filters/GroupFilterSelect';
 import type { Monitor, MonitorStatus, ProfileId } from '../api/types';
@@ -308,18 +310,7 @@ export default function Monitors() {
   // Section renderItems by owning server when the toggle is on. All mode
   // only - single mode never has more than one profile to group by.
   const groupedSections = isAllMode && settings.monitorsGroupByServer
-    ? Array.from(
-        renderItems.reduce((byProfile, item) => {
-          const key = item.profileId as ProfileId;
-          const existing = byProfile.get(key);
-          if (existing) {
-            existing.items.push(item);
-          } else {
-            byProfile.set(key, { profileName: item.profileChip ?? '', items: [item] });
-          }
-          return byProfile;
-        }, new Map<ProfileId, { profileName: string; items: MonitorGridItem[] }>())
-      )
+    ? groupByOwningProfile(renderItems)
     : null;
 
   return (
@@ -447,20 +438,14 @@ export default function Monitors() {
               className="p-8 text-center border rounded-lg bg-muted/20 text-muted-foreground"
             />
           </div>
-        ) : groupedSections ? (
-          <div className="space-y-6">
-            {groupedSections.map(([profileId, section]) => (
-              <div key={profileId}>
-                <h2
-                  className="text-sm font-semibold text-muted-foreground mb-2 truncate"
-                  title={section.profileName}
-                >
-                  {section.profileName}
-                </h2>
-                {renderMonitorSection(section.items, false)}
-              </div>
-            ))}
-          </div>
+        ) : groupedSections && currentProfileId ? (
+          <ProfileSectionList
+            sections={groupedSections}
+            surface="monitors-group"
+            scopeId={currentProfileId}
+            className="space-y-6"
+            renderItems={(items) => renderMonitorSection(items, false)}
+          />
         ) : (
           renderMonitorSection(renderItems, true)
         )}

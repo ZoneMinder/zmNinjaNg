@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 
@@ -391,5 +391,72 @@ describe('EventMontageView grid action parity (refs #494)', () => {
     expect(useEventFavoritesStore.getState().isFavorited(asProfileId('current'), '504')).toBe(true);
     expect(useDeleteSelectionStore.getState().selectedKeys).toEqual([eventSelectionKey(asProfileId('current'), '504')]);
     expect(navigate).not.toHaveBeenCalled();
+  });
+});
+
+// Sectioning by owning server (refs #501). The page turns this on only in an
+// aggregate, where every row carries a profileId and a profileChip.
+describe('EventMontageView server sections (grid view)', () => {
+  function renderGrouped(events: ScopedEventItem[], grouped: boolean) {
+    // Same pre-seeded client as renderEvents: every tile mounts
+    // EventContextButton, whose permission probe would otherwise settle
+    // outside act() (refs #494).
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    client.setQueryData(queryKeys.accountPermissions(asProfileId('current')), UNRESTRICTED_PERMISSIONS);
+    client.setQueryData(queryKeys.accountPermissions(asProfileId('profile-b')), UNRESTRICTED_PERMISSIONS);
+    return render(
+      <QueryClientProvider client={client}>
+      <EventMontageView
+        events={events}
+        monitors={[]}
+        gridCols={3}
+        thumbnailFit="contain"
+        portalUrl="https://zm.example.test"
+        accessToken="current-profile-token"
+        batchSize={20}
+        onLoadMore={vi.fn()}
+        groupByScopeId={grouped ? asProfileId('group-1') : undefined}
+      />
+      </QueryClientProvider>
+    );
+  }
+
+  const interleaved = () => [
+    scopedEvent('1', 'current', 'Home'),
+    scopedEvent('2', 'profile-b', 'Office'),
+    scopedEvent('3', 'current', 'Home'),
+  ];
+
+  it('renders one grid per owning server, keeping each section in arrival order', () => {
+    renderGrouped(interleaved(), true);
+
+    const sections = screen.getAllByTestId(/^events-group-section-/);
+    expect(sections.map((s) => s.getAttribute('data-testid'))).toEqual([
+      'events-group-section-current',
+      'events-group-section-profile-b',
+    ]);
+    expect(within(sections[0]).getByTestId('events-group-toggle-current')).toHaveTextContent('Home');
+    expect(
+      within(sections[0])
+        .getAllByTestId('event-montage-tile')
+        .map((t) => t.getAttribute('data-event-id'))
+    ).toEqual(['1', '3']);
+    expect(within(sections[1]).getByTestId('events-group-toggle-profile-b')).toHaveTextContent('Office');
+    expect(
+      within(sections[1])
+        .getAllByTestId('event-montage-tile')
+        .map((t) => t.getAttribute('data-event-id'))
+    ).toEqual(['2']);
+    // One count header for the view, not one per section.
+    expect(screen.getAllByText('events.showing_events')).toHaveLength(1);
+  });
+
+  it('renders a single grid when grouping is off', () => {
+    renderGrouped(interleaved(), false);
+
+    expect(screen.queryAllByTestId(/^events-group-section-/)).toHaveLength(0);
+    expect(
+      screen.getAllByTestId('event-montage-tile').map((t) => t.getAttribute('data-event-id'))
+    ).toEqual(['1', '2', '3']);
   });
 });

@@ -1129,7 +1129,8 @@
     "delete_group_error": "Échec de la suppression du groupe virtuel de profils",
     "group_no_active_members": "Aucun serveur actif dans ce groupe",
     "details": "Détails",
-    "more_actions": "Plus d'actions"
+    "more_actions": "Plus d'actions",
+    "jump_to_server": "Aller au serveur"
   },
   "profile_picker": {
     "label": "Profil"

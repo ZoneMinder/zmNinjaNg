@@ -31,7 +31,7 @@ import { scopedEventKey } from '../lib/event/scoped-event-key';
 import { useScrollRestoration } from '../hooks/useScrollRestoration';
 import { PullToRefreshIndicator } from '../components/ui/pull-to-refresh-indicator';
 import { Button } from '../components/ui/button';
-import { Filter, ArrowLeft, LayoutGrid, List, Clock, X, Crop } from 'lucide-react';
+import { Filter, ArrowLeft, LayoutGrid, List, Clock, X, Crop, Layers } from 'lucide-react';
 import { RefreshButton } from '../components/common/RefreshButton';
 import { filterMonitorsByGroup, includedMonitorIdParam } from '../lib/monitor/filters';
 import { useGroupFilter } from '../hooks/useGroupFilter';
@@ -548,6 +548,26 @@ export default function Events() {
             </div>
 
             <div className="flex items-center gap-2">
+              {isAllMode && (
+                <Button
+                  variant={settings.eventsGroupByServer ? 'default' : 'outline'}
+                  size="icon"
+                  aria-pressed={settings.eventsGroupByServer}
+                  title={t('monitors.group_by_server')}
+                  aria-label={t('monitors.group_by_server')}
+                  onClick={() => {
+                    if (!currentProfileId) return;
+                    // Aggregate bucket: currentProfileId is the aggregate's own
+                    // id while it is current (refs #501).
+                    updateSettings(currentProfileId, {
+                      eventsGroupByServer: !settings.eventsGroupByServer,
+                    });
+                  }}
+                  data-testid="events-group-by-server"
+                >
+                  <Layers className="h-4 w-4" />
+                </Button>
+              )}
               <GroupFilterSelect />
               <Button
                 variant="outline"
@@ -758,6 +778,7 @@ export default function Events() {
             eventTagMap={eventTagMap}
             eventFilters={serverFilters}
             minStreamingPort={resolveMinStreamingPort(currentProfile?.minStreamingPort, settings.forceDisableMultiPort)}
+            groupByScopeId={isAllMode && settings.eventsGroupByServer ? currentProfileId ?? undefined : undefined}
           />
         ) : (
           <EventListView
@@ -773,6 +794,7 @@ export default function Events() {
             eventTagMap={eventTagMap}
             eventFilters={serverFilters}
             minStreamingPort={resolveMinStreamingPort(currentProfile?.minStreamingPort, settings.forceDisableMultiPort)}
+            groupByScopeId={isAllMode && settings.eventsGroupByServer ? currentProfileId ?? undefined : undefined}
           />
         )}
       </div>
