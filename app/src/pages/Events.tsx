@@ -47,7 +47,7 @@ import { NinjiiToolbarButton } from '../components/assistant/NinjiiToolbarButton
 import { EventsFilterPopover } from '../components/events/EventsFilterPopover';
 import { QuickDateRangeButtons } from '../components/ui/quick-date-range-buttons';
 import { useTranslation } from 'react-i18next';
-import { formatForServer, formatLocalDateTime } from '../lib/time';
+import { formatForServer, formatLocalDateTimeSeconds } from '../lib/time';
 import { EmptyState } from '../components/ui/empty-state';
 import { NotificationBadge } from '../components/NotificationBadge';
 
@@ -627,8 +627,8 @@ export default function Events() {
                   endDateInput={endDateInput}
                   onEndDateChange={setEndDateInput}
                   onQuickRangeSelect={({ start, end }) => {
-                    setStartDateInput(formatLocalDateTime(start));
-                    setEndDateInput(formatLocalDateTime(end));
+                    setStartDateInput(formatLocalDateTimeSeconds(start));
+                    setEndDateInput(formatLocalDateTimeSeconds(end));
                   }}
                   onApplyFilters={applyFilters}
                   onClearFilters={clearFilters}
@@ -686,8 +686,8 @@ export default function Events() {
             <QuickDateRangeButtons
               activeHours={activeQuickRange}
               onRangeSelect={({ start, end, hours }) => {
-                const startInput = formatLocalDateTime(start);
-                const endInput = formatLocalDateTime(end);
+                const startInput = formatLocalDateTimeSeconds(start);
+                const endInput = formatLocalDateTimeSeconds(end);
                 setStartDateInput(startInput);
                 setEndDateInput(endInput);
                 setActiveQuickRange(hours);
@@ -723,8 +723,8 @@ export default function Events() {
             startDate={heatmapDateRange.startDate}
             endDate={heatmapDateRange.endDate}
             onTimeRangeClick={(startDateTime, endDateTime) => {
-              setStartDateInput(formatLocalDateTime(new Date(startDateTime)));
-              setEndDateInput(formatLocalDateTime(new Date(endDateTime)));
+              setStartDateInput(formatLocalDateTimeSeconds(new Date(startDateTime)));
+              setEndDateInput(formatLocalDateTimeSeconds(new Date(endDateTime)));
               applyFilters();
             }}
           />

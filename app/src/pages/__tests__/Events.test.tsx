@@ -50,6 +50,8 @@ vi.mock('../../hooks/useScopedMonitors', () => ({
 // mode agree because both derive from the same real currentProfileId.
 
 const applyFilters = vi.fn();
+const setStartDateInput = vi.fn();
+const setEndDateInput = vi.fn();
 const clearFilters = vi.fn();
 const clearDateRange = vi.fn();
 
@@ -81,8 +83,8 @@ vi.mock('../../hooks/useEventFilters', () => ({
     activeQuickRange: null,
     setSelectedMonitorIds: vi.fn(),
     setSelectedTagIds: vi.fn(),
-    setStartDateInput: vi.fn(),
-    setEndDateInput: vi.fn(),
+    setStartDateInput,
+    setEndDateInput,
     setFavoritesOnly: vi.fn(),
     setActiveQuickRange: vi.fn(),
     applyFilters,
@@ -131,8 +133,17 @@ vi.mock('../../components/filters/MonitorFilterPopover', () => ({
   MonitorFilterPopoverContent: () => <div data-testid="monitor-filter" />,
 }));
 
+// Inert unless clicked: the range it reports is fixed, so a test can assert
+// exactly what the page writes into the date inputs (refs #495).
 vi.mock('../../components/ui/quick-date-range-buttons', () => ({
-  QuickDateRangeButtons: () => <div data-testid="quick-range" />,
+  QuickDateRangeButtons: ({ onRangeSelect }: { onRangeSelect: (r: { start: Date; end: Date; hours: number }) => void }) => (
+    <button
+      data-testid="quick-range"
+      onClick={() => onRangeSelect({ start: new Date('2026-08-03T06:04:07'), end: new Date('2026-08-03T10:04:09'), hours: 4 })}
+    >
+      range
+    </button>
+  ),
 }));
 
 vi.mock('../../components/ui/pull-to-refresh-indicator', () => ({
@@ -217,6 +228,8 @@ describe('Events Page', () => {
     singleScope();
     scopedEvents();
     applyFilters.mockClear();
+    setStartDateInput.mockClear();
+    setEndDateInput.mockClear();
     clearFilters.mockClear();
     clearDateRange.mockClear();
     setSearchParamsMock.mockClear();
@@ -228,6 +241,19 @@ describe('Events Page', () => {
   afterEach(() => {
     resetProfileFixture();
     resetFakeStoreGates();
+  });
+
+  // A quick range populates the two date inputs, which carry step="1". Writing
+  // minute precision there made the value change shape on the first keystroke,
+  // and the browser dropped the segment being edited: typing 30 landed 03
+  // (refs #495).
+  it('writes the quick range into the date inputs at the precision they report', () => {
+    render(<Events />);
+
+    fireEvent.click(screen.getAllByTestId('quick-range')[0]);
+
+    expect(setStartDateInput).toHaveBeenCalledWith('2026-08-03T06:04:07');
+    expect(setEndDateInput).toHaveBeenCalledWith('2026-08-03T10:04:09');
   });
 
   it('shows empty state when no events exist', () => {

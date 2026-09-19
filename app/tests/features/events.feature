@@ -42,6 +42,16 @@ Feature: Event Browsing and Management
     And I press the event detail back button if I opened an event
     Then the events list scroll position should be restored if it was scrolled
 
+  # A preset populates the date fields, and editing one used to take only the
+  # first digit: the value changed precision on that keystroke and the browser
+  # dropped the segment being typed (refs #495).
+  @web
+  Scenario: Editing a date range a quick filter populated keeps every digit
+    When I select the past week quick time filter
+    And I open the events filter panel
+    And I type a month into the start date field
+    Then the start date field should hold the month I typed
+
   @all
   Scenario: Clearing the quick time filter keeps the events list usable
     When I select the past week quick time filter

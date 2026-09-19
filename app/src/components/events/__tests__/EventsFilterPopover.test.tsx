@@ -65,6 +65,46 @@ function baseProps() {
   };
 }
 
+// Typing a date used to reach the page on every keystroke. Each one made a new
+// events query, which came back pending with no rows, so the page swapped in
+// its loading skeleton and tore the open panel down mid-edit: the field lost
+// focus after one character and the next digit went to the Apply button
+// (refs #495).
+describe('EventsFilterPopover date editing (refs #495)', () => {
+  it('holds the typed date locally and reports it once, on blur', async () => {
+    const onStartDateChange = vi.fn();
+    render(
+      <EventsFilterPopover
+        {...baseProps()}
+        startDateInput="2026-09-12T09:35:40"
+        onStartDateChange={onStartDateChange}
+      />
+    );
+
+    const user = userEvent.setup();
+    const input = screen.getByTestId('events-start-date') as HTMLInputElement;
+    await user.clear(input);
+    await user.type(input, '2026-12-12T09:35:40');
+
+    expect(onStartDateChange).not.toHaveBeenCalled();
+    expect(input.value).toContain('2026-12-12');
+
+    await user.tab();
+
+    expect(onStartDateChange).toHaveBeenCalledTimes(1);
+    expect(onStartDateChange).toHaveBeenCalledWith(expect.stringContaining('2026-12-12'));
+  });
+
+  it('shows a date the page sets while the field is not being edited', () => {
+    const { rerender } = render(
+      <EventsFilterPopover {...baseProps()} startDateInput="2026-09-12T09:35:40" />
+    );
+    rerender(<EventsFilterPopover {...baseProps()} startDateInput="2026-08-03T06:04:07" />);
+
+    expect((screen.getByTestId('events-start-date') as HTMLInputElement).value).toContain('2026-08-03');
+  });
+});
+
 describe('EventsFilterPopover server-grouped monitor selection (refs #337 I6)', () => {
   it('selecting a monitor on one server does not select the other server\'s same-id monitor', async () => {
     const onMonitorSelectionChange = vi.fn();

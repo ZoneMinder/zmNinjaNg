@@ -280,6 +280,21 @@ When('I apply event filters', async ({ page }) => {
 // uncontrolled), and the open panel sits over the top of the event list. Any
 // step that then clicks a card is clicking through it and never lands, so the
 // popover must be dismissed first (refs #237).
+// Typing into a preset-populated date field (refs #495). The delay matters:
+// the bug needed a React commit between the two keystrokes, which is why the
+// reporter could sometimes beat it by typing fast.
+When('I type a month into the start date field', async ({ page }) => {
+  const input = page.getByTestId('events-start-date');
+  await input.scrollIntoViewIfNeeded();
+  await expect(input).not.toHaveValue('');
+  await input.focus();
+  await input.pressSequentially('12', { delay: 200 });
+});
+
+Then('the start date field should hold the month I typed', async ({ page }) => {
+  await expect(page.getByTestId('events-start-date')).toHaveValue(/^\d{4}-12-/);
+});
+
 When('I close the events filter panel', async ({ page }) => {
   const panel = page.getByTestId('events-filter-panel');
   // Escape is also the global back shortcut, so it only gets pressed when

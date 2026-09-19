@@ -40,7 +40,7 @@ The same selection and delete flow is available in the Recent Events list on a m
 
 Filter events using the controls at the top:
 
-- **Date range** - Select a start and end date
+- **Date range** - Select a start and end date. A date you type takes effect when you leave the field, so you can finish typing it first; the quick range buttons below apply as soon as you press them.
 - **Monitor** - Show events from a specific camera only. In a {doc}`profiles` group the picker groups cameras by server, and picking from one server narrows the list to that server's events - the other servers drop out rather than showing everything they have.
 - **Groups** - Filter by monitor group
 - **Favorites only** - Show only events you have starred. This works across all your favorites, including ones older than the first page of results.

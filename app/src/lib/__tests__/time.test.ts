@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { formatForServer, formatForServerInTz, formatLocalDateTime, resolveProfileTimezone } from '../time';
+import { formatForServer, formatForServerInTz, formatLocalDateTime, formatLocalDateTimeSeconds, resolveProfileTimezone } from '../time';
 
 vi.mock('../../api/store-gates', () => import('../../tests/fake-store-gates'));
 vi.mock('../../lib/security/secureStorage', () => import('../../tests/fake-secure-storage'));
@@ -121,6 +121,23 @@ describe('formatForServer', () => {
     const result = formatForServer(date);
 
     expect(result).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
+  });
+});
+
+describe('formatLocalDateTimeSeconds', () => {
+  // The Events filter's inputs carry step="1", so the browser reports seconds
+  // back on the first keystroke. A minute-precision value there changes shape
+  // mid-edit and the browser drops the segment being typed (refs #495).
+  it('formats a date at the seconds precision a step=1 input reports', () => {
+    expect(formatLocalDateTimeSeconds(new Date('2024-01-15T10:30:07'))).toBe('2024-01-15T10:30:07');
+  });
+
+  it('pads a single-digit second', () => {
+    expect(formatLocalDateTimeSeconds(new Date('2024-01-15T10:30:04'))).toBe('2024-01-15T10:30:04');
+  });
+
+  it('keeps a whole minute at :00 rather than dropping the segment', () => {
+    expect(formatLocalDateTimeSeconds(new Date('2024-01-15T10:30:00'))).toBe('2024-01-15T10:30:00');
   });
 });
 

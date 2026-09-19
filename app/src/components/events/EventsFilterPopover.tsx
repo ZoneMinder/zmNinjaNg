@@ -75,6 +75,20 @@ export function EventsFilterPopover({
 }: EventsFilterPopoverProps) {
   const { t } = useTranslation();
 
+  // The two date fields below hold their own value while being typed into and
+  // report it when the field is left. Reporting every keystroke made the page
+  // start a new events query, which arrives pending with no rows, so
+  // Events.tsx swapped in its loading skeleton and unmounted this panel
+  // mid-edit: the field lost focus after one character and the remaining
+  // digits went to the Apply button (refs #495).
+  //
+  // They are uncontrolled, keyed by the page's value: typing never rewrites
+  // the DOM value, and a date the page sets - a quick range, Clear, a deep
+  // link - replaces the field as it always did.
+  const commit = (next: string, current: string, report: (value: string) => void) => {
+    if (next !== current) report(next);
+  };
+
   const isAllTagsSelected = selectedTagIds.includes(ALL_TAGS_FILTER_ID);
 
   // Get selected tags for display (exclude the "All" sentinel)
@@ -323,10 +337,12 @@ export function EventsFilterPopover({
               {t('events.date_range')} ({t('events.start')})
             </Label>
             <Input
+              key={startDateInput}
               id="start-date"
               type="datetime-local"
-              value={startDateInput}
-              onChange={(e) => onStartDateChange(e.target.value)}
+              defaultValue={startDateInput}
+              onBlur={(e) => commit(e.target.value, startDateInput, onStartDateChange)}
+              onKeyDown={(e) => { if (e.key === 'Enter') commit(e.currentTarget.value, startDateInput, onStartDateChange); }}
               step="1"
               data-testid="events-start-date"
             />
@@ -336,10 +352,12 @@ export function EventsFilterPopover({
               {t('events.date_range')} ({t('events.end')})
             </Label>
             <Input
+              key={endDateInput}
               id="end-date"
               type="datetime-local"
-              value={endDateInput}
-              onChange={(e) => onEndDateChange(e.target.value)}
+              defaultValue={endDateInput}
+              onBlur={(e) => commit(e.target.value, endDateInput, onEndDateChange)}
+              onKeyDown={(e) => { if (e.key === 'Enter') commit(e.currentTarget.value, endDateInput, onEndDateChange); }}
               step="1"
               data-testid="events-end-date"
             />

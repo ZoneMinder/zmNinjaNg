@@ -89,3 +89,16 @@ export function formatLocalDateTime(date: Date): string {
     const minutes = String(date.getMinutes()).padStart(2, '0');
     return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
+
+/**
+ * Same, at seconds precision, for a `datetime-local` input with `step="1"`.
+ *
+ * Such an input reports seconds back on the first keystroke, so a
+ * minute-precision value written into it changes shape mid-edit; React then
+ * rewrites the DOM value and the browser drops the segment being typed. That
+ * is why, on the Events filter, typing 30 into a preset-populated day landed
+ * 03 (refs #495).
+ */
+export function formatLocalDateTimeSeconds(date: Date): string {
+    return `${formatLocalDateTime(date)}:${String(date.getSeconds()).padStart(2, '0')}`;
+}
