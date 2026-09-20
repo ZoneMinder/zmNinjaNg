@@ -30,6 +30,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { findScrollParent } from '../lib/dom/scroll-parent';
 
 const NO_TILES: ReadonlySet<string> = new Set();
 
@@ -37,15 +38,26 @@ export interface ViewportGatingOptions {
   /** Whether gating applies at all. False keeps every tile ungated and
    *  observes nothing; turning it off releases whatever was gated. */
   enabled: boolean;
-  /** Scroll container the tiles live in. The margin below only expands THIS
-   *  root: an intermediate scroller clips without it, so rooting at the
-   *  viewport instead would collapse the pre-load margin to nothing. */
+  /** The element the tiles live in. The observer roots on the nearest
+   *  SCROLLING ancestor of it, not on it: a page's own container usually
+   *  declares `overflow-auto` while its height stays content-driven, so it
+   *  never clips, every tile sits inside it, and the whole grid reads as in
+   *  view - which is how gating shipped doing nothing (refs #507). The margin
+   *  below expands that resolved root, so rooting at the viewport instead
+   *  would collapse the pre-load margin to nothing. Falls back to this element
+   *  when nothing scrolls: the content fits, so nothing is off screen to hold. */
   root: HTMLElement | null;
   /** How far beyond the container a tile still counts as in view, as an
    *  IntersectionObserver rootMargin. */
   rootMargin: string;
   /** How long a tile stays connected after leaving view. */
   lingerMs: number;
+  /** Bumped when the container's height changes - a layout landed, the list
+   *  grew, a view mode stacked taller. Which ancestor scrolls is read from live
+   *  geometry, so it has to be resolved again when that geometry changes: a
+   *  page that used to fit starts scrolling, and only then is there anything
+   *  off screen to hold. */
+  rootEpoch?: number;
 }
 
 export interface ViewportGating {
@@ -61,6 +73,7 @@ export function useViewportGating({
   root,
   rootMargin,
   lingerMs,
+  rootEpoch,
 }: ViewportGatingOptions): ViewportGating {
   // The tiles currently in view. Gating is the complement of this rather than
   // a set of gated ids, so a tile that has not been measured yet - not in any
@@ -107,6 +120,7 @@ export function useViewportGating({
   useEffect(() => {
     if (!active || !root) return;
 
+    const observerRoot = findScrollParent(root) ?? root;
     const timers = leaveTimers.current;
     const observer = new IntersectionObserver(
       (entries) => {
@@ -135,7 +149,7 @@ export function useViewportGating({
           return next;
         });
       },
-      { root, rootMargin }
+      { root: observerRoot, rootMargin }
     );
     observerRef.current = observer;
     for (const el of elementByTile.current.values()) observer.observe(el);
@@ -149,7 +163,7 @@ export function useViewportGating({
       // with nothing left running to un-gate it.
       setVisibleTileIds(NO_TILES);
     };
-  }, [active, root, rootMargin, lingerMs, cancelLeave, dropTile]);
+  }, [active, root, rootEpoch, rootMargin, lingerMs, cancelLeave, dropTile]);
 
   const registerTile = useCallback(
     (tileId: string) => {

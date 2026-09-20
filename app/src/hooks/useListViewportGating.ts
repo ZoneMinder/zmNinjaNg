@@ -1,10 +1,8 @@
 /**
- * Viewport gating for a page that scrolls inside the app shell.
+ * Viewport gating for a page that renders a long list of live tiles.
  *
- * `useViewportGating` needs the element that actually scrolls, and a page's own
- * container is usually not it - the app's `<main>` is (see `findScrollParent`).
- * This finds that element, decides whether gating applies at all, and hands
- * back the tile plumbing unchanged.
+ * `useViewportGating` does the observing; this decides whether the page is long
+ * enough to need it, and reports the answer to the log.
  *
  * Why a long list needs this: a browser opens six connections to one host, so
  * the cards below the fold queue requests ahead of the ones on screen and the
@@ -13,7 +11,6 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { findScrollParent } from '../lib/dom/scroll-parent';
 import { log, LogLevel } from '../lib/logger';
 import { MONTAGE_GRID } from '../lib/zmninja-ng-constants';
 import { useViewportGating, type ViewportGating } from './useViewportGating';
@@ -24,51 +21,47 @@ export interface ListViewportGating extends ViewportGating {
 }
 
 export function useListViewportGating({
-  itemCount,
+  itemIds,
 }: {
-  /** Tiles the list is rendering. Below the threshold gating stays off. */
-  itemCount: number;
+  /** One id per tile, in render order. Below the threshold gating stays off,
+   *  and the ids are what the gated count below is measured over. */
+  itemIds: string[];
 }): ListViewportGating {
-  const [scrollRoot, setScrollRoot] = useState<HTMLElement | null>(null);
+  const [listContainer, setListContainer] = useState<HTMLElement | null>(null);
 
-  // Resolved as the container mounts rather than in an effect: reading
-  // scrollHeight forces the layout the answer depends on, so it is already
-  // true here, and an effect would cost a second render pass for the same
-  // element. The ceiling is that it is resolved once - a page that only starts
-  // scrolling later (a list that grew, a view mode that stacks taller) keeps
-  // gating off until this container mounts again. The case that matters, a
-  // page opened with more tiles than fit, scrolls in this very commit.
-  const setListContainer = useCallback((element: HTMLElement | null) => {
-    setScrollRoot(element ? findScrollParent(element) : null);
-  }, []);
-
-  // No scroll root means the cards all fit, so every one of them is in view and
-  // gating has nothing to hold: leave it off rather than root an observer on
-  // nothing and hold the whole page closed.
-  const enabled = !!scrollRoot && itemCount > MONTAGE_GRID.viewportGatingMinTiles;
-
-  // Nothing else in a device log says whether a page is gating: a tile reports
-  // on its own stream, not on whether the page let it have one, and #507 was
-  // debugged for six rounds against logs that could not answer that. Emitted
-  // only when the answer changes, so a scroll does not flood the log.
-  const lastLoggedRef = useRef<string | null>(null);
-  useEffect(() => {
-    const line = `${enabled}:${itemCount}:${!!scrollRoot}`;
-    if (lastLoggedRef.current === line) return;
-    lastLoggedRef.current = line;
-    log.monitor('List viewport gating', LogLevel.INFO, {
-      enabled,
-      tiles: itemCount,
-      rooted: !!scrollRoot,
-    });
-  }, [enabled, itemCount, scrollRoot]);
+  const enabled = itemIds.length > MONTAGE_GRID.viewportGatingMinTiles;
 
   const gating = useViewportGating({
     enabled,
-    root: scrollRoot,
+    root: listContainer,
+    // The list's height changes with its length, and which ancestor scrolls is
+    // read from that height.
+    rootEpoch: itemIds.length,
     rootMargin: MONTAGE_GRID.viewportGatingRootMargin,
     lingerMs: MONTAGE_GRID.viewportGatingLingerMs,
   });
 
-  return { ...gating, setListContainer };
+  // How many tiles hold no connection right now. Nothing else in a device log
+  // distinguishes a gated tile from a streaming one - the stream status a tile
+  // reports is about its own URL, not about whether the page let it have one -
+  // so #507 was debugged for rounds against logs that could not answer it.
+  // Emitted only when the count changes, so a scroll does not flood the log.
+  const gated = itemIds.reduce((total, id) => total + (gating.isTileGated(id) ? 1 : 0), 0);
+  const lastLoggedRef = useRef<string | null>(null);
+  useEffect(() => {
+    const line = `${gated}:${itemIds.length}:${enabled}`;
+    if (lastLoggedRef.current === line) return;
+    lastLoggedRef.current = line;
+    log.monitor('List viewport gating', LogLevel.INFO, {
+      gated,
+      tiles: itemIds.length,
+      enabled,
+    });
+  }, [gated, itemIds.length, enabled]);
+
+  const setContainer = useCallback((element: HTMLElement | null) => {
+    setListContainer(element);
+  }, []);
+
+  return { ...gating, setListContainer: setContainer };
 }

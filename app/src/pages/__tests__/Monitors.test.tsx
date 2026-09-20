@@ -453,17 +453,16 @@ describe('Monitors Page', () => {
 
       renderPage();
 
-      // The last line, not the first: the container's scroll parent is known
-      // from the commit that mounts it, so the first line is the page before
-      // it had one.
+      // The last line, not the first: the container arrives from a ref, so the
+      // first line is the page before it had one.
       const reported = vi
         .mocked(log.monitor)
         .mock.calls.filter(([message]) => String(message).includes('List viewport gating'))
         .at(-1);
       expect(reported?.[2]).toMatchObject({
-        enabled: true,
+        gated: MONTAGE_GRID.viewportGatingMinTiles + 1,
         tiles: MONTAGE_GRID.viewportGatingMinTiles + 1,
-        rooted: true,
+        enabled: true,
       });
     });
 
@@ -476,16 +475,20 @@ describe('Monitors Page', () => {
       expect(allPaused()).not.toContain('true');
     });
 
-    it('leaves every card streaming when nothing around the page scrolls', () => {
-      // No scroll parent means every card is on screen, so there is nothing to
-      // hold: gating stands down rather than blanking a page that fits.
+    it('roots the observer on the element that scrolls, not the page container', () => {
+      // The page's own container declares overflow-auto but its height is
+      // content-driven, so it never clips and every card sits inside it. An
+      // observer rooted there reports the whole list as in view and releases
+      // it, which is how montage gating shipped doing nothing (refs #507).
       singleProfile();
-      shellScrolls(false);
       manyMonitors(MONTAGE_GRID.viewportGatingMinTiles + 1);
 
       renderPage();
 
-      expect(allPaused()).not.toContain('true');
+      const root = latestIntersectionObserver().options?.root;
+      expect(root).toBe(document.body);
+      expect(screen.getByTestId('monitor-grid').contains(root as Node)).toBe(false);
     });
+
   });
 });

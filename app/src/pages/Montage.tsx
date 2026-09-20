@@ -373,6 +373,9 @@ export default function Montage() {
     // counts as gated, so waiting for it holds the tiles rather than freeing
     // them.
     root: layout.length > 0 ? scrollContainer : null,
+    // The grid's height is what decides which ancestor scrolls, and that height
+    // arrives with the layout.
+    rootEpoch: layout.length,
     rootMargin: MONTAGE_GRID.viewportGatingRootMargin,
     lingerMs: MONTAGE_GRID.viewportGatingLingerMs,
   });
