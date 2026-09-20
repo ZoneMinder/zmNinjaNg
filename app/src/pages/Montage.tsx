@@ -350,8 +350,16 @@ export default function Montage() {
   // a connection. A tile the budget dropped never reaches here, and a tile
   // gated here still counts against the budget - so scrolling cannot promote
   // an overflow monitor into the grid.
+  // Above the tile threshold a montage has scrollback nobody is looking at, and
+  // those tiles are what starve the visible ones of the few connections a
+  // browser opens to one host (refs #507). That is true of a single server as
+  // much as of an aggregate, and single mode cannot reach the All-mode switch
+  // at all, so the threshold turns gating on by itself. The switch still forces
+  // it on for a smaller aggregate, which is what it was added for (refs #337).
+  const gateOnTileCount = cappedMonitors.length > MONTAGE_GRID.viewportGatingMinTiles;
+
   const { isTileGated, registerTile } = useViewportGating({
-    enabled: isAllMode && settings.allModeViewportGating,
+    enabled: gateOnTileCount || (isAllMode && settings.allModeViewportGating),
     root: scrollContainer,
     rootMargin: MONTAGE_GRID.viewportGatingRootMargin,
     lingerMs: MONTAGE_GRID.viewportGatingLingerMs,
