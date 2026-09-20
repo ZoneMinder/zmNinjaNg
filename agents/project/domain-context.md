@@ -79,10 +79,17 @@ matching reality, fixing it is a protocol change like any rule edit.
   without JPEGs hit this most, since `zms` then has to decode the video.
 - `zms` serves `mode=single` out of shared memory without calling
   `setLastViewed()`, so `zmc` sees no viewer. A monitor whose `Decoding` is
-  not `Always` stops decoding ten seconds later, and every later snapshot
+  `Ondemand` stops decoding ten seconds later, and every later snapshot
   repeats the same frozen frame (#383). `mode=jpeg&frames=1` runs one pass
   of the streaming loop, which does mark the monitor viewed, so snapshot
-  polling uses it for those monitors and keeps `mode=single` for `Always`.
+  polling uses it for `Ondemand` only. It is the expensive request: a zms
+  streaming pass and a decoder wake per poll, and on a server with 74
+  `Ondemand` cameras it is what made the montage crawl (forcing
+  `mode=single` on a device filled it markedly faster, #507). `Always`,
+  `KeyFrames` and `KeyFrames+Ondemand` keep a recent picture decoded with
+  nobody watching and stay on `mode=single`; keyframe tiles advance a
+  keyframe at a time. Do not add a user switch that sends `mode=single` to
+  `Ondemand`: it fills fast and then freezes (#509, reverted in #510).
   A missing `Decoding` field means a server older than the field, which is
   also older than `frames=`: unknown parameters are only logged, so such a
   request would stream forever. `frames=` reached `zms` during 1.37.61

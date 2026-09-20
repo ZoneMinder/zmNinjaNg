@@ -69,7 +69,7 @@ vi.mock('../../lib/zm/zm-constants', () => ({
     cmdAnalyzeOff: 'analyzeOff',
   },
   ZMS_FRAMES_PARAM_MIN_VERSION: '1.37.61',
-  ZM_DECODING_ALWAYS: 'Always',
+  ZM_DECODING_ONDEMAND: 'Ondemand',
 }));
 
 describe('useMonitorStream', () => {
@@ -307,6 +307,27 @@ describe('useMonitorStream', () => {
       expect(result.current.streamUrl).toContain('mode=single');
       expect(result.current.streamUrl).not.toContain('frames=');
     });
+
+    // Only pure on-demand decoding has nothing decoded between viewers. The two
+    // keyframe modes keep decoding keyframes whether or not anyone is watching,
+    // so shared memory always holds a recent picture and the cheap mode=single
+    // read is enough. frames=1 starts a streaming pass per poll, which across a
+    // large montage is what made it crawl (refs #507).
+    it.each(['KeyFrames', 'KeyFrames+Ondemand'])(
+      'sends a plain snapshot to a monitor decoding %s',
+      async (decoding) => {
+        snapshotOn('1.38.0');
+
+        const { result } = renderHook(() => useMonitorStream({ monitorId: '1', decoding }));
+
+        await waitFor(() => {
+          expect(result.current.streamUrl).toBeTruthy();
+        });
+
+        expect(result.current.streamUrl).toContain('mode=single');
+        expect(result.current.streamUrl).not.toContain('frames=');
+      },
+    );
 
     it('keeps mode=single when the server reports no decoding value', async () => {
       // Pre-1.37 servers have no Decoding field and no frames= either; their zms

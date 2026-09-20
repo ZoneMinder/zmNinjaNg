@@ -27,7 +27,7 @@ import { useAuthStore, useAuthSlice } from '../stores/auth';
 import { log, LogLevel } from '../lib/logger';
 import { planReconnect } from '../lib/monitor/reconnect-backoff';
 import { ZM_INTEGRATION } from '../lib/zmninja-ng-constants';
-import { ZMS_FRAMES_PARAM_MIN_VERSION, ZM_DECODING_ALWAYS } from '../lib/zm/zm-constants';
+import { ZMS_FRAMES_PARAM_MIN_VERSION, ZM_DECODING_ONDEMAND } from '../lib/zm/zm-constants';
 import { isZmVersionAtLeast } from '../lib/zm/zm-version';
 import type { StreamOptions, ProfileId } from '../api/types';
 
@@ -122,17 +122,20 @@ export function useMonitorStream({
   // marking the monitor as viewed, so a monitor that only decodes on demand
   // stops decoding between polls and its picture freezes (refs #383). A jpeg
   // stream capped at one frame runs one pass of the streaming loop, which does
-  // mark the monitor viewed, so those monitors poll that way instead. Monitors
-  // on Decoding=Always never stop decoding and stay on the cheaper mode=single,
-  // as do servers that report no Decoding at all: no Decoding field means a ZM
+  // mark the monitor viewed, so those monitors poll that way instead. Only
+  // Decoding=Ondemand needs it. Always never stops decoding, and the two
+  // keyframe modes keep decoding keyframes with nobody watching, so shared
+  // memory holds a recent picture and they stay on the cheaper mode=single:
+  // frames=1 starts a streaming pass per poll, which across a large montage is
+  // what made it crawl (refs #507). Their tiles advance a keyframe at a time.
+  // So do servers that report no Decoding at all: no Decoding field means a ZM
   // too old to understand frames=, which it would log as unknown and then
   // stream forever. The version check covers the 1.37 development builds that
   // grew Decoding before zms grew frames=.
   const zmVersion = useAuthSlice(currentProfile?.id ?? null).version;
   const snapshotSendsOneJpeg =
     effectiveViewMode === 'snapshot' &&
-    !!decoding &&
-    decoding !== ZM_DECODING_ALWAYS &&
+    decoding === ZM_DECODING_ONDEMAND &&
     isZmVersionAtLeast(zmVersion, ZMS_FRAMES_PARAM_MIN_VERSION);
   // Multi-port only applies in streaming mode, and only when not force-disabled.
   const effectiveMinStreamingPort =
