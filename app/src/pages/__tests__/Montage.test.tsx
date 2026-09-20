@@ -1535,6 +1535,37 @@ describe('Montage Page', () => {
       );
     });
 
+    it('shows the whole montage while editing, however small the page', () => {
+      // Every layout write persists what react-grid-layout reports, and rgl only
+      // knows the tiles it was given. Paged, a drag or a resize would write a
+      // workingLayout holding one page and discard the positions arranged on the
+      // others, so editing sees everything (refs #507).
+      singleProfile({ monitorsPerPage: 12 });
+      manyMonitors(74);
+
+      render(<Montage />);
+      expect(mountedTileIds()).toHaveLength(12);
+
+      fireEvent.click(screen.getByTestId('montage-edit-toggle'));
+
+      expect(mountedTileIds()).toHaveLength(74);
+      expect(screen.queryByTestId('montage-page-controls')).toBeNull();
+    });
+
+    it('returns to the page it was on when editing ends', () => {
+      singleProfile({ monitorsPerPage: 12 });
+      manyMonitors(74);
+
+      render(<Montage />);
+      fireEvent.click(screen.getByTestId('montage-page-next'));
+      const onPageTwo = mountedTileIds();
+
+      fireEvent.click(screen.getByTestId('montage-edit-toggle'));
+      fireEvent.click(screen.getByTestId('montage-edit-toggle'));
+
+      expect(mountedTileIds()).toEqual(onPageTwo);
+    });
+
     it('mounts every tile and renders no control while paging is off', () => {
       // The default. A montage that never had paging must look untouched.
       singleProfile({ monitorsPerPage: 0 });
