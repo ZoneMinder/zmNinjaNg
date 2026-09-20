@@ -128,12 +128,8 @@ export function useMonitorStream({
   // too old to understand frames=, which it would log as unknown and then
   // stream forever. The version check covers the 1.37 development builds that
   // grew Decoding before zms grew frames=.
-  // plainSnapshotsOnDemand is the user's opt-out: every poll of frames=1 starts
-  // a streaming pass and wakes a decoder, which across dozens of on-demand
-  // cameras slowed a montage far more than the request itself costs (refs #507).
   const zmVersion = useAuthSlice(currentProfile?.id ?? null).version;
   const snapshotSendsOneJpeg =
-    !settings.plainSnapshotsOnDemand &&
     effectiveViewMode === 'snapshot' &&
     !!decoding &&
     decoding !== ZM_DECODING_ALWAYS &&

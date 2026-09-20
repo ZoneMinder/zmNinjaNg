@@ -292,30 +292,6 @@ describe('useMonitorStream', () => {
       expect(result.current.streamUrl).toContain('rand=');
     });
 
-    it('sends a plain snapshot to an on-demand monitor when the user opts out of waking the decoder', async () => {
-      // frames=1 starts a zms streaming pass and wakes the decoder on every
-      // poll. Across 76 on-demand cameras that made a montage crawl where plain
-      // mode=single filled quickly (refs #507). The opt-out trades that back:
-      // fast tiles, at the price of the frozen frame #383 describes.
-      snapshotOn('1.38.0');
-      useSettingsStore.setState((state) => ({
-        profileSettings: {
-          'profile-1': { ...state.profileSettings['profile-1'], plainSnapshotsOnDemand: true },
-        },
-      }));
-
-      const { result } = renderHook(() =>
-        useMonitorStream({ monitorId: '1', decoding: 'Ondemand' }),
-      );
-
-      await waitFor(() => {
-        expect(result.current.streamUrl).toBeTruthy();
-      });
-
-      expect(result.current.streamUrl).toContain('mode=single');
-      expect(result.current.streamUrl).not.toContain('frames=');
-    });
-
     it('keeps mode=single for a monitor on Decoding=Always', async () => {
       // It never stops decoding, so the cheaper single-image request is enough.
       snapshotOn('1.38.0');

@@ -151,14 +151,6 @@ export interface ProfileSettings {
   theme: ThemePreference;
   logLevel: LogLevel;
   snapshotRefreshInterval: number; // in seconds
-  /**
-   * Send a plain mode=single snapshot to monitors that decode on demand too,
-   * instead of the one-frame jpeg stream that wakes their decoder (refs #383).
-   * Much lighter on a server with many on-demand cameras (refs #507), at the
-   * price #383 describes: such a monitor's picture can freeze until something
-   * views it live. Off by default, so the #383 behavior stands.
-   */
-  plainSnapshotsOnDemand: boolean;
   streamMaxFps: number; // Max FPS for live streams
   streamScale: number; // Scale percentage for live streams (1-100)
   defaultEventLimit: number; // Default number of events to fetch when no filters applied
@@ -461,7 +453,6 @@ export const DEFAULT_SETTINGS: ProfileSettings = {
   theme: 'slate',
   logLevel: getDefaultLogLevel(),
   snapshotRefreshInterval: 3,
-  plainSnapshotsOnDemand: false,
   streamMaxFps: 10,
   streamScale: 50,
   defaultEventLimit: 100,

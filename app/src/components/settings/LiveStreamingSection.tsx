@@ -226,22 +226,6 @@ export function LiveStreamingSection({
           </div>
         )}
 
-        {/* Plain snapshots for on-demand monitors (snapshot mode only) */}
-        {settings.viewMode === 'snapshot' && (
-          <SettingsRow>
-            <RowLabel
-              label={t('settings.plain_snapshots_ondemand')}
-              desc={t('settings.plain_snapshots_ondemand_desc')}
-            />
-            <Switch
-              checked={settings.plainSnapshotsOnDemand}
-              onCheckedChange={(checked) => update('plainSnapshotsOnDemand', checked)}
-              aria-label={t('settings.plain_snapshots_ondemand')}
-              data-testid="settings-plain-snapshots-ondemand-switch"
-            />
-          </SettingsRow>
-        )}
-
         {/* Go2RTC */}
         <SettingsRow>
           <RowLabel
