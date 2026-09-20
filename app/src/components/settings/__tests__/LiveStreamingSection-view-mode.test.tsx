@@ -110,4 +110,30 @@ describe('LiveStreamingSection Streaming Mode recommendation', () => {
     fireEvent.click(toggle);
     expect(update).toHaveBeenCalledWith('monitorDetailFullscreen', true);
   });
+
+  // The row only means something while tiles are polled as snapshots, and its
+  // switch has to write the profile setting the stream hook reads (refs #507).
+  it('offers fast on-demand snapshots in snapshot mode only, and writes the setting', async () => {
+    seedProfiles([profile()]);
+    vi.mocked(getMonitors).mockResolvedValue({ monitors: [] } as never);
+    const update = vi.fn();
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const ui = (viewMode: 'snapshot' | 'streaming') => (
+      <QueryClientProvider client={client}>
+        <LiveStreamingSection
+          settings={{ ...DEFAULT_SETTINGS, viewMode }}
+          update={update}
+          currentProfile={profile()}
+          updateSettings={vi.fn()}
+        />
+      </QueryClientProvider>
+    );
+
+    const { rerender } = render(ui('streaming'));
+    expect(screen.queryByTestId('settings-plain-snapshots-ondemand-switch')).toBeNull();
+
+    rerender(ui('snapshot'));
+    fireEvent.click(screen.getByTestId('settings-plain-snapshots-ondemand-switch'));
+    expect(update).toHaveBeenCalledWith('plainSnapshotsOnDemand', true);
+  });
 });
