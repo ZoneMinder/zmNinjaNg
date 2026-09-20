@@ -13,6 +13,7 @@ import { render, screen, fireEvent, within, act } from '@testing-library/react';
 import Montage from '../Montage';
 import { ALL_PROFILES_ID } from '../../api/types';
 import { DEFAULT_SETTINGS, useSettingsStore, mergeProfileSettings } from '../../stores/settings';
+import { log } from '../../lib/logger';
 import { MONTAGE_GRID } from '../../lib/zmninja-ng-constants';
 import {
   installMockIntersectionObserver,
@@ -161,6 +162,11 @@ vi.mock('../../components/montage', async (importOriginal) => {
 // question about the renders in between: a tile that mounts unpaused has
 // already minted a connkey by the time a later render pauses it.
 const pausedRenders: boolean[] = [];
+
+vi.mock('../../lib/logger', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../lib/logger')>();
+  return { ...actual, log: { ...actual.log, monitor: vi.fn() } };
+});
 
 vi.mock('../../components/monitors/MontageMonitor', () => ({
   MontageMonitor: ({
@@ -1085,6 +1091,28 @@ describe('Montage Page', () => {
     // off-screen tiles are what starve the visible ones of the handful of
     // connections a browser opens to one host, so gating turns itself on
     // without waiting for a setting nobody in single mode can reach (refs #507).
+    // Six rounds of #507 were spent inferring from logs that say nothing about
+    // gating. This line is what a device log can be read against: it reports
+    // how many of the montage's tiles hold no connection right now.
+    it('reports how many tiles are gated', () => {
+      singleProfile();
+      manyMonitors(MONTAGE_GRID.viewportGatingMinTiles + 1);
+      // Other tests in this file render montages too; only this render's line
+      // should be read.
+      vi.mocked(log.monitor).mockClear();
+
+      render(<Montage />);
+
+      const reported = vi.mocked(log.monitor).mock.calls.find(([message]) =>
+        String(message).includes('Viewport gating'),
+      );
+      expect(reported?.[2]).toMatchObject({
+        gated: MONTAGE_GRID.viewportGatingMinTiles + 1,
+        tiles: MONTAGE_GRID.viewportGatingMinTiles + 1,
+        enabled: true,
+      });
+    });
+
     it('gates a single-profile montage once it passes the tile threshold', () => {
       singleProfile();
       manyMonitors(MONTAGE_GRID.viewportGatingMinTiles + 1);
