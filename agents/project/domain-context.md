@@ -89,6 +89,12 @@ matching reality, fixing it is a protocol change like any rule edit.
   development (January 2024), after `Decoding` did, hence the version floor
   as well. Snapshot requests carry no connkey: nothing commands them, and a
   connkey makes a `frames=1` request open a socket per poll.
+- ZM answers a CMD_QUIT with HTTP 200 and puts the fault in the body, so a
+  discarded response hides a plain-language diagnosis. "Socket
+  /run/zm/zms-<connkey>s.sock does not exist ... either zms did not run, or zms
+  exited early" means no `zms` process stood behind that connkey. All three
+  quit paths route through `quitAndReport` and log it at WARN; never log the
+  control URL, which carries the access token. #507.
 - `zms` answers 503 once its streaming daemon is saturated, and a profile
   switch is when that happens: the outgoing profile's quits are awaited but
   their replies time out at 3s (`cmdQuitTimeoutSeconds`), so the incoming
@@ -100,6 +106,13 @@ matching reality, fixing it is a protocol change like any rule edit.
 - Electron background/occlusion process switches do not fix MJPEG going
   blank on occluded windows; tried and reverted (69990402). The fix is
   stream-level reconnect on focus or visibility return (f7a8292e).
+- Hiding the `<img>` until it loads (#352) is what keeps WebKit's broken-image
+  glyph off screen, so never reveal a half-loaded element to show progress.
+  Change the placeholder behind it instead: a tile waiting on a picture renders
+  a skeleton, and only a tile that has errored renders the VideoOff icon. The
+  two were the same icon until #507, which made a montage that was merely slow
+  (six connections per host, ~76 tiles) indistinguishable from a broken one.
+  `derivePlayerViewState` carries this as `awaiting-frame` vs `no-video`.
 - A minted connkey is not a frame. Gate an `<img>`'s visibility on a `load`
   for the src it currently holds, never on the URL existing: the element
   keeps a dead stream's last frame (which may be half written) with no error
@@ -107,6 +120,17 @@ matching reality, fixing it is a protocol change like any rule edit.
   backgrounded against connkeys that are now dead, painting its broken-image
   glyph before any error event lands. Alt text on a stream image is what the
   browser draws beside that glyph, so keep it empty (#352).
+- A browser allows six concurrent connections per host over HTTP/1.1, and
+  `ZM_MIN_STREAMING_PORT` is the only thing that spreads streams across more
+  than one pool. Measured identically in WKWebView and Chromium: of 74 `<img>`
+  pointed at one host, exactly 6 reached the server and the other 68 sat in the
+  queue with neither a `load` nor an `error`. Snapshot mode is not immune,
+  because reassigning a pending `<img src>` cancels that load silently - no
+  `error` fires - so a refresh tick that reruns every tile cancels and requeues
+  work that was about to finish. With 74 tiles, a 3s interval and a 1.2s server,
+  12 tiles painted in 14 seconds and nothing was reported; the same test against
+  a 300ms server painted 112. A snapshot tile therefore skips its tick while its
+  own request is in flight (`snapshotInFlightCeilingMs` bounds the wait). #507.
 - `visibilitychange` alone is not a reliable resume signal on native: the
   WebView suspends with the app and is not obliged to report an app state
   change as a visibility change. Pair it with Capacitor `appStateChange`.

@@ -396,6 +396,13 @@ describe('useMonitorStream', () => {
       const initialRand = getRand();
       expect(initialRand).toBeTruthy();
 
+      // Settle the first request. A tile skips its tick while its own load is
+      // still in flight (refs #507), and this test is about which interval is
+      // honored, not about that gate - see useMonitorStream.snapshot-refresh.
+      act(() => {
+        result.current.reportStreamLoad();
+      });
+
       // At 3s (the bandwidth-mode default) the snapshot must NOT have refreshed.
       await act(async () => {
         await vi.advanceTimersByTimeAsync(3000);

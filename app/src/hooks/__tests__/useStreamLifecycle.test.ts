@@ -271,6 +271,49 @@ describe('useStreamLifecycle', () => {
     });
   });
 
+  describe('zms control reply', () => {
+    // ZM answers CMD_QUIT with 200 and puts the fault in the body. The reply
+    // "Socket ... does not exist ... either zms did not run, or zms exited
+    // early" is the server saying nothing was streaming behind that connkey -
+    // the one signal that separates a client-side queueing problem from a
+    // server that never started zms. It used to be discarded (refs #507).
+    it('logs the server message when zms rejects the quit', async () => {
+      const mediaRef = makeMediaRef();
+      mockHttpGet.mockResolvedValue({
+        data: {
+          message:
+            'Socket /run/zm/zms-058463s.sock does not exist. This file is created by zms',
+        },
+      });
+
+      const { result } = renderHook(() =>
+        useStreamLifecycle({ ...baseOptions, mediaRef }),
+      );
+      await waitFor(() => {
+        expect(result.current.connKey).not.toBe(0);
+      });
+      mockLogFn.mockClear();
+
+      // killPrevious quits the old connkey, which is the path that carries the
+      // server's reply. Fire-and-forget, so it lands a few microtasks later.
+      act(() => {
+        result.current.forceRegenerate({ killPrevious: true });
+      });
+
+      let warning: unknown[] | undefined;
+      await waitFor(() => {
+        warning = mockLogFn.mock.calls.find(([message]) =>
+          String(message).includes('zms rejected CMD_QUIT'),
+        );
+        expect(warning).toBeDefined();
+      });
+      expect(warning?.[0]).toContain('does not exist');
+      expect(warning?.[1]).toBe('WARN');
+      // The control URL carries the access token and must never be logged.
+      expect(JSON.stringify(mockLogFn.mock.calls)).not.toContain('token');
+    });
+  });
+
   describe('releaseConnection', () => {
     it('sends CMD_QUIT for the current connkey and clears the stored key', async () => {
       const mediaRef = makeMediaRef();

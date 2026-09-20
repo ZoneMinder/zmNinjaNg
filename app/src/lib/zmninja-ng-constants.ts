@@ -85,6 +85,15 @@ export const ZM_INTEGRATION = {
   // presenting an old picture as a live one.
   plannedRestartHoldMs: 5000,
 
+  // How long a snapshot tile may wait on a request that never settles before
+  // it refreshes anyway. The refresh tick skips a tile whose own request is
+  // still in flight, because reassigning a pending `<img src>` cancels that
+  // load silently - no `error` fires - and sends it to the back of a queue
+  // only six deep per host. Without the skip a big montage on a slow server
+  // never drains it (refs #507). Without this ceiling, a feed that genuinely
+  // stops answering would hold its last request open and never try again.
+  snapshotInFlightCeilingMs: 30000,
+
   // Grace delay before a scheduled CMD_QUIT fires. Lets React StrictMode's
   // dev double-mount cancel the quit instead of killing a stream the
   // surviving mount is still using. See lib/zm/zms-quit.ts.

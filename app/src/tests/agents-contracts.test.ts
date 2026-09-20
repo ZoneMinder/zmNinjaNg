@@ -570,6 +570,26 @@ describe('Native contract: no bridge URL or raw error in a native log', () => {
   });
 });
 
+describe('Native contract: iOS cookie jar stays empty', () => {
+  it('AppDelegate refuses cookies, so Capacitor cannot flood the WebKit networking process', () => {
+    // Capacitor's iOS HTTP plugin runs setCookiesFromResponse on every single
+    // response, and that ends in syncCookiesToWebView(): a loop over the whole
+    // shared cookie jar that pushes one WKHTTPCookieStore.setCookie IPC message
+    // per cookie held. ZoneMinder sets ZMSESSID on every reply, so the jar fills
+    // and each later response re-pushes all of it. A montage of monitors makes
+    // one event-count request per tile, which queued 129 of those messages at
+    // the networking process - the same process that serves every <img> MJPEG
+    // load ("Too many messages (129) in the queue to remote PID ... most common:
+    // 129 WebCookieManager_SetCookie messages", refs #507). Android has no such
+    // path: its CookieManager is in-process, which is why only iOS showed this.
+    // The plugin exposes no flag to turn the sync off. Refusing cookies at the
+    // jar leaves that loop nothing to iterate. The app reads no cookie anywhere
+    // and authenticates with a token in the query string.
+    const source = read(path.join(repoRoot, 'app/ios/App/App/AppDelegate.swift'));
+    expect(source).toMatch(/HTTPCookieStorage\.shared\.cookieAcceptPolicy\s*=\s*\.never/);
+  });
+});
+
 describe('Native contract: Android local network permission', () => {
   it('declares ACCESS_LOCAL_NETWORK only once targetSdk requires it', () => {
     const androidDir = path.join(repoRoot, 'app/android');
