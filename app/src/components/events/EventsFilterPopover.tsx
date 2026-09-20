@@ -12,8 +12,8 @@ import type { MonitorData, Tag as TagType } from '../../api/types';
 import { ALL_TAGS_FILTER_ID } from '../../hooks/useEventFilters';
 import type { LinkedEventFilter } from '../../stores/settings';
 import { Button } from '../ui/button';
-import { Input } from '../ui/input';
 import { Label } from '../ui/label';
+import { DateTimeField } from './DateTimeField';
 import { PopoverContent } from '../ui/popover';
 import { Switch } from '../ui/switch';
 import { QuickDateRangeButtons } from '../ui/quick-date-range-buttons';
@@ -393,36 +393,24 @@ export function EventsFilterPopover({
       </div>
       <div className="grid gap-2 mt-3">
         <div className="grid gap-2">
-          <div className="grid gap-2">
-            <Label htmlFor="start-date" className="text-xs">
-              {t('events.date_range')} ({t('events.start')})
-            </Label>
-            <Input
-              key={startDateInput}
-              ref={startRef}
-              id="start-date"
-              type="datetime-local"
-              defaultValue={startDateInput}
-              onKeyDown={(e) => { if (e.key === 'Enter') applyDates(); }}
-              step="1"
-              data-testid="events-start-date"
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="end-date" className="text-xs">
-              {t('events.date_range')} ({t('events.end')})
-            </Label>
-            <Input
-              key={endDateInput}
-              ref={endRef}
-              id="end-date"
-              type="datetime-local"
-              defaultValue={endDateInput}
-              onKeyDown={(e) => { if (e.key === 'Enter') applyDates(); }}
-              step="1"
-              data-testid="events-end-date"
-            />
-          </div>
+          <DateTimeField
+            key={`start-${startDateInput}`}
+            id="start-date"
+            label={`${t('events.date_range')} (${t('events.start')})`}
+            defaultValue={startDateInput}
+            inputRef={startRef}
+            onKeyDown={(e) => { if (e.key === 'Enter') applyDates(); }}
+            testId="events-start-date"
+          />
+          <DateTimeField
+            key={`end-${endDateInput}`}
+            id="end-date"
+            label={`${t('events.date_range')} (${t('events.end')})`}
+            defaultValue={endDateInput}
+            inputRef={endRef}
+            onKeyDown={(e) => { if (e.key === 'Enter') applyDates(); }}
+            testId="events-end-date"
+          />
           <div className="grid gap-2">
             <Label className="text-xs text-muted-foreground">{t('events.quick_ranges')}</Label>
             <QuickDateRangeButtons onRangeSelect={onQuickRangeSelect} />

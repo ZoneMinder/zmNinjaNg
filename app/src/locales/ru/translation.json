@@ -178,6 +178,7 @@
     "subtitle": "Просмотр записей",
     "event_id": "ID события",
     "date_range": "Диапазон дат",
+    "open_date_picker": "Открыть выбор даты",
     "filters": "Фильтры",
     "clear_filters": "Очистить фильтры",
     "refresh": "Обновить",

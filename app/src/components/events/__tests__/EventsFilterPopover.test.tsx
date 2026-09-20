@@ -269,3 +269,56 @@ describe('EventsFilterPopover server-grouped monitor selection (refs #337 I6)', 
     expect(onMonitorSelectionChange).toHaveBeenCalledWith(['profile-b:3', 'profile-a:3']);
   });
 });
+
+// Chromium draws a calendar button on these inputs but will not open its
+// chooser from it while they sit inside the Radix popover layer - the same
+// fields in the timeline's plain panel open it fine, and showPicker() called
+// from here works. So the panel hides the browser's dead button and offers its
+// own (refs #507).
+describe('EventsFilterPopover date picker button', () => {
+  const clickPickerButton = async (buttonId: string, fieldId: string) => {
+    const field = screen.getByTestId(fieldId) as HTMLInputElement;
+    const showPicker = vi.fn();
+    (field as unknown as { showPicker: () => void }).showPicker = showPicker;
+    await userEvent.setup().click(screen.getByTestId(buttonId));
+    return showPicker;
+  };
+
+  it('opens the picker for the start field', async () => {
+    render(<EventsFilterPopover {...baseProps()} startDateInput="2026-09-12T09:35:40" />);
+
+    expect(await clickPickerButton('events-start-date-picker', 'events-start-date'))
+      .toHaveBeenCalledTimes(1);
+  });
+
+  it('opens the picker for the end field', async () => {
+    render(<EventsFilterPopover {...baseProps()} endDateInput="2026-09-13T09:35:40" />);
+
+    expect(await clickPickerButton('events-end-date-picker', 'events-end-date'))
+      .toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves the other field alone, so each button opens its own date', async () => {
+    render(
+      <EventsFilterPopover
+        {...baseProps()}
+        startDateInput="2026-09-12T09:35:40"
+        endDateInput="2026-09-13T09:35:40"
+      />
+    );
+
+    const start = screen.getByTestId('events-start-date') as HTMLInputElement;
+    const startPicker = vi.fn();
+    (start as unknown as { showPicker: () => void }).showPicker = startPicker;
+
+    expect(await clickPickerButton('events-end-date-picker', 'events-end-date')).toHaveBeenCalled();
+    expect(startPicker).not.toHaveBeenCalled();
+  });
+
+  it('names each button for a screen reader', () => {
+    render(<EventsFilterPopover {...baseProps()} />);
+
+    expect(screen.getByTestId('events-start-date-picker')).toHaveAccessibleName();
+    expect(screen.getByTestId('events-end-date-picker')).toHaveAccessibleName();
+  });
+});
