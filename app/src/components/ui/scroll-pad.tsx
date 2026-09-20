@@ -13,6 +13,7 @@
 
 import type { RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
+import { findScrollParent } from '../../lib/dom/scroll-parent';
 import { ChevronDown, ChevronUp, ChevronsDown, ChevronsUp } from 'lucide-react';
 import { Button } from './button';
 import { SCROLL_PAD } from '../../lib/zmninja-ng-constants';
@@ -24,22 +25,6 @@ const BUTTONS = [
   { icon: ChevronDown, labelKey: 'common.scroll_down', testId: 'scroll-down', jump: false, direction: 1 },
   { icon: ChevronsDown, labelKey: 'common.scroll_bottom', testId: 'scroll-bottom', jump: true, direction: 1 },
 ] as const;
-
-/**
- * The grid container declares `overflow-auto`, but its height is content-driven
- * outside fullscreen, so the element that actually scrolls is the app's `<main>`
- * further up. Which one it is depends on the layout the page is rendered in, so
- * find it rather than assume it.
- */
-function findScrollParent(from: HTMLElement | null): HTMLElement | null {
-  for (let node = from; node; node = node.parentElement) {
-    const overflowY = getComputedStyle(node).overflowY;
-    if (node.scrollHeight > node.clientHeight && (overflowY === 'auto' || overflowY === 'scroll')) {
-      return node;
-    }
-  }
-  return null;
-}
 
 interface ScrollPadProps {
   /**
