@@ -671,7 +671,7 @@
       }
     },
     "monitors_per_page": "Moniteurs par page",
-    "monitors_per_page_desc": "Afficher ce nombre de moniteurs à la fois dans le Montage et sur l'écran Moniteurs, avec des flèches pour changer de page. Un navigateur n'ouvre que six connexions vers un serveur : avec beaucoup de caméras, la plupart des images attendent et restent vides ; une page plus petite se remplit plus vite. 0 désactive la pagination et met tous les moniteurs sur une seule page."
+    "monitors_per_page_desc": "Utile avec beaucoup de moniteurs (plus de 30) quand le serveur n'a pas de diffusion multi-port. 0 désactive la pagination."
   },
   "ssl": {
     "trust_dialog_title": "Certificat non fiable",

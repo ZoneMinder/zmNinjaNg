@@ -58,8 +58,13 @@ vi.mock('../../hooks/useMontageGroupState', () => ({
   }),
 }));
 
+// Records the monitor ids the page asks new-event counts for. That fan-out is
+// one request per monitor, so whether it follows the page is the difference
+// between 12 requests and 74 (refs #507).
+const useMonitorNewEventsMock = vi.fn((_ids: string[]) => ({ counts: {}, newest: {} }));
+
 vi.mock('../../hooks/useMonitorNewEvents', () => ({
-  useMonitorNewEvents: () => ({ counts: {}, newest: {} }),
+  useMonitorNewEvents: (ids: string[]) => useMonitorNewEventsMock(ids),
   useScopedMonitorNewEvents: () => ({ counts: {}, newest: {} }),
   scopedMonitorEventKey: (profileId: string, monitorId: string) => `${profileId}:${monitorId}`,
 }));
@@ -1515,6 +1520,19 @@ describe('Montage Page', () => {
 
       expect(mountedTileIds()).toHaveLength(74 - 72);
       expect(screen.getByTestId('montage-page-next')).toBeDisabled();
+    });
+
+    it('asks for new-event counts only for the page, not the whole scope', () => {
+      // The montage gets this for free by deriving from the paged list, which is
+      // exactly why it is worth pinning: nothing about the code says so.
+      singleProfile({ monitorsPerPage: 12 });
+      manyMonitors(74);
+
+      render(<Montage />);
+
+      expect(useMonitorNewEventsMock).toHaveBeenLastCalledWith(
+        Array.from({ length: 12 }, (_, i) => String(i + 1))
+      );
     });
 
     it('mounts every tile and renders no control while paging is off', () => {
