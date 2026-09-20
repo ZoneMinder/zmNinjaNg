@@ -1037,13 +1037,29 @@ describe('Montage Page', () => {
       });
     };
 
+    /**
+     * Say that the app shell around the montage scrolls, the way a browser's
+     * layout does. jsdom computes none, and which element scrolls is exactly
+     * what the observer has to resolve.
+     */
+    const shellScrolls = (scrolls: boolean) => {
+      document.body.style.overflowY = scrolls ? 'auto' : 'visible';
+      Object.defineProperty(document.body, 'scrollHeight', {
+        value: scrolls ? 4000 : 0,
+        configurable: true,
+      });
+      Object.defineProperty(document.body, 'clientHeight', { value: 800, configurable: true });
+    };
+
     beforeEach(() => {
       vi.useFakeTimers();
       installMockIntersectionObserver();
+      shellScrolls(true);
     });
 
     afterEach(() => {
       vi.useRealTimers();
+      shellScrolls(false);
       vi.unstubAllGlobals();
     });
 
@@ -1265,6 +1281,21 @@ describe('Montage Page', () => {
       rerender(<Montage />);
 
       expect(paused()).toBe('false');
+    });
+
+    it('roots the observer on the element that scrolls, not the grid container', () => {
+      // Outside fullscreen the grid container declares overflow-auto but its
+      // height is content-driven, so it never clips: all 74 tiles sit inside it
+      // and the observer reported the whole montage as in view, every time.
+      // That is why gating read `gated:0` on a device with nothing on screen
+      // (refs #507).
+      singleProfile();
+      manyMonitors(MONTAGE_GRID.viewportGatingMinTiles + 1);
+      measured(MONTAGE_GRID.viewportGatingMinTiles + 1);
+
+      render(<Montage />);
+
+      expect(latestIntersectionObserver().options?.root).toBe(document.body);
     });
 
     it('holds the whole grid while its tiles have no measured position', () => {

@@ -134,8 +134,12 @@ export default function Monitors() {
   // a browser opens to one host, so the cards out of view hold none at all
   // (refs #507). Both view modes share this: a list row is taller than a grid
   // tile, so a list puts even fewer cards on screen.
+  const tileIds = useMemo(
+    () => renderItems.map(({ Monitor, profileId }) => monitorCacheKey(profileId, Monitor.Id)),
+    [renderItems]
+  );
   const { isTileGated, registerTile, setListContainer } = useListViewportGating({
-    itemCount: renderItems.length,
+    itemIds: tileIds,
   });
 
   // useMonitorNewEvents stays current-profile-scoped for single mode, sharing
