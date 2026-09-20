@@ -18,3 +18,10 @@ the old one and says what changed.
   Several proposed "new" features already existed. Grep the code and the
   user guide before proposing; an inventory from a subagent alone misses
   things.
+- Deciding which montage tiles or monitor cards stream from where they sit on
+  screen (an IntersectionObserver over the grid). Built, fixed twice and
+  removed the same day: the observer needs layout geometry that the montage's
+  own container does not provide, four rounds of device logs never held a
+  single tile, and every test of it passed in jsdom while the device failed.
+  Paging (`monitorsPerPage`) is the sanctioned bound, because a slice needs no
+  geometry. Declined 2026-09-20; refs #507, #512, #513, #514, #515.
