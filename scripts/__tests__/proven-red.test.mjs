@@ -25,6 +25,7 @@ test('skipReason honors no-behavior commit types and source-less ranges', () => 
   const change = { unitTests: [], testSupport: [], source: ['app/src/a.ts'] };
   assert.match(skipReason('docs: tidy', change), /docs/);
   assert.match(skipReason('refactor(zones): split file', change), /refactor/);
+  assert.match(skipReason('revert(montage): drop viewport gating', change), /revert/);
   assert.equal(skipReason('fix(zones): scale coords', change), null);
   assert.equal(skipReason('feat!: breaking', change), null);
   assert.match(skipReason('fix: x', { unitTests: [], testSupport: [], source: [] }), /no source/);

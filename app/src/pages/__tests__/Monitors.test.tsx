@@ -1,17 +1,11 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Monitors from '../Monitors';
 import { ALL_PROFILES_ID } from '../../api/types';
 import { seedProfiles, resetProfileFixture, makeProfile } from '../../tests/profile-fixture';
 import { resetFakeStoreGates } from '../../tests/fake-store-gates';
 import { useSettingsStore } from '../../stores/settings';
-import { log } from '../../lib/logger';
-import { MONTAGE_GRID } from '../../lib/zmninja-ng-constants';
-import {
-  installMockIntersectionObserver,
-  latestIntersectionObserver,
-} from '../../tests/mock-intersection-observer';
 
 vi.mock('../../api/store-gates', () => import('../../tests/fake-store-gates'));
 vi.mock('../../lib/security/secureStorage', () => import('../../tests/fake-secure-storage'));
@@ -48,11 +42,6 @@ vi.mock('../../hooks/useMonitorNewEvents', () => ({
   scopedMonitorEventKey: (profileId: string, monitorId: string) => `${profileId}:${monitorId}`,
 }));
 
-vi.mock('../../lib/logger', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../lib/logger')>();
-  return { ...actual, log: { ...actual.log, monitor: vi.fn() } };
-});
-
 vi.mock('../../components/filters/GroupFilterSelect', () => ({
   GroupFilterSelect: () => <div data-testid="group-filter-select-stub" />,
 }));
@@ -63,20 +52,13 @@ vi.mock('../../components/monitors/MonitorCard', () => ({
     profileId,
     profileChip,
     newEventCount,
-    tileRef,
-    paused,
   }: {
     monitor: { Id: string; Name: string };
     profileId?: string;
     profileChip?: string;
     newEventCount?: number;
-    tileRef?: (element: HTMLElement | null) => void;
-    paused?: boolean;
   }) => (
-    // The real card puts tileRef on its own outer element and hands `paused`
-    // to the player; both are the seam viewport gating works through, so the
-    // double has to expose them or a gating test passes against nothing.
-    <div ref={tileRef} data-paused={String(!!paused)} data-testid={`monitor-card-${monitor.Id}`}>
+    <div data-testid={`monitor-card-${monitor.Id}`}>
       {monitor.Name}
       {profileChip && <span data-testid="monitor-profile-chip">{profileChip}</span>}
       {newEventCount !== undefined && (
@@ -111,7 +93,7 @@ vi.mock('../../components/monitors/AnalysisFramesToggle', () => ({
 }));
 
 const SETTINGS = {
-  monitorsViewMode: 'list' as 'list' | 'grid',
+  monitorsViewMode: 'list' as const,
   monitorsFeedFit: 'contain' as const,
   monitorGridCols: 2,
   monitorsGroupByServer: false,
@@ -126,10 +108,10 @@ function renderPage() {
   );
 }
 
-function singleProfile(overrides: Partial<typeof SETTINGS> = {}) {
+function singleProfile() {
   seedProfiles([makeProfile('profile-1', { name: 'Home' })], {
     current: 'profile-1',
-    settings: { 'profile-1': { ...SETTINGS, ...overrides } },
+    settings: { 'profile-1': SETTINGS },
   });
 }
 
@@ -352,143 +334,5 @@ describe('Monitors Page', () => {
     renderPage();
 
     expect(screen.getByTestId('profile-error-strip-profile-2')).toHaveTextContent('Office:');
-  });
-  // A long monitor list is the same problem as a big montage: a browser opens
-  // six connections to one host, so the cards below the fold queue requests
-  // ahead of the visible ones and the feeds on screen stay blank, silently
-  // (refs #507). Both view modes are covered - a list row is taller than a
-  // grid tile, so a list fits even fewer cards on screen.
-  describe('viewport gating', () => {
-    const manyMonitors = (count: number) => {
-      useScopedMonitorsMock.mockReturnValue({
-        monitors: Array.from({ length: count }, (_, i) => ({
-          profileId: 'profile-1',
-          profileName: 'Home',
-          item: {
-            Monitor: { Id: String(i + 1), Name: `Cam ${i + 1}`, Deleted: false },
-            Monitor_Status: { Status: 'Connected' },
-          },
-        })),
-        errors: [],
-        isLoading: false,
-        refetchProfile: vi.fn(),
-      });
-    };
-
-    /**
-     * What scrolls is the app shell around the page, not the page's own
-     * container, and jsdom computes no layout - so say so explicitly. Setting
-     * it on <body> is what the page walks up to find.
-     */
-    const shellScrolls = (scrolls: boolean) => {
-      document.body.style.overflowY = scrolls ? 'auto' : 'visible';
-      Object.defineProperty(document.body, 'scrollHeight', {
-        value: scrolls ? 4000 : 0,
-        configurable: true,
-      });
-      Object.defineProperty(document.body, 'clientHeight', { value: 800, configurable: true });
-    };
-
-    const allPaused = () =>
-      screen.getAllByTestId(/^monitor-card-/).map((el) => el.getAttribute('data-paused'));
-
-    const cardPaused = (id: string) =>
-      screen.getByTestId(`monitor-card-${id}`).getAttribute('data-paused');
-
-    beforeEach(() => {
-      installMockIntersectionObserver();
-      shellScrolls(true);
-    });
-
-    afterEach(() => {
-      shellScrolls(false);
-      vi.unstubAllGlobals();
-    });
-
-    it('holds every card in a long list until the observer places it', () => {
-      singleProfile();
-      manyMonitors(MONTAGE_GRID.viewportGatingMinTiles + 1);
-
-      renderPage();
-
-      // An unplaced card counts as gated, so none of them opens a connection
-      // it would have to close again a frame later.
-      expect(allPaused()).not.toContain('false');
-    });
-
-    it('holds every card in a long grid the same way', () => {
-      singleProfile({ monitorsViewMode: 'grid' });
-      manyMonitors(MONTAGE_GRID.viewportGatingMinTiles + 1);
-
-      renderPage();
-
-      expect(screen.getAllByTestId(/^monitor-card-/)).toHaveLength(
-        MONTAGE_GRID.viewportGatingMinTiles + 1
-      );
-      expect(allPaused()).not.toContain('false');
-    });
-
-    it('opens the card the observer reports in view and leaves the rest closed', () => {
-      singleProfile();
-      manyMonitors(MONTAGE_GRID.viewportGatingMinTiles + 1);
-
-      renderPage();
-      act(() => {
-        latestIntersectionObserver().fire([
-          { target: screen.getByTestId('monitor-card-1'), isIntersecting: true },
-        ]);
-      });
-
-      expect(cardPaused('1')).toBe('false');
-      expect(cardPaused('2')).toBe('true');
-    });
-
-    // The line a device log is read against: whether the page is gating at all.
-    it('reports whether the list is gating at all', () => {
-      singleProfile();
-      manyMonitors(MONTAGE_GRID.viewportGatingMinTiles + 1);
-      // Other tests in this file render the page too; only this render's line
-      // should be read.
-      vi.mocked(log.monitor).mockClear();
-
-      renderPage();
-
-      // The last line, not the first: the container arrives from a ref, so the
-      // first line is the page before it had one.
-      const reported = vi
-        .mocked(log.monitor)
-        .mock.calls.filter(([message]) => String(message).includes('List viewport gating'))
-        .at(-1);
-      expect(reported?.[2]).toMatchObject({
-        gated: MONTAGE_GRID.viewportGatingMinTiles + 1,
-        tiles: MONTAGE_GRID.viewportGatingMinTiles + 1,
-        enabled: true,
-      });
-    });
-
-    it('leaves a list short enough to fit on screen alone', () => {
-      singleProfile();
-      manyMonitors(MONTAGE_GRID.viewportGatingMinTiles);
-
-      renderPage();
-
-      expect(allPaused()).not.toContain('true');
-    });
-
-    it('roots the observer on the element that scrolls, not the page container', () => {
-      // The page's own container declares overflow-auto but its height is
-      // content-driven, so it never clips and every card sits inside it. An
-      // observer rooted there reports the whole list as in view and releases
-      // it, which is how montage gating shipped doing nothing (refs #507).
-      singleProfile();
-      manyMonitors(MONTAGE_GRID.viewportGatingMinTiles + 1);
-
-      renderPage();
-
-      const root = latestIntersectionObserver().options?.root;
-      expect(root).toBe(document.body);
-      expect(screen.getByTestId('monitor-grid').contains(root as Node)).toBe(false);
-    });
-
   });
 });

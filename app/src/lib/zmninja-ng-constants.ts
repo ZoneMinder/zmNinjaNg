@@ -1175,15 +1175,6 @@ export const MONTAGE_GRID = {
   // between, and without this each one would quit and remint a connkey on the
   // way past - more server work than the streaming it saves. Coming back into
   // view is not debounced; only leaving is (ms).
-  // A montage smaller than this fits on screen, so nothing is ever scrolled
-  // out and the observer would watch for a condition that cannot happen.
-  // Past it there are tiles nobody is looking at, and those are what starve
-  // the visible ones of the handful of connections a browser opens to one
-  // host, so gating turns itself on without a setting (refs #507). Gating is
-  // positional, not a cap: however many tiles are on screen, all of them stay
-  // live.
-  viewportGatingMinTiles: 10,
-
   viewportGatingLingerMs: 1_500,
 } as const;
 

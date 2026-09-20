@@ -749,17 +749,6 @@ export interface MonitorCardProps {
   profileId?: ProfileId | null;
   /** Owning profile's display name, rendered as a small chip. All mode only. */
   profileChip?: string;
-  /**
-   * Ref for the card's outer element, so a list can observe where this card
-   * sits and gate the feeds it cannot see (refs #507).
-   */
-  tileRef?: (element: HTMLElement | null) => void;
-  /**
-   * Hold no connection at all. A browser opens six connections to one host, so
-   * a long list of cards starves its visible feeds with requests for the ones
-   * below the fold; the cards out of view take this instead (refs #507).
-   */
-  paused?: boolean;
 }
 
 export interface EventCardProps {
