@@ -39,7 +39,13 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export const SKIP_TYPES = ['docs', 'chore', 'ci', 'refactor', 'build', 'style', 'test'];
+// `revert` is here because a revert cannot be proven red by construction: it
+// restores behaviour that the fork point already had, and it deletes the very
+// tests that proved the reverted change, so whatever remains passes against
+// the pre-change code. Demanding a red from it blocked a revert once already
+// (#510, refs #507). The proof a revert owes is that the tree matches the
+// commit being returned to, which `git diff` shows and a red test cannot.
+export const SKIP_TYPES = ['docs', 'chore', 'ci', 'refactor', 'build', 'style', 'test', 'revert'];
 
 // app/src/tests/ holds the repo-hygiene gates. A new assertion there is
 // proven red against a scratch violation (testing playbook), not against the
