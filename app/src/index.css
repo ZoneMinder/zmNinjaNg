@@ -293,9 +293,14 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
     --radius: 0.5rem;
+    /* Tells the engine to paint native widget chrome - the datetime-local
+       calendar button, scrollbars, the picker popup - for a light page.
+       Without it the calendar glyph stays black on the dark themes. */
+    color-scheme: light;
   }
 
   .dark {
+    color-scheme: dark;
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
     --card: 222.2 84% 4.9%;

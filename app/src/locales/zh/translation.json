@@ -174,6 +174,7 @@
     "subtitle": "查看录像",
     "event_id": "事件 ID",
     "date_range": "日期范围",
+    "open_date_picker": "打开日期选择器",
     "filters": "筛选",
     "clear_filters": "清除筛选",
     "refresh": "刷新",
