@@ -111,6 +111,12 @@ to 12 on a montage of nine changes nothing you can see. The same setting pages
 the Monitors screen, and the page you are on is not remembered - both screens
 open on the first page.
 
+**Edit layout** shows the whole montage, however small the page is, and the
+arrows disappear while you are editing. Arranging tiles is a job for the whole
+wall, and it means a drag or a resize can never lose the positions you set for
+cameras that happen to be on another page. Leaving edit mode puts you back on
+the page you were on.
+
 ### While aggregating
 
 Combining servers multiplies all of the above, so **Aggregate performance**

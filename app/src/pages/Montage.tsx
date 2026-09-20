@@ -29,7 +29,7 @@ import { MonitorPageControls } from '../components/monitors/MonitorPageControls'
 import { useHiddenPause } from '../hooks/useHiddenPause';
 import { useIdleAfter } from '../hooks/useIdleAfter';
 import { useViewportGating } from '../hooks/useViewportGating';
-import { MONTAGE_GRID } from '../lib/zmninja-ng-constants';
+import { MONITOR_PAGING, MONTAGE_GRID } from '../lib/zmninja-ng-constants';
 import { useGroupFilter } from '../hooks/useGroupFilter';
 import { useMontageGroupState } from '../hooks/useMontageGroupState';
 import { GroupFilterSelect } from '../components/filters/GroupFilterSelect';
@@ -165,17 +165,29 @@ export default function Montage() {
     [monitors, hiddenSet]
   );
 
+  // Edit mode state lifted to page level. Declared here because paging below
+  // turns itself off for it.
+  const [isEditMode, setIsEditMode] = useState(false);
+
   // Paging (refs #507): the slice happens BEFORE the stream budget below, not
   // after. A budget spent on the whole list and then paged would give page 1
   // the twelve tiles it allowed and page 2 the four that were left; paging
   // first hands each page its own budget, and in single mode - which has no
   // budget at all - this is the only bound on how many tiles mount.
   //
+  // Editing shows the WHOLE montage, never a page. Every layout write - a drag,
+  // a resize, apply-columns, fill-width, loading a saved layout - persists the
+  // layout react-grid-layout reports, and rgl only knows the tiles it was
+  // given. Paged, that array holds one page, so any reshape would write a
+  // `workingLayout` missing every other page and silently discard positions the
+  // user arranged (I2). Showing everything while editing keeps those six paths
+  // seeing the whole list, which is what they have always assumed.
+  //
   // Which page resets when the scope or the group filter changes, since page 4
   // of the previous list says nothing about this one.
   const paging = useMonitorPaging({
     items: visibleMonitors,
-    pageSize: settings.monitorsPerPage,
+    pageSize: isEditMode ? MONITOR_PAGING.off : settings.monitorsPerPage,
     resetKey: `${currentProfileId ?? ''}:${groupKey}`,
   });
 
@@ -252,8 +264,6 @@ export default function Montage() {
   const { counts: scopedNewEventCounts, newest: scopedNewestEventAt } =
     useScopedMonitorNewEvents(scopedMonitorRefs);
 
-  // Edit mode state lifted to page level
-  const [isEditMode, setIsEditMode] = useState(false);
   // Edit mode shows the pad whatever the setting says: a drag there reorders
   // tiles rather than scrolling, which is a fact about the mode rather than a
   // preference. The kebab entry writes the remembered setting (refs #365).
