@@ -58,6 +58,7 @@ vi.mock('../../lib/zm/url-builder', () => ({
 vi.mock('../../lib/zm/zm-constants', () => ({
   ZMS_COMMANDS: { cmdQuit: 'quit' },
   ZMS_FRAMES_PARAM_MIN_VERSION: '1.38.0',
+  ZM_DECODING_ONDEMAND: 'Ondemand',
 }));
 
 // Captured so a test can fire the resume the way returning to the foreground

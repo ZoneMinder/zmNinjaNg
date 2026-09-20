@@ -498,8 +498,6 @@
     "video_display_desc": "Configurer l'affichage des flux vidéo",
     "refresh_interval": "Intervalle d'actualisation",
     "refresh_interval_desc": "Fréquence d'actualisation des données",
-    "plain_snapshots_ondemand": "Instantanés rapides à la demande",
-    "plain_snapshots_ondemand_desc": "N'active pas le décodeur des caméras qui décodent à la demande. Bien plus rapide avec beaucoup de caméras, mais l'image peut se figer tant que la caméra n'est pas vue en direct.",
     "seconds": "secondes",
     "event_list_settings": "Paramètres de la liste d'événements",
     "event_list_desc": "Configurer la liste des événements",

@@ -498,8 +498,6 @@
     "video_display_desc": "Configura la visualizzazione dei flussi video",
     "refresh_interval": "Intervallo di aggiornamento",
     "refresh_interval_desc": "Frequenza di aggiornamento delle istantanee dei monitor live",
-    "plain_snapshots_ondemand": "Istantanee rapide su richiesta",
-    "plain_snapshots_ondemand_desc": "Non attiva il decoder sulle telecamere che decodificano su richiesta. Molto più veloce con tante telecamere, ma l'immagine può bloccarsi finché la telecamera non viene vista dal vivo.",
     "seconds": "secondi",
     "event_list_settings": "Impostazioni elenco eventi",
     "event_list_desc": "Configura l'elenco degli eventi",

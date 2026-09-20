@@ -134,11 +134,14 @@ export const ZMS_FRAMES_PARAM_MIN_VERSION = '1.37.61';
 export const ZMS_FULL_SCALE = 100;
 
 /**
- * Monitor `Decoding` value that keeps zmc decoding whether or not anyone is
- * watching. The others ('None', 'Ondemand', 'KeyFrames', 'KeyFrames+Ondemand')
- * decode on demand or not at all. Absent before ZM 1.37.
+ * Monitor `Decoding` value under which zmc decodes nothing at all until
+ * someone is watching, so shared memory holds no fresh picture between
+ * viewers. 'Always' decodes every frame, and the two keyframe modes
+ * ('KeyFrames', 'KeyFrames+Ondemand') keep decoding keyframes regardless, so
+ * all three leave a recent picture for a plain snapshot to read. 'None' never
+ * decodes, and no request shape changes that. Absent before ZM 1.37.
  */
-export const ZM_DECODING_ALWAYS = 'Always';
+export const ZM_DECODING_ONDEMAND = 'Ondemand';
 
 /**
  * Monitor Function States

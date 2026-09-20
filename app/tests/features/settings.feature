@@ -22,14 +22,6 @@ Feature: Application Settings
     Then the Streaming Mode row explains which mode it recommends
 
   @all
-  Scenario: Fast on-demand snapshots setting persists across navigation
-    When I navigate to the "Settings" page
-    And I turn on fast on-demand snapshots
-    And I navigate to the "Dashboard" page
-    And I navigate to the "Settings" page
-    Then fast on-demand snapshots should still be on
-
-  @all
   Scenario: Change language and verify visible text updates
     When I navigate to the "Settings" page
     Then I should see language selector

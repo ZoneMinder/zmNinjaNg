@@ -498,8 +498,6 @@
     "video_display_desc": "Konfigurieren Sie, wie Videostreams angezeigt werden",
     "refresh_interval": "Aktualisierungsintervall",
     "refresh_interval_desc": "Wie oft Daten aktualisiert werden sollen",
-    "plain_snapshots_ondemand": "Schnelle On-Demand-Snapshots",
-    "plain_snapshots_ondemand_desc": "Weckt den Decoder bei Kameras mit Dekodierung bei Bedarf nicht auf. Viel schneller bei vielen Kameras, aber ein Bild kann einfrieren, bis die Kamera live angesehen wird.",
     "seconds": "Sekunden",
     "event_list_settings": "Ereignislisten-Einstellungen",
     "event_list_desc": "Konfigurieren Sie die Ereignisliste",

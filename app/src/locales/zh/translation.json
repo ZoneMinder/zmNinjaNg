@@ -498,8 +498,6 @@
     "video_display_desc": "配置视频流显示方式",
     "refresh_interval": "刷新间隔",
     "refresh_interval_desc": "数据刷新频率",
-    "plain_snapshots_ondemand": "按需解码快速快照",
-    "plain_snapshots_ondemand_desc": "不唤醒按需解码摄像头的解码器。摄像头较多时快得多，但画面可能冻结，直到实时查看该摄像头。",
     "seconds": "秒",
     "event_list_settings": "事件列表设置",
     "event_list_desc": "配置事件列表",

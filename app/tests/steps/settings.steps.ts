@@ -152,31 +152,6 @@ Then('a visible menu item should change to the selected language', async ({ page
   }
 });
 
-// The row only renders in Snapshot mode, so put the profile there first: the
-// view-mode switch is checked while streaming.
-When('I turn on fast on-demand snapshots', async ({ page }) => {
-  const viewMode = page.getByTestId('settings-view-mode-switch');
-  await expect(viewMode).toBeVisible({ timeout: testConfig.timeouts.element });
-  if (await viewMode.isChecked()) await viewMode.click();
-
-  const toggle = page.getByTestId('settings-plain-snapshots-ondemand-switch');
-  await expect(toggle).toBeVisible({ timeout: testConfig.timeouts.element });
-  if (!(await toggle.isChecked())) await toggle.click();
-  await expect
-    .poll(() => toggle.isChecked(), { timeout: testConfig.timeouts.element })
-    .toBe(true);
-});
-
-Then('fast on-demand snapshots should still be on', async ({ page }) => {
-  // Settings is a lazy route; poll for the persisted state instead of taking
-  // one reading that can race the first render after navigating back.
-  const toggle = page.getByTestId('settings-plain-snapshots-ondemand-switch');
-  await expect(toggle).toBeVisible({ timeout: testConfig.timeouts.element });
-  await expect
-    .poll(() => toggle.isChecked().catch(() => false), { timeout: testConfig.timeouts.element })
-    .toBe(true);
-});
-
 When('I toggle a notification setting', async ({ page }) => {
   // NotificationSettings renders either "notification-settings" or its
   // "-empty" variant once the profile/settings are ready (src/pages/
