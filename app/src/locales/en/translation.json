@@ -498,6 +498,8 @@
     "video_display_desc": "Configure how video streams are displayed",
     "refresh_interval": "Refresh Interval",
     "refresh_interval_desc": "Snapshot refresh rate for live monitor feeds",
+    "plain_snapshots_ondemand": "Fast on-demand snapshots",
+    "plain_snapshots_ondemand_desc": "Skips waking the decoder on cameras that decode on demand. Much faster with many cameras, but a picture can freeze until the camera is viewed live.",
     "seconds": "seconds",
     "event_list_settings": "Event List Settings",
     "event_list_desc": "Configure the events list",

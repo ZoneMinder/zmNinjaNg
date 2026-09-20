@@ -498,6 +498,8 @@
     "video_display_desc": "Configurar cómo se muestran las transmisiones de video",
     "refresh_interval": "Intervalo de Actualización",
     "refresh_interval_desc": "Con qué frecuencia actualizar datos",
+    "plain_snapshots_ondemand": "Instantáneas rápidas bajo demanda",
+    "plain_snapshots_ondemand_desc": "No activa el decodificador en cámaras que decodifican bajo demanda. Mucho más rápido con muchas cámaras, pero la imagen puede congelarse hasta ver la cámara en directo.",
     "seconds": "segundos",
     "event_list_settings": "Configuración de Lista de Eventos",
     "event_list_desc": "Configurar la lista de eventos",
