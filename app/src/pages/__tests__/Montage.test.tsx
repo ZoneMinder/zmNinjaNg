@@ -970,8 +970,24 @@ describe('Montage Page', () => {
       });
     };
 
+    const manyMonitors = (count: number) => {
+      useScopedMonitorsMock.mockReturnValue({
+        monitors: Array.from({ length: count }, (_, i) => ({
+          profileId: 'profile-1',
+          profileName: 'Home',
+          item: monitor(String(i + 1), `Cam ${i + 1}`),
+        })),
+        errors: [],
+        isLoading: false,
+        refetchProfile: vi.fn(),
+      });
+    };
+
     const paused = () =>
       screen.getByTestId('montage-tile-tuning').getAttribute('data-paused');
+
+    const allPaused = () =>
+      screen.getAllByTestId('montage-tile-tuning').map((el) => el.getAttribute('data-paused'));
 
     /**
      * The element the page actually handed the observer for this tile, found
@@ -1062,6 +1078,33 @@ describe('Montage Page', () => {
       expect(paused()).toBe('false');
       act(() => { vi.advanceTimersByTime(MONTAGE_GRID.viewportGatingLingerMs * 2); });
       expect(paused()).toBe('false');
+    });
+
+    // A montage only has tiles nobody is looking at once it outgrows the screen,
+    // and below that the observer would run for nothing. Past the threshold the
+    // off-screen tiles are what starve the visible ones of the handful of
+    // connections a browser opens to one host, so gating turns itself on
+    // without waiting for a setting nobody in single mode can reach (refs #507).
+    it('gates a single-profile montage once it passes the tile threshold', () => {
+      singleProfile();
+      manyMonitors(MONTAGE_GRID.viewportGatingMinTiles + 1);
+
+      render(<Montage />);
+
+      // Nothing has been measured yet, and an unmeasured tile counts as gated,
+      // so no tile mints a connkey it would have to quit a frame later.
+      expect(allPaused()).not.toContain('false');
+    });
+
+    it('leaves a montage at the threshold alone, setting or no setting', () => {
+      singleProfile();
+      manyMonitors(MONTAGE_GRID.viewportGatingMinTiles);
+
+      render(<Montage />);
+
+      expect(allPaused()).not.toContain('true');
+      act(() => { vi.advanceTimersByTime(MONTAGE_GRID.viewportGatingLingerMs * 2); });
+      expect(allPaused()).not.toContain('true');
     });
 
     it('never gates in single mode, whatever the ALL bucket says', () => {

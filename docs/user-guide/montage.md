@@ -92,6 +92,24 @@ For a per-platform breakdown of where the ~6-stream limit applies, see {ref}`Con
 If you have many cameras, use **Low bandwidth mode** in Settings to reduce data usage. You can also filter to show only the cameras you need, or use saved layouts to switch between different subsets.
 :::
 
+### Off-screen tiles
+
+A montage of more than 10 cameras is taller than the screen, so most of it is
+scrolled out of sight. Those hidden tiles would still be fetching pictures and
+competing for the handful of connections the server allows, which is what makes
+the tiles you are actually looking at fill slowly. Past that size the app stops
+a tile once it is roughly a screen's worth beyond the edge of the grid, and
+starts it again as you scroll back.
+
+This is about position, not a limit on how many tiles can be live: however many
+fit on your screen, all of them keep running. A tile you scroll quickly past
+keeps its connection for a second or two, so moving through a long grid does not
+restart everything on the way. A tile that has been out of sight for longer
+shows its loading placeholder for a moment when you come back to it.
+
+Nothing to configure: it applies by itself above 10 cameras and does nothing
+below that, where the whole grid is on screen anyway.
+
 ### While aggregating
 
 Combining servers multiplies all of the above, so **Aggregate performance**

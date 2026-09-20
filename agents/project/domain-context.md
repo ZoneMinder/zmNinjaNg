@@ -142,6 +142,14 @@ matching reality, fixing it is a protocol change like any rule edit.
   WebView suspends with the app and is not obliged to report an app state
   change as a visibility change. Pair it with Capacitor `appStateChange`.
   Notifications learned this in #274 and streams re-learned it in #352.
+- A montage past `MONTAGE_GRID.viewportGatingMinTiles` tiles gates on the
+  viewport in BOTH modes, not just while aggregating: the off-screen tiles are
+  what starve the visible ones of the six connections a browser opens to one
+  host, and single mode cannot reach `allModeViewportGating` at all (that
+  switch still forces gating on for a smaller aggregate, which is what #337
+  added it for). Gating is positional, never a cap - every tile on screen stays
+  live however many that is, so it does not fix contention among visible tiles
+  on a dense grid. #507.
 - Tauri snapshot thumbnails fetch as blob URLs, or WebKitGTK leaks sockets;
   same constraint as the MJPEG workaround, separate code path (7e121140).
 - iOS video.js fullscreen: CSS overrides cannot reliably intercept the
