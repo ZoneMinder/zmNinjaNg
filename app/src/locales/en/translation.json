@@ -164,7 +164,10 @@
     "view_events": "Events",
     "group_by_server": "Group by server",
     "stream_permission_denied": "No streaming permission for this account.",
-    "no_monitor_permission": "This account has no monitor permissions."
+    "no_monitor_permission": "This account has no monitor permissions.",
+    "page_previous": "Previous page",
+    "page_next": "Next page",
+    "page_position": "{{page}} / {{pages}}"
   },
   "events": {
     "title": "Events",
@@ -666,7 +669,9 @@
         "live_activity": "Live Activity tiles",
         "event_context": "Nearby events"
       }
-    }
+    },
+    "monitors_per_page": "Monitors per page",
+    "monitors_per_page_desc": "Show this many monitors at a time on the Montage and Monitors screens, with arrows to step through the pages. A browser opens only six connections to one server, so a wall of cameras leaves most of its feeds waiting and blank; a smaller page fills faster. 0 turns paging off and puts every monitor on one page."
   },
   "ssl": {
     "trust_dialog_title": "Untrusted Certificate",

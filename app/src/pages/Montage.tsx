@@ -24,6 +24,8 @@ import { resolveQueryError } from '../lib/query/query-error';
 import { EmptyState } from '../components/ui/empty-state';
 import { filterMonitorsByGroup } from '../lib/monitor/filters';
 import { allocateStreamBudget } from '../lib/monitor/stream-budget';
+import { useMonitorPaging } from '../hooks/useMonitorPaging';
+import { MonitorPageControls } from '../components/monitors/MonitorPageControls';
 import { useHiddenPause } from '../hooks/useHiddenPause';
 import { useIdleAfter } from '../hooks/useIdleAfter';
 import { useViewportGating } from '../hooks/useViewportGating';
@@ -163,6 +165,20 @@ export default function Montage() {
     [monitors, hiddenSet]
   );
 
+  // Paging (refs #507): the slice happens BEFORE the stream budget below, not
+  // after. A budget spent on the whole list and then paged would give page 1
+  // the twelve tiles it allowed and page 2 the four that were left; paging
+  // first hands each page its own budget, and in single mode - which has no
+  // budget at all - this is the only bound on how many tiles mount.
+  //
+  // Which page resets when the scope or the group filter changes, since page 4
+  // of the previous list says nothing about this one.
+  const paging = useMonitorPaging({
+    items: visibleMonitors,
+    pageSize: settings.monitorsPerPage,
+    resetKey: `${currentProfileId ?? ''}:${groupKey}`,
+  });
+
   // Stream cap (refs #337, Phase 4 Task 1): All mode only - single mode stays
   // unlimited (byte-identical). Without it, N profiles each contributing every
   // enabled monitor could open dozens of simultaneous streams across
@@ -178,17 +194,17 @@ export default function Montage() {
   // instead of handing the first N to whichever server sorts first; the total
   // is the same, so the overflow count still describes the dropped tiles.
   const maxStreams = settings.allModeMaxStreams;
-  const overflowCount = isAllMode && visibleMonitors.length > maxStreams
-    ? visibleMonitors.length - maxStreams
+  const overflowCount = isAllMode && paging.items.length > maxStreams
+    ? paging.items.length - maxStreams
     : 0;
   // Memoized so the query-input memos below keep their identity across a
   // render that changed nothing about which tiles are on screen.
   const cappedMonitors = useMemo(
     () =>
       overflowCount > 0
-        ? allocateStreamBudget(visibleMonitors, maxStreams, (m) => m.profileId ?? '')
-        : visibleMonitors,
-    [overflowCount, visibleMonitors, maxStreams]
+        ? allocateStreamBudget(paging.items, maxStreams, (m) => m.profileId ?? '')
+        : paging.items,
+    [overflowCount, paging.items, maxStreams]
   );
 
   // Reduced stream tuning (refs #337): another ALL-bucket knob, so it is read
@@ -640,6 +656,16 @@ export default function Montage() {
                 <Maximize className="h-4 w-4" />
               </Button>
               <NinjiiToolbarButton />
+              {/* Only once there is a second page, so a montage that fits looks
+                  exactly as it did before paging existed (refs #507). */}
+              {paging.isPaged && (
+                <MonitorPageControls
+                  page={paging.page}
+                  pages={paging.pages}
+                  onGoToPage={paging.goToPage}
+                  testIdPrefix="montage"
+                />
+              )}
               <RefreshButton size="sm" className="h-8 sm:h-9" data-testid="montage-refresh-button" />
               <MontageKebabMenu
                 items={visibilityItems}

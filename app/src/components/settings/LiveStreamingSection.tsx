@@ -17,6 +17,7 @@ import { Badge } from '../ui/badge';
 import { Checkbox } from '../ui/checkbox';
 import { Label } from '../ui/label';
 import { CollapsibleSection, SettingsCard, SettingsRow, RowLabel } from './SettingsLayout';
+import { MonitorsPerPageRow } from './MonitorsPerPageRow';
 import { getBandwidthSettings, type BandwidthMode } from '../../lib/zmninja-ng-constants';
 import { getMonitors } from '../../api/monitors';
 import { getSession } from '../../services/sessions';
@@ -225,6 +226,11 @@ export function LiveStreamingSection({
             </div>
           </div>
         )}
+
+        <MonitorsPerPageRow
+          value={settings.monitorsPerPage}
+          onChange={(next) => update('monitorsPerPage', next)}
+        />
 
         {/* Go2RTC */}
         <SettingsRow>

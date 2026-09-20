@@ -1450,4 +1450,92 @@ describe('Montage Page', () => {
     expect(screen.getByTestId('montage-group-toggle-profile-1')).toHaveTextContent('Home');
     expect(screen.getByTestId('montage-group-toggle-profile-1')).toHaveAttribute('aria-expanded', 'false');
   });
+  // Paging (refs #507). The gating this replaced could only be checked against
+  // faked geometry, and passed in jsdom while failing on a device; a slice is
+  // checkable for real - count what mounted.
+  describe('paging', () => {
+    const manyMonitors = (count: number) => {
+      useScopedMonitorsMock.mockReturnValue({
+        monitors: Array.from({ length: count }, (_, i) => ({
+          profileId: 'profile-1',
+          profileName: 'Home',
+          item: monitor(String(i + 1), `Cam ${i + 1}`),
+        })),
+        errors: [],
+        isLoading: false,
+        refetchProfile: vi.fn(),
+      });
+    };
+
+    const mountedTileIds = () =>
+      screen
+        .getAllByTestId(/^montage-monitor-/)
+        .map((el) => el.getAttribute('data-testid'));
+
+    it('mounts one page of tiles and no more', () => {
+      singleProfile({ monitorsPerPage: 12 });
+      manyMonitors(74);
+
+      render(<Montage />);
+
+      // Not "hidden" or "paused": the other 62 tiles never mount, so they hold
+      // no connection at all.
+      expect(mountedTileIds()).toHaveLength(12);
+      // The i18n stub appends interpolated values, so this asserts the numbers
+      // reach the control, not just that it rendered.
+      expect(screen.getByTestId('montage-page-position')).toHaveTextContent(
+        'monitors.page_position-1-7'
+      );
+    });
+
+    it('mounts a disjoint page when you step forward', () => {
+      singleProfile({ monitorsPerPage: 12 });
+      manyMonitors(74);
+
+      render(<Montage />);
+      const first = mountedTileIds();
+      fireEvent.click(screen.getByTestId('montage-page-next'));
+      const second = mountedTileIds();
+
+      expect(second).toHaveLength(12);
+      expect(second.some((id) => first.includes(id))).toBe(false);
+      expect(screen.getByTestId('montage-page-position')).toHaveTextContent(
+        'monitors.page_position-2-7'
+      );
+    });
+
+    it('gives the last page only what is left, and cannot step past it', () => {
+      singleProfile({ monitorsPerPage: 24 });
+      manyMonitors(74);
+
+      render(<Montage />);
+      fireEvent.click(screen.getByTestId('montage-page-next'));
+      fireEvent.click(screen.getByTestId('montage-page-next'));
+      fireEvent.click(screen.getByTestId('montage-page-next'));
+
+      expect(mountedTileIds()).toHaveLength(74 - 72);
+      expect(screen.getByTestId('montage-page-next')).toBeDisabled();
+    });
+
+    it('mounts every tile and renders no control while paging is off', () => {
+      // The default. A montage that never had paging must look untouched.
+      singleProfile({ monitorsPerPage: 0 });
+      manyMonitors(74);
+
+      render(<Montage />);
+
+      expect(mountedTileIds()).toHaveLength(74);
+      expect(screen.queryByTestId('montage-page-controls')).toBeNull();
+    });
+
+    it('renders no control when the whole list fits on one page', () => {
+      singleProfile({ monitorsPerPage: 12 });
+      manyMonitors(9);
+
+      render(<Montage />);
+
+      expect(mountedTileIds()).toHaveLength(9);
+      expect(screen.queryByTestId('montage-page-controls')).toBeNull();
+    });
+  });
 });
