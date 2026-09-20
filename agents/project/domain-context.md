@@ -138,6 +138,16 @@ matching reality, fixing it is a protocol change like any rule edit.
   12 tiles painted in 14 seconds and nothing was reported; the same test against
   a 300ms server painted 112. A snapshot tile therefore skips its tick while its
   own request is in flight (`snapshotInFlightCeilingMs` bounds the wait). #507.
+- The bound on how many tiles compete for those six connections is a page
+  (`monitorsPerPage`, `lib/monitor/paging.ts`), not anything derived from where
+  a tile sits. Position-based gating was built, fixed twice and removed: an
+  IntersectionObserver needs the page's layout geometry readable at the moment
+  it is built, and the montage's grid container declares `overflow-auto` while
+  its height stays content-driven, so it never clips and reports every tile as
+  in view. Four rounds of device logs read `gated:0` with nothing on screen.
+  A slice needs no geometry and is provable in a unit test, which is the
+  difference that matters: every gating test passed in jsdom while the device
+  failed. #507, #512-#515.
 - `visibilitychange` alone is not a reliable resume signal on native: the
   WebView suspends with the app and is not obliged to report an app state
   change as a visibility change. Pair it with Capacitor `appStateChange`.

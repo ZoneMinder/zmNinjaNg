@@ -16,6 +16,21 @@ Tap a card to open the [Monitor Detail](#monitor-detail) view.
 
 On desktop, hovering a monitor card for a moment opens a larger (400px wide) live preview next to the card. The preview uses its own streaming connection that is opened when the preview appears and closed the moment your cursor leaves. The underlying card remains clickable while the preview is visible.
 
+### Paging a long list
+
+A browser opens only six connections to one server, so on a long list most
+cards queue behind the six at the top and stay blank while they wait.
+**Monitors per page** in {doc}`settings` shows a fixed number of monitors at a
+time, with arrows in the toolbar to step through the rest; the cards on other
+pages are not built, so nothing competes with the ones in front of you. It
+applies to both the list and the grid layout, and to the {doc}`montage` as
+well.
+
+It is off by default, which means one page holding every monitor. The arrows
+appear only when there is a second page, and the count beside the screen's
+title always describes every camera in view of the current filter, not just the
+page you are on.
+
 ## Filtering Monitors
 
 Use the **Groups** selector at the top of the screen to filter by ZoneMinder monitor group. The selection persists across navigation within the same session.

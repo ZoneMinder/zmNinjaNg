@@ -92,6 +92,25 @@ For a per-platform breakdown of where the ~6-stream limit applies, see {ref}`Con
 If you have many cameras, use **Low bandwidth mode** in Settings to reduce data usage. You can also filter to show only the cameras you need, or use saved layouts to switch between different subsets.
 :::
 
+### Paging a long list
+
+With more than a handful of cameras the montage asks the server for every feed
+at once, and a browser only opens six connections to one server. The rest queue
+behind those six, so on a large montage most tiles sit empty and the ones you
+are looking at fill slowly.
+
+**Monitors per page** in {doc}`settings` splits the grid into pages instead:
+set it to 12 and the montage shows twelve tiles with arrows in the toolbar to
+step through the rest. The tiles on the other pages are not running in the
+background, they are not built at all, so nothing competes with what is in
+front of you. Twelve fill about as fast as twelve can.
+
+It is off by default, and off means what it always did: one page with every
+camera on it. The arrows appear only when there is a second page, so setting it
+to 12 on a montage of nine changes nothing you can see. The same setting pages
+the Monitors screen, and the page you are on is not remembered - both screens
+open on the first page.
+
 ### While aggregating
 
 Combining servers multiplies all of the above, so **Aggregate performance**
@@ -109,7 +128,7 @@ you are on a single server.
   and opens it again as you scroll back. A tile you scroll past keeps its
   connection for a second or two, so moving through a long grid does not
   reconnect everything you pass. This changes which cameras are streaming,
-  never which are on the page: the stream limit still decides that, and
+  never which tiles are in the grid: the stream limit still decides that, and
   scrolling does not bring an overflow camera in.
 - **Idle timeout** drops the tiles to periodic snapshots after the minutes you
   set with no touch, click or keypress. Any interaction puts them back, and so

@@ -24,6 +24,8 @@ import { EmptyState } from '../components/ui/empty-state';
 import { resolveQueryError } from '../lib/query/query-error';
 import { RefreshButton } from '../components/common/RefreshButton';
 import { MonitorCard } from '../components/monitors/MonitorCard';
+import { MonitorPageControls } from '../components/monitors/MonitorPageControls';
+import { useMonitorPaging } from '../hooks/useMonitorPaging';
 import { ViewOptionsMenu, FeedFitItems, AnalysisFramesItem, ViewOptionsSeparator } from '../components/common/view-options';
 import { NinjiiToolbarButton } from '../components/assistant/NinjiiToolbarButton';
 import { MonitorSettingsDialog } from '../components/monitor-detail/MonitorSettingsDialog';
@@ -116,6 +118,15 @@ export default function Monitors() {
         : filterMonitorsByGroup(unwrapped, filteredMonitorIds);
     return filtered.map(({ Monitor, Monitor_Status }) => ({ Monitor, Monitor_Status }));
   }, [isAllMode, scopedMonitors, isFilterActive, filteredMonitorIds]);
+
+  // Paging (refs #507, see lib/monitor/paging). `renderItems` stays the whole
+  // scope, which the header count and the error strips describe; only what is
+  // rendered is sliced.
+  const paging = useMonitorPaging({
+    items: renderItems,
+    pageSize: settings.monitorsPerPage,
+    resetKey: `${currentProfileId ?? ''}:${isFilterActive ? filteredMonitorIds.join(',') : ''}`,
+  });
 
   // Raw per-profile monitor counts, independent of the group filter above:
   // used only to decide whether a profile's error strip shows (a profile
@@ -310,7 +321,7 @@ export default function Monitors() {
   // Section renderItems by owning server when the toggle is on. All mode
   // only - single mode never has more than one profile to group by.
   const groupedSections = isAllMode && settings.monitorsGroupByServer
-    ? groupByOwningProfile(renderItems)
+    ? groupByOwningProfile(paging.items)
     : null;
 
   return (
@@ -372,6 +383,14 @@ export default function Monitors() {
             />
           )}
           <NinjiiToolbarButton />
+          {paging.isPaged && (
+            <MonitorPageControls
+              page={paging.page}
+              pages={paging.pages}
+              onGoToPage={paging.goToPage}
+              testIdPrefix="monitors"
+            />
+          )}
           <RefreshButton
             className="h-8 w-8 sm:h-9 sm:w-9"
             data-testid="monitors-refresh-button"
@@ -447,7 +466,7 @@ export default function Monitors() {
             renderItems={(items) => renderMonitorSection(items, false)}
           />
         ) : (
-          renderMonitorSection(renderItems, true)
+          renderMonitorSection(paging.items, true)
         )}
       </div>
 

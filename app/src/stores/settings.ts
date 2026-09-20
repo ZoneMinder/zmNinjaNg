@@ -9,6 +9,7 @@ import {
   ASSISTANT,
   DEFAULT_EVENT_PLAYBACK_RATE,
   LIVE_ACTIVITY,
+  MONITOR_PAGING,
   MONTAGE_GRID,
   NOTIFICATIONS_SERVICE,
   STORAGE_KEYS,
@@ -230,6 +231,14 @@ export interface ProfileSettings {
    *  allowed, never to which tiles exist. Stored under the ALL settings
    *  bucket (refs #337). */
   allModeViewportGating: boolean;
+  /** How many monitors the Montage and the Monitors screen show at once, as
+   *  pages you step through. 0 is off: one page holding every monitor, which
+   *  is what the app did before this existed. A browser opens six connections
+   *  to one host, so a wall of cameras queues most of its requests behind each
+   *  other and the visible feeds stay blank; a page small enough to fit the
+   *  connections is the bound that fixes it, and unlike anything based on
+   *  scroll position it does not depend on where a tile sits (refs #507). */
+  monitorsPerPage: number;
   monitorGridCols: number; // Grid columns for Monitors page grid view
   monitorDetailFeedFit: MonitorFeedFit; // Object-fit for monitor detail feed
   eventsThumbnailFit: MonitorFeedFit; // Object-fit for event thumbnails
@@ -485,6 +494,7 @@ export const DEFAULT_SETTINGS: ProfileSettings = {
   allModePauseHidden: false,
   allModeIdleMinutes: 0,
   allModeViewportGating: false,
+  monitorsPerPage: 0,
   monitorGridCols: 2,
   monitorDetailFeedFit: 'contain',
   eventsThumbnailFit: 'contain',
@@ -619,6 +629,15 @@ export function mergeProfileSettings(raw: Partial<ProfileSettings> | undefined):
     !START_SCREENS.some((screen) => screen.path === merged.startScreen)
   ) {
     merged.startScreen = START_SCREEN_LAST_USED;
+  }
+  // A hand-edited blob, or a future picker offering a value this build does not,
+  // must not page the montage into fractional or negative pages. A plain number
+  // is clamped in place: rebuilding a nested object here would hand every
+  // `useShallow` reader a new identity on each merge (Settings contract).
+  if (!Number.isInteger(merged.monitorsPerPage) || merged.monitorsPerPage < 0) {
+    merged.monitorsPerPage = DEFAULT_SETTINGS.monitorsPerPage;
+  } else if (merged.monitorsPerPage > MONITOR_PAGING.maxPageSize) {
+    merged.monitorsPerPage = MONITOR_PAGING.maxPageSize;
   }
   coerceAllModePerformance(merged, DEFAULT_SETTINGS);
   coerceEventContext(merged, DEFAULT_SETTINGS);

@@ -93,7 +93,7 @@ vi.mock('../../components/monitors/AnalysisFramesToggle', () => ({
 }));
 
 const SETTINGS = {
-  monitorsViewMode: 'list' as const,
+  monitorsViewMode: 'list' as 'list' | 'grid',
   monitorsFeedFit: 'contain' as const,
   monitorGridCols: 2,
   monitorsGroupByServer: false,
@@ -108,10 +108,10 @@ function renderPage() {
   );
 }
 
-function singleProfile() {
+function singleProfile(settingsOverrides: Partial<typeof SETTINGS & { monitorsPerPage: number }> = {}) {
   seedProfiles([makeProfile('profile-1', { name: 'Home' })], {
     current: 'profile-1',
-    settings: { 'profile-1': SETTINGS },
+    settings: { 'profile-1': { ...SETTINGS, ...settingsOverrides } },
   });
 }
 
@@ -334,5 +334,84 @@ describe('Monitors Page', () => {
     renderPage();
 
     expect(screen.getByTestId('profile-error-strip-profile-2')).toHaveTextContent('Office:');
+  });
+  // Paging (refs #507): both view modes, since the list and the grid render
+  // through one renderMonitorSection and a regression in either would be
+  // invisible from the other.
+  describe('paging', () => {
+    const manyMonitors = (count: number) => {
+      useScopedMonitorsMock.mockReturnValue({
+        monitors: Array.from({ length: count }, (_, i) => ({
+          profileId: 'profile-1',
+          profileName: 'Home',
+          item: {
+            Monitor: { Id: String(i + 1), Name: `Cam ${i + 1}`, Deleted: false },
+            Monitor_Status: { Status: 'Connected' },
+          },
+        })),
+        errors: [],
+        isLoading: false,
+        refetchProfile: vi.fn(),
+      });
+    };
+
+    const mountedCardIds = () =>
+      screen.getAllByTestId(/^monitor-card-/).map((el) => el.getAttribute('data-testid'));
+
+    it('mounts one page of cards in the list view', () => {
+      singleProfile({ monitorsPerPage: 12 });
+      manyMonitors(74);
+
+      renderPage();
+
+      expect(mountedCardIds()).toHaveLength(12);
+      // This file's i18n stub returns the bare key, so the numbers are asserted
+      // through the controls instead: page 1 of several cannot step back.
+      expect(screen.getByTestId('monitors-page-previous')).toBeDisabled();
+      expect(screen.getByTestId('monitors-page-next')).toBeEnabled();
+    });
+
+    it('mounts one page of cards in the grid view', () => {
+      singleProfile({ monitorsViewMode: 'grid', monitorsPerPage: 6 });
+      manyMonitors(74);
+
+      renderPage();
+
+      expect(mountedCardIds()).toHaveLength(6);
+    });
+
+    it('mounts a disjoint page when you step forward', () => {
+      singleProfile({ monitorsPerPage: 12 });
+      manyMonitors(74);
+
+      renderPage();
+      const first = mountedCardIds();
+      fireEvent.click(screen.getByTestId('monitors-page-next'));
+      const second = mountedCardIds();
+
+      expect(second).toHaveLength(12);
+      expect(second.some((id) => first.includes(id))).toBe(false);
+    });
+
+    it('keeps the header count describing the whole scope, not the page', () => {
+      // The count answers "how many cameras do I have", which paging does not
+      // change. Only what is rendered is sliced.
+      singleProfile({ monitorsPerPage: 12 });
+      manyMonitors(74);
+
+      renderPage();
+
+      expect(screen.getByText('count-74')).toBeVisible();
+    });
+
+    it('mounts every card and renders no control while paging is off', () => {
+      singleProfile({ monitorsPerPage: 0 });
+      manyMonitors(74);
+
+      renderPage();
+
+      expect(mountedCardIds()).toHaveLength(74);
+      expect(screen.queryByTestId('monitors-page-controls')).toBeNull();
+    });
   });
 });

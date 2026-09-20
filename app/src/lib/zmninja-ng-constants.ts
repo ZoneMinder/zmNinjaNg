@@ -160,6 +160,32 @@ export const GRID_LAYOUT = {
 } as const;
 
 /**
+ * Monitor paging
+ *
+ * The Montage and the Monitors screen show `monitorsPerPage` monitors at a
+ * time. A browser opens six connections to one host, so a wall of cameras
+ * queues most of its image requests behind each other and the visible feeds
+ * stay blank - silently, because a queued load reports nothing (refs #507).
+ * A page is the bound that fixes it, and unlike anything derived from scroll
+ * position it holds wherever a tile happens to sit.
+ */
+export const MONITOR_PAGING = {
+  // Offered in Settings next to the number box. 6 matches the per-host
+  // connection limit exactly, so every monitor on a page gets a connection at
+  // once; the larger sizes trade first paint for fewer page turns.
+  sizeOptions: [6, 12, 24] as const,
+
+  // A page size of 0 is off: one page with everything on it, which is what the
+  // app did before paging existed and remains the default.
+  off: 0,
+
+  // Nothing about the app breaks above this, but a "page" of a thousand tiles
+  // is not a page, and it is the ceiling a hand-edited settings blob is
+  // clamped to.
+  maxPageSize: 200,
+} as const;
+
+/**
  * Montage Scroll Pad
  *
  * The edit-mode pad that scrolls the grid when every tile is a drag surface

@@ -164,7 +164,10 @@
     "view_events": "事件",
     "group_by_server": "按服务器分组",
     "stream_permission_denied": "此账户没有视频流权限。",
-    "no_monitor_permission": "此账户没有监视器权限。"
+    "no_monitor_permission": "此账户没有监视器权限。",
+    "page_previous": "上一页",
+    "page_next": "下一页",
+    "page_position": "{{page}} / {{pages}}"
   },
   "events": {
     "title": "事件",
@@ -666,7 +669,9 @@
         "live_activity": "实时活动图块",
         "event_context": "附近事件"
       }
-    }
+    },
+    "monitors_per_page": "每页监视器数量",
+    "monitors_per_page_desc": "在拼接视图和监视器页面每次显示这么多监视器，并用箭头翻页。浏览器对同一服务器只开六个连接，摄像头很多时大部分画面都在排队等待、保持空白；页面小一些就能更快填满。填 0 表示关闭分页，把所有监视器放在一页。"
   },
   "ssl": {
     "trust_dialog_title": "不受信任的证书",

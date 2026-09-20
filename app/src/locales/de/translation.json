@@ -164,7 +164,10 @@
     "view_events": "Ereignisse",
     "group_by_server": "Nach Server gruppieren",
     "stream_permission_denied": "Dieses Konto hat keine Streaming-Berechtigung.",
-    "no_monitor_permission": "Dieses Konto hat keine Monitor-Berechtigungen."
+    "no_monitor_permission": "Dieses Konto hat keine Monitor-Berechtigungen.",
+    "page_previous": "Vorherige Seite",
+    "page_next": "Nächste Seite",
+    "page_position": "{{page}} / {{pages}}"
   },
   "events": {
     "title": "Ereignisse",
@@ -666,7 +669,9 @@
         "live_activity": "Live-Aktivität-Kacheln",
         "event_context": "Ereignisse in der Nähe"
       }
-    }
+    },
+    "monitors_per_page": "Monitore pro Seite",
+    "monitors_per_page_desc": "So viele Monitore gleichzeitig in der Montage und auf der Monitorseite zeigen, mit Pfeilen zum Blättern. Ein Browser öffnet nur sechs Verbindungen zu einem Server, daher warten bei vielen Kameras die meisten Bilder und bleiben leer; eine kleinere Seite lädt schneller. 0 schaltet das Blättern ab und zeigt alle Monitore auf einer Seite."
   },
   "ssl": {
     "trust_dialog_title": "Nicht vertrauenswürdiges Zertifikat",

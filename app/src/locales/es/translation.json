@@ -164,7 +164,10 @@
     "view_events": "Eventos",
     "group_by_server": "Agrupar por servidor",
     "stream_permission_denied": "Esta cuenta no tiene permiso de streaming.",
-    "no_monitor_permission": "Esta cuenta no tiene permisos de monitores."
+    "no_monitor_permission": "Esta cuenta no tiene permisos de monitores.",
+    "page_previous": "Página anterior",
+    "page_next": "Página siguiente",
+    "page_position": "{{page}} / {{pages}}"
   },
   "events": {
     "title": "Eventos",
@@ -666,7 +669,9 @@
         "live_activity": "Mosaicos de Actividad en vivo",
         "event_context": "Eventos cercanos"
       }
-    }
+    },
+    "monitors_per_page": "Monitores por página",
+    "monitors_per_page_desc": "Muestra esta cantidad de monitores a la vez en el Montaje y en la pantalla de Monitores, con flechas para cambiar de página. Un navegador abre solo seis conexiones a un servidor, así que con muchas cámaras la mayoría de las imágenes esperan y quedan en blanco; una página más pequeña se llena antes. 0 desactiva las páginas y muestra todos los monitores en una."
   },
   "ssl": {
     "trust_dialog_title": "Certificado no confiable",
