@@ -142,14 +142,6 @@ matching reality, fixing it is a protocol change like any rule edit.
   WebView suspends with the app and is not obliged to report an app state
   change as a visibility change. Pair it with Capacitor `appStateChange`.
   Notifications learned this in #274 and streams re-learned it in #352.
-- A montage past `MONTAGE_GRID.viewportGatingMinTiles` tiles gates on the
-  viewport in BOTH modes, not just while aggregating: the off-screen tiles are
-  what starve the visible ones of the six connections a browser opens to one
-  host, and single mode cannot reach `allModeViewportGating` at all (that
-  switch still forces gating on for a smaller aggregate, which is what #337
-  added it for). Gating is positional, never a cap - every tile on screen stays
-  live however many that is, so it does not fix contention among visible tiles
-  on a dense grid. #507.
 - Tauri snapshot thumbnails fetch as blob URLs, or WebKitGTK leaks sockets;
   same constraint as the MJPEG workaround, separate code path (7e121140).
 - iOS video.js fullscreen: CSS overrides cannot reliably intercept the
@@ -179,25 +171,6 @@ matching reality, fixing it is a protocol change like any rule edit.
   (IntersectionObserver, measurement) puts its ref one level in, and any
   test mock of the grid clones with a ref too, or it calls refs the real
   grid swallows (c8d0d833).
-- Montage tile heights come from the measured container width, and
-  `montageRowHeight` is 1px, so a layout unit IS a pixel. Before the first
-  measurement `useMontageGrid` builds no layout at all, and
-  `react-grid-layout` then renders every tile as a unit-sized placeholder
-  stacked at the top of the grid. Anything reading tile geometry must wait
-  for a non-empty `layout`: an IntersectionObserver rooted before that
-  reports the WHOLE grid as in view and released all 74 tiles of a montage
-  at once, which is what viewport gating exists to prevent (refs #507).
-- A page's own container is usually not what scrolls - the app's `<main>`
-  is. The montage's grid container declares `overflow-auto` but its height is
-  content-driven outside fullscreen, so it never clips: an observer rooted
-  there held all 74 tiles inside it and reported the whole montage as in view
-  on every callback, which is why gating read `gated:0` on a device with
-  nothing on screen. `useViewportGating` therefore resolves its own root with
-  `findScrollParent` (`lib/dom/scroll-parent.ts`) and takes a `rootEpoch` to
-  re-resolve it when the container's height changes; a caller never passes the
-  scrolling element itself. Rooting on a container that never bounds its
-  content leaves every tile "in view" forever; no scroll parent means
-  the content fits, so gating stands down rather than holding the page.
 - A ref-callback cache keyed by id must outlive a detach. Deleting the
   entry when React calls the ref with null hands the next render a
   different callback, which React treats as a new ref: detach, delete,

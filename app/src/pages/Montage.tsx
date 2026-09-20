@@ -28,7 +28,6 @@ import { useHiddenPause } from '../hooks/useHiddenPause';
 import { useIdleAfter } from '../hooks/useIdleAfter';
 import { useViewportGating } from '../hooks/useViewportGating';
 import { MONTAGE_GRID } from '../lib/zmninja-ng-constants';
-import { log, LogLevel } from '../lib/logger';
 import { useGroupFilter } from '../hooks/useGroupFilter';
 import { useMontageGroupState } from '../hooks/useMontageGroupState';
 import { GroupFilterSelect } from '../components/filters/GroupFilterSelect';
@@ -351,54 +350,12 @@ export default function Montage() {
   // a connection. A tile the budget dropped never reaches here, and a tile
   // gated here still counts against the budget - so scrolling cannot promote
   // an overflow monitor into the grid.
-  // Above the tile threshold a montage has scrollback nobody is looking at, and
-  // those tiles are what starve the visible ones of the few connections a
-  // browser opens to one host (refs #507). That is true of a single server as
-  // much as of an aggregate, and single mode cannot reach the All-mode switch
-  // at all, so the threshold turns gating on by itself. The switch still forces
-  // it on for a smaller aggregate, which is what it was added for (refs #337).
-  const gateOnTileCount = cappedMonitors.length > MONTAGE_GRID.viewportGatingMinTiles;
-
-  const viewportGatingEnabled = gateOnTileCount || (isAllMode && settings.allModeViewportGating);
-
   const { isTileGated, registerTile } = useViewportGating({
-    enabled: viewportGatingEnabled,
-    // Observe nothing until the grid has real positions. montageRowHeight is
-    // 1px, so a tile's layout height IS its pixel height, and that height is
-    // derived from the measured container width - which is 0 for the first
-    // commit. Every tile then clamps to the 2px floor and the whole montage
-    // stacks into one screenful, so the observer's first callback reports all
-    // of it as in view and releases the grid it was meant to hold (refs #507).
-    // `layout` stays empty until a real width built it, and an unobserved tile
-    // counts as gated, so waiting for it holds the tiles rather than freeing
-    // them.
-    root: layout.length > 0 ? scrollContainer : null,
-    // The grid's height is what decides which ancestor scrolls, and that height
-    // arrives with the layout.
-    rootEpoch: layout.length,
+    enabled: isAllMode && settings.allModeViewportGating,
+    root: scrollContainer,
     rootMargin: MONTAGE_GRID.viewportGatingRootMargin,
     lingerMs: MONTAGE_GRID.viewportGatingLingerMs,
   });
-
-  // How many tiles hold no connection right now. Nothing else in a device log
-  // distinguishes a gated tile from a streaming one - the stream status a tile
-  // reports is about its own URL, not about whether the page let it have one -
-  // so #507 was debugged for six rounds against logs that could not answer it.
-  // Emitted only when the count changes, so a scroll does not flood the log.
-  const gatedCount = cappedMonitors.reduce(
-    (total, item) => total + (isTileGated(tileIdFor(item)) ? 1 : 0),
-    0,
-  );
-  const lastGatedRef = useRef<number | null>(null);
-  useEffect(() => {
-    if (lastGatedRef.current === gatedCount) return;
-    lastGatedRef.current = gatedCount;
-    log.monitor('Viewport gating', LogLevel.INFO, {
-      gated: gatedCount,
-      tiles: cappedMonitors.length,
-      enabled: viewportGatingEnabled,
-    });
-  }, [gatedCount, cappedMonitors.length, viewportGatingEnabled]);
 
   // TV mode D-pad grid navigation
   const { isTvMode } = useTvMode();

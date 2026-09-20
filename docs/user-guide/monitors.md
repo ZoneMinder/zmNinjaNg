@@ -16,21 +16,6 @@ Tap a card to open the [Monitor Detail](#monitor-detail) view.
 
 On desktop, hovering a monitor card for a moment opens a larger (400px wide) live preview next to the card. The preview uses its own streaming connection that is opened when the preview appears and closed the moment your cursor leaves. The underlying card remains clickable while the preview is visible.
 
-### Cards you have scrolled past
-
-With more than 10 cameras the list is taller than the screen, so most of the
-cards are out of sight. Those hidden cards would still be fetching pictures and
-competing for the handful of connections the server allows, which is what makes
-the cards you are actually looking at fill slowly. Past that size the app stops
-a card once it is roughly a screen's worth beyond the edge of the list, and
-starts it again as you scroll back. A card you scroll quickly past keeps its
-connection for a second or two, so moving through a long list does not restart
-everything on the way.
-
-This applies to both the grid and the list layout, and to nothing you need to
-configure: below 10 cameras, or whenever the whole list fits on screen, every
-card keeps running.
-
 ## Filtering Monitors
 
 Use the **Groups** selector at the top of the screen to filter by ZoneMinder monitor group. The selection persists across navigation within the same session.

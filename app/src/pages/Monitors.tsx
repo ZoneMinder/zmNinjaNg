@@ -35,8 +35,6 @@ import { filterMonitorsByGroup } from '../lib/monitor/filters';
 import { groupByOwningProfile } from '../lib/profile/profile-sections';
 import { ProfileSectionList } from '../components/profiles/ProfileSectionList';
 import { useGroupFilter } from '../hooks/useGroupFilter';
-import { useListViewportGating } from '../hooks/useListViewportGating';
-import { monitorCacheKey } from '../stores/monitors';
 import { GroupFilterSelect } from '../components/filters/GroupFilterSelect';
 import type { Monitor, MonitorStatus, ProfileId } from '../api/types';
 import { NotificationBadge } from '../components/NotificationBadge';
@@ -129,18 +127,6 @@ export default function Monitors() {
     }
     return counts;
   }, [scopedMonitors]);
-
-  // A long list of cards starves its own visible feeds of the few connections
-  // a browser opens to one host, so the cards out of view hold none at all
-  // (refs #507). Both view modes share this: a list row is taller than a grid
-  // tile, so a list puts even fewer cards on screen.
-  const tileIds = useMemo(
-    () => renderItems.map(({ Monitor, profileId }) => monitorCacheKey(profileId, Monitor.Id)),
-    [renderItems]
-  );
-  const { isTileGated, registerTile, setListContainer } = useListViewportGating({
-    itemIds: tileIds,
-  });
 
   // useMonitorNewEvents stays current-profile-scoped for single mode, sharing
   // its watermarks keyed by one profile id. All mode fans the equivalent
@@ -273,9 +259,7 @@ export default function Monitors() {
       >
         {items.map(({ Monitor, Monitor_Status, profileId, profileChip }) => (
           <MonitorCard
-            key={monitorCacheKey(profileId, Monitor.Id)}
-            tileRef={registerTile(monitorCacheKey(profileId, Monitor.Id))}
-            paused={isTileGated(monitorCacheKey(profileId, Monitor.Id))}
+            key={`${profileId ?? ''}-${Monitor.Id}`}
             monitor={Monitor}
             status={Monitor_Status}
             newEventCount={
@@ -300,9 +284,7 @@ export default function Monitors() {
       <div className="space-y-4" data-testid="monitor-grid">
         {items.map(({ Monitor, Monitor_Status, profileId, profileChip }) => (
           <MonitorCard
-            key={monitorCacheKey(profileId, Monitor.Id)}
-            tileRef={registerTile(monitorCacheKey(profileId, Monitor.Id))}
-            paused={isTileGated(monitorCacheKey(profileId, Monitor.Id))}
+            key={`${profileId ?? ''}-${Monitor.Id}`}
             monitor={Monitor}
             status={Monitor_Status}
             newEventCount={
@@ -441,7 +423,7 @@ export default function Monitors() {
       )}
 
       {/* All Cameras */}
-      <div ref={setListContainer} className="space-y-3 sm:space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         {renderItems.length === 0 ? (
           <div data-testid={allFailed ? 'monitors-all-failed-state' : 'monitors-empty-state'}>
             <EmptyState

@@ -57,8 +57,6 @@ function MonitorCardComponent({
   compact,
   profileId,
   profileChip,
-  tileRef,
-  paused,
 }: MonitorCardComponentProps) {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -88,7 +86,6 @@ function MonitorCardComponent({
       externalMediaRef={mediaRef}
       muted={isMuted}
       onProtocolChange={setProtocol}
-      paused={paused}
     />
   );
   const wrappedVideo = showHover ? (
@@ -139,7 +136,6 @@ function MonitorCardComponent({
   if (compact) {
     return (
       <Card
-        ref={tileRef}
         className="group overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-300 bg-card ring-1 ring-border/50 hover:ring-primary/50"
         data-testid="monitor-card"
         data-monitor-id={monitor.Id}
@@ -248,7 +244,6 @@ function MonitorCardComponent({
 
   return (
     <Card
-      ref={tileRef}
       className="group overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-300 bg-card ring-1 ring-border/50 hover:ring-primary/50"
       data-testid="monitor-card"
       data-monitor-id={monitor.Id}
