@@ -36,8 +36,13 @@ vi.mock('../../hooks/useGroupFilter', () => ({
 
 const useScopedMonitorNewEventsMock = vi.fn();
 
+// Records the monitor ids the page asks new-event counts for. That fan-out is
+// one request per monitor, so whether it follows the page is the difference
+// between 12 requests and 74 (refs #507).
+const useMonitorNewEventsMock = vi.fn((_ids: string[]) => ({ counts: {}, newest: {} }));
+
 vi.mock('../../hooks/useMonitorNewEvents', () => ({
-  useMonitorNewEvents: () => ({ counts: {}, newest: {} }),
+  useMonitorNewEvents: (ids: string[]) => useMonitorNewEventsMock(ids),
   useScopedMonitorNewEvents: () => useScopedMonitorNewEventsMock(),
   scopedMonitorEventKey: (profileId: string, monitorId: string) => `${profileId}:${monitorId}`,
 }));
@@ -402,6 +407,19 @@ describe('Monitors Page', () => {
       renderPage();
 
       expect(screen.getByText('count-74')).toBeVisible();
+    });
+
+    it('asks for new-event counts only for the page, not the whole scope', () => {
+      // One request per monitor, competing for the same six connections per host
+      // the feeds need: 74 of them at mount is what the device log showed.
+      singleProfile({ monitorsPerPage: 12 });
+      manyMonitors(74);
+
+      renderPage();
+
+      expect(useMonitorNewEventsMock).toHaveBeenLastCalledWith(
+        Array.from({ length: 12 }, (_, i) => String(i + 1))
+      );
     });
 
     it('mounts every card and renders no control while paging is off', () => {

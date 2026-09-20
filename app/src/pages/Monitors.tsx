@@ -142,20 +142,26 @@ export default function Monitors() {
   // useMonitorNewEvents stays current-profile-scoped for single mode, sharing
   // its watermarks keyed by one profile id. All mode fans the equivalent
   // query out per owning profile via useScopedMonitorNewEvents (refs #337).
+  //
+  // Over the PAGE, not the whole scope: this is one request per monitor, so a
+  // 74-camera account fired 74 of them at mount and they compete for the same
+  // six connections per host the feeds need (refs #507). A card that is not
+  // rendered has no badge to fill, and its watermark is untouched until you
+  // turn to its page - which is correct, since you have not looked at it.
   const monitorIds = useMemo(
-    () => (isAllMode ? [] : renderItems.map(({ Monitor }) => Monitor.Id)),
-    [isAllMode, renderItems]
+    () => (isAllMode ? [] : paging.items.map(({ Monitor }) => Monitor.Id)),
+    [isAllMode, paging.items]
   );
   const { counts: newEventCounts, newest: newestEventAt } = useMonitorNewEvents(monitorIds);
 
   const scopedMonitorRefs = useMemo(
     () =>
       isAllMode
-        ? renderItems
+        ? paging.items
             .filter((item): item is MonitorGridItem & { profileId: ProfileId } => item.profileId !== undefined)
             .map(({ Monitor, profileId }) => ({ profileId, monitorId: Monitor.Id }))
         : [],
-    [isAllMode, renderItems]
+    [isAllMode, paging.items]
   );
   const { counts: scopedNewEventCounts, newest: scopedNewestEventAt } =
     useScopedMonitorNewEvents(scopedMonitorRefs);
