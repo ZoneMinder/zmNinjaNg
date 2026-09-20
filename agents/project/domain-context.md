@@ -187,6 +187,11 @@ matching reality, fixing it is a protocol change like any rule edit.
   for a non-empty `layout`: an IntersectionObserver rooted before that
   reports the WHOLE grid as in view and released all 74 tiles of a montage
   at once, which is what viewport gating exists to prevent (refs #507).
+- A page's own container is usually not what scrolls - the app's `<main>`
+  is - so an observer root is found with `findScrollParent`
+  (`lib/dom/scroll-parent.ts`), never assumed. Rooting on a container that
+  never bounds its content leaves every tile "in view" forever; no scroll parent means
+  the content fits, so gating stands down rather than holding the page.
 - A ref-callback cache keyed by id must outlive a detach. Deleting the
   entry when React calls the ref with null hands the next render a
   different callback, which React treats as a new ref: detach, delete,
