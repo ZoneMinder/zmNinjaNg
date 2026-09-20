@@ -363,7 +363,16 @@ export default function Montage() {
 
   const { isTileGated, registerTile } = useViewportGating({
     enabled: viewportGatingEnabled,
-    root: scrollContainer,
+    // Observe nothing until the grid has real positions. montageRowHeight is
+    // 1px, so a tile's layout height IS its pixel height, and that height is
+    // derived from the measured container width - which is 0 for the first
+    // commit. Every tile then clamps to the 2px floor and the whole montage
+    // stacks into one screenful, so the observer's first callback reports all
+    // of it as in view and releases the grid it was meant to hold (refs #507).
+    // `layout` stays empty until a real width built it, and an unobserved tile
+    // counts as gated, so waiting for it holds the tiles rather than freeing
+    // them.
+    root: layout.length > 0 ? scrollContainer : null,
     rootMargin: MONTAGE_GRID.viewportGatingRootMargin,
     lingerMs: MONTAGE_GRID.viewportGatingLingerMs,
   });

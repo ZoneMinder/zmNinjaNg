@@ -27,6 +27,23 @@ vi.mock('../../lib/security/secureStorage', () => import('../../tests/fake-secur
 
 const useScopedMonitorsMock = vi.fn();
 const useMontageGridMock = vi.fn();
+
+/** What the stubbed useMontageGrid returns. `layout` empty is the unmeasured
+ *  grid: the real hook builds one only once it knows a container width. */
+const gridMockReturn = () => ({
+  layout: [] as Array<{ i: string; x: number; y: number; w: number; h: number }>,
+  gridCols: 2,
+  currentWidthRef: { current: 800 },
+  handleApplyGridLayout: vi.fn(),
+  handleLoadSavedLayout: vi.fn(),
+  handleLayoutChange: vi.fn(),
+  handleDragStop: vi.fn(),
+  handleFillWidth: vi.fn(),
+  handleResizeStop: vi.fn(),
+  handleWidthChange: vi.fn(),
+  togglePinMonitor: vi.fn(),
+  isMonitorPinned: () => false,
+});
 const useGroupFilterMock = vi.fn();
 
 vi.mock('../../hooks/useScopedMonitors', () => ({
@@ -303,20 +320,7 @@ describe('Montage Page', () => {
     useMontageGridMock.mockReset();
     useGroupFilterMock.mockReset();
     useGroupFilterMock.mockReturnValue({ isFilterActive: false, filteredMonitorIds: [], isFilterReady: true });
-    useMontageGridMock.mockReturnValue({
-      layout: [],
-      gridCols: 2,
-      currentWidthRef: { current: 800 },
-      handleApplyGridLayout: vi.fn(),
-      handleLoadSavedLayout: vi.fn(),
-      handleLayoutChange: vi.fn(),
-      handleDragStop: vi.fn(),
-      handleFillWidth: vi.fn(),
-      handleResizeStop: vi.fn(),
-      handleWidthChange: vi.fn(),
-      togglePinMonitor: vi.fn(),
-      isMonitorPinned: () => false,
-    });
+    useMontageGridMock.mockReturnValue(gridMockReturn());
   });
 
   afterEach(() => {
@@ -1014,6 +1018,25 @@ describe('Montage Page', () => {
       act(() => { latestIntersectionObserver().fire([{ target, isIntersecting }]); });
     };
 
+    /**
+     * The layout a measured container produces: one entry per tile, at a real
+     * position. Until that exists the tiles have no position at all, and
+     * gating deliberately holds every one of them through that state (see the
+     * unplaced test below), so the observer cases have to be past it.
+     */
+    const measured = (count: number) => {
+      useMontageGridMock.mockReturnValue({
+        ...gridMockReturn(),
+        layout: Array.from({ length: count }, (_, i) => ({
+          i: `profile-1:${i + 1}`,
+          x: 0,
+          y: i * 200,
+          w: 1,
+          h: 200,
+        })),
+      });
+    };
+
     beforeEach(() => {
       vi.useFakeTimers();
       installMockIntersectionObserver();
@@ -1024,9 +1047,11 @@ describe('Montage Page', () => {
       vi.unstubAllGlobals();
     });
 
-    it('holds an unmeasured tile closed and opens it once it is reported in view', () => {
+
+    it('holds a tile the observer has not placed, and opens it once it has', () => {
       allMode([{ id: 'profile-1', name: 'Home' }], { allModeViewportGating: true });
       oneMonitor();
+      measured(1);
 
       render(<Montage />);
       expect(paused()).toBe('true');
@@ -1044,6 +1069,7 @@ describe('Montage Page', () => {
       // a single unpaused one fails here.
       allMode([{ id: 'profile-1', name: 'Home' }], { allModeViewportGating: true });
       oneMonitor();
+      measured(1);
 
       render(<Montage />);
 
@@ -1059,6 +1085,7 @@ describe('Montage Page', () => {
     it('stops a tile that scrolled out, but only after the linger', () => {
       allMode([{ id: 'profile-1', name: 'Home' }], { allModeViewportGating: true });
       oneMonitor();
+      measured(1);
 
       render(<Montage />);
       report(true);
@@ -1157,6 +1184,7 @@ describe('Montage Page', () => {
         isLoading: false,
         refetchProfile: vi.fn(),
       });
+      measured(2);
 
       render(<Montage />);
       act(() => {
@@ -1180,6 +1208,7 @@ describe('Montage Page', () => {
         allModePauseHidden: true,
       });
       oneMonitor();
+      measured(1);
 
       render(<Montage />);
       report(true);
@@ -1208,6 +1237,7 @@ describe('Montage Page', () => {
         allModeIdleMinutes: 5,
       });
       oneMonitor();
+      measured(1);
 
       render(<Montage />);
       report(true);
@@ -1237,9 +1267,41 @@ describe('Montage Page', () => {
       expect(paused()).toBe('false');
     });
 
+    it('holds the whole grid while its tiles have no measured position', () => {
+      // A grid with no layout has not been measured yet, and react-grid-layout
+      // then renders each tile as a unit-sized placeholder at the top of the
+      // grid - montageRowHeight is 1px, so those are 2px tall and stacked. All
+      // of them intersect the root, so honouring that first report released
+      // every tile of a 74-tile montage at once: the exact flood gating exists
+      // to prevent (refs #507). Nothing is observed until positions are real,
+      // and an unobserved tile counts as gated.
+      singleProfile();
+      manyMonitors(MONTAGE_GRID.viewportGatingMinTiles + 1);
+
+      render(<Montage />);
+
+      expect(latestIntersectionObserver()).toBeUndefined();
+      expect(allPaused()).not.toContain('false');
+    });
+
+    it('observes the grid once its tiles have real positions', () => {
+      // The pair to the test above: waiting for a measured layout has to end,
+      // or gating would hold a montage closed for good.
+      singleProfile();
+      manyMonitors(MONTAGE_GRID.viewportGatingMinTiles + 1);
+      measured(MONTAGE_GRID.viewportGatingMinTiles + 1);
+
+      render(<Montage />);
+
+      expect(latestIntersectionObserver().targets.size).toBe(
+        MONTAGE_GRID.viewportGatingMinTiles + 1
+      );
+    });
+
     it('leaves no linger timer behind when the montage unmounts', () => {
       allMode([{ id: 'profile-1', name: 'Home' }], { allModeViewportGating: true });
       oneMonitor();
+      measured(1);
 
       const { unmount } = render(<Montage />);
       report(true);

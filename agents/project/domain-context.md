@@ -179,6 +179,14 @@ matching reality, fixing it is a protocol change like any rule edit.
   (IntersectionObserver, measurement) puts its ref one level in, and any
   test mock of the grid clones with a ref too, or it calls refs the real
   grid swallows (c8d0d833).
+- Montage tile heights come from the measured container width, and
+  `montageRowHeight` is 1px, so a layout unit IS a pixel. Before the first
+  measurement `useMontageGrid` builds no layout at all, and
+  `react-grid-layout` then renders every tile as a unit-sized placeholder
+  stacked at the top of the grid. Anything reading tile geometry must wait
+  for a non-empty `layout`: an IntersectionObserver rooted before that
+  reports the WHOLE grid as in view and released all 74 tiles of a montage
+  at once, which is what viewport gating exists to prevent (refs #507).
 - A ref-callback cache keyed by id must outlive a detach. Deleting the
   entry when React calls the ref with null hands the next render a
   different callback, which React treats as a new ref: detach, delete,
