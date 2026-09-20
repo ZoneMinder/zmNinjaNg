@@ -671,7 +671,7 @@
       }
     },
     "monitors_per_page": "Monitore pro Seite",
-    "monitors_per_page_desc": "So viele Monitore gleichzeitig in der Montage und auf der Monitorseite zeigen, mit Pfeilen zum Blättern. Ein Browser öffnet nur sechs Verbindungen zu einem Server, daher warten bei vielen Kameras die meisten Bilder und bleiben leer; eine kleinere Seite lädt schneller. 0 schaltet das Blättern ab und zeigt alle Monitore auf einer Seite."
+    "monitors_per_page_desc": "Nützlich bei vielen Monitoren (über 30), wenn der Server kein Multi-Port-Streaming hat. 0 schaltet das Blättern ab."
   },
   "ssl": {
     "trust_dialog_title": "Nicht vertrauenswürdiges Zertifikat",

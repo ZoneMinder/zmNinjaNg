@@ -671,7 +671,7 @@
       }
     },
     "monitors_per_page": "Monitor per pagina",
-    "monitors_per_page_desc": "Mostra questo numero di monitor alla volta nel Montaggio e nella schermata Monitor, con le frecce per cambiare pagina. Un browser apre solo sei connessioni verso un server, quindi con molte telecamere la maggior parte delle immagini resta in attesa e vuota; una pagina più piccola si riempie prima. 0 disattiva le pagine e mette tutti i monitor su una sola."
+    "monitors_per_page_desc": "Utile con molti monitor (oltre 30) quando il server non ha lo streaming multi-porta. 0 disattiva le pagine."
   },
   "ssl": {
     "trust_dialog_title": "Certificato non attendibile",

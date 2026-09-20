@@ -88,7 +88,7 @@ Settings that control live camera feeds:
 | **Enable Go2RTC** | When on, the app tries WebRTC/MSE/HLS for each monitor and falls back to MJPEG. When off, all monitors use MJPEG. |
 | **Streaming Protocols** | WebRTC, MSE, and HLS, tried in parallel when Go2RTC is configured. The first protocol to produce video wins. |
 | **Snapshot interval** | How often to refresh the still image when Streaming Mode is set to *Snapshot* (1–30 seconds) |
-| **Monitors per page** | How many monitors the Montage and the Monitors screen show at once, with arrows to step through the pages (0 turns paging off, the default; presets 6/12/24). A browser opens only six connections to one server, so a wall of cameras leaves most of its feeds queued and blank; a page small enough to fit those connections fills straight away. See [Paging a long list](montage.md#paging-a-long-list). |
+| **Monitors per page** | How many monitors the Montage and the Monitors screen show at once, with arrows to step through the pages (0 turns paging off, the default; presets 6/12/24). Useful with many monitors (over 30) when the server has no multi-port streaming. See [Paging a long list](montage.md#paging-a-long-list). |
 | **Protocol Label** | Shows or hides the streaming protocol indicator (MJPEG/MSE/WebRTC) on video feeds across all pages |
 | **Open live view in fullscreen** | Every monitor's detail page opens maximized. For one monitor only, use **Open in fullscreen** in that monitor's Settings dialog instead. |
 | **Stream FPS** | Maximum frame rate for live MJPEG streams (1–30 fps, default 10; presets 5/10/15/30). Lower values reduce bandwidth and CPU. |

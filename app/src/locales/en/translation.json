@@ -671,7 +671,7 @@
       }
     },
     "monitors_per_page": "Monitors per page",
-    "monitors_per_page_desc": "Show this many monitors at a time on the Montage and Monitors screens, with arrows to step through the pages. A browser opens only six connections to one server, so a wall of cameras leaves most of its feeds waiting and blank; a smaller page fills faster. 0 turns paging off and puts every monitor on one page."
+    "monitors_per_page_desc": "Useful with many monitors (over 30) when the server has no multi-port streaming. 0 turns paging off."
   },
   "ssl": {
     "trust_dialog_title": "Untrusted Certificate",
