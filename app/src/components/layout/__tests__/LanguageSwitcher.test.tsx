@@ -22,7 +22,7 @@ import '../../../i18n';
 import { LanguageSwitcher } from '../LanguageSwitcher';
 
 /** English, Deutsch, Español, Français, Italiano, Русский, 中文. */
-const EXPECTED = ['en', 'de', 'es', 'fr', 'it', 'ru', 'zh'];
+const EXPECTED = ['en', 'de', 'es', 'fr', 'it', 'ru', 'fa', 'zh'];
 
 describe('LanguageSwitcher', () => {
   it('lists English first, then the other languages by their own name', () => {
