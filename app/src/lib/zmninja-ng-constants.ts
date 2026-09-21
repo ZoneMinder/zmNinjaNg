@@ -632,11 +632,13 @@ export const UI_INTERACTIONS = {
   // Hover preview enter/exit animation duration (ms)
   previewAnimationMs: 200,
 
-  // Default hover preview width (px)
-  previewWidthPx: 400,
-
   // Hover preview minimum margin from viewport edges (px)
   previewEdgeMarginPx: 12,
+
+  // How much of the window a hover preview fills, in whichever dimension the
+  // aspect ratio binds. Large enough to read a scene at a glance, short of the
+  // fullscreen takeover that filling the window outright reads as.
+  previewWindowFraction: 0.7,
 
   // Pointer movement threshold to cancel a long-press (px)
   moveCancelPx: 8,
