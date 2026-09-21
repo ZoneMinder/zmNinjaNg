@@ -44,7 +44,10 @@
  * The portal starts at the trigger's bounding rect and animates out to
  * the target size, with the zoom origin anchored to whichever corner of
  * the trigger is closest to the screen center, so the enlarged frame
- * stays on-screen. `renderPreview` is only invoked while the preview is
+ * stays on-screen. That target is the window, aspect-fit: the preview is
+ * as large as the viewport allows whatever opened it, so the same event
+ * previews at the same size from an Events grid tile and from a 64px row
+ * in the "around this event" panel (refs #494). `renderPreview` is only invoked while the preview is
  * open, so inner components (live stream players) are created on open
  * and torn down on close.
  */
@@ -98,8 +101,6 @@ export interface HoverPreviewProps {
   renderPreview: () => ReactNode;
   /** Trigger element(s). */
   children: ReactNode;
-  /** Width of the preview in pixels. Defaults to 400. */
-  previewWidth?: number;
   /** Delay before opening, in ms. Defaults to 400. */
   hoverDelayMs?: number;
   /** data-testid on the preview portal root. */
@@ -112,7 +113,6 @@ export function HoverPreview({
   aspectRatio,
   renderPreview,
   children,
-  previewWidth = UI_INTERACTIONS.previewWidthPx,
   hoverDelayMs = UI_INTERACTIONS.hoverDelayMs,
   testId,
   className = 'w-full h-full',
@@ -238,10 +238,13 @@ export function HoverPreview({
     if (!start) return;
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-    const maxW = vw - UI_INTERACTIONS.previewEdgeMarginPx * 2;
-    const maxH = vh - UI_INTERACTIONS.previewEdgeMarginPx * 2;
-    let w = Math.max(previewWidth, start.width * 2);
-    w = Math.min(w, maxW);
+    const fraction = UI_INTERACTIONS.previewWindowFraction;
+    const maxW = (vw - UI_INTERACTIONS.previewEdgeMarginPx * 2) * fraction;
+    const maxH = (vh - UI_INTERACTIONS.previewEdgeMarginPx * 2) * fraction;
+    // The window, not the trigger. Sizing from the trigger made the preview a
+    // function of layout density: an Events grid tile opened a near-fullscreen
+    // preview while the same event's 64px row thumbnail opened a 400px one.
+    let w = maxW;
     let h = w / aspectRatio;
     if (h > maxH) {
       h = maxH;
@@ -269,7 +272,7 @@ export function HoverPreview({
       cancelled = true;
       cancelAnimationFrame(raf1);
     };
-  }, [open, aspectRatio, previewWidth]);
+  }, [open, aspectRatio]);
 
   useEffect(() => {
     if (!open) return;
