@@ -117,7 +117,11 @@ function scopedEvent(id: string, profileId: string, profileChip: string, overrid
   } as unknown as ScopedEventItem;
 }
 
-function renderEvents(events: EventData[], monitors: Array<{ Monitor: { Id: string; ServerId?: string | null }; profileId?: string }> = []) {
+function renderEvents(
+  events: EventData[],
+  monitors: Array<{ Monitor: { Id: string; ServerId?: string | null }; profileId?: string }> = [],
+  showThumbnailLabels = true,
+) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   // EventContextButton's usePermissions probes account permissions on mount.
   // Pre-seeding the (infinitely fresh, per usePermissions) cache means that
@@ -131,7 +135,7 @@ function renderEvents(events: EventData[], monitors: Array<{ Monitor: { Id: stri
         events={events as ScopedEventItem[]}
         monitors={monitors as never}
         gridCols={3}
-        thumbnailFit="contain"
+        showThumbnailLabels={showThumbnailLabels}
         portalUrl="https://zm.example.test"
         accessToken="current-profile-token"
         batchSize={20}
@@ -142,8 +146,12 @@ function renderEvents(events: EventData[], monitors: Array<{ Monitor: { Id: stri
   );
 }
 
-function renderMontage(startDateTime: string) {
-  return renderEvents([{ Event: { ...baseEventFields, StartDateTime: startDateTime } } as unknown as EventData]);
+function renderMontage(startDateTime: string, showThumbnailLabels = true) {
+  return renderEvents(
+    [{ Event: { ...baseEventFields, StartDateTime: startDateTime } } as unknown as EventData],
+    [],
+    showThumbnailLabels,
+  );
 }
 
 // Reset before, not after: Testing Library unmounts between tests, so by the
@@ -179,6 +187,20 @@ describe('EventMontageView relative time (grid view)', () => {
   it('hides the relative-time label for an event older than the window', () => {
     renderMontage(toZmDate(new Date(Date.now() - 30 * 24 * 60 * 60_000)));
     expect(screen.queryByTestId('event-montage-relative-time')).not.toBeInTheDocument();
+  });
+
+  it('hides the relative-time label when thumbnail labels are off (refs #525)', () => {
+    renderMontage(toZmDate(new Date(Date.now() - 40 * 60_000)), false);
+    expect(screen.queryByTestId('event-montage-relative-time')).not.toBeInTheDocument();
+  });
+
+  it('puts the star and nearby-events buttons below the image, not on it (refs #525)', () => {
+    renderMontage(toZmDate(new Date(Date.now() - 40 * 60_000)));
+    const image = screen.getByTestId('event-montage-thumbnail');
+    expect(within(image).queryByTestId('event-favorite-button')).toBeNull();
+    expect(within(image).queryByTestId('event-context-open')).toBeNull();
+    const tile = screen.getByTestId('event-montage-tile');
+    expect(within(tile).getByTestId('event-favorite-button')).toBeVisible();
   });
 });
 
@@ -410,7 +432,7 @@ describe('EventMontageView server sections (grid view)', () => {
         events={events}
         monitors={[]}
         gridCols={3}
-        thumbnailFit="contain"
+        showThumbnailLabels
         portalUrl="https://zm.example.test"
         accessToken="current-profile-token"
         batchSize={20}

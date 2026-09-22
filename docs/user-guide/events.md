@@ -48,8 +48,11 @@ Filter events using the controls at the top:
 - **Tags** - Show only events carrying the tags you pick (if your server supports tags). Select several tags to see events with any of them, or "All" for events with any tag. Like favorites, this covers tagged events older than the first page. In a {doc}`profiles` group the list offers each tag name once, however many servers in it define it, and picking one matches that name on every server. A server that has no tag by that name contributes no events, so filtering by a tag only one of your servers uses shows you only that server's events.
 - **Archived only** - Restrict the list to archived events. To archive an event, open it in the event detail screen and use the archive action.
 
-The crop button in the toolbar switches event thumbnails between showing the
-whole image and filling their tile.
+The eye button in the toolbar shows or hides the labels drawn over event
+thumbnails, such as how long ago an event happened. It is on by default. Turn
+it off when the labels cover too much of a small thumbnail, for example on a
+phone with two grid columns. In the grid, the star and nearby-events buttons
+sit below each image, as they do in the list, so they never cover it.
 
 ## Event Playback
 

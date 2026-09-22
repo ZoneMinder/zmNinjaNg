@@ -192,6 +192,15 @@ Feature: Event Browsing and Management
     And any relative time labels in the montage read as a duration
 
   @all
+  Scenario: Hiding thumbnail labels clears them from the grid
+    When I switch events view to montage
+    Then I should see the events montage grid
+    When I toggle the events thumbnail labels
+    Then the events montage shows no relative time labels
+    When I toggle the events thumbnail labels
+    Then any relative time labels in the montage read as a duration
+
+  @all
   Scenario: Event frames carousel opens a frame full size
     When I click into the first event if events exist
     Then I should see the event frames carousel if events exist

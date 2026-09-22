@@ -31,7 +31,7 @@ import { scopedEventKey } from '../lib/event/scoped-event-key';
 import { useScrollRestoration } from '../hooks/useScrollRestoration';
 import { PullToRefreshIndicator } from '../components/ui/pull-to-refresh-indicator';
 import { Button } from '../components/ui/button';
-import { Filter, ArrowLeft, LayoutGrid, List, Clock, X, Crop, Layers } from 'lucide-react';
+import { Filter, ArrowLeft, LayoutGrid, List, Clock, X, Eye, Layers } from 'lucide-react';
 import { RefreshButton } from '../components/common/RefreshButton';
 import { filterMonitorsByGroup, includedMonitorIdParam } from '../lib/monitor/filters';
 import { useGroupFilter } from '../hooks/useGroupFilter';
@@ -64,9 +64,6 @@ export default function Events() {
   const currentProfileId = useProfileStore((state) => state.currentProfileId);
   const scope = useProfileScope();
   const totalScopeProfiles = scope?.profiles.length ?? 0;
-  const normalizedThumbnailFit = settings.eventsThumbnailFit === 'fill'
-    ? 'contain'
-    : settings.eventsThumbnailFit;
   const updateSettings = useSettingsStore((state) => state.updateProfileSettings);
   const updateEventMontageGroupLayout = useSettingsStore(
     (state) => state.updateEventMontageGroupLayout
@@ -480,11 +477,9 @@ export default function Events() {
     setSearchParams(nextParams, { replace: true });
   };
 
-  const handleThumbnailFitChange = (value: string) => {
+  const toggleThumbnailLabels = () => {
     if (!currentProfileId) return;
-    updateSettings(currentProfileId, {
-      eventsThumbnailFit: (value === 'fill' ? 'contain' : value) as typeof settings.eventsThumbnailFit,
-    });
+    updateSettings(currentProfileId, { eventsThumbnailLabels: !settings.eventsThumbnailLabels });
   };
 
   // isLoading never clears on a total outage (no profile ever gets data), so
@@ -651,22 +646,19 @@ export default function Events() {
                 aria-label={t('events.refresh')}
                 data-testid="events-refresh-button"
               />
-              {/* One preference, so a toggle rather than a menu holding it
-                  alone. Pressed means cropped to fill, the state that differs
-                  from the default. */}
+              {/* Labels over the thumbnails; off clears the picture on
+                  small tiles (refs #525). */}
               <Button
-                variant={normalizedThumbnailFit === 'cover' ? 'default' : 'outline'}
+                variant={settings.eventsThumbnailLabels ? 'default' : 'outline'}
                 size="icon"
                 className="h-8 w-8 sm:h-9 sm:w-9"
-                aria-pressed={normalizedThumbnailFit === 'cover'}
-                title={t('common.crop_to_fill')}
-                aria-label={t('common.crop_to_fill')}
-                onClick={() =>
-                  handleThumbnailFitChange(normalizedThumbnailFit === 'cover' ? 'contain' : 'cover')
-                }
-                data-testid="events-thumbnail-fit-toggle"
+                aria-pressed={settings.eventsThumbnailLabels}
+                title={t('events.thumbnail_labels')}
+                aria-label={t('events.thumbnail_labels')}
+                onClick={toggleThumbnailLabels}
+                data-testid="events-thumbnail-labels-toggle"
               >
-                <Crop className="h-4 w-4" />
+                <Eye className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -772,7 +764,7 @@ export default function Events() {
             events={allEvents}
             monitors={eventListMonitors}
             gridCols={gridControls.gridCols}
-            thumbnailFit={normalizedThumbnailFit}
+            showThumbnailLabels={settings.eventsThumbnailLabels}
             portalUrl={currentProfile?.portalUrl || ''}
             accessToken={isAccessTokenFresh ? accessToken ?? undefined : undefined}
             batchSize={batchSize}
@@ -788,7 +780,7 @@ export default function Events() {
           <EventListView
             events={allEvents}
             monitors={eventListMonitors}
-            thumbnailFit={normalizedThumbnailFit}
+            showThumbnailLabels={settings.eventsThumbnailLabels}
             portalUrl={currentProfile?.portalUrl || ''}
             accessToken={isAccessTokenFresh ? accessToken ?? undefined : undefined}
             batchSize={batchSize}

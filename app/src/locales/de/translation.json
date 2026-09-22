@@ -170,6 +170,7 @@
     "page_position": "{{page}} / {{pages}}"
   },
   "events": {
+    "thumbnail_labels": "Beschriftung auf Vorschaubildern",
     "title": "Ereignisse",
     "subtitle": "Aufnahmen überprüfen",
     "event_id": "Ereignis ID",

@@ -170,6 +170,7 @@
     "page_position": "{{page}} / {{pages}}"
   },
   "events": {
+    "thumbnail_labels": "在缩略图上显示标签",
     "title": "事件",
     "subtitle": "查看录像",
     "event_id": "事件 ID",
