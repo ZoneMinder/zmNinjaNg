@@ -33,10 +33,11 @@ import { usePermissions } from '../hooks/usePermissions';
 import { canEditMonitorSettings, canViewMonitors } from '../lib/permissions/zm-permissions';
 import { isPermissionDenied } from '../lib/permissions/permission-error';
 import { markPermissionDenied, useIsPermissionDenied } from '../stores/permissions';
-import { filterMonitorsByGroup } from '../lib/monitor/filters';
+import { filterMonitorsByGroup, countMonitorsByProfile } from '../lib/monitor/filters';
 import { groupByOwningProfile } from '../lib/profile/profile-sections';
 import { ProfileSectionList } from '../components/profiles/ProfileSectionList';
 import { useGroupFilter } from '../hooks/useGroupFilter';
+import { useSkipOfflineMonitors } from '../hooks/useSkipOfflineMonitors';
 import { GroupFilterSelect } from '../components/filters/GroupFilterSelect';
 import type { Monitor, MonitorStatus, ProfileId } from '../api/types';
 import { NotificationBadge } from '../components/NotificationBadge';
@@ -70,6 +71,9 @@ export default function Monitors() {
   // Group filter is current-profile-scoped (settings + groups query both key
   // off it); All mode skips it until Phase 3 extends it across servers.
   const { isFilterActive, filteredMonitorIds, isFilterReady } = useGroupFilter();
+  // "Skip offline monitors" (Settings > Live Streaming): a monitor with no
+  // picture to show never reaches the grid (refs #527).
+  const keepMonitor = useSkipOfflineMonitors();
   const gridContainerRef = useRef<HTMLDivElement>(null);
 
   const handleMonitorGridChange = useCallback((cols: number) => {
@@ -100,14 +104,18 @@ export default function Monitors() {
 
   const renderItems = useMemo((): MonitorGridItem[] => {
     if (isAllMode) {
-      return scopedMonitors.map((s) => ({
-        Monitor: s.item.Monitor,
-        Monitor_Status: s.item.Monitor_Status,
-        profileId: s.profileId,
-        profileChip: s.profileName,
-      }));
+      return scopedMonitors
+        .filter((s) => keepMonitor(s.item, s.profileId))
+        .map((s) => ({
+          Monitor: s.item.Monitor,
+          Monitor_Status: s.item.Monitor_Status,
+          profileId: s.profileId,
+          profileChip: s.profileName,
+        }));
     }
-    const unwrapped = scopedMonitors.map((s) => s.item);
+    // Offline monitors leave before the group filter: the two are independent,
+    // and a group whose cameras are all down then renders empty, not stale.
+    const unwrapped = scopedMonitors.filter((s) => keepMonitor(s.item)).map((s) => s.item);
     // Apply group filter if active. An empty id list means the group resolved
     // to nothing (or groups have not loaded yet), so show none rather than
     // falling back to every monitor.
@@ -117,7 +125,7 @@ export default function Monitors() {
         ? []
         : filterMonitorsByGroup(unwrapped, filteredMonitorIds);
     return filtered.map(({ Monitor, Monitor_Status }) => ({ Monitor, Monitor_Status }));
-  }, [isAllMode, scopedMonitors, isFilterActive, filteredMonitorIds]);
+  }, [isAllMode, scopedMonitors, isFilterActive, filteredMonitorIds, keepMonitor]);
 
   // Paging (refs #507, see lib/monitor/paging). `renderItems` stays the whole
   // scope, which the header count and the error strips describe; only what is
@@ -131,13 +139,7 @@ export default function Monitors() {
   // Raw per-profile monitor counts, independent of the group filter above:
   // used only to decide whether a profile's error strip shows (a profile
   // filtered down to zero by the group filter still "has data").
-  const monitorCountByProfile = useMemo(() => {
-    const counts = new Map<ProfileId, number>();
-    for (const s of scopedMonitors) {
-      counts.set(s.profileId, (counts.get(s.profileId) ?? 0) + 1);
-    }
-    return counts;
-  }, [scopedMonitors]);
+  const monitorCountByProfile = useMemo(() => countMonitorsByProfile(scopedMonitors), [scopedMonitors]);
 
   // useMonitorNewEvents stays current-profile-scoped for single mode, sharing
   // its watermarks keyed by one profile id. All mode fans the equivalent

@@ -290,7 +290,7 @@ function allMode(
 
 const monitor = (id: string, name: string, sequence?: string) => ({
   Monitor: { Id: id, Name: name, Deleted: false, Sequence: sequence },
-  Monitor_Status: { Status: 'Connected' },
+  Monitor_Status: { Status: 'Connected', CaptureFPS: '10.00' },
 });
 
 describe('Montage Page', () => {
@@ -1586,5 +1586,53 @@ describe('Montage Page', () => {
       expect(mountedTileIds()).toHaveLength(9);
       expect(screen.queryByTestId('montage-page-controls')).toBeNull();
     });
+  });
+});
+
+describe('Montage Page skip-offline filter (refs #527)', () => {
+  const scoped = (item: unknown) => ({ profileId: 'profile-1', profileName: 'Home', item });
+  const offlineMonitor = (id: string, name: string) => ({
+    Monitor: { Id: id, Name: name, Deleted: false, Function: 'Monitor', Capturing: 'Always' },
+    Monitor_Status: { Status: 'Running', CaptureFPS: '0.00' },
+  });
+
+  beforeEach(() => {
+    hiddenMonitorIds = [];
+    useScopedMonitorsMock.mockReset();
+  });
+
+  afterEach(() => {
+    resetProfileFixture();
+    resetFakeStoreGates();
+  });
+
+  it('streams only the monitors with a picture, and leaves the rest out of the kebab list', () => {
+    singleProfile({ skipOfflineMonitors: true });
+    useScopedMonitorsMock.mockReturnValue({
+      monitors: [scoped(monitor('1', 'Front Door')), scoped(offlineMonitor('2', 'Dead Cam'))],
+      errors: [],
+      isLoading: false,
+      refetchProfile: vi.fn(),
+    });
+
+    render(<Montage />);
+
+    expect(screen.getByTestId('montage-monitor-1')).toHaveTextContent('Front Door');
+    expect(screen.queryByTestId('montage-monitor-2')).toBeNull();
+    expect(screen.queryByTestId('montage-kebab-item-2')).toBeNull();
+  });
+
+  it('streams every monitor when the setting is off', () => {
+    singleProfile({ skipOfflineMonitors: false });
+    useScopedMonitorsMock.mockReturnValue({
+      monitors: [scoped(monitor('1', 'Front Door')), scoped(offlineMonitor('2', 'Dead Cam'))],
+      errors: [],
+      isLoading: false,
+      refetchProfile: vi.fn(),
+    });
+
+    render(<Montage />);
+
+    expect(screen.getByTestId('montage-monitor-2')).toHaveTextContent('Dead Cam');
   });
 });

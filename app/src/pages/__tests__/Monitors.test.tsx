@@ -113,7 +113,7 @@ function renderPage() {
   );
 }
 
-function singleProfile(settingsOverrides: Partial<typeof SETTINGS & { monitorsPerPage: number }> = {}) {
+function singleProfile(settingsOverrides: Partial<typeof SETTINGS & { monitorsPerPage: number; skipOfflineMonitors: boolean }> = {}) {
   seedProfiles([makeProfile('profile-1', { name: 'Home' })], {
     current: 'profile-1',
     settings: { 'profile-1': { ...SETTINGS, ...settingsOverrides } },
@@ -159,8 +159,8 @@ describe('Monitors Page', () => {
     singleProfile();
     useScopedMonitorsMock.mockReturnValue({
       monitors: [
-        { profileId: 'profile-1', profileName: 'Home', item: { Monitor: { Id: '1', Name: 'Front Door', Deleted: false }, Monitor_Status: { Status: 'Connected' } } },
-        { profileId: 'profile-1', profileName: 'Home', item: { Monitor: { Id: '2', Name: 'Back Door', Deleted: false }, Monitor_Status: { Status: 'Connected' } } },
+        { profileId: 'profile-1', profileName: 'Home', item: { Monitor: { Id: '1', Name: 'Front Door', Deleted: false }, Monitor_Status: { Status: 'Connected', CaptureFPS: '10.00' } } },
+        { profileId: 'profile-1', profileName: 'Home', item: { Monitor: { Id: '2', Name: 'Back Door', Deleted: false }, Monitor_Status: { Status: 'Connected', CaptureFPS: '10.00' } } },
       ],
       errors: [],
       isLoading: false,
@@ -178,8 +178,8 @@ describe('Monitors Page', () => {
     allMode(2);
     useScopedMonitorsMock.mockReturnValue({
       monitors: [
-        { profileId: 'profile-1', profileName: 'Home', item: { Monitor: { Id: '1', Name: 'Front Door', Deleted: false }, Monitor_Status: { Status: 'Connected' } } },
-        { profileId: 'profile-2', profileName: 'Office', item: { Monitor: { Id: '2', Name: 'Lobby Cam', Deleted: false }, Monitor_Status: { Status: 'Connected' } } },
+        { profileId: 'profile-1', profileName: 'Home', item: { Monitor: { Id: '1', Name: 'Front Door', Deleted: false }, Monitor_Status: { Status: 'Connected', CaptureFPS: '10.00' } } },
+        { profileId: 'profile-2', profileName: 'Office', item: { Monitor: { Id: '2', Name: 'Lobby Cam', Deleted: false }, Monitor_Status: { Status: 'Connected', CaptureFPS: '10.00' } } },
       ],
       errors: [],
       isLoading: false,
@@ -199,8 +199,8 @@ describe('Monitors Page', () => {
     useSettingsStore.getState().updateProfileSettings(ALL_PROFILES_ID, { monitorsGroupByServer: true });
     useScopedMonitorsMock.mockReturnValue({
       monitors: [
-        { profileId: 'profile-1', profileName: 'Home', item: { Monitor: { Id: '1', Name: 'Front Door', Deleted: false }, Monitor_Status: { Status: 'Connected' } } },
-        { profileId: 'profile-2', profileName: 'Office', item: { Monitor: { Id: '2', Name: 'Lobby Cam', Deleted: false }, Monitor_Status: { Status: 'Connected' } } },
+        { profileId: 'profile-1', profileName: 'Home', item: { Monitor: { Id: '1', Name: 'Front Door', Deleted: false }, Monitor_Status: { Status: 'Connected', CaptureFPS: '10.00' } } },
+        { profileId: 'profile-2', profileName: 'Office', item: { Monitor: { Id: '2', Name: 'Lobby Cam', Deleted: false }, Monitor_Status: { Status: 'Connected', CaptureFPS: '10.00' } } },
       ],
       errors: [],
       isLoading: false,
@@ -222,8 +222,8 @@ describe('Monitors Page', () => {
     allMode(2);
     useScopedMonitorsMock.mockReturnValue({
       monitors: [
-        { profileId: 'profile-1', profileName: 'Home', item: { Monitor: { Id: '1', Name: 'Front Door', Deleted: false }, Monitor_Status: { Status: 'Connected' } } },
-        { profileId: 'profile-2', profileName: 'Office', item: { Monitor: { Id: '1', Name: 'Front Door (Office)', Deleted: false }, Monitor_Status: { Status: 'Connected' } } },
+        { profileId: 'profile-1', profileName: 'Home', item: { Monitor: { Id: '1', Name: 'Front Door', Deleted: false }, Monitor_Status: { Status: 'Connected', CaptureFPS: '10.00' } } },
+        { profileId: 'profile-2', profileName: 'Office', item: { Monitor: { Id: '1', Name: 'Front Door (Office)', Deleted: false }, Monitor_Status: { Status: 'Connected', CaptureFPS: '10.00' } } },
       ],
       errors: [],
       isLoading: false,
@@ -246,7 +246,7 @@ describe('Monitors Page', () => {
       monitors: [
         // profile-2 has no entry here: its error produced zero monitors, so
         // its strip should show (unlike the suppressed-strip case below).
-        { profileId: 'profile-1', profileName: 'Home', item: { Monitor: { Id: '1', Name: 'Front Door', Deleted: false }, Monitor_Status: { Status: 'Connected' } } },
+        { profileId: 'profile-1', profileName: 'Home', item: { Monitor: { Id: '1', Name: 'Front Door', Deleted: false }, Monitor_Status: { Status: 'Connected', CaptureFPS: '10.00' } } },
       ],
       errors: [
         { profileId: 'profile-2', profileName: 'Office', error: new Error('network down') },
@@ -269,8 +269,8 @@ describe('Monitors Page', () => {
         // profile-2 has an error below AND a monitor here: a background
         // refetch failure (e.g. offline) while cached data still renders,
         // same as the old single-mode "error and !data" wall it replaces.
-        { profileId: 'profile-1', profileName: 'Home', item: { Monitor: { Id: '1', Name: 'Front Door', Deleted: false }, Monitor_Status: { Status: 'Connected' } } },
-        { profileId: 'profile-2', profileName: 'Office', item: { Monitor: { Id: '2', Name: 'Lobby Cam', Deleted: false }, Monitor_Status: { Status: 'Connected' } } },
+        { profileId: 'profile-1', profileName: 'Home', item: { Monitor: { Id: '1', Name: 'Front Door', Deleted: false }, Monitor_Status: { Status: 'Connected', CaptureFPS: '10.00' } } },
+        { profileId: 'profile-2', profileName: 'Office', item: { Monitor: { Id: '2', Name: 'Lobby Cam', Deleted: false }, Monitor_Status: { Status: 'Connected', CaptureFPS: '10.00' } } },
       ],
       errors: [
         { profileId: 'profile-2', profileName: 'Office', error: new Error('offline') },
@@ -327,7 +327,7 @@ describe('Monitors Page', () => {
     allMode(2);
     useScopedMonitorsMock.mockReturnValue({
       monitors: [
-        { profileId: 'profile-1', profileName: 'Home', item: { Monitor: { Id: '1', Name: 'Front Door', Deleted: false }, Monitor_Status: { Status: 'Connected' } } },
+        { profileId: 'profile-1', profileName: 'Home', item: { Monitor: { Id: '1', Name: 'Front Door', Deleted: false }, Monitor_Status: { Status: 'Connected', CaptureFPS: '10.00' } } },
       ],
       errors: [
         { profileId: 'profile-2', profileName: 'Office', error: new Error('network down') },
@@ -351,7 +351,7 @@ describe('Monitors Page', () => {
           profileName: 'Home',
           item: {
             Monitor: { Id: String(i + 1), Name: `Cam ${i + 1}`, Deleted: false },
-            Monitor_Status: { Status: 'Connected' },
+            Monitor_Status: { Status: 'Connected', CaptureFPS: '10.00' },
           },
         })),
         errors: [],
@@ -431,5 +431,57 @@ describe('Monitors Page', () => {
       expect(mountedCardIds()).toHaveLength(74);
       expect(screen.queryByTestId('monitors-page-controls')).toBeNull();
     });
+  });
+});
+
+describe('Monitors Page skip-offline filter (refs #527)', () => {
+  const scoped = (item: unknown) => ({ profileId: 'profile-1', profileName: 'Home', item });
+  const live = (id: string, name: string) => ({
+    Monitor: { Id: id, Name: name, Deleted: false, Function: 'Monitor', Capturing: 'Always' },
+    Monitor_Status: { Status: 'Connected', CaptureFPS: '10.00' },
+  });
+  const offline = (id: string, name: string) => ({
+    Monitor: { Id: id, Name: name, Deleted: false, Function: 'Monitor', Capturing: 'Always' },
+    Monitor_Status: { Status: 'Running', CaptureFPS: '0.00' },
+  });
+
+  beforeEach(() => {
+    useScopedMonitorsMock.mockReset();
+    useScopedMonitorNewEventsMock.mockReset();
+    useScopedMonitorNewEventsMock.mockReturnValue({ counts: {}, newest: {} });
+  });
+
+  afterEach(() => {
+    resetProfileFixture();
+    resetFakeStoreGates();
+  });
+
+  it('drops a monitor with no stream when the setting is on', () => {
+    singleProfile({ skipOfflineMonitors: true });
+    useScopedMonitorsMock.mockReturnValue({
+      monitors: [scoped(live('1', 'Front Door')), scoped(offline('2', 'Dead Cam'))],
+      errors: [],
+      isLoading: false,
+      refetchProfile: vi.fn(),
+    });
+
+    renderPage();
+
+    expect(screen.getByTestId('monitor-card-1')).toHaveTextContent('Front Door');
+    expect(screen.queryByTestId('monitor-card-2')).toBeNull();
+  });
+
+  it('keeps every monitor when the setting is off', () => {
+    singleProfile({ skipOfflineMonitors: false });
+    useScopedMonitorsMock.mockReturnValue({
+      monitors: [scoped(live('1', 'Front Door')), scoped(offline('2', 'Dead Cam'))],
+      errors: [],
+      isLoading: false,
+      refetchProfile: vi.fn(),
+    });
+
+    renderPage();
+
+    expect(screen.getByTestId('monitor-card-2')).toHaveTextContent('Dead Cam');
   });
 });

@@ -6,7 +6,7 @@
  * and to filter by monitor groups.
  */
 
-import type { MonitorData, GroupData } from '../../api/types';
+import type { MonitorData, GroupData, ProfileId } from '../../api/types';
 
 /**
  * Filter monitors to only show non-deleted ones.
@@ -151,4 +151,18 @@ export function buildGroupHierarchy(groups: GroupData[]): GroupHierarchyItem[] {
     .forEach((root) => addGroupWithChildren(root, 0));
 
   return result;
+}
+
+/**
+ * How many monitors each profile contributed, before any filter narrows the
+ * view. Both the Monitors page and the montage decide whether to show a
+ * profile's error strip from this: a profile whose tiles were all filtered
+ * away still "has data" and needs no strip.
+ */
+export function countMonitorsByProfile<T>(
+  scoped: Array<{ profileId: ProfileId; item: T }>,
+): Map<ProfileId, number> {
+  const counts = new Map<ProfileId, number>();
+  for (const s of scoped) counts.set(s.profileId, (counts.get(s.profileId) ?? 0) + 1);
+  return counts;
 }
