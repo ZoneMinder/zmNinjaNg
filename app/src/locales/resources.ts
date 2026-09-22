@@ -10,6 +10,7 @@ import deTranslation from './de/translation.json';
 import esTranslation from './es/translation.json';
 import frTranslation from './fr/translation.json';
 import itTranslation from './it/translation.json';
+import faTranslation from './fa/translation.json';
 import ruTranslation from './ru/translation.json';
 import zhTranslation from './zh/translation.json';
 
@@ -19,6 +20,7 @@ export const LANGUAGE_RESOURCES = {
   es: { translation: esTranslation },
   fr: { translation: frTranslation },
   it: { translation: itTranslation },
+  fa: { translation: faTranslation },
   ru: { translation: ruTranslation },
   zh: { translation: zhTranslation },
 };
