@@ -34,8 +34,8 @@ const mockState = vi.hoisted(() => ({
   // useScopedMonitors' `combine`-based reference stability (Task 4). A fresh
   // array per call would defeat the memo comparison this file exists to test.
   scopedMonitors: [
-    { profileId: 'profile-1', profileName: 'Home', item: { Monitor: { Id: '1', Name: 'Front Door', Deleted: false }, Monitor_Status: { Status: 'Connected' } } },
-    { profileId: 'profile-1', profileName: 'Home', item: { Monitor: { Id: '2', Name: 'Back Door', Deleted: false }, Monitor_Status: { Status: 'Connected' } } },
+    { profileId: 'profile-1', profileName: 'Home', item: { Monitor: { Id: '1', Name: 'Front Door', Deleted: false }, Monitor_Status: { Status: 'Connected', CaptureFPS: '10.00' } } },
+    { profileId: 'profile-1', profileName: 'Home', item: { Monitor: { Id: '2', Name: 'Back Door', Deleted: false }, Monitor_Status: { Status: 'Connected', CaptureFPS: '10.00' } } },
   ],
 }));
 

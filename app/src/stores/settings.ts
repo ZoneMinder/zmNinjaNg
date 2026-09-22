@@ -247,6 +247,11 @@ export interface ProfileSettings {
    *  in fullscreen" under Settings > Live Streaming). `fullscreenMonitorIds`
    *  is the per-monitor form (refs #462, #463). */
   monitorDetailFullscreen: boolean;
+  /** Skip monitors with nothing to show when stepping through live view with
+   *  swipe, prev/next or auto-cycle. A monitor whose capture is off, or whose
+   *  daemon reports no frames, has no stream to stop on (refs #527). On-demand
+   *  monitors stay in the rotation: they only start capturing once viewed. */
+  skipOfflineMonitors: boolean;
   insomnia: boolean; // Global: Keep screen awake across all pages
   monitorDetailInsomnia: boolean; // @deprecated - use global insomnia instead
   montageInsomnia: boolean; // @deprecated - use global insomnia instead
@@ -500,6 +505,8 @@ export const DEFAULT_SETTINGS: ProfileSettings = {
   eventsThumbnailLabels: true,
   monitorDetailCycleSeconds: 0,
   monitorDetailFullscreen: false,
+  // On by default: zmNinja 1.6 stepped through live monitors only (refs #527)
+  skipOfflineMonitors: true,
   insomnia: false,
   monitorDetailInsomnia: false,
   montageInsomnia: false,

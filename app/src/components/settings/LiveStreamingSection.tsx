@@ -332,6 +332,20 @@ export function LiveStreamingSection({
           />
         </SettingsRow>
 
+        {/* Skip offline monitors when stepping through live view (refs #527) */}
+        <SettingsRow>
+          <RowLabel
+            label={t('settings.skip_offline_monitors')}
+            desc={t('settings.skip_offline_monitors_desc')}
+          />
+          <Switch
+            id="skip-offline-monitors"
+            checked={settings.skipOfflineMonitors}
+            onCheckedChange={(checked) => update('skipOfflineMonitors', checked)}
+            data-testid="settings-skip-offline-monitors-switch"
+          />
+        </SettingsRow>
+
         {/* Stream FPS */}
         <div className="px-4 py-3 space-y-2">
           <RowLabel

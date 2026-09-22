@@ -586,6 +586,8 @@
     "show_protocol_label_desc": "Streaming-Protokoll auf Videofeeds anzeigen",
     "live_fullscreen": "Live-Ansicht im Vollbild öffnen",
     "live_fullscreen_desc": "Jeder Monitor öffnet maximiert. Für einen einzelnen Monitor: Im Vollbild öffnen in dessen Einstellungen",
+    "skip_offline_monitors": "Offline-Monitore überspringen",
+    "skip_offline_monitors_desc": "Wischen, Vorheriger/Nächster und Auto-Wechsel überspringen Monitore ohne Stream. Monitore mit Aufnahme bei Bedarf bleiben immer enthalten",
     "webrtc_use_stun": "STUN-Server",
     "webrtc_use_stun_desc": "Nur für go2rtc direkt über das Internet aktivieren. Aus im LAN oder VPN.",
     "webrtc_protocols": "Streaming-Protokolle",
@@ -1217,7 +1219,7 @@
     "fr": "Français",
     "de": "Deutsch",
     "it": "Italiano",
-	"fa": "فارسی",
+    "fa": "فارسی",
     "zh": "中文",
     "ru": "Русский"
   },

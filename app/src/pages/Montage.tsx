@@ -22,7 +22,7 @@ import { RefreshButton } from '../components/common/RefreshButton';
 import { ErrorBanner } from '../components/ui/query-state';
 import { resolveQueryError } from '../lib/query/query-error';
 import { EmptyState } from '../components/ui/empty-state';
-import { filterMonitorsByGroup } from '../lib/monitor/filters';
+import { filterMonitorsByGroup, countMonitorsByProfile } from '../lib/monitor/filters';
 import { allocateStreamBudget } from '../lib/monitor/stream-budget';
 import { useMonitorPaging } from '../hooks/useMonitorPaging';
 import { MonitorPageControls } from '../components/monitors/MonitorPageControls';
@@ -31,6 +31,7 @@ import { useIdleAfter } from '../hooks/useIdleAfter';
 import { useViewportGating } from '../hooks/useViewportGating';
 import { MONITOR_PAGING, MONTAGE_GRID } from '../lib/zmninja-ng-constants';
 import { useGroupFilter } from '../hooks/useGroupFilter';
+import { useSkipOfflineMonitors } from '../hooks/useSkipOfflineMonitors';
 import { useMontageGroupState } from '../hooks/useMontageGroupState';
 import { GroupFilterSelect } from '../components/filters/GroupFilterSelect';
 import { cn } from '../lib/utils';
@@ -123,30 +124,34 @@ export default function Montage() {
   // Raw per-profile monitor counts, independent of any filter/cap below:
   // decides whether a profile's error strip shows (a profile filtered/capped
   // to zero tiles still "has data"), mirroring Monitors.tsx.
-  const monitorCountByProfile = useMemo(() => {
-    const counts = new Map<ProfileId, number>();
-    for (const s of scopedMonitors) {
-      counts.set(s.profileId, (counts.get(s.profileId) ?? 0) + 1);
-    }
-    return counts;
-  }, [scopedMonitors]);
+  const monitorCountByProfile = useMemo(() => countMonitorsByProfile(scopedMonitors), [scopedMonitors]);
+
+  // "Skip offline monitors" (Settings > Live Streaming). Applied before both
+  // the tiles and the kebab list: a monitor with no picture would only open a
+  // stream that never arrives, and listing one the grid refuses to render
+  // would leave its Show toggle doing nothing (refs #527).
+  const keepMonitor = useSkipOfflineMonitors();
+  const streamableMonitors = useMemo(
+    () => scopedMonitors.filter((s) => keepMonitor(s.item, s.profileId)),
+    [scopedMonitors, keepMonitor]
+  );
 
   // The kebab's show-monitors list. Built from the FULL monitor list, never
   // the group-filtered `monitors` below - see the hook for why.
-  const visibilityItems = useMontageVisibilityItems(scopedMonitors, isAllMode);
+  const visibilityItems = useMontageVisibilityItems(streamableMonitors, isAllMode);
 
   const monitors = useMemo((): MontageTileItem[] => {
     if (isAllMode) {
       // Group filter is current-profile-scoped (Monitors.tsx precedent) - All
       // mode skips it until it is extended across servers.
-      return scopedMonitors.map((s) => ({
+      return streamableMonitors.map((s) => ({
         Monitor: s.item.Monitor,
         Monitor_Status: s.item.Monitor_Status,
         profileId: s.profileId,
         profileChip: s.profileName,
       }));
     }
-    let list: MonitorData[] = scopedMonitors.map((s) => ({ Monitor: s.item.Monitor, Monitor_Status: s.item.Monitor_Status }));
+    let list: MonitorData[] = streamableMonitors.map((s) => ({ Monitor: s.item.Monitor, Monitor_Status: s.item.Monitor_Status }));
     // When a group filter is active, show only its monitors. An empty id list
     // means the group resolved to nothing (or groups have not loaded yet), so
     // render none rather than falling back to streaming every monitor.
@@ -156,7 +161,7 @@ export default function Montage() {
         : [];
     }
     return list;
-  }, [isAllMode, scopedMonitors, isFilterActive, filteredMonitorIds]);
+  }, [isAllMode, streamableMonitors, isFilterActive, filteredMonitorIds]);
 
   // tileIdFor degrades to the bare monitor id when the tile has no profileId,
   // which is every tile in single mode - so one expression covers both modes.

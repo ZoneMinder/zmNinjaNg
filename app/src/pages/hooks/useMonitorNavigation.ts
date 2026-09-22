@@ -10,6 +10,9 @@ import { useQuery } from '@tanstack/react-query';
 import { getMonitors } from '../../api/monitors';
 import { getSession, getCurrentSession } from '../../services/sessions';
 import { filterEnabledMonitors } from '../../lib/monitor/filters';
+import { getMonitorRunState, isMonitorStreamable } from '../../lib/monitor/monitor-status';
+import { useAuthSlice } from '../../stores/auth';
+import { useSettingsStore } from '../../stores/settings';
 import { useCurrentProfile } from '../../hooks/useCurrentProfile';
 import { useSwipeNavigation } from '../../hooks/useSwipeNavigation';
 import { MONITOR_NAVIGATION } from '../../lib/zmninja-ng-constants';
@@ -39,6 +42,21 @@ interface UseMonitorNavigationReturn {
   onSwipeRight: () => void;
 }
 
+/**
+ * Whether stepping through live view should stop on this monitor (refs #527).
+ *
+ * A monitor with capture off, or whose daemon reports no frames, has no stream
+ * to show, so swipe/prev/next/cycle pass over it. Two monitors stay in the
+ * rotation regardless: an on-demand one, which has no running daemon and so no
+ * status until a viewer connects, and the one being viewed, whose removal would
+ * leave the page with no way to step out of it.
+ */
+function isNavigable(m: MonitorData, currentMonitorId: string, zmVersion: string | null): boolean {
+  if (m.Monitor.Id === currentMonitorId) return true;
+  if (m.Monitor.Capturing === 'Ondemand') return true;
+  return isMonitorStreamable(getMonitorRunState(m.Monitor, m.Monitor_Status, zmVersion));
+}
+
 export function useMonitorNavigation({
   currentMonitorId,
   cycleSeconds = 0,
@@ -60,12 +78,19 @@ export function useMonitorNavigation({
     },
   });
 
+  const zmVersion = useAuthSlice(effectiveProfileId ?? null).version;
+  const skipOffline = useSettingsStore((state) =>
+    effectiveProfileId ? state.getProfileSettings(effectiveProfileId).skipOfflineMonitors : false,
+  );
+
   // Get enabled monitors list and find current monitor index
   const { enabledMonitors, currentIndex, hasPrev, hasNext } = useMemo(() => {
     if (!monitorsData?.monitors || !currentMonitorId) {
       return { enabledMonitors: [] as MonitorData[], currentIndex: -1, hasPrev: false, hasNext: false };
     }
-    const enabled = filterEnabledMonitors(monitorsData.monitors);
+    const enabled = filterEnabledMonitors(monitorsData.monitors).filter(
+      (m) => !skipOffline || isNavigable(m, currentMonitorId, zmVersion),
+    );
     const idx = enabled.findIndex((m) => m.Monitor.Id === currentMonitorId);
     return {
       enabledMonitors: enabled,
@@ -73,7 +98,7 @@ export function useMonitorNavigation({
       hasPrev: idx > 0,
       hasNext: idx < enabled.length - 1,
     };
-  }, [monitorsData?.monitors, currentMonitorId]);
+  }, [monitorsData?.monitors, currentMonitorId, skipOffline, zmVersion]);
 
   // Navigation callbacks. Stepping between monitors replaces the current history
   // entry (so prev/next don't build a back-stack) and carries the original
