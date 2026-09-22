@@ -1,5 +1,27 @@
 # Changelog
 
+## [zmNinjaNg-2.5.0](https://github.com/ZoneMinder/zmNinjaNg/tree/zmNinjaNg-2.5.0) (2026-09-20)
+
+[Full Changelog](https://github.com/ZoneMinder/zmNinjaNg/compare/zmNinjaNg-2.4.0...zmNinjaNg-2.5.0)
+
+**Implemented enhancements:**
+
+- feat\(profiles\): jump to and collapse the per-server sections [\#503](https://github.com/ZoneMinder/zmNinjaNg/issues/503)
+- feat\(events\): section the event list and grid by server in an aggregate [\#501](https://github.com/ZoneMinder/zmNinjaNg/issues/501)
+- Show events around the current event \(plus/minus N minutes\) [\#494](https://github.com/ZoneMinder/zmNinjaNg/issues/494)
+- Ability to filter by linked/not linked monitor event cause [\#493](https://github.com/ZoneMinder/zmNinjaNg/issues/493)
+
+**Fixed bugs:**
+
+- Images not shown on zmNinjaNG [\#507](https://github.com/ZoneMinder/zmNinjaNg/issues/507)
+- go2rtc WebSocket carries no token: behind ZoneMinder auth the live view falls back to MJPEG [\#499](https://github.com/ZoneMinder/zmNinjaNg/issues/499)
+- Inputting date ranges only seems to accept a single number of input and refreshes if already populated [\#495](https://github.com/ZoneMinder/zmNinjaNg/issues/495)
+- Zoom level does not reset between full screen and not full-screen on Android [\#489](https://github.com/ZoneMinder/zmNinjaNg/issues/489)
+
+**Closed issues:**
+
+- go2rtc stream name is \<Id\>\_\<StreamChannel\> \(1\_Restream\), which ZoneMinder never registers [\#498](https://github.com/ZoneMinder/zmNinjaNg/issues/498)
+
 ## [zmNinjaNg-2.4.0](https://github.com/ZoneMinder/zmNinjaNg/tree/zmNinjaNg-2.4.0) (2026-09-12)
 
 [Full Changelog](https://github.com/ZoneMinder/zmNinjaNg/compare/zmNinjaNg-2.3.0...zmNinjaNg-2.4.0)

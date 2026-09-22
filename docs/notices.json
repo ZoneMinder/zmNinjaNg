@@ -1,5 +1,14 @@
 [
   {
+    "id": "release-2.5.0",
+    "title": "Event grouping by server, new filters, playback fixes",
+    "body": "- Events from a few minutes before and after the one you are viewing can now be listed, so you can follow what happened around it.\n- Events can be filtered by whether the cause came from a linked monitor or not.\n- When several servers are shown at once, the event list and event grid are split into a section per server.\n- The profiles screen groups each server into a section you can jump to or collapse.\n- Fixed images not appearing in the montage and the monitor list when a server has many monitors.\n- Fixed live view dropping to the slower stream when go2rtc is used on a server that requires a login.\n- Fixed typing dates in the event filter, which accepted only one character at a time and cleared what was already entered. Date fields now have their own button for opening the picker.\n- Fixed the zoom level staying wrong after leaving full screen on Android.\n- Date pickers and other built-in controls now follow the light or dark theme.\n\n[Full changelog](https://github.com/ZoneMinder/zmNinjaNg/releases/tag/zmNinjaNg-2.5.0)",
+    "publishedAt": "2026-09-20T15:41:44.123Z",
+    "severity": "info",
+    "link": "https://github.com/ZoneMinder/zmNinjaNg/releases/tag/zmNinjaNg-2.5.0",
+    "minAppVersion": "2.5.0"
+  },
+  {
     "id": "release-2.4.0",
     "title": "Zoom, fullscreen, and startup screen updates",
     "body": "- Added a setting to choose which screen the app opens on, per profile.\n- Removed the 400% zoom limit on monitors, and zoomed views now load full-size frames so detail stays sharp.\n- Maximizing a monitor no longer sticks, so the app stops opening that monitor in fullscreen next time.\n- Replaced the fullscreen exit strip with a floating translucent close button over the feed.\n- Added Russian as an interface language.\n- Language pickers now list languages in a consistent order with English first.\n\n[Full changelog](https://github.com/ZoneMinder/zmNinjaNg/releases/tag/zmNinjaNg-2.4.0)",
