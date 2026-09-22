@@ -31,7 +31,8 @@ interface EventListViewProps {
   /** All mode only: monitors carry their owning profileId so a colliding
    *  numeric id across two servers doesn't collapse into one map entry. */
   monitors: Array<{ Monitor: Monitor; profileId?: ProfileId }>;
-  thumbnailFit: 'contain' | 'cover' | 'none' | 'scale-down';
+  /** Off hides the text drawn over each thumbnail (refs #525). */
+  showThumbnailLabels: boolean;
   /** Default portal URL/token, used in single mode or for an item with no profileId. */
   portalUrl: string;
   accessToken?: string;
@@ -56,7 +57,7 @@ interface EventListViewProps {
 const EventItem = memo(function EventItem({
   event,
   monitorMap,
-  thumbnailFit,
+  showThumbnailLabels,
   portalUrl,
   accessToken,
   eventTagMap,
@@ -66,7 +67,7 @@ const EventItem = memo(function EventItem({
 }: {
   event: ScopedEventItem;
   monitorMap: Map<string, Monitor>;
-  thumbnailFit: 'contain' | 'cover' | 'none' | 'scale-down';
+  showThumbnailLabels: boolean;
   portalUrl: string;
   accessToken?: string;
   eventTagMap?: Map<string, Tag[]>;
@@ -148,7 +149,7 @@ const EventItem = memo(function EventItem({
         monitorServerId={monitorData?.ServerId}
         thumbnailUrls={thumbnailUrls}
         largeThumbnailUrls={largeThumbnailUrls}
-        objectFit={thumbnailFit}
+        showThumbnailLabels={showThumbnailLabels}
         thumbnailWidth={thumbnailWidth}
         thumbnailHeight={thumbnailHeight}
         tags={eventTagMap?.get(scopedEventKey(profileId, Event.Id))}
@@ -161,7 +162,7 @@ const EventItem = memo(function EventItem({
 export const EventListView = ({
   events,
   monitors,
-  thumbnailFit,
+  showThumbnailLabels,
   portalUrl,
   accessToken,
   batchSize,
@@ -226,7 +227,7 @@ export const EventListView = ({
       key={scopedEventKey(event.profileId, event.Event.Id)}
       event={event}
       monitorMap={monitorMap}
-      thumbnailFit={thumbnailFit}
+      showThumbnailLabels={showThumbnailLabels}
       portalUrl={portalUrl}
       accessToken={accessToken}
       eventTagMap={eventTagMap}

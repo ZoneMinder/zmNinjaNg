@@ -131,7 +131,7 @@ function renderTile(): ReturnType<typeof render> {
         events={[{ Event: sharedEvent } as ScopedEventItem]}
         monitors={[]}
         gridCols={3}
-        thumbnailFit="contain"
+        showThumbnailLabels
         portalUrl="https://zm.example.test"
         accessToken="current-profile-token"
         batchSize={20}

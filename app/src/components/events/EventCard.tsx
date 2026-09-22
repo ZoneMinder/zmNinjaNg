@@ -43,7 +43,7 @@ import { useDeleteSelectionStore, eventSelectionKey } from '../../stores/deleteS
  * @param props.monitorName - Name of the monitor that recorded the event
  * @param props.thumbnailUrl - URL for the event thumbnail image
  */
-function EventCardComponent({ event, monitorName, profileId, profileChip, monitorServerId, thumbnailUrls, largeThumbnailUrls, objectFit = 'contain', thumbnailWidth, thumbnailHeight, tags, eventFilters }: EventCardProps) {
+function EventCardComponent({ event, monitorName, profileId, profileChip, monitorServerId, thumbnailUrls, largeThumbnailUrls, showThumbnailLabels = true, thumbnailWidth, thumbnailHeight, tags, eventFilters }: EventCardProps) {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const { fmtDate, fmtTime } = useDateTimeFormat();
@@ -130,7 +130,7 @@ function EventCardComponent({ event, monitorName, profileId, profileChip, monito
                   className={cn(
                     "w-full h-full group-hover:scale-105 transition-transform duration-300"
                   )}
-                  objectFit={objectFit}
+                  objectFit="contain"
                   loading="lazy"
                   data-testid="event-thumbnail"
                 />
@@ -143,13 +143,13 @@ function EventCardComponent({ event, monitorName, profileId, profileChip, monito
                 className={cn(
                   "w-full h-full group-hover:scale-105 transition-transform duration-300"
                 )}
-                objectFit={objectFit}
+                objectFit="contain"
                 loading="lazy"
                 data-testid="event-thumbnail"
               />
             )}
           </div>
-          {isWithinDays(startTime, RELATIVE_TIME_LIST_WINDOW_DAYS) && (
+          {showThumbnailLabels && isWithinDays(startTime, RELATIVE_TIME_LIST_WINDOW_DAYS) && (
             <div
               className="absolute bottom-0.5 left-1/2 -translate-x-1/2 sm:bottom-1 max-w-[calc(100%-0.5rem)] truncate bg-black/50 text-white text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded font-medium"
               data-testid="event-relative-time"

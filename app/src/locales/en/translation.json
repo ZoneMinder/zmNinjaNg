@@ -170,6 +170,7 @@
     "page_position": "{{page}} / {{pages}}"
   },
   "events": {
+    "thumbnail_labels": "Show labels on thumbnails",
     "title": "Events",
     "subtitle": "Review recordings",
     "event_id": "Event ID",

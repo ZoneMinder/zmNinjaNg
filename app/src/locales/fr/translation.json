@@ -170,6 +170,7 @@
     "page_position": "{{page}} / {{pages}}"
   },
   "events": {
+    "thumbnail_labels": "Libellés sur les vignettes",
     "title": "Événements",
     "subtitle": "Revoir les enregistrements",
     "event_id": "ID Événement",

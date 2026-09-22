@@ -55,7 +55,8 @@ interface EventMontageTileProps {
   profileId?: ProfileId;
   profileChip?: string;
   monitorMap: Map<string, Monitor>;
-  thumbnailFit: 'contain' | 'cover' | 'none' | 'scale-down';
+  /** Off hides the text drawn over the image (refs #525). */
+  showThumbnailLabels: boolean;
   thumbnailChain: ThumbnailFallbackEntry[];
   showHover: boolean;
   portalUrl: string;
@@ -74,7 +75,7 @@ const EventMontageTile = memo(function EventMontageTile({
   profileId,
   profileChip,
   monitorMap,
-  thumbnailFit,
+  showThumbnailLabels,
   thumbnailChain,
   showHover,
   portalUrl,
@@ -172,7 +173,7 @@ const EventMontageTile = memo(function EventMontageTile({
         tabIndex={0}
         aria-label={`${t('common.view')}: ${event.Name}`}
       >
-        <div className="relative bg-card" style={{ aspectRatio: aspectRatio.toString() }}>
+        <div className="relative bg-card" style={{ aspectRatio: aspectRatio.toString() }} data-testid="event-montage-thumbnail">
           {showHover ? (
           <EventThumbnailHoverPreview event={event} aspectRatio={aspectRatio} profileId={profileId}>
             <EventThumbnail
@@ -180,7 +181,7 @@ const EventMontageTile = memo(function EventMontageTile({
               cacheKey={event.Id}
               alt={event.Name}
               className="w-full h-full"
-              objectFit={thumbnailFit}
+              objectFit="contain"
               loading="lazy"
             />
           </EventThumbnailHoverPreview>
@@ -190,26 +191,23 @@ const EventMontageTile = memo(function EventMontageTile({
             cacheKey={event.Id}
             alt={event.Name}
             className="w-full h-full"
-            objectFit={thumbnailFit}
+            objectFit="contain"
             loading="lazy"
           />
         )}
-        <div className="absolute top-2 right-2 flex items-center gap-2">
-          {isWithinDays(startTime, RELATIVE_TIME_LIST_WINDOW_DAYS) && (
-            <Badge variant="secondary" className="text-xs" data-testid="event-montage-relative-time">
-              {formatEventRelative(startTime, i18n.language, t)}
-            </Badge>
-          )}
-          {/* A plate behind them: a muted stroke on top of a photograph is
-              invisible, which is why these two read as missing. The relative
-              time badge beside them has always had one. */}
-          <div className="flex items-center gap-1 rounded-full bg-background/80 px-1 backdrop-blur-sm">
-            <EventFavoriteButton eventId={event.Id} profileId={ownerProfileId} />
-            <EventContextButton event={event} profileId={profileId} />
-          </div>
-        </div>
+        {showThumbnailLabels && isWithinDays(startTime, RELATIVE_TIME_LIST_WINDOW_DAYS) && (
+          <Badge variant="secondary" className="absolute top-2 right-2 text-xs" data-testid="event-montage-relative-time">
+            {formatEventRelative(startTime, i18n.language, t)}
+          </Badge>
+        )}
       </div>
       <div className="p-3 space-y-1">
+        {/* Below the image, as on a list row: on a small tile the buttons
+            covered a third of the picture (refs #525). */}
+        <div className="flex items-center gap-1">
+          <EventFavoriteButton eventId={event.Id} profileId={ownerProfileId} />
+          <EventContextButton event={event} profileId={profileId} />
+        </div>
         <div className="font-medium text-sm truncate" title={event.Name}>
           {event.Name}
         </div>
@@ -283,7 +281,7 @@ interface EventMontageViewProps {
    *  (same contract as EventListView's monitors prop). */
   monitors: Array<{ Monitor: Monitor; profileId?: ProfileId }>;
   gridCols: number;
-  thumbnailFit: 'contain' | 'cover' | 'none' | 'scale-down';
+  showThumbnailLabels: boolean;
   portalUrl: string;
   accessToken?: string;
   batchSize: number;
@@ -305,7 +303,7 @@ export const EventMontageView = ({
   events,
   monitors,
   gridCols,
-  thumbnailFit,
+  showThumbnailLabels,
   portalUrl,
   accessToken,
   batchSize,
@@ -342,7 +340,7 @@ export const EventMontageView = ({
       profileId={eventData.profileId}
       profileChip={eventData.profileChip}
       monitorMap={monitorMap}
-      thumbnailFit={thumbnailFit}
+      showThumbnailLabels={showThumbnailLabels}
       thumbnailChain={thumbnailChain}
       showHover={showHover}
       portalUrl={portalUrl}

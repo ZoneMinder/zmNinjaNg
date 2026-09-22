@@ -170,6 +170,7 @@
     "page_position": "{{page}} / {{pages}}"
   },
   "events": {
+    "thumbnail_labels": "Etiquetas en miniaturas",
     "title": "Eventos",
     "subtitle": "Revisar grabaciones",
     "event_id": "ID de Evento",

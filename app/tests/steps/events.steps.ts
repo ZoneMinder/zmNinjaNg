@@ -760,6 +760,20 @@ Then('any relative time labels in the montage read as a duration', async ({ page
   expect(text).toMatch(relativeTimePattern);
 });
 
+When('I toggle the events thumbnail labels', async ({ page }) => {
+  const toggle = page.getByTestId('events-thumbnail-labels-toggle');
+  const wasPressed = (await toggle.getAttribute('aria-pressed')) === 'true';
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-pressed', String(!wasPressed));
+});
+
+Then('the events montage shows no relative time labels', async ({ page }) => {
+  // The tiles stay; only the text over their images goes (refs #525).
+  const grid = page.getByTestId('events-montage-grid');
+  await expect(grid).toBeVisible();
+  await expect(grid.getByTestId('event-montage-relative-time')).toHaveCount(0);
+});
+
 When('I favorite the event from detail page if on detail page', async ({ page }) => {
   if (!(await serverHasEvents())) {
     log.info('E2E: Skipping favorite from detail - no events exist', { component: 'e2e' });

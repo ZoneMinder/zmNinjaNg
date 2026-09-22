@@ -241,7 +241,7 @@ export interface ProfileSettings {
   monitorsPerPage: number;
   monitorGridCols: number; // Grid columns for Monitors page grid view
   monitorDetailFeedFit: MonitorFeedFit; // Object-fit for monitor detail feed
-  eventsThumbnailFit: MonitorFeedFit; // Object-fit for event thumbnails
+  eventsThumbnailLabels: boolean; // Labels drawn over event thumbnails (refs #525)
   monitorDetailCycleSeconds: number; // Auto-cycle interval for single monitor view (0 = off)
   /** Open the Monitor Detail page maximized for every monitor ("Open live view
    *  in fullscreen" under Settings > Live Streaming). `fullscreenMonitorIds`
@@ -497,7 +497,7 @@ export const DEFAULT_SETTINGS: ProfileSettings = {
   monitorsPerPage: 0,
   monitorGridCols: 2,
   monitorDetailFeedFit: 'contain',
-  eventsThumbnailFit: 'contain',
+  eventsThumbnailLabels: true,
   monitorDetailCycleSeconds: 0,
   monitorDetailFullscreen: false,
   insomnia: false,

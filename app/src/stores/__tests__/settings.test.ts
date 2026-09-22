@@ -33,7 +33,8 @@ describe('Settings Store', () => {
     expect(settings.viewMode).toBe('snapshot');
     expect(settings.snapshotRefreshInterval).toBe(3);
     expect(settings.monitorDetailCycleSeconds).toBe(0);
-    expect(settings.eventsThumbnailFit).toBe('contain');
+    // Labels over event thumbnails show until the user hides them (refs #525).
+    expect(settings.eventsThumbnailLabels).toBe(true);
     // Continuous event playback (#250): off by default, 1x speed.
     expect(settings.eventContinuousPlay).toBe(false);
     expect(settings.eventPlaybackRate).toBe(1);

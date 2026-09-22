@@ -308,6 +308,14 @@ describe('EventCard', () => {
     expect(screen.getByTestId('event-relative-time')).toBeInTheDocument();
   });
 
+  it('hides the relative-time chip when thumbnail labels are off (refs #525)', () => {
+    const recent = new Date(Date.now() - 40 * 60_000);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const start = `${recent.getFullYear()}-${pad(recent.getMonth() + 1)}-${pad(recent.getDate())} ${pad(recent.getHours())}:${pad(recent.getMinutes())}:${pad(recent.getSeconds())}`;
+    renderEventCard({ StartDateTime: start }, { showThumbnailLabels: false });
+    expect(screen.queryByTestId('event-relative-time')).not.toBeInTheDocument();
+  });
+
   it('hides the relative-time chip for an event older than the window', () => {
     const old = new Date(Date.now() - 30 * 24 * 60 * 60_000);
     const pad = (n: number) => String(n).padStart(2, '0');

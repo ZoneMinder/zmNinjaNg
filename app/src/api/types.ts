@@ -764,7 +764,8 @@ export interface EventCardProps {
   monitorServerId?: string | null;
   thumbnailUrls: string[];
   largeThumbnailUrls?: string[];
-  objectFit?: React.CSSProperties['objectFit'];
+  /** Off hides the text drawn over the thumbnail (refs #525). Defaults to on. */
+  showThumbnailLabels?: boolean;
   thumbnailWidth: number;
   thumbnailHeight: number;
   tags?: Tag[];

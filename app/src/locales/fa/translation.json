@@ -170,6 +170,7 @@
     "page_position": "{{page}} / {{pages}}"
   },
   "events": {
+    "thumbnail_labels": "نمایش برچسب روی تصاویر کوچک",
     "title": "رویدادها",
     "subtitle": "بررسی ضبط‌ها",
     "event_id": "شناسه رویداد",

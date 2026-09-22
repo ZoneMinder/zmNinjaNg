@@ -49,7 +49,6 @@ export function MonitorRecentEvents({ monitor, profileId }: MonitorRecentEventsP
 
   const portalUrl = ownerProfile?.portalUrl || '';
   const thumbnailChain = settings.thumbnailFallbackChain;
-  const thumbnailFit = settings.eventsThumbnailFit === 'fill' ? 'contain' : settings.eventsThumbnailFit;
   const minStreamingPort = resolveMinStreamingPort(
     ownerProfile?.minStreamingPort,
     settings.forceDisableMultiPort
@@ -151,7 +150,7 @@ export function MonitorRecentEvents({ monitor, profileId }: MonitorRecentEventsP
                     event={ev}
                     thumbnailUrls={urls}
                     aspectRatio={aspectRatio}
-                    objectFit={thumbnailFit}
+                    objectFit="contain"
                     profileId={profileId}
                     ownerProfileId={profileId ?? ownerProfile?.id}
                   />

@@ -74,8 +74,8 @@ describe('MonitorRecentEvents thumbnail-chain profile scoping (refs #337 I2)', (
     seedProfiles([makeProfile('current-profile'), makeProfile('profile-b')], {
       current: 'current-profile',
       settings: {
-        'current-profile': { thumbnailFallbackChain: [], eventsThumbnailFit: 'contain' as never, forceDisableMultiPort: false },
-        'profile-b': { thumbnailFallbackChain: [], eventsThumbnailFit: 'contain' as never, forceDisableMultiPort: false },
+        'current-profile': { thumbnailFallbackChain: [], forceDisableMultiPort: false },
+        'profile-b': { thumbnailFallbackChain: [], forceDisableMultiPort: false },
       },
     });
   });
