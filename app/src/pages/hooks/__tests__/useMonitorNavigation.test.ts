@@ -51,6 +51,15 @@ vi.mock('../../../hooks/useSwipeNavigation', () => ({
   useSwipeNavigation: () => ({}),
 }));
 
+let mockGroupFilter: { isFilterActive: boolean; filteredMonitorIds: string[] } = {
+  isFilterActive: false,
+  filteredMonitorIds: [],
+};
+
+vi.mock('../../../hooks/useGroupFilter', () => ({
+  useGroupFilter: () => mockGroupFilter,
+}));
+
 import { useMonitorNavigation } from '../useMonitorNavigation';
 
 const profileB = asProfileId('profile-b');
@@ -210,5 +219,66 @@ describe('useMonitorNavigation All mode (refs #337)', () => {
       replace: true,
       state: { from: '/monitors' },
     });
+  });
+});
+
+describe('useMonitorNavigation respects the monitor group (refs #527)', () => {
+  beforeEach(() => {
+    navigateMock.mockClear();
+    seedProfiles(['profile-a'], { current: 'profile-a' });
+    mockMonitors = [liveMonitor('1'), liveMonitor('2'), liveMonitor('3')];
+    mockLocation = { pathname: '/monitors/1', state: { from: '/monitors' } };
+  });
+
+  afterEach(() => {
+    resetProfileFixture();
+    resetFakeStoreGates();
+    mockGroupFilter = { isFilterActive: false, filteredMonitorIds: [] };
+    mockMonitors = defaultMonitors();
+  });
+
+  it('steps over a monitor outside the selected group', () => {
+    mockGroupFilter = { isFilterActive: true, filteredMonitorIds: ['1', '3'] };
+
+    const { result } = renderHook(() => useMonitorNavigation({ currentMonitorId: '1' }));
+
+    act(() => result.current.onSwipeLeft());
+
+    expect(navigateMock).toHaveBeenCalledWith('/monitors/3', expect.anything());
+  });
+
+  it('steps through every monitor when no group is selected', () => {
+    const { result } = renderHook(() => useMonitorNavigation({ currentMonitorId: '1' }));
+
+    act(() => result.current.onSwipeLeft());
+
+    expect(navigateMock).toHaveBeenCalledWith('/monitors/2', expect.anything());
+  });
+
+  it('keeps the monitor being viewed navigable when it sits outside the group', () => {
+    mockGroupFilter = { isFilterActive: true, filteredMonitorIds: ['1', '3'] };
+    mockLocation = { pathname: '/monitors/2', state: { from: '/monitors' } };
+
+    const { result } = renderHook(() => useMonitorNavigation({ currentMonitorId: '2' }));
+
+    expect(result.current.hasPrev).toBe(true);
+
+    act(() => result.current.onSwipeLeft());
+
+    expect(navigateMock).toHaveBeenCalledWith('/monitors/3', expect.anything());
+  });
+
+  it('ignores the group filter on an /all/ deep route, which has no cross-server groups', () => {
+    seedProfiles(['profile-a', 'profile-b'], { current: 'profile-a' });
+    mockGroupFilter = { isFilterActive: true, filteredMonitorIds: ['1', '3'] };
+    mockLocation = { pathname: '/all/monitors/profile-b/1', state: { from: '/monitors' } };
+
+    const { result } = renderHook(() =>
+      useMonitorNavigation({ currentMonitorId: '1', profileId: profileB })
+    );
+
+    act(() => result.current.onSwipeLeft());
+
+    expect(navigateMock).toHaveBeenCalledWith('/all/monitors/profile-b/2', expect.anything());
   });
 });

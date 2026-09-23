@@ -14,6 +14,7 @@ import { getMonitorRunState, isMonitorStreamable } from '../../lib/monitor/monit
 import { useAuthSlice } from '../../stores/auth';
 import { useSettingsStore } from '../../stores/settings';
 import { useCurrentProfile } from '../../hooks/useCurrentProfile';
+import { useGroupFilter } from '../../hooks/useGroupFilter';
 import { useSwipeNavigation } from '../../hooks/useSwipeNavigation';
 import { MONITOR_NAVIGATION } from '../../lib/zmninja-ng-constants';
 import { queryKeys } from '../../lib/query/query-keys';
@@ -57,6 +58,20 @@ function isNavigable(m: MonitorData, currentMonitorId: string, zmVersion: string
   return isMonitorStreamable(getMonitorRunState(m.Monitor, m.Monitor_Status, zmVersion));
 }
 
+/**
+ * Whether the selected monitor group admits this monitor (refs #527).
+ *
+ * `groupIds` is null when no group is selected, and then every monitor passes.
+ * An empty list means the group holds nothing, or the groups query has not
+ * settled: stepping stays put rather than escaping to the whole server. The
+ * monitor being viewed always passes, since arriving by link or search can land
+ * on one outside the group.
+ */
+function isInGroup(m: MonitorData, currentMonitorId: string, groupIds: string[] | null): boolean {
+  if (!groupIds) return true;
+  return m.Monitor.Id === currentMonitorId || groupIds.includes(m.Monitor.Id);
+}
+
 export function useMonitorNavigation({
   currentMonitorId,
   cycleSeconds = 0,
@@ -79,6 +94,11 @@ export function useMonitorNavigation({
   });
 
   const zmVersion = useAuthSlice(effectiveProfileId ?? null).version;
+  // The group picked on the Monitors page narrows stepping too, or swiping
+  // walks straight out of the group the user chose (refs #527). The filter is
+  // current-profile-scoped, so an /all/ deep route skips it, as those pages do.
+  const { isFilterActive, filteredMonitorIds } = useGroupFilter();
+  const groupIds = !profileId && isFilterActive ? filteredMonitorIds : null;
   const skipOffline = useSettingsStore((state) =>
     effectiveProfileId ? state.getProfileSettings(effectiveProfileId).skipOfflineMonitors : false,
   );
@@ -89,7 +109,9 @@ export function useMonitorNavigation({
       return { enabledMonitors: [] as MonitorData[], currentIndex: -1, hasPrev: false, hasNext: false };
     }
     const enabled = filterEnabledMonitors(monitorsData.monitors).filter(
-      (m) => !skipOffline || isNavigable(m, currentMonitorId, zmVersion),
+      (m) =>
+        isInGroup(m, currentMonitorId, groupIds) &&
+        (!skipOffline || isNavigable(m, currentMonitorId, zmVersion)),
     );
     const idx = enabled.findIndex((m) => m.Monitor.Id === currentMonitorId);
     return {
@@ -98,7 +120,7 @@ export function useMonitorNavigation({
       hasPrev: idx > 0,
       hasNext: idx < enabled.length - 1,
     };
-  }, [monitorsData?.monitors, currentMonitorId, skipOffline, zmVersion]);
+  }, [monitorsData?.monitors, currentMonitorId, skipOffline, zmVersion, groupIds]);
 
   // Navigation callbacks. Stepping between monitors replaces the current history
   // entry (so prev/next don't build a back-stack) and carries the original
