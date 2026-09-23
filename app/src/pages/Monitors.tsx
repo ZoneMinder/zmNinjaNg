@@ -105,7 +105,7 @@ export default function Monitors() {
   const renderItems = useMemo((): MonitorGridItem[] => {
     if (isAllMode) {
       return scopedMonitors
-        .filter((s) => keepMonitor(s.item, s.profileId))
+        .filter((s) => keepMonitor(s.item))
         .map((s) => ({
           Monitor: s.item.Monitor,
           Monitor_Status: s.item.Monitor_Status,

@@ -440,7 +440,12 @@ describe('Monitors Page skip-offline filter (refs #527)', () => {
     Monitor: { Id: id, Name: name, Deleted: false, Function: 'Monitor', Capturing: 'Always' },
     Monitor_Status: { Status: 'Connected', CaptureFPS: '10.00' },
   });
-  const offline = (id: string, name: string) => ({
+  const notCapturing = (id: string, name: string) => ({
+    Monitor: { Id: id, Name: name, Deleted: false, Function: 'None', Capturing: 'None' },
+    Monitor_Status: { Status: null, CaptureFPS: null },
+  });
+  /** Meant to capture, camera down right now: shown, with its red dot. */
+  const stalled = (id: string, name: string) => ({
     Monitor: { Id: id, Name: name, Deleted: false, Function: 'Monitor', Capturing: 'Always' },
     Monitor_Status: { Status: 'Running', CaptureFPS: '0.00' },
   });
@@ -456,10 +461,10 @@ describe('Monitors Page skip-offline filter (refs #527)', () => {
     resetFakeStoreGates();
   });
 
-  it('drops a monitor with no stream when the setting is on', () => {
+  it('drops a monitor whose capture is switched off when the setting is on', () => {
     singleProfile({ skipOfflineMonitors: true });
     useScopedMonitorsMock.mockReturnValue({
-      monitors: [scoped(live('1', 'Front Door')), scoped(offline('2', 'Dead Cam'))],
+      monitors: [scoped(live('1', 'Front Door')), scoped(notCapturing('2', 'Dead Cam'))],
       errors: [],
       isLoading: false,
       refetchProfile: vi.fn(),
@@ -474,7 +479,7 @@ describe('Monitors Page skip-offline filter (refs #527)', () => {
   it('keeps every monitor when the setting is off', () => {
     singleProfile({ skipOfflineMonitors: false });
     useScopedMonitorsMock.mockReturnValue({
-      monitors: [scoped(live('1', 'Front Door')), scoped(offline('2', 'Dead Cam'))],
+      monitors: [scoped(live('1', 'Front Door')), scoped(notCapturing('2', 'Dead Cam'))],
       errors: [],
       isLoading: false,
       refetchProfile: vi.fn(),
@@ -483,5 +488,21 @@ describe('Monitors Page skip-offline filter (refs #527)', () => {
     renderPage();
 
     expect(screen.getByTestId('monitor-card-2')).toHaveTextContent('Dead Cam');
+  });
+
+  // Status flaps: a reconnecting camera reports 0 fps for a poll or two, and
+  // hiding on that would drop the card and restart its stream (refs #527).
+  it('keeps a camera that is meant to capture but is reporting no frames', () => {
+    singleProfile({ skipOfflineMonitors: true });
+    useScopedMonitorsMock.mockReturnValue({
+      monitors: [scoped(live('1', 'Front Door')), scoped(stalled('2', 'Blinking Cam'))],
+      errors: [],
+      isLoading: false,
+      refetchProfile: vi.fn(),
+    });
+
+    renderPage();
+
+    expect(screen.getByTestId('monitor-card-2')).toHaveTextContent('Blinking Cam');
   });
 });

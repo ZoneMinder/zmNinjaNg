@@ -1,62 +1,42 @@
 /**
- * The "Skip offline monitors" filter (refs #527).
+ * The "Skip monitors that aren't capturing" filter (refs #527).
  *
  * One predicate for every surface that lists monitors, so the Monitors page,
- * the montage and live-view navigation all agree on what counts as offline.
- * The answer comes from `getMonitorRunState`, the same run state the status
- * dot renders, never a second copy of the Connected/FPS rule.
+ * the montage and live-view navigation all agree.
  *
- * Each monitor is judged against its OWN server's ZoneMinder version: the
- * field that says whether capture is configured moved in 1.38, and in All mode
- * two servers can be on either side of that. The setting itself is read from
- * the current profile, aggregate included, like the other display preferences
- * on those pages.
+ * It reads configuration only, never the daemon's live status. Status flaps:
+ * ZoneMinder rewrites Monitor_Status about every FPSReportInterval frames, and
+ * a reconnecting camera reports Running with 0 fps for a cycle or two. Hiding
+ * on that would drop a tile out of the montage on one poll and bring it back on
+ * the next, tearing down and restarting its stream, at exactly the moment the
+ * user wants to watch the camera come back. Configuration does not flap. A
+ * camera that IS meant to capture but has died stays visible with the red dot
+ * the status rule already gives it, which is the honest answer.
  */
 
 import { useCallback } from 'react';
-import { useShallow } from 'zustand/react/shallow';
-import { useAuthStore } from '../stores/auth';
-import { getMonitorRunState, isMonitorStreamable } from '../lib/monitor/monitor-status';
 import { useCurrentProfile } from './useCurrentProfile';
-import type { MonitorData, ProfileId } from '../api/types';
+import type { MonitorData } from '../api/types';
 
 /**
- * Whether a monitor has a live picture to show.
+ * Whether this monitor is configured to capture at all.
  *
- * On-demand monitors always pass: ZoneMinder starts no capture daemon for them
- * until a viewer connects, so they report no status at all, and calling that
- * offline would hide a camera that streams perfectly well once opened.
+ * 1.38 split `Function` into Capturing/Analysing/Recording and still sends
+ * both, so reading `Capturing` first and falling back covers either server
+ * without asking which version it is. `Ondemand` is capture, just deferred
+ * until a viewer connects, so it passes.
  */
-export function hasLiveStream(
-  monitor: MonitorData['Monitor'],
-  status: MonitorData['Monitor_Status'],
-  zmVersion: string | null,
-): boolean {
-  if (monitor.Capturing === 'Ondemand') return true;
-  return isMonitorStreamable(getMonitorRunState(monitor, status, zmVersion));
+export function isCaptureEnabled(monitor: MonitorData['Monitor']): boolean {
+  return (monitor.Capturing ?? monitor.Function) !== 'None';
 }
 
-/**
- * Returns a predicate that keeps the monitors a list should render.
- *
- * `profileId` names the monitor's owning server, needed in All mode; omit it
- * in single mode and the current profile answers.
- */
-export function useSkipOfflineMonitors(): (monitor: MonitorData, profileId?: ProfileId) => boolean {
-  const { currentProfile, settings } = useCurrentProfile();
-  // The slices object is the store's own, not minted here: a selector that
-  // built one would loop every subscriber (Stores contract).
-  const slices = useAuthStore(useShallow((state) => state.slices));
+/** Returns a predicate that keeps the monitors a list should render. */
+export function useSkipOfflineMonitors(): (monitor: MonitorData) => boolean {
+  const { settings } = useCurrentProfile();
   const skipOffline = settings.skipOfflineMonitors;
-  const fallbackProfileId = currentProfile?.id;
 
   return useCallback(
-    (monitor: MonitorData, profileId?: ProfileId) => {
-      if (!skipOffline) return true;
-      const owner = profileId ?? fallbackProfileId;
-      const zmVersion = owner ? slices[owner]?.version ?? null : null;
-      return hasLiveStream(monitor.Monitor, monitor.Monitor_Status, zmVersion);
-    },
-    [skipOffline, slices, fallbackProfileId],
+    (monitor: MonitorData) => !skipOffline || isCaptureEnabled(monitor.Monitor),
+    [skipOffline],
   );
 }

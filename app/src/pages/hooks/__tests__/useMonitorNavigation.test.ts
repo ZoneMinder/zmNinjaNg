@@ -108,11 +108,15 @@ describe('useMonitorNavigation prev/next history handling', () => {
   });
 });
 
-describe('useMonitorNavigation skips offline monitors (refs #527)', () => {
-  // Legacy `Function` fields: the seeded auth slices carry no ZM version, so
-  // the run state resolves through the pre-1.38 path.
+describe('useMonitorNavigation skips monitors that are not capturing (refs #527)', () => {
   const live = liveMonitor;
-  const offline = (id: string) => ({
+  /** Capture switched off: on 1.38+ via Capturing, before it via Function. */
+  const notCapturing = (id: string) => ({
+    Monitor: { Id: id, Function: 'None', Capturing: 'None' },
+    Monitor_Status: { Status: null, CaptureFPS: null },
+  });
+  /** Configured to capture, but the camera is down right now. */
+  const stalled = (id: string) => ({
     Monitor: { Id: id, Function: 'Monitor', Capturing: 'Always' },
     Monitor_Status: { Status: 'Running', CaptureFPS: '0.00' },
   });
@@ -132,9 +136,9 @@ describe('useMonitorNavigation skips offline monitors (refs #527)', () => {
     mockMonitors = defaultMonitors();
   });
 
-  it('steps over an offline monitor when the setting is on', () => {
+  it('steps over a monitor whose capture is switched off when the setting is on', () => {
     seedProfiles(['profile-a'], { current: 'profile-a', settings: { 'profile-a': { skipOfflineMonitors: true } } });
-    mockMonitors = [live('1'), offline('2'), live('3')];
+    mockMonitors = [live('1'), notCapturing('2'), live('3')];
 
     const { result } = renderHook(() => useMonitorNavigation({ currentMonitorId: '1' }));
 
@@ -143,9 +147,9 @@ describe('useMonitorNavigation skips offline monitors (refs #527)', () => {
     expect(navigateMock).toHaveBeenCalledWith('/monitors/3', expect.anything());
   });
 
-  it('stops on an offline monitor when the setting is off', () => {
+  it('stops on a monitor whose capture is switched off when the setting is off', () => {
     seedProfiles(['profile-a'], { current: 'profile-a', settings: { 'profile-a': { skipOfflineMonitors: false } } });
-    mockMonitors = [live('1'), offline('2'), live('3')];
+    mockMonitors = [live('1'), notCapturing('2'), live('3')];
 
     const { result } = renderHook(() => useMonitorNavigation({ currentMonitorId: '1' }));
 
@@ -165,9 +169,20 @@ describe('useMonitorNavigation skips offline monitors (refs #527)', () => {
     expect(navigateMock).toHaveBeenCalledWith('/monitors/2', expect.anything());
   });
 
-  it('keeps the monitor being viewed navigable even when it is offline', () => {
+  it('keeps a camera that is down but meant to capture, whose status flaps between polls', () => {
     seedProfiles(['profile-a'], { current: 'profile-a', settings: { 'profile-a': { skipOfflineMonitors: true } } });
-    mockMonitors = [live('1'), offline('2'), live('3')];
+    mockMonitors = [live('1'), stalled('2'), live('3')];
+
+    const { result } = renderHook(() => useMonitorNavigation({ currentMonitorId: '1' }));
+
+    act(() => result.current.onSwipeLeft());
+
+    expect(navigateMock).toHaveBeenCalledWith('/monitors/2', expect.anything());
+  });
+
+  it('keeps the monitor being viewed navigable even when its capture is off', () => {
+    seedProfiles(['profile-a'], { current: 'profile-a', settings: { 'profile-a': { skipOfflineMonitors: true } } });
+    mockMonitors = [live('1'), notCapturing('2'), live('3')];
     mockLocation = { pathname: '/monitors/2', state: { from: '/monitors' } };
 
     const { result } = renderHook(() => useMonitorNavigation({ currentMonitorId: '2' }));

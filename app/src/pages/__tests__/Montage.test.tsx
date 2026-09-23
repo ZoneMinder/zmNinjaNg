@@ -1591,9 +1591,9 @@ describe('Montage Page', () => {
 
 describe('Montage Page skip-offline filter (refs #527)', () => {
   const scoped = (item: unknown) => ({ profileId: 'profile-1', profileName: 'Home', item });
-  const offlineMonitor = (id: string, name: string) => ({
-    Monitor: { Id: id, Name: name, Deleted: false, Function: 'Monitor', Capturing: 'Always' },
-    Monitor_Status: { Status: 'Running', CaptureFPS: '0.00' },
+  const notCapturing = (id: string, name: string) => ({
+    Monitor: { Id: id, Name: name, Deleted: false, Function: 'None', Capturing: 'None' },
+    Monitor_Status: { Status: null, CaptureFPS: null },
   });
 
   beforeEach(() => {
@@ -1606,10 +1606,10 @@ describe('Montage Page skip-offline filter (refs #527)', () => {
     resetFakeStoreGates();
   });
 
-  it('streams only the monitors with a picture, and leaves the rest out of the kebab list', () => {
+  it('streams only the capturing monitors, and leaves the rest out of the kebab list', () => {
     singleProfile({ skipOfflineMonitors: true });
     useScopedMonitorsMock.mockReturnValue({
-      monitors: [scoped(monitor('1', 'Front Door')), scoped(offlineMonitor('2', 'Dead Cam'))],
+      monitors: [scoped(monitor('1', 'Front Door')), scoped(notCapturing('2', 'Dead Cam'))],
       errors: [],
       isLoading: false,
       refetchProfile: vi.fn(),
@@ -1625,7 +1625,7 @@ describe('Montage Page skip-offline filter (refs #527)', () => {
   it('streams every monitor when the setting is off', () => {
     singleProfile({ skipOfflineMonitors: false });
     useScopedMonitorsMock.mockReturnValue({
-      monitors: [scoped(monitor('1', 'Front Door')), scoped(offlineMonitor('2', 'Dead Cam'))],
+      monitors: [scoped(monitor('1', 'Front Door')), scoped(notCapturing('2', 'Dead Cam'))],
       errors: [],
       isLoading: false,
       refetchProfile: vi.fn(),

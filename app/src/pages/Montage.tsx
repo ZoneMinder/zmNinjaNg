@@ -132,7 +132,7 @@ export default function Montage() {
   // would leave its Show toggle doing nothing (refs #527).
   const keepMonitor = useSkipOfflineMonitors();
   const streamableMonitors = useMemo(
-    () => scopedMonitors.filter((s) => keepMonitor(s.item, s.profileId)),
+    () => scopedMonitors.filter((s) => keepMonitor(s.item)),
     [scopedMonitors, keepMonitor]
   );
 

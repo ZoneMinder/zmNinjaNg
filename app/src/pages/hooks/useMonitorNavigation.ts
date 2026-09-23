@@ -10,8 +10,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getMonitors } from '../../api/monitors';
 import { getSession, getCurrentSession } from '../../services/sessions';
 import { filterEnabledMonitors } from '../../lib/monitor/filters';
-import { getMonitorRunState, isMonitorStreamable } from '../../lib/monitor/monitor-status';
-import { useAuthSlice } from '../../stores/auth';
+import { isCaptureEnabled } from '../../hooks/useSkipOfflineMonitors';
 import { useSettingsStore } from '../../stores/settings';
 import { useCurrentProfile } from '../../hooks/useCurrentProfile';
 import { useGroupFilter } from '../../hooks/useGroupFilter';
@@ -46,16 +45,13 @@ interface UseMonitorNavigationReturn {
 /**
  * Whether stepping through live view should stop on this monitor (refs #527).
  *
- * A monitor with capture off, or whose daemon reports no frames, has no stream
- * to show, so swipe/prev/next/cycle pass over it. Two monitors stay in the
- * rotation regardless: an on-demand one, which has no running daemon and so no
- * status until a viewer connects, and the one being viewed, whose removal would
- * leave the page with no way to step out of it.
+ * A monitor configured not to capture has no stream to show, so swipe, prev,
+ * next and cycle pass over it. The one being viewed always stays, or the page
+ * would have no way to step out of it. See useSkipOfflineMonitors for why this
+ * reads configuration rather than the daemon's live status.
  */
-function isNavigable(m: MonitorData, currentMonitorId: string, zmVersion: string | null): boolean {
-  if (m.Monitor.Id === currentMonitorId) return true;
-  if (m.Monitor.Capturing === 'Ondemand') return true;
-  return isMonitorStreamable(getMonitorRunState(m.Monitor, m.Monitor_Status, zmVersion));
+function isNavigable(m: MonitorData, currentMonitorId: string): boolean {
+  return m.Monitor.Id === currentMonitorId || isCaptureEnabled(m.Monitor);
 }
 
 /**
@@ -93,7 +89,6 @@ export function useMonitorNavigation({
     },
   });
 
-  const zmVersion = useAuthSlice(effectiveProfileId ?? null).version;
   // The group picked on the Monitors page narrows stepping too, or swiping
   // walks straight out of the group the user chose (refs #527). The filter is
   // current-profile-scoped, so an /all/ deep route skips it, as those pages do.
@@ -111,7 +106,7 @@ export function useMonitorNavigation({
     const enabled = filterEnabledMonitors(monitorsData.monitors).filter(
       (m) =>
         isInGroup(m, currentMonitorId, groupIds) &&
-        (!skipOffline || isNavigable(m, currentMonitorId, zmVersion)),
+        (!skipOffline || isNavigable(m, currentMonitorId)),
     );
     const idx = enabled.findIndex((m) => m.Monitor.Id === currentMonitorId);
     return {
@@ -120,7 +115,7 @@ export function useMonitorNavigation({
       hasPrev: idx > 0,
       hasNext: idx < enabled.length - 1,
     };
-  }, [monitorsData?.monitors, currentMonitorId, skipOffline, zmVersion, groupIds]);
+  }, [monitorsData?.monitors, currentMonitorId, skipOffline, groupIds]);
 
   // Navigation callbacks. Stepping between monitors replaces the current history
   // entry (so prev/next don't build a back-stack) and carries the original
