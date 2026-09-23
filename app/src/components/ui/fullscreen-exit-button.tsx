@@ -3,8 +3,9 @@ import { X } from 'lucide-react';
 import { Button } from './button';
 
 interface FullscreenExitButtonProps {
-  /** The subject in fullscreen. Names the button in its tooltip, since a
-   *  fullscreen page has nowhere else left to show it. */
+  /** The subject in fullscreen, shown as a label beside the button. A
+   *  fullscreen page hides the header that normally names it, and a tooltip
+   *  alone never appears on a touch device (refs #527). */
   title: string;
   onExit: () => void;
   /** Prefix for the button's test id, e.g. `monitor-detail`. */
@@ -23,16 +24,25 @@ export function FullscreenExitButton({ title, onExit, testIdPrefix }: Fullscreen
   const { t } = useTranslation();
   const label = t('monitor_detail.exit_fullscreen');
   return (
-    <Button
-      variant="ghost"
-      size="icon"
-      className="fixed z-50 top-[max(0.75rem,var(--sai-top,env(safe-area-inset-top)))] right-[max(0.75rem,var(--sai-right,env(safe-area-inset-right)))] rounded-full bg-black/40 text-white/80 backdrop-blur-sm hover:bg-black/70 hover:text-white"
-      onClick={onExit}
-      title={`${title} - ${label}`}
-      aria-label={label}
-      data-testid={`${testIdPrefix}-exit-fullscreen`}
-    >
-      <X className="h-5 w-5" />
-    </Button>
+    <>
+      <span
+        className="fixed z-50 top-[max(0.75rem,var(--sai-top,env(safe-area-inset-top)))] left-[max(0.75rem,var(--sai-left,env(safe-area-inset-left)))] max-w-[60vw] min-w-0 truncate rounded-full bg-black/40 px-3 py-1.5 text-sm text-white/80 backdrop-blur-sm"
+        title={title}
+        data-testid={`${testIdPrefix}-fullscreen-title`}
+      >
+        {title}
+      </span>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="fixed z-50 top-[max(0.75rem,var(--sai-top,env(safe-area-inset-top)))] right-[max(0.75rem,var(--sai-right,env(safe-area-inset-right)))] rounded-full bg-black/40 text-white/80 backdrop-blur-sm hover:bg-black/70 hover:text-white"
+        onClick={onExit}
+        title={`${title} - ${label}`}
+        aria-label={label}
+        data-testid={`${testIdPrefix}-exit-fullscreen`}
+      >
+        <X className="h-5 w-5" />
+      </Button>
+    </>
   );
 }
