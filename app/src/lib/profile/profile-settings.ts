@@ -15,14 +15,18 @@
  * match that profile, not whichever one is active in the UI. Refs #337.
  */
 import type { ProfileId } from '../../api/types';
+import type { MonitorSortOrder } from '../monitor/filters';
 
 export interface ProfileSettingsGate {
   getExcludedMonitorIds(profileId: ProfileId): string[];
+  getMonitorSortOrder(profileId: ProfileId): MonitorSortOrder;
 }
 
 let gate: ProfileSettingsGate = {
-  // Safe default before the store registers: no monitors excluded.
+  // Safe defaults before the store registers: no monitors excluded, and the
+  // order ZoneMinder sent.
   getExcludedMonitorIds: () => [],
+  getMonitorSortOrder: () => 'unsorted',
 };
 
 export function setProfileSettingsGate(g: ProfileSettingsGate): void {
@@ -49,4 +53,18 @@ export function getExcludedMonitorIds(profileId: ProfileId): string[] {
  */
 export function getExcludedMonitorIdSet(profileId: ProfileId): Set<string> {
   return new Set(getExcludedMonitorIds(profileId));
+}
+
+/**
+ * How this profile wants its monitor list ordered.
+ *
+ * Falls back to the server's own order when the stores are not up yet.
+ */
+export function getMonitorSortOrder(profileId: ProfileId): MonitorSortOrder {
+  try {
+    return gate.getMonitorSortOrder(profileId);
+  } catch {
+    // Ignore errors accessing the gate (e.g. during initialization)
+  }
+  return 'unsorted';
 }

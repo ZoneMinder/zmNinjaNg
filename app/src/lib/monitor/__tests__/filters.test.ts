@@ -4,6 +4,7 @@
 
 import { describe, it, expect } from 'vitest';
 import {
+  sortMonitors,
   filterEnabledMonitors,
   filterExcludedMonitors,
   getEnabledMonitorIds,
@@ -499,5 +500,34 @@ describe('includedMonitorIdParam', () => {
 
   it('returns undefined when every monitor is excluded', () => {
     expect(includedMonitorIdParam(monitors, ['1', '2', '3'])).toBeUndefined();
+  });
+});
+
+describe('sortMonitors (refs #527)', () => {
+  const m = (id: string, name: string) =>
+    ({ Monitor: { Id: id, Name: name } }) as unknown as MonitorData;
+
+  const unordered = [m('10', 'Back Door'), m('2', 'attic'), m('1', 'Zebra')];
+
+  it('leaves the server order alone when unsorted', () => {
+    expect(sortMonitors(unordered, 'unsorted').map((x) => x.Monitor.Id)).toEqual(['10', '2', '1']);
+  });
+
+  it('sorts by id numerically, so 10 follows 2 rather than preceding it', () => {
+    expect(sortMonitors(unordered, 'id').map((x) => x.Monitor.Id)).toEqual(['1', '2', '10']);
+  });
+
+  it('sorts by name without case deciding the order', () => {
+    expect(sortMonitors(unordered, 'name').map((x) => x.Monitor.Name)).toEqual([
+      'attic',
+      'Back Door',
+      'Zebra',
+    ]);
+  });
+
+  it('returns a new array rather than reordering the one it was given', () => {
+    const input = [...unordered];
+    sortMonitors(input, 'id');
+    expect(input.map((x) => x.Monitor.Id)).toEqual(['10', '2', '1']);
   });
 });

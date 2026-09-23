@@ -14,7 +14,7 @@ import {
 } from '../monitors';
 import { validateApiResponse } from '../../lib/zm/api-validator';
 import { getMonitorStreamUrl } from '../../lib/zm/url-builder';
-import { getExcludedMonitorIds } from '../../lib/profile/profile-settings';
+import { getExcludedMonitorIds, getMonitorSortOrder } from '../../lib/profile/profile-settings';
 import { asProfileId } from '../types';
 import type { ApiClient } from '../client';
 
@@ -29,6 +29,7 @@ vi.mock('../../lib/zm/api-validator', () => ({
 
 vi.mock('../../lib/profile/profile-settings', () => ({
   getExcludedMonitorIds: vi.fn(() => []),
+  getMonitorSortOrder: vi.fn(() => 'unsorted'),
 }));
 
 vi.mock('../../lib/zm/url-builder', () => ({
@@ -46,6 +47,41 @@ describe('Monitors API', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(getExcludedMonitorIds).mockReturnValue([]);
+    vi.mocked(getMonitorSortOrder).mockReturnValue('unsorted');
+  });
+
+  // The order is applied here, not per page, so the grid, the montage and
+  // live-view stepping cannot disagree about it (refs #527).
+  it('returns the server order when the profile asks for none', async () => {
+    mockGet.mockResolvedValue({
+      data: { monitors: [{ Monitor: { Id: '10', Name: 'B' } }, { Monitor: { Id: '2', Name: 'A' } }] },
+    });
+
+    const response = await getMonitors(mockClient, pid);
+
+    expect(response.monitors.map((m) => m.Monitor.Id)).toEqual(['10', '2']);
+  });
+
+  it('sorts by id when the profile asks for it', async () => {
+    vi.mocked(getMonitorSortOrder).mockReturnValue('id');
+    mockGet.mockResolvedValue({
+      data: { monitors: [{ Monitor: { Id: '10', Name: 'B' } }, { Monitor: { Id: '2', Name: 'A' } }] },
+    });
+
+    const response = await getMonitors(mockClient, pid);
+
+    expect(response.monitors.map((m) => m.Monitor.Id)).toEqual(['2', '10']);
+  });
+
+  it('sorts by name when the profile asks for it', async () => {
+    vi.mocked(getMonitorSortOrder).mockReturnValue('name');
+    mockGet.mockResolvedValue({
+      data: { monitors: [{ Monitor: { Id: '10', Name: 'Zebra' } }, { Monitor: { Id: '2', Name: 'attic' } }] },
+    });
+
+    const response = await getMonitors(mockClient, pid);
+
+    expect(response.monitors.map((m) => m.Monitor.Name)).toEqual(['attic', 'Zebra']);
   });
 
   it('fetches monitors list', async () => {

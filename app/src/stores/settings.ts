@@ -18,6 +18,7 @@ import type { AssistantBackend } from '../lib/assistant/types';
 import type { DateFormatPreset, TimeFormatPreset } from '../lib/format-date-time';
 import type { ThumbnailFallbackType, ThumbnailFallbackEntry } from '../lib/event/thumbnail-chain';
 import type { ProfileId } from '../api/types';
+import type { MonitorSortOrder } from '../lib/monitor/filters';
 import { START_SCREENS, START_SCREEN_LAST_USED } from '../lib/navigation';
 import {
   ALL_MODE_STREAM_TUNING_VALUES,
@@ -30,6 +31,8 @@ import {
 
 export type ViewMode = 'snapshot' | 'streaming';
 export type DisplayMode = 'normal' | 'compact';
+export type { MonitorSortOrder } from '../lib/monitor/filters';
+
 export type MonitorFeedFit = 'contain' | 'cover' | 'fill' | 'none' | 'scale-down';
 export type MonitorsLayoutMode = MonitorFeedFit | 'flex';
 export type MonitorsViewMode = 'list' | 'grid';
@@ -252,6 +255,9 @@ export interface ProfileSettings {
    *  daemon reports no frames, has no stream to stop on (refs #527). On-demand
    *  monitors stay in the rotation: they only start capturing once viewed. */
   skipOfflineMonitors: boolean;
+  /** Order the monitor list is shown in, applied where it arrives so the
+   *  grid, the montage and live-view stepping all agree (refs #527). */
+  monitorSortOrder: MonitorSortOrder;
   insomnia: boolean; // Global: Keep screen awake across all pages
   monitorDetailInsomnia: boolean; // @deprecated - use global insomnia instead
   montageInsomnia: boolean; // @deprecated - use global insomnia instead
@@ -507,6 +513,8 @@ export const DEFAULT_SETTINGS: ProfileSettings = {
   monitorDetailFullscreen: false,
   // On by default: zmNinja 1.6 stepped through live monitors only (refs #527)
   skipOfflineMonitors: true,
+  // The server's own console order until the user picks another (refs #527)
+  monitorSortOrder: 'unsorted',
   insomnia: false,
   monitorDetailInsomnia: false,
   montageInsomnia: false,

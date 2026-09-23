@@ -7,7 +7,7 @@
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Image, Video as VideoIcon, Zap, Gauge, Leaf, ChevronDown } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Switch } from '../ui/switch';
@@ -18,6 +18,7 @@ import { Checkbox } from '../ui/checkbox';
 import { Label } from '../ui/label';
 import { CollapsibleSection, SettingsCard, SettingsRow, RowLabel } from './SettingsLayout';
 import { MonitorsPerPageRow } from './MonitorsPerPageRow';
+import { MonitorSortOrderRow } from './MonitorSortOrderRow';
 import { getBandwidthSettings, type BandwidthMode } from '../../lib/zmninja-ng-constants';
 import { getMonitors } from '../../api/monitors';
 import { getSession } from '../../services/sessions';
@@ -25,7 +26,7 @@ import { queryKeys } from '../../lib/query/query-keys';
 import { resolveMinStreamingPort } from '../../lib/monitor/multiport';
 import { recommendViewMode } from '../../lib/monitor/view-mode-recommendation';
 import type { Profile } from '../../api/types';
-import type { ProfileSettings, WebRTCProtocol } from '../../stores/settings';
+import type { MonitorSortOrder, ProfileSettings, WebRTCProtocol } from '../../stores/settings';
 
 // Streaming Mode hint text, one key per reason recommendViewMode can give.
 const VIEW_MODE_REASON_KEYS = {
@@ -56,6 +57,15 @@ export function LiveStreamingSection({
 }: LiveStreamingSectionProps) {
   const { t } = useTranslation();
   const [protocolsExpanded, setProtocolsExpanded] = useState(false);
+  const queryClient = useQueryClient();
+
+  // The order is applied where the list arrives, so a change only shows once
+  // the list is fetched again. Invalidating here spares the user a wait for
+  // the next poll (refs #527).
+  const handleSortOrderChange = (next: MonitorSortOrder) => {
+    update('monitorSortOrder', next);
+    void queryClient.invalidateQueries({ queryKey: queryKeys.monitors(currentProfile?.id) });
+  };
 
   // Streaming Mode hint: how many monitors compete for this server's live
   // connections. Same query key the monitor views use, so this reuses their
@@ -331,6 +341,12 @@ export function LiveStreamingSection({
             data-testid="settings-live-fullscreen-switch"
           />
         </SettingsRow>
+
+        {/* Monitor order, applied at the API boundary (refs #527) */}
+        <MonitorSortOrderRow
+          value={settings.monitorSortOrder}
+          onChange={handleSortOrderChange}
+        />
 
         {/* Skip offline monitors when stepping through live view (refs #527) */}
         <SettingsRow>

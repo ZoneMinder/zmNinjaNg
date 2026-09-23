@@ -166,3 +166,29 @@ export function countMonitorsByProfile<T>(
   for (const s of scoped) counts.set(s.profileId, (counts.get(s.profileId) ?? 0) + 1);
   return counts;
 }
+
+/** How the monitor list is ordered after it arrives (refs #527). */
+export type MonitorSortOrder = 'unsorted' | 'id' | 'name';
+
+/**
+ * Order a monitor list for display.
+ *
+ * "unsorted" keeps whatever ZoneMinder sent, which is its console's own
+ * Sequence order. Ids sort numerically, so monitor 10 follows monitor 2
+ * instead of preceding it as a string compare would have it, and names sort
+ * the way the user's locale does, ignoring case.
+ *
+ * Applied once at the API boundary, so every view of the list agrees.
+ */
+export function sortMonitors(monitors: MonitorData[], order: MonitorSortOrder): MonitorData[] {
+  if (order === 'unsorted') return monitors;
+  const sorted = [...monitors];
+  if (order === 'id') {
+    sorted.sort((a, b) => Number(a.Monitor.Id) - Number(b.Monitor.Id));
+  } else {
+    sorted.sort((a, b) =>
+      (a.Monitor.Name ?? '').localeCompare(b.Monitor.Name ?? '', undefined, { sensitivity: 'base' }),
+    );
+  }
+  return sorted;
+}

@@ -15,8 +15,8 @@ import {
 } from '../lib/zm/url-builder';
 import { log, LogLevel } from '../lib/logger';
 import { wrapWithImageProxy } from '../lib/zm/proxy-utils';
-import { filterExcludedMonitors } from '../lib/monitor/filters';
-import { getExcludedMonitorIds } from '../lib/profile/profile-settings';
+import { filterExcludedMonitors, sortMonitors } from '../lib/monitor/filters';
+import { getExcludedMonitorIds, getMonitorSortOrder } from '../lib/profile/profile-settings';
 
 /**
  * Get all monitors.
@@ -53,6 +53,10 @@ export async function getMonitors(
   if (!options?.includeExcluded) {
     validated.monitors = filterExcludedMonitors(validated.monitors, getExcludedMonitorIds(profileId));
   }
+
+  // Order once, here, so the grid, the montage and live-view stepping all read
+  // the same list in the same order (refs #527).
+  validated.monitors = sortMonitors(validated.monitors, getMonitorSortOrder(profileId));
 
   return validated;
 }
