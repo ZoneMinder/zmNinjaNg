@@ -504,37 +504,17 @@ describe('includedMonitorIdParam', () => {
 });
 
 describe('sortMonitors (refs #527)', () => {
-  const m = (id: string, name: string) =>
-    ({ Monitor: { Id: id, Name: name } }) as unknown as MonitorData;
+  const s = (id: string, seq: string | null) =>
+    ({ Monitor: { Id: id, Name: id, Sequence: seq } }) as unknown as MonitorData;
 
-  const unordered = [m('10', 'Back Door'), m('2', 'attic'), m('1', 'Zebra')];
-
-  it('leaves the server order alone when unsorted', () => {
-    expect(sortMonitors(unordered, 'unsorted').map((x) => x.Monitor.Id)).toEqual(['10', '2', '1']);
-  });
-
-  it('orders server order by Sequence, numerically, with unsequenced monitors last in arrival order', () => {
-    const s = (id: string, seq: string | null) =>
-      ({ Monitor: { Id: id, Name: id, Sequence: seq } }) as unknown as MonitorData;
+  it('orders by Sequence, numerically, with unsequenced monitors last in arrival order', () => {
     const list = [s('1', '10'), s('2', null), s('3', '2'), s('4', 'undefined'), s('5', '1')];
-    expect(sortMonitors(list, 'unsorted').map((x) => x.Monitor.Id)).toEqual(['5', '3', '1', '2', '4']);
-  });
-
-  it('sorts by id numerically, so 10 follows 2 rather than preceding it', () => {
-    expect(sortMonitors(unordered, 'id').map((x) => x.Monitor.Id)).toEqual(['1', '2', '10']);
-  });
-
-  it('sorts by name without case deciding the order', () => {
-    expect(sortMonitors(unordered, 'name').map((x) => x.Monitor.Name)).toEqual([
-      'attic',
-      'Back Door',
-      'Zebra',
-    ]);
+    expect(sortMonitors(list).map((x) => x.Monitor.Id)).toEqual(['5', '3', '1', '2', '4']);
   });
 
   it('returns a new array rather than reordering the one it was given', () => {
-    const input = [...unordered];
-    sortMonitors(input, 'id');
-    expect(input.map((x) => x.Monitor.Id)).toEqual(['10', '2', '1']);
+    const input = [s('1', '2'), s('2', '1')];
+    sortMonitors(input);
+    expect(input.map((x) => x.Monitor.Id)).toEqual(['1', '2']);
   });
 });

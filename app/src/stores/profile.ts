@@ -747,7 +747,6 @@ setLogRedactionGate({
 // Refs #217.
 setProfileSettingsGate({
   getExcludedMonitorIds: (profileId) => useSettingsStore.getState().getProfileSettings(profileId).excludedMonitorIds,
-  getMonitorSortOrder: (profileId) => useSettingsStore.getState().getProfileSettings(profileId).monitorSortOrder,
 });
 
 // services/sessions.ts has no store imports for the same reason (breaking a
