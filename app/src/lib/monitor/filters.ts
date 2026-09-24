@@ -173,17 +173,25 @@ export type MonitorSortOrder = 'unsorted' | 'id' | 'name';
 /**
  * Order a monitor list for display.
  *
- * "unsorted" keeps whatever ZoneMinder sent, which is its console's own
- * Sequence order. Ids sort numerically, so monitor 10 follows monitor 2
- * instead of preceding it as a string compare would have it, and names sort
- * the way the user's locale does, ignoring case.
+ * "unsorted" is server order: ZoneMinder's Sequence, compared numerically,
+ * because the API does not promise to return monitors in it. Monitors with no
+ * usable Sequence follow, in the order they arrived (sort is stable). Ids sort
+ * numerically, so monitor 10 follows monitor 2 instead of preceding it as a
+ * string compare would have it, and names sort the way the user's locale does,
+ * ignoring case.
  *
  * Applied once at the API boundary, so every view of the list agrees.
  */
 export function sortMonitors(monitors: MonitorData[], order: MonitorSortOrder): MonitorData[] {
-  if (order === 'unsorted') return monitors;
   const sorted = [...monitors];
-  if (order === 'id') {
+  if (order === 'unsorted') {
+    // Sequence is coerced to a string, so a missing field arrives as "undefined".
+    const seq = (m: MonitorData) => {
+      const n = m.Monitor.Sequence == null || m.Monitor.Sequence === '' ? NaN : Number(m.Monitor.Sequence);
+      return Number.isFinite(n) ? n : Number.MAX_SAFE_INTEGER;
+    };
+    sorted.sort((a, b) => seq(a) - seq(b));
+  } else if (order === 'id') {
     sorted.sort((a, b) => Number(a.Monitor.Id) - Number(b.Monitor.Id));
   } else {
     sorted.sort((a, b) =>

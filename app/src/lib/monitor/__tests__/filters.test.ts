@@ -513,6 +513,13 @@ describe('sortMonitors (refs #527)', () => {
     expect(sortMonitors(unordered, 'unsorted').map((x) => x.Monitor.Id)).toEqual(['10', '2', '1']);
   });
 
+  it('orders server order by Sequence, numerically, with unsequenced monitors last in arrival order', () => {
+    const s = (id: string, seq: string | null) =>
+      ({ Monitor: { Id: id, Name: id, Sequence: seq } }) as unknown as MonitorData;
+    const list = [s('1', '10'), s('2', null), s('3', '2'), s('4', 'undefined'), s('5', '1')];
+    expect(sortMonitors(list, 'unsorted').map((x) => x.Monitor.Id)).toEqual(['5', '3', '1', '2', '4']);
+  });
+
   it('sorts by id numerically, so 10 follows 2 rather than preceding it', () => {
     expect(sortMonitors(unordered, 'id').map((x) => x.Monitor.Id)).toEqual(['1', '2', '10']);
   });
