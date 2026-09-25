@@ -1,5 +1,14 @@
 [
   {
+    "id": "release-2.6.0",
+    "title": "Persian language, server grouping, and image fixes",
+    "body": "- Added Persian as an interface language, with right-to-left layout\n- Live Activity, Timeline, and the Dashboard can now group items by server when you view several servers together\n- Dashboard widgets can now show monitors from more than one server\n- Event thumbnails have a toggle to hide their labels, which helps on small screens. The grid star and link now sit below the image\n- Large montages and monitor lists now load in pages, so camera images show up reliably again\n- The whole montage stays visible while you edit its layout\n\n[Full changelog](https://github.com/ZoneMinder/zmNinjaNg/releases/tag/zmNinjaNg-2.6.0)",
+    "publishedAt": "2026-09-25T15:11:45.198Z",
+    "severity": "info",
+    "link": "https://github.com/ZoneMinder/zmNinjaNg/releases/tag/zmNinjaNg-2.6.0",
+    "minAppVersion": "2.6.0"
+  },
+  {
     "id": "release-2.5.0",
     "title": "Event grouping by server, new filters, playback fixes",
     "body": "- Events from a few minutes before and after the one you are viewing can now be listed, so you can follow what happened around it.\n- Events can be filtered by whether the cause came from a linked monitor or not.\n- When several servers are shown at once, the event list and event grid are split into a section per server.\n- The profiles screen groups each server into a section you can jump to or collapse.\n- Fixed images not appearing in the montage and the monitor list when a server has many monitors.\n- Fixed live view dropping to the slower stream when go2rtc is used on a server that requires a login.\n- Fixed typing dates in the event filter, which accepted only one character at a time and cleared what was already entered. Date fields now have their own button for opening the picker.\n- Fixed the zoom level staying wrong after leaving full screen on Android.\n- Date pickers and other built-in controls now follow the light or dark theme.\n\n[Full changelog](https://github.com/ZoneMinder/zmNinjaNg/releases/tag/zmNinjaNg-2.5.0)",
