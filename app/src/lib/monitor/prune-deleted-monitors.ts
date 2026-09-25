@@ -18,6 +18,8 @@
 import type { Layout } from 'react-grid-layout';
 import type { MontageGroupLayout, ProfileSettings } from '../../stores/settings';
 import type { DashboardWidget } from '../../stores/dashboard';
+import type { ProfileId } from '../../api/types';
+import { widgetMonitorRefs, withMonitorRefs } from './widget-monitor-refs';
 
 /** Decides whether one stored id still refers to a monitor that exists. */
 type IdSurvives = (id: string) => boolean;
@@ -139,5 +141,28 @@ export function pruneWidgetMonitorIds(
     updates.push({ id: widget.id, settings });
   }
 
+  return updates;
+}
+
+/**
+ * Build the updates that remove one profile's deleted monitors from an
+ * aggregate dashboard's widgets, whose picks carry their owning profile
+ * (refs #529). As with the montage bucket, only picks owned by `profileId`
+ * are judged. A legacy widget converts through `widgetMonitorRefs` and is
+ * written back in the new shape; one with no stored profile has no owner to
+ * judge against and is left alone.
+ */
+export function pruneAggregateWidgetMonitorRefs(
+  widgets: DashboardWidget[],
+  profileId: ProfileId,
+  known: Set<string>
+): WidgetSettingsUpdate[] {
+  const updates: WidgetSettingsUpdate[] = [];
+  for (const widget of widgets) {
+    const refs = widgetMonitorRefs(widget.settings);
+    const kept = refs.filter((ref) => ref.profileId !== profileId || known.has(ref.monitorId));
+    if (kept.length === refs.length) continue;
+    updates.push({ id: widget.id, settings: withMonitorRefs(widget.settings, kept) });
+  }
   return updates;
 }

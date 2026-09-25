@@ -14,7 +14,7 @@ import { useDashboardStore } from '../../stores/dashboard';
 import { useCurrentProfile } from '../../hooks/useCurrentProfile';
 import { useProfileScope } from '../../hooks/useProfileScope';
 import { asProfileId } from '../../api/types';
-import type { ProfileId } from '../../api/types';
+import { widgetMonitorRefs } from '../../lib/monitor/widget-monitor-refs';
 import { useShallow } from 'zustand/react/shallow';
 import { GRID_LAYOUT } from '../../lib/zmninja-ng-constants';
 import { DashboardWidget } from './DashboardWidget';
@@ -33,12 +33,10 @@ const WrappedGridLayout = WidthProvider(GridLayout);
 
 export function DashboardLayout() {
     const { t } = useTranslation();
-    const { currentProfile, isAllMode } = useCurrentProfile();
-    // Owning-profile resolution for the monitor widget (the one intrinsically
-    // single-server widget type - a monitorId only means something on one
-    // server): widget.settings.profileId if the edit dialog set one,
-    // otherwise the first profile in scope. Undefined outside All mode so
-    // MonitorWidget keeps its exact single-mode prop shape.
+    const { currentProfile } = useCurrentProfile();
+    // In an aggregate, Monitor and Events widgets hold picks from several
+    // servers; widgetMonitorRefs reads them, pinning a legacy widget's bare
+    // ids to its stored profile or the first profile in scope (refs #529).
     const scope = useProfileScope();
     // Boundary: 'default' is a synthesized placeholder key for the
     // no-profile-selected case (dashboard widget storage keys still need a
@@ -174,25 +172,26 @@ export function DashboardLayout() {
                 preventCollision={false}
             >
                 {widgets.map((widget) => {
-                    // Memoize monitorIds to prevent new array references
-                    const monitorIds = widget.settings.monitorIds ?? 
-                        (widget.settings.monitorId ? [widget.settings.monitorId] : []);
-                    
+                    const monitorIds = widget.settings.monitorIds ??
+                        (widget.settings.monitorId ? [widget.settings.monitorId] : undefined);
+                    const monitorRefs = scope?.mode === 'all'
+                        ? widgetMonitorRefs(widget.settings, scope?.profiles[0]?.id)
+                        : undefined;
+
                     return (
                         <div key={widget.id}>
                             <DashboardWidget id={widget.id} title={widget.title} profileId={profileId}>
-                                {widget.type === 'monitor' && monitorIds.length > 0 && (
+                                {widget.type === 'monitor' && (monitorRefs ?? monitorIds ?? []).length > 0 && (
                                     <MonitorWidget
-                                        monitorIds={monitorIds}
+                                        monitorIds={monitorRefs ? undefined : monitorIds}
+                                        monitorRefs={monitorRefs}
                                         objectFit={widget.settings.feedFit || 'contain'}
-                                        profileId={isAllMode
-                                            ? ((widget.settings.profileId as ProfileId | undefined) ?? scope?.profiles[0]?.id)
-                                            : undefined}
                                     />
                                 )}
                                 {widget.type === 'events' && (
                                     <EventsWidget
-                                        monitorIds={widget.settings.monitorIds ?? (widget.settings.monitorId ? [widget.settings.monitorId] : undefined)}
+                                        monitorIds={monitorRefs ? undefined : monitorIds}
+                                        monitorRefs={monitorRefs}
                                         limit={widget.settings.eventCount}
                                         refreshInterval={widget.settings.refreshInterval}
                                         onlyDetectedObjects={widget.settings.onlyDetectedObjects}

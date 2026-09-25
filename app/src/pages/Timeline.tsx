@@ -25,6 +25,8 @@ import { useTimelineFilters } from '../hooks/useTimelineFilters';
 import { useTimelineData } from '../hooks/useTimelineData';
 import { useScopedTimelineEvents, type ScopedTimelineEvent } from '../hooks/useScopedTimelineEvents';
 import { useProfileScope } from '../hooks/useProfileScope';
+import { useGroupByServerScope } from '../hooks/useGroupByServerScope';
+import { GroupByServerToggle } from '../components/profiles/GroupByServerToggle';
 import { usePermissions } from '../hooks/usePermissions';
 import { canViewEvents } from '../lib/permissions/zm-permissions';
 import { useTvKeyHandler } from '../hooks/useTvKeyHandler';
@@ -126,6 +128,7 @@ export default function Timeline() {
   // queries via `enabled` so only the active mode's hook actually fetches.
   const scope = useProfileScope();
   const isAllMode = scope?.mode === 'all';
+  const groupByServer = !!useGroupByServerScope('eventsGroupByServer');
 
   // Single mode only: in All mode the events come from several accounts, and
   // one verdict cannot speak for all of them (refs #344).
@@ -213,11 +216,19 @@ export default function Timeline() {
       );
       const rows: MonitorRow[] = [];
       const seen = new Set<string>();
+      let lastProfileId: string | undefined;
       for (const s of scoped.enabledMonitors) {
         const key = monitorCacheKey(asProfileId(s.profileId), s.item.Monitor.Id);
         if (activeKeys.has(key) && !seen.has(key)) {
           seen.add(key);
-          rows.push({ id: key, name: s.item.Monitor.Name, profileChip: s.profileName });
+          // Rows already run one server after another in scope order, so
+          // grouping by server names each server once, on its first row,
+          // and marks where each server after the first starts.
+          const firstOfServer = s.profileId !== lastProfileId;
+          lastProfileId = s.profileId;
+          rows.push(groupByServer
+            ? { id: key, name: s.item.Monitor.Name, profileChip: firstOfServer ? s.profileName : undefined, serverStart: firstOfServer && rows.length > 0 }
+            : { id: key, name: s.item.Monitor.Name, profileChip: s.profileName });
         }
       }
       return rows;
@@ -233,7 +244,7 @@ export default function Timeline() {
       }
     }
     return rows;
-  }, [isAllMode, scoped.enabledMonitors, single.enabledMonitors, filteredEvents]);
+  }, [isAllMode, groupByServer, scoped.enabledMonitors, single.enabledMonitors, filteredEvents]);
 
   // Events fed to the canvas: All mode overrides monitorId to the same
   // composite key monitorRows uses above, so the renderer's (profile-unaware)
@@ -408,6 +419,7 @@ export default function Timeline() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <GroupByServerToggle setting="eventsGroupByServer" testId="timeline-group-by-server" className="h-8 w-8 sm:h-9 sm:w-9" />
           <NinjiiToolbarButton />
           <Button onClick={() => { filters.clearFilters(); filters.setActiveQuickRange(null); defaultDates.current = { start: formatLocalDateTime(subDays(new Date(), 1)), end: formatLocalDateTime(new Date()) }; }} variant="outline" size="sm" className="h-8 sm:h-9" data-testid="timeline-clear-button">
             <FilterX className="h-4 w-4 sm:mr-2" />

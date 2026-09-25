@@ -17,6 +17,12 @@ put a column of scroll buttons on the right edge: jump to the top, up one screen
 down one screen, and jump to the bottom. The choice is remembered for that
 server.
 
+In a {doc}`profiles` group, each monitor's row carries a chip naming its
+server, and the rows run one server after another. The stacking button in the
+header (the layers icon) names each server once, on its first row, with a rule
+where the next server starts. The events stay on one shared time axis. The
+button shares its on/off state with the one on Events and the Dashboard.
+
 ## Filtering
 
 Open the **Filters** panel at the top of the page to narrow what the timeline shows. Filter selections are saved per profile.

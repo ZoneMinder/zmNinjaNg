@@ -9,10 +9,11 @@
  * dashboard store (out of scope here) and the HTTP client stay faked.
  */
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import Dashboard from '../Dashboard';
 import { ALL_PROFILES_ID, mintVirtualProfileId } from '../../api/types';
 import { useProfileStore } from '../../stores/profile';
+import { useSettingsStore } from '../../stores/settings';
 import { seedProfiles, resetProfileFixture } from '../../tests/profile-fixture';
 import { resetFakeStoreGates } from '../../tests/fake-store-gates';
 import { useDashboardStore, type DashboardWidget } from '../../stores/dashboard';
@@ -91,5 +92,36 @@ describe('Dashboard page', () => {
     render(<Dashboard />);
 
     expect(screen.queryByTestId('dashboard-edit-toggle')).not.toBeInTheDocument();
+  });
+
+  // The widgets read eventsGroupByServer from the group's own bucket, which
+  // is where this toggle writes it (refs #529).
+  it("toggles grouping by server in the active group's own bucket", () => {
+    const [profile] = seedProfiles(['profile-1']);
+    const group = mintVirtualProfileId();
+    useProfileStore.setState({
+      currentProfileId: group,
+      virtualProfiles: [{ id: group, name: 'Backyard', memberProfileIds: [profile.id] }],
+    });
+    useDashboardStore.setState({ widgets: { [group]: [widget] } });
+
+    render(<Dashboard />);
+    const toggle = screen.getByTestId('dashboard-group-by-server');
+    expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    expect(toggle).toHaveAttribute('title', 'monitors.group_by_server');
+    fireEvent.click(toggle);
+
+    expect(useSettingsStore.getState().getProfileSettings(group).eventsGroupByServer).toBe(true);
+    expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('offers no group-by-server toggle for a single profile', () => {
+    const [profile] = seedProfiles(['profile-1']);
+    useDashboardStore.setState({ widgets: { [profile.id]: [widget] } });
+
+    render(<Dashboard />);
+
+    expect(screen.getByTestId('dashboard-edit-toggle')).toBeInTheDocument();
+    expect(screen.queryByTestId('dashboard-group-by-server')).not.toBeInTheDocument();
   });
 });

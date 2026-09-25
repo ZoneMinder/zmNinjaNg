@@ -10,7 +10,7 @@
  * - Profile-aware widget creation
  */
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -21,37 +21,32 @@ import {
 } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Plus, Video, Clock, ChartGantt, TrendingUp } from 'lucide-react';
-import { queryKeys } from '../../lib/query/query-keys';
-import type { DashboardWidget, WidgetType } from '../../stores/dashboard';
+import type { DashboardWidget, MonitorRef, WidgetType } from '../../stores/dashboard';
 import type { MonitorFeedFit } from '../../stores/settings';
 import { useDashboardStore } from '../../stores/dashboard';
 import { useCurrentProfile } from '../../hooks/useCurrentProfile';
 import { useProfileScope } from '../../hooks/useProfileScope';
 import { asProfileId } from '../../api/types';
-import type { ProfileId } from '../../api/types';
-import { useQuery } from '@tanstack/react-query';
-import { getMonitors } from '../../api/monitors';
-import { getSession } from '../../services/sessions';
-import { filterEnabledMonitors } from '../../lib/monitor/filters';
+import { useScopedMonitors } from '../../hooks/useScopedMonitors';
+import { WidgetMonitorPicker } from './WidgetMonitorPicker';
 import { GRID_LAYOUT } from '../../lib/zmninja-ng-constants';
 import { activateOnEnterOrSpace } from '../../lib/utils';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Input } from '../ui/input';
-import { Checkbox } from '../ui/checkbox';
-import { ScrollArea } from '../ui/scroll-area';
 import { useTranslation } from 'react-i18next';
 
 export function DashboardConfig() {
     const { t } = useTranslation();
     const [open, setOpen] = useState(false);
     const [selectedType, setSelectedType] = useState<WidgetType>('monitor');
-    const [selectedMonitors, setSelectedMonitors] = useState<string[]>([]);
+    const [picks, setPicks] = useState<MonitorRef[]>([]);
     const [title, setTitle] = useState('');
     const [feedFit, setFeedFit] = useState<MonitorFeedFit>('contain');
     const addWidget = useDashboardStore((state) => state.addWidget);
-    const { currentProfile, isAllMode } = useCurrentProfile();
+    const { currentProfile } = useCurrentProfile();
     const scope = useProfileScope();
+    const isAllMode = scope?.mode === 'all';
     // Boundary: 'default' is a synthesized placeholder key for the
     // no-profile-selected case (dashboard widget storage keys still need a
     // key). Not a real profile id, so it must be minted explicitly. Each
@@ -61,23 +56,10 @@ export function DashboardConfig() {
         ? scope.aggregateId
         : (currentProfile?.id ?? asProfileId('default'));
 
-    // Which profile's monitors to list (monitor/events widgets only need
-    // this to populate the checkbox list): the widget's own settings.profileId
-    // isn't known yet at add-time, so this is just the current pick, default
-    // to the first profile in scope. Single mode: scope.profiles[0] is
-    // exactly the current profile, so this is byte-identical to before.
-    const [pickedProfileId, setPickedProfileId] = useState<ProfileId | undefined>(scope?.profiles[0]?.id);
-
-    const { data: monitors } = useQuery({
-        queryKey: queryKeys.monitors(pickedProfileId),
-        queryFn: () => getMonitors(getSession(pickedProfileId!).client, pickedProfileId!),
-        enabled: !!pickedProfileId,
-    });
-
-    // Filter out deleted monitors
-    const enabledMonitors = useMemo(() => {
-        return monitors?.monitors ? filterEnabledMonitors(monitors.monitors) : [];
-    }, [monitors?.monitors]);
+    // Single mode's events widget picks one monitor from a dropdown; the
+    // picker lists the same monitors for the other cases. One profile is in
+    // scope there, so every listed monitor shares its profileId.
+    const { monitors: scopedMonitors } = useScopedMonitors({ poll: false });
 
     /**
      * Get default title for a widget type
@@ -122,17 +104,18 @@ export function DashboardConfig() {
     /**
      * Get widget settings based on type and monitor selection
      */
-    const getWidgetSettings = (type: WidgetType, monitors: string[], fit: MonitorFeedFit) => {
+    const getWidgetSettings = (type: WidgetType, refs: MonitorRef[], fit: MonitorFeedFit) => {
         const settings: DashboardWidget['settings'] = {};
 
+        // An aggregate saves each pick with its owning server - a monitorId
+        // only means something on one server (refs #529).
         if (type === 'monitor') {
-            settings.monitorIds = monitors;
+            if (isAllMode) settings.monitorRefs = refs;
+            else settings.monitorIds = refs.map((r) => r.monitorId);
             settings.feedFit = fit;
-            // Pins the widget to the profile its monitors were picked from -
-            // a monitorId only means something on one server (refs #337).
-            if (isAllMode) settings.profileId = pickedProfileId;
         } else if (type === 'events') {
-            settings.monitorId = monitors[0] || undefined;
+            if (isAllMode) settings.monitorRefs = refs;
+            else settings.monitorId = refs[0]?.monitorId;
             settings.eventCount = 5;
         }
 
@@ -144,15 +127,15 @@ export function DashboardConfig() {
      */
     const handleAdd = () => {
         // Validation: Monitor widgets require at least one monitor
-        if (selectedType === 'monitor' && selectedMonitors.length === 0) {
+        if (selectedType === 'monitor' && picks.length === 0) {
             return;
         }
 
         addWidget(profileId, {
             type: selectedType,
             title: title || getDefaultTitle(selectedType),
-            settings: getWidgetSettings(selectedType, selectedMonitors, feedFit),
-            layout: getDefaultLayout(selectedType, selectedMonitors.length),
+            settings: getWidgetSettings(selectedType, picks, feedFit),
+            layout: getDefaultLayout(selectedType, picks.length),
         });
 
         setOpen(false);
@@ -164,19 +147,9 @@ export function DashboardConfig() {
      */
     const resetForm = () => {
         setSelectedType('monitor');
-        setSelectedMonitors([]);
+        setPicks([]);
         setTitle('');
         setFeedFit('contain');
-        setPickedProfileId(scope?.profiles[0]?.id);
-    };
-
-    /**
-     * Toggle monitor selection
-     */
-    const toggleMonitor = (id: string) => {
-        setSelectedMonitors(prev =>
-            prev.includes(id) ? prev.filter(m => m !== id) : [...prev, id]
-        );
     };
 
     return (
@@ -262,46 +235,16 @@ export function DashboardConfig() {
                         />
                     </div>
 
-                    {isAllMode && (selectedType === 'monitor' || selectedType === 'events') && (
-                        <div className="space-y-2">
-                            <Label>{t('dashboard.widget_profile')}</Label>
-                            <Select value={pickedProfileId ?? ''} onValueChange={(val) => setPickedProfileId(val as ProfileId)}>
-                                <SelectTrigger data-testid="widget-profile-picker">
-                                    <SelectValue placeholder={t('dashboard.widget_profile')} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {(scope?.profiles ?? []).map((p) => (
-                                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    )}
-
-                    {selectedType === 'monitor' && (
+                    {(selectedType === 'monitor' || (isAllMode && selectedType === 'events')) && (
                         <div className="space-y-2">
                             <Label>{t('dashboard.select_monitors')}</Label>
-                            <ScrollArea className="h-[200px] border rounded-md p-2" data-testid="monitor-selection-list">
-                                <div className="space-y-2">
-                                    {enabledMonitors.map((m) => (
-                                        <div key={m.Monitor.Id} className="flex items-center space-x-2">
-                                            <Checkbox
-                                                id={`monitor-${m.Monitor.Id}`}
-                                                checked={selectedMonitors.includes(m.Monitor.Id)}
-                                                onCheckedChange={() => toggleMonitor(m.Monitor.Id)}
-                                                data-testid={`monitor-checkbox-${m.Monitor.Id}`}
-                                            />
-                                            <label
-                                                htmlFor={`monitor-${m.Monitor.Id}`}
-                                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                                            >
-                                                {m.Monitor.Name}
-                                            </label>
-                                        </div>
-                                    ))}
-                                </div>
-                            </ScrollArea>
-                            {selectedMonitors.length === 0 && (
+                            <WidgetMonitorPicker
+                                value={picks}
+                                onChange={setPicks}
+                                checkboxTestId="monitor-checkbox"
+                                listTestId="monitor-selection-list"
+                            />
+                            {selectedType === 'monitor' && picks.length === 0 && (
                                 <p className="text-xs text-destructive">{t('dashboard.monitor_required')}</p>
                             )}
                         </div>
@@ -325,16 +268,19 @@ export function DashboardConfig() {
                         </div>
                     )}
 
-                    {selectedType === 'events' && (
+                    {!isAllMode && selectedType === 'events' && (
                         <div className="space-y-2">
                             <Label>{t('dashboard.select_monitor')}</Label>
-                            <Select value={selectedMonitors[0] || 'all'} onValueChange={(val) => setSelectedMonitors(val === 'all' ? [] : [val])}>
+                            <Select
+                                value={picks[0]?.monitorId || 'all'}
+                                onValueChange={(val) => setPicks(val === 'all' ? [] : [{ profileId: scopedMonitors[0].profileId, monitorId: val }])}
+                            >
                                 <SelectTrigger data-testid="events-monitor-select">
                                     <SelectValue placeholder={t('dashboard.select_monitor')} />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">{t('dashboard.all_monitors')}</SelectItem>
-                                    {enabledMonitors.map((m) => (
+                                    {scopedMonitors.map(({ item: m }) => (
                                         <SelectItem key={m.Monitor.Id} value={m.Monitor.Id}>
                                             {m.Monitor.Name}
                                         </SelectItem>
@@ -347,7 +293,7 @@ export function DashboardConfig() {
 
                 <div className="flex justify-end gap-2">
                     <Button variant="outline" onClick={() => setOpen(false)} data-testid="widget-cancel-button">{t('dashboard.cancel')}</Button>
-                    <Button onClick={handleAdd} disabled={selectedType === 'monitor' && selectedMonitors.length === 0} data-testid="widget-add-button">
+                    <Button onClick={handleAdd} disabled={selectedType === 'monitor' && picks.length === 0} data-testid="widget-add-button">
                         {t('dashboard.add')}
                     </Button>
                 </div>

@@ -373,6 +373,7 @@ export default function LiveActivity() {
       onDismiss={handleDismiss}
       overflowCount={overflowCount}
       watchOverflowCount={isAllMode ? allMode.watchOverflowCount : 0}
+      groupByScopeId={isAllMode && settings.monitorsGroupByServer ? currentProfileId ?? undefined : undefined}
     />
   );
 

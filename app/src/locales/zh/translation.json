@@ -95,7 +95,6 @@
     "widget_title_placeholder": "我的小部件",
     "select_monitor": "选择监控",
     "select_monitors": "选择监控",
-    "widget_profile": "配置",
     "all_monitors": "所有监控（仅事件）",
     "monitor_required": "请至少选择一个监控。",
     "monitor_order": "显示顺序",

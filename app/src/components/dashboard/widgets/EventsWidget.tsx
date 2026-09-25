@@ -26,6 +26,9 @@ import { useTranslation } from 'react-i18next';
 import { getEventCauseIcon } from '../../../lib/event/event-icons';
 import { useBandwidthSettings } from '../../../hooks/useBandwidthSettings';
 import { useProfileScope } from '../../../hooks/useProfileScope';
+import { useGroupByServerScope } from '../../../hooks/useGroupByServerScope';
+import { groupByOwningProfile } from '../../../lib/profile/profile-sections';
+import { ProfileSectionList } from '../../profiles/ProfileSectionList';
 import { queryKeys } from '../../../lib/query/query-keys';
 import { useEventTagMapping } from '../../../hooks/useEventTags';
 import { TagChipList } from '../../events/TagChip';
@@ -37,11 +40,14 @@ import { ErrorBanner } from '../../ui/query-state';
 import { ProfileChip } from '../../ui/profile-chip';
 import { resolveQueryError } from '../../../lib/query/query-error';
 import type { Scoped, ProfileError } from '../../../api/scoped-types';
-import type { EventData } from '../../../api/types';
+import type { EventData, ProfileId } from '../../../api/types';
+import type { MonitorRef } from '../../../stores/dashboard';
 
 interface EventsWidgetProps {
-    /** Optional monitor IDs to filter events */
+    /** Single profile: optional monitor IDs to filter events */
     monitorIds?: string[];
+    /** Aggregate: picked monitors with their owning servers (refs #529) */
+    monitorRefs?: MonitorRef[];
     /** Maximum number of events to display (default: 5) */
     limit?: number;
     /** Override auto-refresh interval in milliseconds (default: uses bandwidth settings) */
@@ -54,6 +60,7 @@ interface EventsWidgetProps {
 
 export const EventsWidget = memo(function EventsWidget({
     monitorIds,
+    monitorRefs,
     limit = 5,
     refreshInterval,
     onlyDetectedObjects = false,
@@ -64,25 +71,36 @@ export const EventsWidget = memo(function EventsWidget({
     const navigate = useNavigate();
     const bandwidth = useBandwidthSettings();
     const scope = useProfileScope();
-    const profiles = scope?.profiles ?? [];
+    // Each picked server's ids, joined as that server's monitor filter.
+    const filterByProfile = useMemo(() => {
+        const ids = new Map<ProfileId, string[]>();
+        for (const ref of monitorRefs ?? []) ids.set(ref.profileId, [...(ids.get(ref.profileId) ?? []), ref.monitorId]);
+        return new Map([...ids].map(([id, list]) => [id, list.join(',')]));
+    }, [monitorRefs]);
+    // With picks, only the servers that have some are queried.
+    const profiles = useMemo(() => {
+        const inScope = scope?.profiles ?? [];
+        return filterByProfile.size ? inScope.filter((p) => filterByProfile.has(p.id)) : inScope;
+    }, [scope, filterByProfile]);
     // scope.mode, not profiles.length > 1: a single remaining profile after
     // deleting down to one WHILE still in All mode must keep chips/deep-links
     // (profiles.length > 1 collapses to the single-mode branch there, refs
     // #337).
     const isAllMode = scope?.mode === 'all';
+    const groupScopeId = useGroupByServerScope('eventsGroupByServer');
     const monitorIdFilter = monitorIds?.length ? monitorIds.join(',') : undefined;
     const refetchMs = refreshInterval ?? bandwidth.eventsWidgetInterval;
 
-    // One query per profile in scope - single mode's array of one uses the
-    // exact key+session the old single useQuery used, so it shares that
-    // cache entry (byte-identical). All mode's monitor id filter, if set,
-    // applies identically to every profile - same v1 precedent as
-    // useScopedEvents (a bare id only ever means something on one server).
+    // One query per profile - single mode's array of one uses the exact
+    // key+session the old single useQuery used, so it shares that cache
+    // entry (byte-identical). An aggregate's picks filter each server by
+    // its own ids; with no picks every server in scope is unfiltered.
+    const filterFor = (id: ProfileId) => filterByProfile.get(id) ?? monitorIdFilter;
     const { events, isLoading, errors } = useQueries({
         queries: profiles.map((p, i) => ({
-            queryKey: queryKeys.eventsWidget(p.id, monitorIdFilter, limit, onlyDetectedObjects),
+            queryKey: queryKeys.eventsWidget(p.id, filterFor(p.id), limit, onlyDetectedObjects),
             queryFn: () => getEvents(getSession(p.id).client, p.id, {
-                monitorId: monitorIdFilter,
+                monitorId: filterFor(p.id),
                 limit,
                 sort: 'StartTime',
                 direction: 'desc',
@@ -107,7 +125,8 @@ export const EventsWidget = memo(function EventsWidget({
             scoped.sort((a, b) =>
                 eventInstant(b.item, tzById.get(b.profileId) ?? 'UTC') - eventInstant(a.item, tzById.get(a.profileId) ?? 'UTC')
             );
-            return { events: scoped.slice(0, limit), isLoading: !anyData, errors };
+            // No queries (every pick's server left the scope) is empty, not loading.
+            return { events: scoped.slice(0, limit), isLoading: results.length > 0 && !anyData, errors };
         },
     });
 
@@ -138,6 +157,68 @@ export const EventsWidget = memo(function EventsWidget({
         });
     }, [events, tagIds, eventTagMap]);
 
+    // The event rows, for the flat list or one server's section of it.
+    const renderRows = (list: Scoped<EventData>[]) => (
+        <div className="divide-y">
+            {list.map((scopedEvent) => {
+                const event = scopedEvent.item;
+                const tags = eventTagMap.get(event.Event.Id) || [];
+                const detailPath = isAllMode
+                    ? `/all/events/${scopedEvent.profileId}/${event.Event.Id}`
+                    : `/events/${event.Event.Id}`;
+                return (
+                    <div
+                        key={`${scopedEvent.profileId}-${event.Event.Id}`}
+                        className="p-3 hover:bg-muted/50 cursor-pointer transition-colors flex items-center gap-3"
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => navigate(detailPath, { state: { from: '/dashboard' } })}
+                        onKeyDown={activateOnEnterOrSpace(() => navigate(detailPath, { state: { from: '/dashboard' } }))}
+                    >
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-1">
+                                <span className="font-medium text-sm truncate">{event.Event.Name}</span>
+                                <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                                    {fmtDateTimeShort(new Date(event.Event.StartDateTime.replace(' ', 'T')))}
+                                </span>
+                            </div>
+                            <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                {(() => {
+                                    const CauseIcon = getEventCauseIcon(event.Event.Cause);
+                                    return (
+                                        <span className="flex items-center gap-1">
+                                            <CauseIcon className="h-3 w-3" />
+                                            {event.Event.Cause}
+                                        </span>
+                                    );
+                                })()}
+                                <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded text-[10px]">
+                                    {event.Event.Length}s
+                                </span>
+                            </div>
+                            {event.Event.Notes && (
+                                <p className="text-[10px] text-muted-foreground truncate mt-0.5" title={event.Event.Notes}>
+                                    {event.Event.Notes.split('|')[0].trim()}
+                                </p>
+                            )}
+                            {(isAllMode || tags.length > 0) && (
+                                <div className="flex items-center gap-1 flex-wrap mt-1">
+                                    {isAllMode && (
+                                        <ProfileChip
+                                            name={scopedEvent.profileName}
+                                            testId="widget-profile-chip"
+                                        />
+                                    )}
+                                    {tags.length > 0 && <TagChipList tags={tags} maxVisible={3} size="sm" />}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+    );
+
     if (isLoading && errors.length === 0) {
         return (
             <div className="p-4 space-y-2">
@@ -162,64 +243,19 @@ export const EventsWidget = memo(function EventsWidget({
 
     return (
         <div className="h-full overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <div className="divide-y">
-                {filteredEvents.map((scopedEvent) => {
-                    const event = scopedEvent.item;
-                    const tags = eventTagMap.get(event.Event.Id) || [];
-                    const detailPath = isAllMode
-                        ? `/all/events/${scopedEvent.profileId}/${event.Event.Id}`
-                        : `/events/${event.Event.Id}`;
-                    return (
-                        <div
-                            key={`${scopedEvent.profileId}-${event.Event.Id}`}
-                            className="p-3 hover:bg-muted/50 cursor-pointer transition-colors flex items-center gap-3"
-                            role="button"
-                            tabIndex={0}
-                            onClick={() => navigate(detailPath, { state: { from: '/dashboard' } })}
-                            onKeyDown={activateOnEnterOrSpace(() => navigate(detailPath, { state: { from: '/dashboard' } }))}
-                        >
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between mb-1">
-                                    <span className="font-medium text-sm truncate">{event.Event.Name}</span>
-                                    <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                                        {fmtDateTimeShort(new Date(event.Event.StartDateTime.replace(' ', 'T')))}
-                                    </span>
-                                </div>
-                                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                                    {(() => {
-                                        const CauseIcon = getEventCauseIcon(event.Event.Cause);
-                                        return (
-                                            <span className="flex items-center gap-1">
-                                                <CauseIcon className="h-3 w-3" />
-                                                {event.Event.Cause}
-                                            </span>
-                                        );
-                                    })()}
-                                    <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded text-[10px]">
-                                        {event.Event.Length}s
-                                    </span>
-                                </div>
-                                {event.Event.Notes && (
-                                    <p className="text-[10px] text-muted-foreground truncate mt-0.5" title={event.Event.Notes}>
-                                        {event.Event.Notes.split('|')[0].trim()}
-                                    </p>
-                                )}
-                                {(isAllMode || tags.length > 0) && (
-                                    <div className="flex items-center gap-1 flex-wrap mt-1">
-                                        {isAllMode && (
-                                            <ProfileChip
-                                                name={scopedEvent.profileName}
-                                                testId="widget-profile-chip"
-                                            />
-                                        )}
-                                        {tags.length > 0 && <TagChipList tags={tags} maxVisible={3} size="sm" />}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
+            {groupScopeId ? (
+                <div className="p-2">
+                    <ProfileSectionList
+                        sections={groupByOwningProfile(filteredEvents.map((e) => ({ ...e, profileChip: e.profileName })))}
+                        surface="dashboard-events-group"
+                        scopeId={groupScopeId}
+                        className="space-y-3"
+                        renderItems={renderRows}
+                    />
+                </div>
+            ) : (
+                renderRows(filteredEvents)
+            )}
         </div>
     );
 });

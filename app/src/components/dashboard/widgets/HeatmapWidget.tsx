@@ -15,6 +15,9 @@ import { useTranslation } from 'react-i18next';
 import { getEvents } from '../../../api/events';
 import { getSession } from '../../../services/sessions';
 import { useProfileScope } from '../../../hooks/useProfileScope';
+import { useGroupByServerScope } from '../../../hooks/useGroupByServerScope';
+import { groupByOwningProfile, type OwnedByProfile } from '../../../lib/profile/profile-sections';
+import { ProfileSectionList } from '../../profiles/ProfileSectionList';
 import { queryKeys } from '../../../lib/query/query-keys';
 import { useBandwidthSettings } from '../../../hooks/useBandwidthSettings';
 import { staggeredRefetchInterval } from '../../../lib/query/stagger-interval';
@@ -42,6 +45,7 @@ export const HeatmapWidget = memo(function HeatmapWidget({ title }: HeatmapWidge
   const [timeRange, setTimeRange] = useState<TimeRange>('7d');
   const scope = useProfileScope();
   const profiles = scope?.profiles ?? [];
+  const groupScopeId = useGroupByServerScope('eventsGroupByServer');
 
   // Calculate date range based on selection
   const { startDate, endDate } = useMemo(() => {
@@ -75,9 +79,8 @@ export const HeatmapWidget = memo(function HeatmapWidget({ title }: HeatmapWidge
 
   // One query per profile in scope - single mode's array of one shares the
   // exact key+session the old single query used (byte-identical). All mode
-  // merges raw events across profiles for the density visualization; this
-  // is aggregate density, not per-row datums, so no profile identity needs
-  // to survive the merge (no chip - unlike EventsWidget's list).
+  // merges raw events across profiles for the density visualization, each
+  // tagged with its owner so group-by-server can split it per server.
   // Partial-failure tolerant: one profile's error never blanks the heatmap
   // once another profile has data (mirrors useScopedEvents' anyHasData) -
   // but zero data AND at least one error still needs the error branch below
@@ -97,7 +100,7 @@ export const HeatmapWidget = memo(function HeatmapWidget({ title }: HeatmapWidge
       // Tag each event with its OWNING profile's timezone so EventHeatmap
       // buckets by real chronological instant, not a naive local Date parse
       // of the server wall-clock string (refs #337).
-      const events: TzEvent[] = [];
+      const events: Array<TzEvent & OwnedByProfile> = [];
       const errors: ProfileError[] = [];
       let anyData = false;
       profiles.forEach((p, i) => {
@@ -105,7 +108,13 @@ export const HeatmapWidget = memo(function HeatmapWidget({ title }: HeatmapWidge
         if (!q) return;
         if (q.data) {
           anyData = true;
-          events.push(...q.data.events.map((item) => ({ item, timezone: p.timezone ?? 'UTC' })));
+          // The owner rides along for the group-by-server sections below.
+          events.push(...q.data.events.map((item) => ({
+            item,
+            timezone: p.timezone ?? 'UTC',
+            profileId: p.id,
+            profileChip: p.name,
+          })));
         }
         if (q.error) errors.push({ profileId: p.id, profileName: p.name, error: q.error });
       });
@@ -137,6 +146,17 @@ export const HeatmapWidget = memo(function HeatmapWidget({ title }: HeatmapWidge
       { state: { from: location.pathname } }
     );
   };
+
+  const renderHeatmap = (list: TzEvent[]) => (
+    <EventHeatmap
+      events={list}
+      startDate={startDate}
+      endDate={endDate}
+      onTimeRangeClick={handleTimeRangeClick}
+      collapsible={false}
+      showCard={false}
+    />
+  );
 
   const timeRangeButtons: { value: TimeRange; label: string }[] = [
     { value: '24h', label: t('events.past_24_hours') },
@@ -190,15 +210,16 @@ export const HeatmapWidget = memo(function HeatmapWidget({ title }: HeatmapWidge
               title={t('events.no_events')}
               className="text-center py-12 text-muted-foreground"
             />
-          ) : (
-            <EventHeatmap
-              events={events}
-              startDate={startDate}
-              endDate={endDate}
-              onTimeRangeClick={handleTimeRangeClick}
-              collapsible={false}
-              showCard={false}
+          ) : groupScopeId ? (
+            <ProfileSectionList
+              sections={groupByOwningProfile(events)}
+              surface="dashboard-heatmap-group"
+              scopeId={groupScopeId}
+              className="space-y-4"
+              renderItems={renderHeatmap}
             />
+          ) : (
+            renderHeatmap(events)
           )}
         </div>
       </CardContent>

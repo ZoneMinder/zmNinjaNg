@@ -5,12 +5,14 @@
 
 import { describe, it, expect } from 'vitest';
 import {
+  pruneAggregateWidgetMonitorRefs,
   pruneAllBucketMonitorIds,
   pruneProfileSettingsMonitorIds,
   pruneWidgetMonitorIds,
 } from '../prune-deleted-monitors';
 import { DEFAULT_MONTAGE_GROUP_LAYOUT } from '../../../stores/settings';
 import type { DashboardWidget } from '../../../stores/dashboard';
+import { asProfileId } from '../../../api/types';
 
 const KNOWN = new Set(['1', '2']);
 
@@ -131,5 +133,41 @@ describe('pruneWidgetMonitorIds', () => {
     );
 
     expect(updates[0].settings).toEqual({ monitorIds: [], feedFit: 'cover', eventCount: 5 });
+  });
+});
+
+describe('pruneAggregateWidgetMonitorRefs', () => {
+  const A = asProfileId('profile-a');
+  const B = asProfileId('profile-b');
+
+  it("drops this profile's deleted picks and keeps another server's pick with the same id", () => {
+    const updates = pruneAggregateWidgetMonitorRefs(
+      [monitorWidget({ monitorRefs: [{ profileId: A, monitorId: '1' }, { profileId: A, monitorId: '99' }, { profileId: B, monitorId: '99' }] })],
+      A,
+      KNOWN
+    );
+
+    expect(updates).toEqual([{
+      id: 'w1',
+      settings: { monitorRefs: [{ profileId: A, monitorId: '1' }, { profileId: B, monitorId: '99' }] },
+    }]);
+  });
+
+  it('prunes a legacy widget pinned to this profile and rewrites it in the new shape', () => {
+    const updates = pruneAggregateWidgetMonitorRefs(
+      [monitorWidget({ profileId: A, monitorIds: ['1', '99'], feedFit: 'cover' })],
+      A,
+      KNOWN
+    );
+
+    expect(updates).toEqual([{
+      id: 'w1',
+      settings: { monitorRefs: [{ profileId: A, monitorId: '1' }], feedFit: 'cover' },
+    }]);
+  });
+
+  it("leaves a legacy widget pinned to another profile alone", () => {
+    expect(pruneAggregateWidgetMonitorRefs([monitorWidget({ profileId: B, monitorIds: ['99'] })], A, KNOWN))
+      .toEqual([]);
   });
 });

@@ -21,6 +21,8 @@ import { EmptyState } from '../ui/empty-state';
 import { ErrorBanner } from '../ui/query-state';
 import { Skeleton } from '../ui/skeleton';
 import { resolveQueryError } from '../../lib/query/query-error';
+import { groupByOwningProfile } from '../../lib/profile/profile-sections';
+import { ProfileSectionList } from '../profiles/ProfileSectionList';
 
 interface LiveActivityGridBodyProps {
   error: unknown;
@@ -46,6 +48,9 @@ interface LiveActivityGridBodyProps {
    *  dropped before any alarm was ever polled - distinct from
    *  `overflowCount` above, which is about ALARMING monitors. */
   watchOverflowCount: number;
+  /** The aggregate's id when its tiles are sectioned by server, else
+   *  undefined for one flat grid (refs #529). */
+  groupByScopeId?: ProfileId;
 }
 
 export function LiveActivityGridBody({
@@ -67,8 +72,74 @@ export function LiveActivityGridBody({
   onDismiss,
   overflowCount,
   watchOverflowCount,
+  groupByScopeId,
 }: LiveActivityGridBodyProps) {
   const { t } = useTranslation();
+
+  // One tile grid. The measuring ref sits on a wrapper below, not on the
+  // grid, so one element is measured whether the tiles are sectioned or not.
+  const renderGrid = (entries: ActiveMonitorEntry[]) => (
+    <div
+      // items-start, so each tile keeps the height its camera's aspect
+      // ratio gives it and never stretches to fill the rows it spans.
+      // The default stretch would pull a tile up to the rounded-up span
+      // below, and since the video area inside a tile is pinned to its own
+      // ratio, that extra height would arrive as dead black space under
+      // the picture along with the elapsed label floating in it.
+      //
+      // Rows are one pixel tall and each tile spans its own height, so
+      // tiles never share a row and a short camera beside a tall one no
+      // longer leaves a hole under itself. Until the grid has been
+      // measured there are no spans to honour, so the row unit stays off
+      // and tiles keep their natural heights for that one frame.
+      className="grid items-start"
+      style={{
+        gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`,
+        gridAutoRows: gridWidth > 0 ? `${LIVE_ACTIVITY.rowUnitPx}px` : undefined,
+      }}
+    >
+      {entries.map((entry) => {
+        const monitorData = monitorsById.get(entry.monitorId);
+        if (!monitorData) return null;
+        return (
+          <LiveActivityTile
+            key={entry.monitorId}
+            entry={entry}
+            monitor={monitorData.Monitor}
+            status={monitorData.Monitor_Status}
+            currentProfile={resolveOwnerProfile(monitorData.profileId)}
+            profileId={monitorData.profileId}
+            profileChip={monitorData.profileChip}
+            accessToken={accessToken}
+            navigate={navigate}
+            hoverPreview={hoverPreview}
+            now={now}
+            // Recomputed per render, but it only ever changes with the
+            // grid width, the column count or the camera's own shape, so
+            // the one-second clock never moves it.
+            rowSpan={
+              gridWidth > 0
+                ? getLiveActivityRowSpan(monitorData.Monitor, gridWidth, gridCols)
+                : undefined
+            }
+            onDismiss={onDismiss}
+          />
+        );
+      })}
+    </div>
+  );
+
+  // Tagged with the owning server for sectioning. A tile whose monitor is
+  // not loaded yet has no owner to section it under, and renderGrid would
+  // skip it anyway.
+  const sections = groupByScopeId
+    ? groupByOwningProfile(visible.flatMap((entry) => {
+        const monitorData = monitorsById.get(entry.monitorId);
+        return monitorData
+          ? [{ entry, profileId: monitorData.profileId, profileChip: monitorData.profileChip }]
+          : [];
+      }))
+    : null;
 
   return (
     <>
@@ -101,54 +172,18 @@ export function LiveActivityGridBody({
       )}
 
       {!isEmpty && (
-        <div
-          ref={setGridElement}
-          // items-start, so each tile keeps the height its camera's aspect
-          // ratio gives it and never stretches to fill the rows it spans.
-          // The default stretch would pull a tile up to the rounded-up span
-          // below, and since the video area inside a tile is pinned to its own
-          // ratio, that extra height would arrive as dead black space under
-          // the picture along with the elapsed label floating in it.
-          //
-          // Rows are one pixel tall and each tile spans its own height, so
-          // tiles never share a row and a short camera beside a tall one no
-          // longer leaves a hole under itself. Until the grid has been
-          // measured there are no spans to honour, so the row unit stays off
-          // and tiles keep their natural heights for that one frame.
-          className="grid items-start"
-          style={{
-            gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`,
-            gridAutoRows: gridWidth > 0 ? `${LIVE_ACTIVITY.rowUnitPx}px` : undefined,
-          }}
-        >
-          {visible.map((entry) => {
-            const monitorData = monitorsById.get(entry.monitorId);
-            if (!monitorData) return null;
-            return (
-              <LiveActivityTile
-                key={entry.monitorId}
-                entry={entry}
-                monitor={monitorData.Monitor}
-                status={monitorData.Monitor_Status}
-                currentProfile={resolveOwnerProfile(monitorData.profileId)}
-                profileId={monitorData.profileId}
-                profileChip={monitorData.profileChip}
-                accessToken={accessToken}
-                navigate={navigate}
-                hoverPreview={hoverPreview}
-                now={now}
-                // Recomputed per render, but it only ever changes with the
-                // grid width, the column count or the camera's own shape, so
-                // the one-second clock never moves it.
-                rowSpan={
-                  gridWidth > 0
-                    ? getLiveActivityRowSpan(monitorData.Monitor, gridWidth, gridCols)
-                    : undefined
-                }
-                onDismiss={onDismiss}
-              />
-            );
-          })}
+        <div ref={setGridElement}>
+          {sections && groupByScopeId ? (
+            <ProfileSectionList
+              sections={sections}
+              surface="live-activity-group"
+              scopeId={groupByScopeId}
+              className="space-y-6"
+              renderItems={(items) => renderGrid(items.map((item) => item.entry))}
+            />
+          ) : (
+            renderGrid(visible)
+          )}
         </div>
       )}
 

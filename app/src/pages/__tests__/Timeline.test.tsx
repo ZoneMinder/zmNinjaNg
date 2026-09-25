@@ -5,6 +5,7 @@ import Timeline from '../Timeline';
 import { seedProfiles, resetProfileFixture, makeProfile } from '../../tests/profile-fixture';
 import { resetFakeStoreGates } from '../../tests/fake-store-gates';
 import { ALL_PROFILES_ID } from '../../api/types';
+import { useSettingsStore } from '../../stores/settings';
 
 vi.mock('../../api/store-gates', () => import('../../tests/fake-store-gates'));
 vi.mock('../../lib/security/secureStorage', () => import('../../tests/fake-secure-storage'));
@@ -59,7 +60,7 @@ type StubEvent = { id: string; monitorId: string; profileId?: string };
 vi.mock('../../components/timeline/TimelineCanvas', () => ({
   TimelineCanvas: (
     { monitors, events, onEventClick, onScrubberEventTap }: {
-      monitors: Array<{ id: string; name: string; profileChip?: string }>;
+      monitors: Array<{ id: string; name: string; profileChip?: string; serverStart?: boolean }>;
       events: StubEvent[];
       onEventClick?: (ev: StubEvent) => void;
       onScrubberEventTap?: (eventId: string, profileId?: string) => void;
@@ -68,7 +69,7 @@ vi.mock('../../components/timeline/TimelineCanvas', () => ({
     <div data-testid="timeline-canvas-stub">
       <span data-testid="timeline-canvas-event-count">{events.length}</span>
       {monitors.map((m) => (
-        <div key={m.id} data-testid={`timeline-monitor-row-${m.id}`}>
+        <div key={m.id} data-testid={`timeline-monitor-row-${m.id}`} data-server-start={String(!!m.serverStart)}>
           {m.name}
           {m.profileChip && <span data-testid="timeline-row-profile-chip">{m.profileChip}</span>}
         </div>
@@ -364,5 +365,69 @@ describe('Timeline Page', () => {
 
     expect(screen.getByTestId('profile-error-strip-profile-2')).toBeInTheDocument();
     expect(screen.getByTestId('timeline-canvas-event-count')).toHaveTextContent('1');
+  });
+
+  // Group by server (refs #529): rows are already one server after another,
+  // so the toggle marks where each server starts instead of repeating its
+  // chip on every row.
+  describe('grouped by server', () => {
+    function seedTwoServers() {
+      seedProfiles([
+        makeProfile('profile-1', { name: 'Home', timezone: 'UTC' }),
+        makeProfile('profile-2', { name: 'Office', timezone: 'UTC' }),
+      ], { current: ALL_PROFILES_ID });
+      const ev = (id: string, monitorId: string, profileId: string, profileChip: string) =>
+        ({ id, monitorId, startMs: 5000, endMs: 6000, cause: 'Motion', alarmRatio: 0.2, notes: '', profileId, profileChip });
+      useScopedTimelineEventsMock.mockReturnValue({
+        ...defaultScoped(),
+        enabledMonitors: [
+          { profileId: 'profile-1', profileName: 'Home', item: { Monitor: { Id: '1', Name: 'Front Door' } } },
+          { profileId: 'profile-1', profileName: 'Home', item: { Monitor: { Id: '2', Name: 'Porch' } } },
+          { profileId: 'profile-2', profileName: 'Office', item: { Monitor: { Id: '1', Name: 'Lobby Cam' } } },
+        ],
+        events: [
+          ev('a1', '1', 'profile-1', 'Home'),
+          ev('a2', '2', 'profile-1', 'Home'),
+          ev('b1', '1', 'profile-2', 'Office'),
+        ],
+      });
+    }
+
+    it('names each server once, on its first row, and marks where the next server starts', () => {
+      seedTwoServers();
+      useSettingsStore.getState().updateProfileSettings(ALL_PROFILES_ID, { eventsGroupByServer: true });
+
+      renderTimeline();
+
+      const rows = ['profile-1:1', 'profile-1:2', 'profile-2:1'].map((id) => screen.getByTestId(`timeline-monitor-row-${id}`));
+      expect(rows.map((r) => r.textContent)).toEqual(['Front DoorHome', 'Porch', 'Lobby CamOffice']);
+      expect(rows.map((r) => r.getAttribute('data-server-start'))).toEqual(['false', 'false', 'true']);
+    });
+
+    it('keeps a chip on every row with the toggle off', () => {
+      seedTwoServers();
+
+      renderTimeline();
+
+      const chips = screen.getAllByTestId('timeline-row-profile-chip');
+      expect(chips.map((c) => c.textContent)).toEqual(['Home', 'Home', 'Office']);
+    });
+
+    it('writes the toggle to the aggregate bucket', () => {
+      seedTwoServers();
+      renderTimeline();
+      const toggle = screen.getByTestId('timeline-group-by-server');
+      expect(toggle).toHaveAttribute('aria-pressed', 'false');
+      fireEvent.click(toggle);
+      expect(useSettingsStore.getState().getProfileSettings(ALL_PROFILES_ID).eventsGroupByServer).toBe(true);
+      expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    });
+
+    it('offers no toggle for a single profile', () => {
+      seedProfiles([makeProfile('profile-1', { name: 'Home', timezone: 'UTC' })]);
+      useTimelineDataMock.mockReturnValue(defaultSingle());
+      renderTimeline();
+      expect(screen.queryByTestId('timeline-group-by-server')).not.toBeInTheDocument();
+    });
   });
 });

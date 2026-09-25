@@ -6,7 +6,7 @@ import { getSession } from '../../../services/sessions';
 import { staggeredRefetchInterval } from '../../../lib/query/stagger-interval';
 import { ErrorBanner } from '../../ui/query-state';
 import { resolveQueryError } from '../../../lib/query/query-error';
-import type { EventData } from '../../../api/types';
+import type { EventData, ProfileId } from '../../../api/types';
 import type { ProfileError } from '../../../api/scoped-types';
 import { formatForServer, formatLocalDateTime } from '../../../lib/time';
 import {
@@ -27,6 +27,7 @@ import { useDateTimeFormat } from '../../../hooks/useDateTimeFormat';
 import { Button } from '../../ui/button';
 import { useBandwidthSettings } from '../../../hooks/useBandwidthSettings';
 import { useProfileScope } from '../../../hooks/useProfileScope';
+import { useGroupByServerScope } from '../../../hooks/useGroupByServerScope';
 import { queryKeys } from '../../../lib/query/query-keys';
 import { eventInstant } from '../../../lib/event/event-instant';
 
@@ -52,6 +53,7 @@ export const TimelineWidget = memo(function TimelineWidget() {
     const bandwidth = useBandwidthSettings();
     const scope = useProfileScope();
     const profiles = scope?.profiles ?? [];
+    const groupByServer = !!useGroupByServerScope('eventsGroupByServer');
     const [start, setStart] = useState(() => subHours(new Date(), 24));
     const [selectedRange, setSelectedRange] = useState<TimeRange>('24h');
     const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
@@ -93,8 +95,8 @@ export const TimelineWidget = memo(function TimelineWidget() {
     // One query per profile in scope - single mode's array of one shares the
     // exact key+session the old single query used (byte-identical). All
     // mode merges raw events across profiles for the bucket counts below;
-    // this is a chart of counts, not per-row datums, so no profile identity
-    // needs to survive the merge (no chip - unlike EventsWidget's list).
+    // each event keeps its owner's id so group-by-server can stack the
+    // counts per server.
     // Partial-failure tolerant: one profile's error never blanks the chart
     // once another profile has data (mirrors useScopedEvents' anyHasData) -
     // but zero data AND at least one error still needs the error branch
@@ -114,12 +116,12 @@ export const TimelineWidget = memo(function TimelineWidget() {
             // not a naive local Date parse of the server wall-clock string -
             // required once All mode can merge events from more than one
             // profile/timezone (refs #337).
-            const events: { item: EventData; timezone: string }[] = [];
+            const events: { item: EventData; timezone: string; profileId: ProfileId }[] = [];
             const errors: ProfileError[] = [];
             profiles.forEach((p, i) => {
                 const q = results[i];
                 if (!q) return;
-                if (q.data) events.push(...q.data.events.map((item) => ({ item, timezone: p.timezone ?? 'UTC' })));
+                if (q.data) events.push(...q.data.events.map((item) => ({ item, timezone: p.timezone ?? 'UTC', profileId: p.id })));
                 if (q.error) errors.push({ profileId: p.id, profileName: p.name, error: q.error });
             });
             return { events, errors };
@@ -325,6 +327,19 @@ export const TimelineWidget = memo(function TimelineWidget() {
     // Use mergedEvents (the array) for more stable dependency - only recalc when events actually change
     }, [start, now, mergedEvents, containerSize.width, fmtDate, fmtWeekday, fmtTimeShort, fmtDateTimeShort]);
 
+    // Grouped by server: each bucket also counts every server's own events
+    // under server_<index>, one stacked series per server in scope order.
+    const chartData = useMemo(() => {
+        if (!groupByServer || !scope) return data;
+        return data.map((bucket) => ({
+            ...bucket,
+            ...Object.fromEntries(scope.profiles.map((p, i) => [`server_${i}`, mergedEvents.filter((e) => {
+                const eventTime = new Date(eventInstant(e.item, e.timezone));
+                return e.profileId === p.id && eventTime >= bucket.intervalStart && eventTime <= bucket.intervalEnd;
+            }).length])),
+        }));
+    }, [groupByServer, data, scope, mergedEvents]);
+
     // Memoize tooltip styles to prevent re-renders
     const tooltipContentStyle = useMemo(() => {
         const colors = getTooltipColors(theme);
@@ -407,7 +422,7 @@ export const TimelineWidget = memo(function TimelineWidget() {
             ) : (
             <div className="flex-1 min-h-0">
                 <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={data}>
+                    <BarChart data={chartData}>
                     <XAxis
                         dataKey="time"
                         stroke="#888888"
@@ -431,13 +446,31 @@ export const TimelineWidget = memo(function TimelineWidget() {
                         contentStyle={tooltipContentStyle}
                         labelFormatter={tooltipLabelFormatter}
                     />
-                    <Bar
-                        dataKey="count"
-                        fill="currentColor"
-                        radius={[4, 4, 0, 0]}
-                        className="fill-primary cursor-pointer"
-                        onClick={handleBarClick}
-                    />
+                    {groupByServer ? (
+                        // One segment per server, told apart by shade and
+                        // named in the tooltip; only the top one is rounded.
+                        profiles.map((p, i) => (
+                            <Bar
+                                key={p.id}
+                                dataKey={`server_${i}`}
+                                name={p.name}
+                                stackId="servers"
+                                fill="currentColor"
+                                fillOpacity={1 - (i % 4) * 0.2}
+                                radius={i === profiles.length - 1 ? [4, 4, 0, 0] : undefined}
+                                className="fill-primary cursor-pointer"
+                                onClick={handleBarClick}
+                            />
+                        ))
+                    ) : (
+                        <Bar
+                            dataKey="count"
+                            fill="currentColor"
+                            radius={[4, 4, 0, 0]}
+                            className="fill-primary cursor-pointer"
+                            onClick={handleBarClick}
+                        />
+                    )}
                 </BarChart>
             </ResponsiveContainer>
             </div>

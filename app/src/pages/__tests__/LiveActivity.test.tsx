@@ -1059,5 +1059,55 @@ describe('LiveActivity', () => {
         f.useSettingsStore.getState().getProfileSettings(ALL_PROFILES_ID).monitorGridCols
       ).toBe(4);
     });
+
+    // The stacking toggle shares monitorsGroupByServer with Monitors and
+    // Montage, and sections the alarming tiles by owning server (refs #529).
+    it('sections the tiles by server once the group-by-server toggle is pressed', async () => {
+      vi.resetModules();
+      vi.doMock('../../hooks/useScopedMonitors', () => ({
+        useScopedMonitors: () => ({
+          monitors: [
+            scopedMonitor('p1', 'One', '3', 'Front Door'),
+            scopedMonitor('p2', 'Two', '3', 'Garage'),
+            scopedMonitor('p1', 'One', '5', 'Porch'),
+          ],
+          errors: [],
+          isLoading: false,
+          refetchProfile: vi.fn(),
+        }),
+      }));
+
+      const f = await freshImports();
+      seedAllMode(f, [{ id: 'p1', name: 'One' }, { id: 'p2', name: 'Two' }]);
+      f.getAlarmStatus.mockResolvedValue({ status: 2 } as never);
+
+      render(<f.LiveActivityFresh />, { wrapper });
+      await waitFor(() => expect(screen.getByText('Porch')).toHaveTextContent('Porch'));
+      expect(screen.queryByTestId('live-activity-group-section-p1')).not.toBeInTheDocument();
+
+      const toggle = screen.getByTestId('live-activity-group-by-server');
+      expect(toggle).toHaveAttribute('aria-pressed', 'false');
+      expect(toggle).toHaveAttribute('aria-label', 'Group by server');
+      fireEvent.click(toggle);
+
+      expect(
+        f.useSettingsStore.getState().getProfileSettings(ALL_PROFILES_ID).monitorsGroupByServer
+      ).toBe(true);
+      await waitFor(() => expect(toggle).toHaveAttribute('aria-pressed', 'true'));
+      const one = screen.getByTestId('live-activity-group-section-p1');
+      const two = screen.getByTestId('live-activity-group-section-p2');
+      expect(one).toHaveTextContent('Front Door');
+      expect(one).toHaveTextContent('Porch');
+      expect(one).not.toHaveTextContent('Garage');
+      expect(two).toHaveTextContent('Garage');
+      expect(two).not.toHaveTextContent('Porch');
+    });
+  });
+
+  it('offers no group-by-server toggle for a single profile', async () => {
+    mockStatus.mockResolvedValue({ status: 0 } as never);
+    render(<LiveActivity />, { wrapper });
+    await screen.findByTestId('live-activity-empty');
+    expect(screen.queryByTestId('live-activity-group-by-server')).not.toBeInTheDocument();
   });
 });

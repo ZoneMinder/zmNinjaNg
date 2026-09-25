@@ -6,7 +6,7 @@
   "no-restricted-syntax": 4,
   "react-hooks/exhaustive-deps": 32,
   "react-hooks/globals": 2,
-  "react-hooks/preserve-manual-memoization": 10,
+  "react-hooks/preserve-manual-memoization": 8,
   "react-hooks/refs": 21,
   "react-hooks/set-state-in-effect": 11,
   "react-hooks/static-components": 10,

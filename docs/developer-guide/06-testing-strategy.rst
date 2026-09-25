@@ -178,11 +178,16 @@ so a test cannot pass on a request nobody scripted.
    vi.mock('../../../api/store-gates', () => import('../../../tests/fake-store-gates'));
    vi.mock('../../../lib/security/secureStorage', () => import('../../../tests/fake-secure-storage'));
 
-   import { seedProfiles, resetProfileFixture } from '../../../tests/profile-fixture';
-   import { resetFakeStoreGates } from '../../../tests/fake-store-gates';
+   import { seedProfiles, resetProfileFixture, fakeApiClient } from '../../../tests/profile-fixture';
+   import { installApiClient, resetFakeStoreGates } from '../../../tests/fake-store-gates';
    import { useDashboardStore } from '../../../stores/dashboard';
 
-   beforeEach(() => seedProfiles(['profile-1']));
+   beforeEach(() => {
+     seedProfiles(['profile-1']);
+     installApiClient(asProfileId('profile-1'), fakeApiClient({
+       '/monitors.json': monitorList(['Front Door', 'Back Door']),
+     }));
+   });
    afterEach(() => { resetProfileFixture(); resetFakeStoreGates(); });
 
 The test then asserts on the store, which is where a user's click ends up.
@@ -191,11 +196,11 @@ in the real store or it is not.
 
 .. code:: tsx
 
-   it('adds a monitor widget when a monitor is selected', () => {
-     render(<DashboardConfig />);
+   it('adds a monitor widget when a monitor is selected', async () => {
+     renderConfig(); // DashboardConfig inside a QueryClientProvider
 
      fireEvent.click(screen.getByTestId('add-widget-trigger'));
-     fireEvent.click(screen.getByTestId('monitor-checkbox-1'));
+     fireEvent.click(await screen.findByTestId('monitor-checkbox-1'));
      fireEvent.change(screen.getByTestId('widget-title-input'), {
        target: { value: 'My Monitor' },
      });
