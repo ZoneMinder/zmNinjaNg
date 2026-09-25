@@ -1151,13 +1151,36 @@ out of ``widget.settings``:
 
 - **MonitorWidget** (``widgets/MonitorWidget.tsx``): live streams for one or
   more monitors, via ``LiveMonitorPlayer`` (wrapped in ``MonitorHoverPreview``).
-  Configuration: ``monitorIds``, ``feedFit``.
+  Configuration: ``monitorIds`` (or ``monitorRefs`` in an aggregate), ``feedFit``.
 - **EventsWidget** (``widgets/EventsWidget.tsx``): a recent-events list.
-  Configuration: ``monitorIds``, ``eventCount``, ``refreshInterval``,
-  ``onlyDetectedObjects``, ``tagIds``.
+  Configuration: ``monitorIds`` (or ``monitorRefs`` in an aggregate),
+  ``eventCount``, ``refreshInterval``, ``onlyDetectedObjects``, ``tagIds``.
 - **HeatmapWidget** (``widgets/HeatmapWidget.tsx``): event frequency by day and
   hour.
 - **TimelineWidget** (``widgets/TimelineWidget.tsx``): event timeline.
+
+Picking monitors across servers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A monitor id only means something on one server, and two servers in an
+aggregate can both have a monitor ``1``. So in an aggregate the Monitor and
+Events widgets store ``settings.monitorRefs``, an array of
+``{ profileId, monitorId }``. A single profile's widgets keep plain
+``monitorIds``.
+
+``WidgetMonitorPicker`` is the checkbox list both ``DashboardConfig`` and
+``WidgetEditDialog`` render. It reads ``useScopedMonitors`` and, in an
+aggregate, puts each server's monitors under that server's name. Its checkbox
+testids carry the profile id in an aggregate so they stay unique.
+
+Widgets saved before this pinned themselves to one server with
+``settings.profileId`` plus bare ``monitorIds``. ``widgetMonitorRefs``
+(``src/lib/monitor/widget-monitor-refs.ts``) turns those into refs when the
+layout, the edit dialog or the deleted-monitor pruning reads them. A widget
+with no stored profile is pinned to the first profile in scope. The dialogs
+save through ``withMonitorRefs``, which writes ``monitorRefs`` and drops the
+old keys. ``EventsWidget`` then queries only the servers that have refs, each
+with its own ids joined as the ``monitorId`` filter.
 
 Invisible overlays block taps on iOS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

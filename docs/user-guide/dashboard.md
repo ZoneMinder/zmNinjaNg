@@ -15,7 +15,9 @@ The dashboard supports several widget types:
 
 ## In a virtual profile group
 
-While aggregating in a {doc}`profiles` group, the header has a stacking button (the layers icon) that splits the widgets by server. The Recent Events widget sections its list per server, the Timeline widget stacks each bar from one shade per server (the tooltip names them), and the Heatmap widget draws one heatmap per server under the server's name. Monitor widgets already show one server each and do not change. The button shares its on/off state with the one on Events.
+While aggregating in a {doc}`profiles` group, the header has a stacking button (the layers icon) that splits the widgets by server. The Recent Events widget sections its list per server, the Timeline widget stacks each bar from one shade per server (the tooltip names them), and the Heatmap widget draws one heatmap per server under the server's name. Monitor widgets do not change. The button shares its on/off state with the one on Events.
+
+In a group, a Monitor or Recent Events widget can hold monitors from more than one server. The add and edit dialogs list the monitors of every server in the group, under a heading with each server's name. Two servers can have a monitor with the same id, and the widget keeps them apart. A Monitor widget plays each feed from its own server. A Recent Events widget asks only the servers you picked monitors on, each for those monitors' events. With no monitor picked, it shows events from every server in the group.
 
 ## Customizing the Layout
 
