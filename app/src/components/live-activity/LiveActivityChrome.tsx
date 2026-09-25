@@ -14,6 +14,7 @@ import { EventMontageGridControls } from '../events/EventMontageGridControls';
 import { AnalysisFramesToggle } from '../monitors/AnalysisFramesToggle';
 import { NinjiiToolbarButton } from '../assistant/NinjiiToolbarButton';
 import { Button } from '../ui/button';
+import { GroupByServerToggle } from '../profiles/GroupByServerToggle';
 
 interface LiveActivityHeaderProps {
   gridCols: number;
@@ -46,6 +47,7 @@ export function LiveActivityHeader({
         {t('live_activity.title')}
       </h1>
       <div className="flex items-center gap-1">
+        <GroupByServerToggle setting="monitorsGroupByServer" testId="live-activity-group-by-server" />
         <EventMontageGridControls
           gridCols={gridCols}
           customCols={customCols}
