@@ -86,6 +86,24 @@ Feature: Aggregating across servers with a virtual profile group
     And I turn on grouping events by server
     Then every event card sits in its own server section
 
+  # The stacking toggle writes the group's own settings bucket, so it
+  # survives a reload and turns back off (refs #529).
+  @web
+  Scenario Outline: the group-by-server toggle on <page> survives a reload
+    When I navigate to the "Profiles" page
+    And I switch to a group holding every profile
+    When I navigate to the "<page>" page
+    And I press the group-by-server toggle "<toggle>"
+    And I refresh the page
+    Then the group-by-server toggle "<toggle>" should be "on"
+    When I press the group-by-server toggle "<toggle>"
+    Then the group-by-server toggle "<toggle>" should be "off"
+
+    Examples:
+      | page          | toggle                        |
+      | Live Activity | live-activity-group-by-server |
+      | Timeline      | timeline-group-by-server      |
+
   # Folding a server away is not the server filter: its events go off screen,
   # its count stays, and the jump button brings it back (refs #503).
   @web

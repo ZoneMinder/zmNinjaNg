@@ -186,6 +186,16 @@ When('I turn on grouping events by server', async ({ page }) => {
   await expect(toggle).toHaveAttribute('aria-pressed', 'true');
 });
 
+When('I press the group-by-server toggle {string}', async ({ page }, testId: string) => {
+  await page.getByTestId(testId).click();
+});
+
+Then('the group-by-server toggle {string} should be {string}', async ({ page }, testId: string, state: string) => {
+  await expect(page.getByTestId(testId)).toHaveAttribute('aria-pressed', state === 'on' ? 'true' : 'false', {
+    timeout: testConfig.timeouts.pageLoad,
+  });
+});
+
 // The outcome is a partition: every card the flat list showed is still on the
 // page, each one under the heading of the server it came from. Reading each
 // section's own profile chips against its heading catches a section that
