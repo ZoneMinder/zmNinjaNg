@@ -1,5 +1,23 @@
 # Changelog
 
+## [zmNinjaNg-2.6.0](https://github.com/ZoneMinder/zmNinjaNg/tree/zmNinjaNg-2.6.0) (2026-09-25)
+
+[Full Changelog](https://github.com/ZoneMinder/zmNinjaNg/compare/zmNinjaNg-2.5.0...zmNinjaNg-2.6.0)
+
+**Implemented enhancements:**
+
+- feat\(aggregate\): group-by-server toggle on Live Activity, Timeline and Dashboard [\#529](https://github.com/ZoneMinder/zmNinjaNg/issues/529)
+- Persian \(fa\) interface language, with RTL layout [\#523](https://github.com/ZoneMinder/zmNinjaNg/issues/523)
+
+**Fixed bugs:**
+
+- Monitors live view swiping [\#527](https://github.com/ZoneMinder/zmNinjaNg/issues/527)
+- Images not shown on zmNinjaNG [\#507](https://github.com/ZoneMinder/zmNinjaNg/issues/507)
+
+**Closed issues:**
+
+- Can we hide Information pills shown on Event previews on small screens? [\#525](https://github.com/ZoneMinder/zmNinjaNg/issues/525)
+
 ## [zmNinjaNg-2.5.0](https://github.com/ZoneMinder/zmNinjaNg/tree/zmNinjaNg-2.5.0) (2026-09-20)
 
 [Full Changelog](https://github.com/ZoneMinder/zmNinjaNg/compare/zmNinjaNg-2.4.0...zmNinjaNg-2.5.0)
@@ -13,7 +31,6 @@
 
 **Fixed bugs:**
 
-- Images not shown on zmNinjaNG [\#507](https://github.com/ZoneMinder/zmNinjaNg/issues/507)
 - go2rtc WebSocket carries no token: behind ZoneMinder auth the live view falls back to MJPEG [\#499](https://github.com/ZoneMinder/zmNinjaNg/issues/499)
 - Inputting date ranges only seems to accept a single number of input and refreshes if already populated [\#495](https://github.com/ZoneMinder/zmNinjaNg/issues/495)
 - Zoom level does not reset between full screen and not full-screen on Android [\#489](https://github.com/ZoneMinder/zmNinjaNg/issues/489)
