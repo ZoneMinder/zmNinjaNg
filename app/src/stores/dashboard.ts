@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { log, LogLevel } from '../lib/logger';
 import type { MonitorFeedFit } from './settings';
 import { GRID_LAYOUT, STORAGE_KEYS } from '../lib/zmninja-ng-constants';
+import type { ProfileId } from '../api/types';
 
 export type WidgetType = 'monitor' | 'events' | 'timeline' | 'heatmap';
 
@@ -16,6 +17,12 @@ export interface WidgetLayout {
     minH?: number;
 }
 
+/** One monitor picked in an aggregate widget, with the server that owns it. */
+export interface MonitorRef {
+    profileId: ProfileId;
+    monitorId: string;
+}
+
 export interface DashboardWidget {
     id: string;
     type: WidgetType;
@@ -23,6 +30,8 @@ export interface DashboardWidget {
     settings: {
         monitorId?: string;
         monitorIds?: string[];
+        /** Aggregate widgets: every pick with its owning profile (refs #529). */
+        monitorRefs?: MonitorRef[];
         feedFit?: MonitorFeedFit;
         eventCount?: number;
         showThumbnails?: boolean;

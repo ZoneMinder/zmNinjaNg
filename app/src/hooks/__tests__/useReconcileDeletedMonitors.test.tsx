@@ -11,7 +11,7 @@ import { useReconcileDeletedMonitors } from '../useReconcileDeletedMonitors';
 import { useSettingsStore, DEFAULT_MONTAGE_GROUP_LAYOUT } from '../../stores/settings';
 import { useDashboardStore } from '../../stores/dashboard';
 import { getMonitors } from '../../api/monitors';
-import { ALL_PROFILES_ID, mintVirtualProfileId } from '../../api/types';
+import { ALL_PROFILES_ID, asProfileId, mintVirtualProfileId } from '../../api/types';
 import { seedProfiles, resetProfileFixture } from '../../tests/profile-fixture';
 import { resetFakeStoreGates } from '../../tests/fake-store-gates';
 
@@ -163,6 +163,34 @@ describe('useReconcileDeletedMonitors', () => {
     );
     // The All bucket is still pruned as well - this is an addition, not a move.
     expect(storedState().allHidden).toEqual(['p1:1', 'p2:99']);
+  });
+
+  it("drops this profile's deleted picks from an aggregate dashboard's widgets (refs #529)", async () => {
+    const p1 = asProfileId('p1');
+    const p2 = asProfileId('p2');
+    useDashboardStore.setState({
+      widgets: {
+        ...useDashboardStore.getState().widgets,
+        [ALL_PROFILES_ID]: [
+          {
+            id: 'agg',
+            type: 'monitor',
+            settings: { monitorRefs: [{ profileId: p1, monitorId: '1' }, { profileId: p1, monitorId: '99' }, { profileId: p2, monitorId: '99' }] },
+            layout: { i: 'agg', x: 0, y: 0, w: 4, h: 4 },
+          },
+        ],
+      },
+    });
+    mockGetMonitors.mockResolvedValue(monitorList(['1']));
+
+    renderHook(() => useReconcileDeletedMonitors(), { wrapper });
+
+    await waitFor(() =>
+      expect(useDashboardStore.getState().widgets[ALL_PROFILES_ID][0].settings.monitorRefs).toEqual([
+        { profileId: p1, monitorId: '1' },
+        { profileId: p2, monitorId: '99' },
+      ])
+    );
   });
 
   it('changes nothing when the fetch fails: an error is not proof of deletion', async () => {

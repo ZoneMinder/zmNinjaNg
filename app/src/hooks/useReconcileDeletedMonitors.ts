@@ -28,6 +28,7 @@ import { useSettingsStore } from '../stores/settings';
 import { useDashboardStore } from '../stores/dashboard';
 import { log, LogLevel } from '../lib/logger';
 import {
+  pruneAggregateWidgetMonitorRefs,
   pruneAllBucketMonitorIds,
   pruneProfileSettingsMonitorIds,
   pruneWidgetMonitorIds,
@@ -96,6 +97,15 @@ export function useReconcileDeletedMonitors(): void {
     const widgetUpdates = pruneWidgetMonitorIds(dashboardState.widgets[profileId] ?? [], known);
     for (const { id, settings } of widgetUpdates) {
       dashboardState.updateWidget(profileId, id, { settings });
+    }
+    // Aggregate dashboards hold picks from several servers; only this
+    // profile's are judged, as in the montage buckets above (refs #529).
+    for (const bucketId of Object.keys(dashboardState.widgets).filter(isAggregateProfileId)) {
+      const updates = pruneAggregateWidgetMonitorRefs(dashboardState.widgets[bucketId], profileId, known);
+      for (const { id, settings } of updates) {
+        dashboardState.updateWidget(bucketId, id, { settings });
+      }
+      widgetUpdates.push(...updates);
     }
     if (widgetUpdates.length > 0) {
       log.dashboard('Dropped deleted monitors from dashboard widgets', LogLevel.INFO, {
