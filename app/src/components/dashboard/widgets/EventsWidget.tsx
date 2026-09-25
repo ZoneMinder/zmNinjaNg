@@ -40,11 +40,14 @@ import { ErrorBanner } from '../../ui/query-state';
 import { ProfileChip } from '../../ui/profile-chip';
 import { resolveQueryError } from '../../../lib/query/query-error';
 import type { Scoped, ProfileError } from '../../../api/scoped-types';
-import type { EventData } from '../../../api/types';
+import type { EventData, ProfileId } from '../../../api/types';
+import type { MonitorRef } from '../../../stores/dashboard';
 
 interface EventsWidgetProps {
-    /** Optional monitor IDs to filter events */
+    /** Single profile: optional monitor IDs to filter events */
     monitorIds?: string[];
+    /** Aggregate: picked monitors with their owning servers (refs #529) */
+    monitorRefs?: MonitorRef[];
     /** Maximum number of events to display (default: 5) */
     limit?: number;
     /** Override auto-refresh interval in milliseconds (default: uses bandwidth settings) */
@@ -57,6 +60,7 @@ interface EventsWidgetProps {
 
 export const EventsWidget = memo(function EventsWidget({
     monitorIds,
+    monitorRefs,
     limit = 5,
     refreshInterval,
     onlyDetectedObjects = false,
@@ -67,7 +71,17 @@ export const EventsWidget = memo(function EventsWidget({
     const navigate = useNavigate();
     const bandwidth = useBandwidthSettings();
     const scope = useProfileScope();
-    const profiles = scope?.profiles ?? [];
+    // Each picked server's ids, joined as that server's monitor filter.
+    const filterByProfile = useMemo(() => {
+        const ids = new Map<ProfileId, string[]>();
+        for (const ref of monitorRefs ?? []) ids.set(ref.profileId, [...(ids.get(ref.profileId) ?? []), ref.monitorId]);
+        return new Map([...ids].map(([id, list]) => [id, list.join(',')]));
+    }, [monitorRefs]);
+    // With picks, only the servers that have some are queried.
+    const profiles = useMemo(() => {
+        const inScope = scope?.profiles ?? [];
+        return filterByProfile.size ? inScope.filter((p) => filterByProfile.has(p.id)) : inScope;
+    }, [scope, filterByProfile]);
     // scope.mode, not profiles.length > 1: a single remaining profile after
     // deleting down to one WHILE still in All mode must keep chips/deep-links
     // (profiles.length > 1 collapses to the single-mode branch there, refs
@@ -77,16 +91,16 @@ export const EventsWidget = memo(function EventsWidget({
     const monitorIdFilter = monitorIds?.length ? monitorIds.join(',') : undefined;
     const refetchMs = refreshInterval ?? bandwidth.eventsWidgetInterval;
 
-    // One query per profile in scope - single mode's array of one uses the
-    // exact key+session the old single useQuery used, so it shares that
-    // cache entry (byte-identical). All mode's monitor id filter, if set,
-    // applies identically to every profile - same v1 precedent as
-    // useScopedEvents (a bare id only ever means something on one server).
+    // One query per profile - single mode's array of one uses the exact
+    // key+session the old single useQuery used, so it shares that cache
+    // entry (byte-identical). An aggregate's picks filter each server by
+    // its own ids; with no picks every server in scope is unfiltered.
+    const filterFor = (id: ProfileId) => filterByProfile.get(id) ?? monitorIdFilter;
     const { events, isLoading, errors } = useQueries({
         queries: profiles.map((p, i) => ({
-            queryKey: queryKeys.eventsWidget(p.id, monitorIdFilter, limit, onlyDetectedObjects),
+            queryKey: queryKeys.eventsWidget(p.id, filterFor(p.id), limit, onlyDetectedObjects),
             queryFn: () => getEvents(getSession(p.id).client, p.id, {
-                monitorId: monitorIdFilter,
+                monitorId: filterFor(p.id),
                 limit,
                 sort: 'StartTime',
                 direction: 'desc',
@@ -111,7 +125,8 @@ export const EventsWidget = memo(function EventsWidget({
             scoped.sort((a, b) =>
                 eventInstant(b.item, tzById.get(b.profileId) ?? 'UTC') - eventInstant(a.item, tzById.get(a.profileId) ?? 'UTC')
             );
-            return { events: scoped.slice(0, limit), isLoading: !anyData, errors };
+            // No queries (every pick's server left the scope) is empty, not loading.
+            return { events: scoped.slice(0, limit), isLoading: results.length > 0 && !anyData, errors };
         },
     });
 

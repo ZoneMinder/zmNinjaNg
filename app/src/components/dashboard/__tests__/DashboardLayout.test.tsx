@@ -50,12 +50,17 @@ vi.mock('react-grid-layout', () => {
 });
 
 // Mock the widget components to avoid their dependencies
+// The stubs expose the picks each widget is handed.
 vi.mock('../widgets/MonitorWidget', () => ({
-  MonitorWidget: () => <div data-testid="monitor-widget" />,
+  MonitorWidget: ({ monitorRefs }: { monitorRefs?: unknown }) => (
+    <div data-testid="monitor-widget" data-refs={JSON.stringify(monitorRefs ?? null)} />
+  ),
 }));
 
 vi.mock('../widgets/EventsWidget', () => ({
-  EventsWidget: () => <div data-testid="events-widget" />,
+  EventsWidget: ({ monitorRefs }: { monitorRefs?: unknown }) => (
+    <div data-testid="events-widget" data-refs={JSON.stringify(monitorRefs ?? null)} />
+  ),
 }));
 
 vi.mock('../widgets/TimelineWidget', () => ({
@@ -111,6 +116,30 @@ describe('DashboardLayout', () => {
     render(<DashboardLayout />);
 
     expect(screen.getByTestId('dashboard-widget-widget-1')).toBeInTheDocument();
+  });
+
+  // A widget saved before picks carried their server keeps showing the
+  // same monitors: its stored profile, or the first in scope (refs #529).
+  it('hands a legacy aggregate widget its monitors pinned to their server', () => {
+    const home = makeProfile('profile-1', { name: 'Test' });
+    const work = makeProfile('profile-2', { name: 'Work' });
+    seedProfiles([home, work], { current: ALL_PROFILES_ID });
+    const [monitor, events] = makeWidgets();
+    useDashboardStore.setState({
+      widgets: {
+        [ALL_PROFILES_ID]: [
+          { ...monitor, settings: { monitorIds: ['1'], profileId: work.id } },
+          { ...events, settings: { monitorIds: ['3'] } },
+        ],
+      },
+    });
+
+    render(<DashboardLayout />);
+
+    expect(JSON.parse(screen.getByTestId('monitor-widget').dataset.refs!))
+      .toEqual([{ profileId: work.id, monitorId: '1' }]);
+    expect(JSON.parse(screen.getByTestId('events-widget').dataset.refs!))
+      .toEqual([{ profileId: home.id, monitorId: '3' }]);
   });
 
   it('renders empty state when no widgets exist', () => {

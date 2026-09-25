@@ -99,7 +99,7 @@ describe('Dashboard widgets under the ALL_PROFILES_ID sentinel', () => {
   };
 
   it('MonitorWidget does not throw, pinned to the first profile in scope', () => {
-    expect(() => render(wrap(<MonitorWidget monitorIds={['1']} profileId={profileA.id} />))).not.toThrow();
+    expect(() => render(wrap(<MonitorWidget monitorRefs={[{ profileId: profileA.id, monitorId: '1' }]} />))).not.toThrow();
   });
 
   it('EventsWidget does not throw and aggregates across scope.profiles', () => {

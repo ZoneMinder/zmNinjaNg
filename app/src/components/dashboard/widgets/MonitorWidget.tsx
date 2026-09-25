@@ -13,16 +13,19 @@
  */
 
 import { useMemo, memo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueries } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { getMonitor, getMonitors } from '../../../api/monitors';
 import { getSession } from '../../../services/sessions';
 import { queryKeys } from '../../../lib/query/query-keys';
 import type { MonitorFeedFit } from '../../../stores/settings';
 import type { ProfileId } from '../../../api/types';
+import type { MonitorRef } from '../../../stores/dashboard';
+import { monitorCacheKey } from '../../../stores/monitors';
 import { LiveMonitorPlayer } from '../../monitors/LiveMonitorPlayer';
 import { MonitorHoverPreview } from '../../monitors/MonitorHoverPreview';
 import { useProfileById } from '../../../hooks/useCurrentProfile';
+import { useProfileScope } from '../../../hooks/useProfileScope';
 import { AlertTriangle } from 'lucide-react';
 import { Skeleton } from '../../ui/skeleton';
 import { useTranslation } from 'react-i18next';
@@ -31,16 +34,15 @@ import { filterEnabledMonitors } from '../../../lib/monitor/filters';
 import { activateOnEnterOrSpace } from '../../../lib/utils';
 
 interface MonitorWidgetProps {
-    /** Array of monitor IDs to display */
-    monitorIds: string[];
+    /** Single profile: monitor ids on the current profile. */
+    monitorIds?: string[];
+    /** Aggregate: each pick with the server that owns it (refs #529). */
+    monitorRefs?: MonitorRef[];
     objectFit?: MonitorFeedFit;
-    /** Pins this widget to one profile's session - a monitorId only means
-     *  something on one server. Set in All mode (widget.settings.profileId,
-     *  chosen via the edit dialog, or the first profile in scope);
-     *  undefined in single mode (resolves to the current profile, exactly
-     *  as before). */
-    profileId?: ProfileId;
 }
+
+/** A monitor to show. No profileId means the current profile, single mode. */
+type WidgetPick = { profileId?: ProfileId; monitorId: string };
 
 /**
  * Single Monitor Display Component
@@ -128,28 +130,55 @@ function SingleMonitor({ monitorId, objectFit, profileId }: { monitorId: string;
     );
 }
 
-export const MonitorWidget = memo(function MonitorWidget({ monitorIds, objectFit = 'contain', profileId }: MonitorWidgetProps) {
+export const MonitorWidget = memo(function MonitorWidget({ monitorIds, monitorRefs, objectFit = 'contain' }: MonitorWidgetProps) {
     const { t } = useTranslation();
-    const { profile: currentProfile } = useProfileById(profileId);
+    const scope = useProfileScope();
 
-    // Fetch all monitors to check which ones are deleted
-    const { data: monitorsData } = useQuery({
-        queryKey: queryKeys.monitors(currentProfile?.id),
-        queryFn: () => getMonitors(getSession(currentProfile!.id).client, currentProfile!.id),
-        enabled: !!currentProfile,
+    // Picks from a server that left the scope (disabled, or dropped from the
+    // group) are not shown.
+    const picks = useMemo<WidgetPick[]>(() => {
+        if (!monitorRefs) return (monitorIds ?? []).map((monitorId) => ({ monitorId }));
+        const inScope = new Set(scope?.profiles.map((p) => p.id));
+        return monitorRefs.filter((ref) => inScope.has(ref.profileId));
+    }, [monitorIds, monitorRefs, scope]);
+
+    // Single mode's one profile in scope is the current one.
+    const currentId = scope?.profiles[0]?.id;
+    const ownerIds = useMemo(
+        () => [...new Set(picks.map((p) => p.profileId ?? currentId))].filter((id): id is ProfileId => !!id),
+        [picks, currentId]
+    );
+
+    // Each owning server's monitor list, to drop deleted monitors. Arrays,
+    // not Sets, so combine's structural sharing keeps them stable.
+    const { enabledKeys, loadedIds } = useQueries({
+        queries: ownerIds.map((id) => ({
+            queryKey: queryKeys.monitors(id),
+            queryFn: () => getMonitors(getSession(id).client, id),
+        })),
+        combine: (results) => {
+            const enabledKeys: string[] = [];
+            const loadedIds: ProfileId[] = [];
+            results.forEach((q, i) => {
+                if (!q.data) return;
+                loadedIds.push(ownerIds[i]);
+                for (const m of filterEnabledMonitors(q.data.monitors)) enabledKeys.push(monitorCacheKey(ownerIds[i], m.Monitor.Id));
+            });
+            return { enabledKeys, loadedIds };
+        },
     });
 
-    // Filter out deleted monitors
-    const activeMonitorIds = useMemo(() => {
-        if (!monitorsData?.monitors) return monitorIds;
+    // A pick is judged only once its own server's list has arrived.
+    const activePicks = useMemo(() => {
+        const enabled = new Set(enabledKeys);
+        const loaded = new Set(loadedIds);
+        return picks.filter((p) => {
+            const owner = p.profileId ?? currentId;
+            return !owner || !loaded.has(owner) || enabled.has(monitorCacheKey(owner, p.monitorId));
+        });
+    }, [picks, enabledKeys, loadedIds, currentId]);
 
-        const enabledMonitors = filterEnabledMonitors(monitorsData.monitors);
-        const enabledIds = new Set(enabledMonitors.map(m => m.Monitor.Id));
-
-        return monitorIds.filter(id => enabledIds.has(id));
-    }, [monitorIds, monitorsData?.monitors]);
-
-    if (!monitorIds || monitorIds.length === 0) {
+    if (picks.length === 0) {
         return (
             <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                 {t('dashboard.no_monitors_selected')}
@@ -157,7 +186,7 @@ export const MonitorWidget = memo(function MonitorWidget({ monitorIds, objectFit
         );
     }
 
-    if (activeMonitorIds.length === 0) {
+    if (activePicks.length === 0) {
         return (
             <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                 {t('dashboard.no_monitors_available')}
@@ -165,27 +194,27 @@ export const MonitorWidget = memo(function MonitorWidget({ monitorIds, objectFit
         );
     }
 
-    if (activeMonitorIds.length === 1) {
-        return <SingleMonitor monitorId={activeMonitorIds[0]} objectFit={objectFit} profileId={profileId} />;
+    if (activePicks.length === 1) {
+        return <SingleMonitor monitorId={activePicks[0].monitorId} objectFit={objectFit} profileId={activePicks[0].profileId} />;
     }
 
     // Calculate optimal grid layout for multiple monitors
-    const { cols, rows } = calculateGridDimensions(activeMonitorIds.length);
+    const { cols, rows } = calculateGridDimensions(activePicks.length);
 
     return (
         <div
             className="w-full h-full flex flex-wrap bg-black"
         >
-            {activeMonitorIds.map((id) => (
+            {activePicks.map((pick) => (
                 <div
-                    key={id}
+                    key={monitorCacheKey(pick.profileId, pick.monitorId)}
                     className="relative overflow-hidden"
                     style={{
                         width: `${100 / cols}%`,
                         height: `${100 / rows}%`,
                     }}
                 >
-                    <SingleMonitor monitorId={id} objectFit={objectFit} profileId={profileId} />
+                    <SingleMonitor monitorId={pick.monitorId} objectFit={objectFit} profileId={pick.profileId} />
                 </div>
             ))}
         </div>

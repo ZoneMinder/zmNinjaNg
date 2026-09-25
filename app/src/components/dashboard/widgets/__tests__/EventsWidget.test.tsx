@@ -26,6 +26,7 @@ vi.mock('../../../../api/events', () => ({
 
 const profileA = makeProfile('profile-a', { name: 'Home' });
 const profileB = makeProfile('profile-b', { name: 'Work' });
+const profileC = makeProfile('profile-c', { name: 'Cabin' });
 
 function event(id: string, name: string, startDateTime: string): EventData {
   return {
@@ -54,12 +55,12 @@ function seedScope(profiles: Profile[], mode?: 'single' | 'all') {
   for (const p of profiles) installApiClient(p.id, fakeApiClient());
 }
 
-function renderWidget() {
+function renderWidget(props: React.ComponentProps<typeof EventsWidget> = {}) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter>
-        <EventsWidget />
+        <EventsWidget {...props} />
       </MemoryRouter>
     </QueryClientProvider>
   );
@@ -155,5 +156,45 @@ describe('EventsWidget', () => {
 
     await waitFor(() => expect(screen.getByText(/common\.error/)).toBeInTheDocument());
     expect(screen.queryByText('dashboard.no_recent_events')).toBeNull();
+  });
+
+  // Picks from several servers: each server is asked only for its own
+  // monitors, and a server with no picks is not asked at all (refs #529).
+  it('queries only the servers with picks, each filtered to its own monitor ids', async () => {
+    seedScope([profileA, profileB, profileC]);
+    vi.mocked(getEvents).mockResolvedValue({ events: [] } as never);
+
+    renderWidget({
+      monitorRefs: [
+        { profileId: profileA.id, monitorId: '1' },
+        { profileId: profileB.id, monitorId: '5' },
+        { profileId: profileA.id, monitorId: '2' },
+      ],
+    });
+
+    await waitFor(() => expect(getEvents).toHaveBeenCalledTimes(2));
+    const filterByProfile = Object.fromEntries(
+      vi.mocked(getEvents).mock.calls.map(([, profileId, filters]) => [profileId, filters?.monitorId])
+    );
+    expect(filterByProfile).toEqual({ [profileA.id]: '1,2', [profileB.id]: '5' });
+  });
+
+  it('with no picks, queries every server unfiltered', async () => {
+    seedScope([profileA, profileB]);
+    vi.mocked(getEvents).mockResolvedValue({ events: [] } as never);
+
+    renderWidget({ monitorRefs: [] });
+
+    await waitFor(() => expect(getEvents).toHaveBeenCalledTimes(2));
+    expect(vi.mocked(getEvents).mock.calls.map(([, , filters]) => filters?.monitorId)).toEqual([undefined, undefined]);
+  });
+
+  it('shows the empty state when every picked server has left the scope', async () => {
+    seedScope([profileA, profileB]);
+
+    renderWidget({ monitorRefs: [{ profileId: profileC.id, monitorId: '1' }] });
+
+    expect(await screen.findByText('dashboard.no_recent_events')).toBeInTheDocument();
+    expect(getEvents).not.toHaveBeenCalled();
   });
 });
