@@ -13,6 +13,10 @@ The dashboard supports several widget types:
 | **Timeline** | Event counts over time as a bar chart |
 | **Heatmap** | Event activity heatmap showing busy hours and days |
 
+## In a virtual profile group
+
+While aggregating in a {doc}`profiles` group, the header has a stacking button (the layers icon) that splits the widgets by server. The Recent Events widget sections its list per server, the Timeline widget stacks each bar from one shade per server (the tooltip names them), and the Heatmap widget draws one heatmap per server under the server's name. Monitor widgets already show one server each and do not change. The button shares its on/off state with the one on Events.
+
 ## Customizing the Layout
 
 The dashboard uses a drag-and-drop grid layout:

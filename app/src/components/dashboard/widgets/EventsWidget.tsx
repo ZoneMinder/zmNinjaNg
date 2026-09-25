@@ -26,6 +26,9 @@ import { useTranslation } from 'react-i18next';
 import { getEventCauseIcon } from '../../../lib/event/event-icons';
 import { useBandwidthSettings } from '../../../hooks/useBandwidthSettings';
 import { useProfileScope } from '../../../hooks/useProfileScope';
+import { useGroupByServerScope } from '../../../hooks/useGroupByServerScope';
+import { groupByOwningProfile } from '../../../lib/profile/profile-sections';
+import { ProfileSectionList } from '../../profiles/ProfileSectionList';
 import { queryKeys } from '../../../lib/query/query-keys';
 import { useEventTagMapping } from '../../../hooks/useEventTags';
 import { TagChipList } from '../../events/TagChip';
@@ -70,6 +73,7 @@ export const EventsWidget = memo(function EventsWidget({
     // (profiles.length > 1 collapses to the single-mode branch there, refs
     // #337).
     const isAllMode = scope?.mode === 'all';
+    const groupScopeId = useGroupByServerScope('eventsGroupByServer');
     const monitorIdFilter = monitorIds?.length ? monitorIds.join(',') : undefined;
     const refetchMs = refreshInterval ?? bandwidth.eventsWidgetInterval;
 
@@ -138,6 +142,68 @@ export const EventsWidget = memo(function EventsWidget({
         });
     }, [events, tagIds, eventTagMap]);
 
+    // The event rows, for the flat list or one server's section of it.
+    const renderRows = (list: Scoped<EventData>[]) => (
+        <div className="divide-y">
+            {list.map((scopedEvent) => {
+                const event = scopedEvent.item;
+                const tags = eventTagMap.get(event.Event.Id) || [];
+                const detailPath = isAllMode
+                    ? `/all/events/${scopedEvent.profileId}/${event.Event.Id}`
+                    : `/events/${event.Event.Id}`;
+                return (
+                    <div
+                        key={`${scopedEvent.profileId}-${event.Event.Id}`}
+                        className="p-3 hover:bg-muted/50 cursor-pointer transition-colors flex items-center gap-3"
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => navigate(detailPath, { state: { from: '/dashboard' } })}
+                        onKeyDown={activateOnEnterOrSpace(() => navigate(detailPath, { state: { from: '/dashboard' } }))}
+                    >
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-1">
+                                <span className="font-medium text-sm truncate">{event.Event.Name}</span>
+                                <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                                    {fmtDateTimeShort(new Date(event.Event.StartDateTime.replace(' ', 'T')))}
+                                </span>
+                            </div>
+                            <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                {(() => {
+                                    const CauseIcon = getEventCauseIcon(event.Event.Cause);
+                                    return (
+                                        <span className="flex items-center gap-1">
+                                            <CauseIcon className="h-3 w-3" />
+                                            {event.Event.Cause}
+                                        </span>
+                                    );
+                                })()}
+                                <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded text-[10px]">
+                                    {event.Event.Length}s
+                                </span>
+                            </div>
+                            {event.Event.Notes && (
+                                <p className="text-[10px] text-muted-foreground truncate mt-0.5" title={event.Event.Notes}>
+                                    {event.Event.Notes.split('|')[0].trim()}
+                                </p>
+                            )}
+                            {(isAllMode || tags.length > 0) && (
+                                <div className="flex items-center gap-1 flex-wrap mt-1">
+                                    {isAllMode && (
+                                        <ProfileChip
+                                            name={scopedEvent.profileName}
+                                            testId="widget-profile-chip"
+                                        />
+                                    )}
+                                    {tags.length > 0 && <TagChipList tags={tags} maxVisible={3} size="sm" />}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+    );
+
     if (isLoading && errors.length === 0) {
         return (
             <div className="p-4 space-y-2">
@@ -162,64 +228,19 @@ export const EventsWidget = memo(function EventsWidget({
 
     return (
         <div className="h-full overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <div className="divide-y">
-                {filteredEvents.map((scopedEvent) => {
-                    const event = scopedEvent.item;
-                    const tags = eventTagMap.get(event.Event.Id) || [];
-                    const detailPath = isAllMode
-                        ? `/all/events/${scopedEvent.profileId}/${event.Event.Id}`
-                        : `/events/${event.Event.Id}`;
-                    return (
-                        <div
-                            key={`${scopedEvent.profileId}-${event.Event.Id}`}
-                            className="p-3 hover:bg-muted/50 cursor-pointer transition-colors flex items-center gap-3"
-                            role="button"
-                            tabIndex={0}
-                            onClick={() => navigate(detailPath, { state: { from: '/dashboard' } })}
-                            onKeyDown={activateOnEnterOrSpace(() => navigate(detailPath, { state: { from: '/dashboard' } }))}
-                        >
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between mb-1">
-                                    <span className="font-medium text-sm truncate">{event.Event.Name}</span>
-                                    <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                                        {fmtDateTimeShort(new Date(event.Event.StartDateTime.replace(' ', 'T')))}
-                                    </span>
-                                </div>
-                                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                                    {(() => {
-                                        const CauseIcon = getEventCauseIcon(event.Event.Cause);
-                                        return (
-                                            <span className="flex items-center gap-1">
-                                                <CauseIcon className="h-3 w-3" />
-                                                {event.Event.Cause}
-                                            </span>
-                                        );
-                                    })()}
-                                    <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded text-[10px]">
-                                        {event.Event.Length}s
-                                    </span>
-                                </div>
-                                {event.Event.Notes && (
-                                    <p className="text-[10px] text-muted-foreground truncate mt-0.5" title={event.Event.Notes}>
-                                        {event.Event.Notes.split('|')[0].trim()}
-                                    </p>
-                                )}
-                                {(isAllMode || tags.length > 0) && (
-                                    <div className="flex items-center gap-1 flex-wrap mt-1">
-                                        {isAllMode && (
-                                            <ProfileChip
-                                                name={scopedEvent.profileName}
-                                                testId="widget-profile-chip"
-                                            />
-                                        )}
-                                        {tags.length > 0 && <TagChipList tags={tags} maxVisible={3} size="sm" />}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
+            {groupScopeId ? (
+                <div className="p-2">
+                    <ProfileSectionList
+                        sections={groupByOwningProfile(filteredEvents.map((e) => ({ ...e, profileChip: e.profileName })))}
+                        surface="dashboard-events-group"
+                        scopeId={groupScopeId}
+                        className="space-y-3"
+                        renderItems={renderRows}
+                    />
+                </div>
+            ) : (
+                renderRows(filteredEvents)
+            )}
         </div>
     );
 });
