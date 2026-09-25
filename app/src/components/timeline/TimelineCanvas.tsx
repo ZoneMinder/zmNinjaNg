@@ -14,6 +14,7 @@ import { TimelineScrubber, type ScrubberState } from './TimelineScrubber';
 import { useDateTimeFormat } from '../../hooks/useDateTimeFormat';
 import { useBandwidthSettings } from '../../hooks/useBandwidthSettings';
 import { TIMELINE } from '../../lib/zmninja-ng-constants';
+import { cn } from '../../lib/utils';
 
 /**
  * One-shot viewport actions:
@@ -364,7 +365,7 @@ const TimelineCanvasInner = ({
         {monitors.map((monitor, index) => (
           <div
             key={monitor.id}
-            className="flex items-center gap-1.5 pl-2 pr-4 pointer-events-auto"
+            className={cn('flex items-center gap-1.5 pl-2 pr-4 pointer-events-auto', monitor.serverStart && 'border-t border-border')}
             style={{
               height: LAYOUT.rowHeight,
               background: 'linear-gradient(to right, hsl(var(--background)) 70%, transparent)',

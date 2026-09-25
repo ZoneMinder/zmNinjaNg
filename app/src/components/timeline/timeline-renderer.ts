@@ -44,6 +44,9 @@ export interface MonitorRow {
   /** All mode only: the owning profile's display name, for a chip in the
    *  monitor label sidebar (HTML overlay, not drawn on the canvas itself). */
   profileChip?: string;
+  /** Grouped by server: the first row of every server after the first,
+   *  which the label sidebar sets off with a rule (refs #529). */
+  serverStart?: boolean;
 }
 
 export interface TickMark {
