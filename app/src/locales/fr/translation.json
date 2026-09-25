@@ -95,7 +95,6 @@
     "widget_title_placeholder": "Mon Widget",
     "select_monitor": "Sélectionner un moniteur",
     "select_monitors": "Sélectionner des moniteurs",
-    "widget_profile": "Profil",
     "all_monitors": "Tous (événements seul.)",
     "monitor_required": "Veuillez sélectionner au moins un moniteur.",
     "monitor_order": "Ordre",

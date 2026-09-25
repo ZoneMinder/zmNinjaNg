@@ -95,7 +95,6 @@
     "widget_title_placeholder": "My Widget",
     "select_monitor": "Select Monitor",
     "select_monitors": "Select Monitors",
-    "widget_profile": "Profile",
     "all_monitors": "All Monitors (Events only)",
     "monitor_required": "Please select at least one monitor.",
     "monitor_order": "Display order",

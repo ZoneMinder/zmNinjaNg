@@ -71,28 +71,39 @@ describe('WidgetEditDialog', () => {
     useDashboardStore.setState({ widgets: {}, isEditing: false });
   });
 
-  it('picking profile B and saving pins the monitor widget to B (refs #337)', async () => {
+  function renderDialog(w: DashboardWidget) {
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
       <QueryClientProvider client={queryClient}>
-        <WidgetEditDialog open onOpenChange={() => {}} widget={widget} profileId={profileA.id} />
+        <WidgetEditDialog open onOpenChange={() => {}} widget={w} profileId={ALL_PROFILES_ID} />
       </QueryClientProvider>
     );
+  }
 
-    // Default picks the first profile in scope (A); switch to B. The widget
-    // already has monitorIds: ['1'] selected, so the save button stays
-    // enabled without touching the monitor checkboxes.
-    expect(screen.getByTestId('widget-profile-picker')).toBeInTheDocument();
-    await waitFor(() => expect(screen.getByText('Work')).toBeInTheDocument());
-    fireEvent.click(screen.getByText('Work'));
+  const saved = () => useDashboardStore.getState().widgets[ALL_PROFILES_ID]?.find((w) => w.id === 'widget-1');
+  const checkbox = (profileId: string) => screen.findByTestId(`widget-edit-monitor-checkbox-${profileId}-1`);
 
-    await waitFor(() => expect(screen.getByTestId('widget-edit-monitor-checkbox-1')).toBeInTheDocument());
+  // Both servers' monitors list under their server's heading; ticking one
+  // on each saves both, each with its owning server (refs #529).
+  it('saves picks from two servers, each with its own server', async () => {
+    const legacy = { ...widget, settings: { monitorIds: ['1'], profileId: profileB.id } };
+    useDashboardStore.setState({ widgets: { [ALL_PROFILES_ID]: [legacy] } });
+    renderDialog(legacy);
 
+    expect(screen.queryByTestId('widget-profile-picker')).not.toBeInTheDocument();
+    expect(await screen.findByTestId(`widget-edit-monitor-list-server-${profileA.id}`)).toHaveTextContent('Home');
+    expect(screen.getByTestId(`widget-edit-monitor-list-server-${profileB.id}`)).toHaveTextContent('Work');
+
+    // The legacy widget's monitor 1 belongs to Work, not Home.
+    expect(await checkbox(profileB.id)).toHaveAttribute('data-state', 'checked');
+    expect(await checkbox(profileA.id)).toHaveAttribute('data-state', 'unchecked');
+
+    fireEvent.click(await checkbox(profileA.id));
     fireEvent.click(screen.getByTestId('widget-edit-save-button'));
 
-    await waitFor(() => {
-      const saved = useDashboardStore.getState().widgets[profileA.id]?.find((w) => w.id === 'widget-1');
-      expect(saved?.settings.profileId).toBe(profileB.id);
-    });
+    await waitFor(() => expect(saved()?.settings).toEqual({
+      monitorRefs: [{ profileId: profileB.id, monitorId: '1' }, { profileId: profileA.id, monitorId: '1' }],
+      feedFit: 'contain',
+    }));
   });
 });

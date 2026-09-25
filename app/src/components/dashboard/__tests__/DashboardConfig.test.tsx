@@ -1,26 +1,31 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 vi.mock('../../../api/store-gates', () => import('../../../tests/fake-store-gates'));
 vi.mock('../../../lib/security/secureStorage', () => import('../../../tests/fake-secure-storage'));
 
 import { DashboardConfig } from '../DashboardConfig';
-import { asProfileId, mintVirtualProfileId } from '../../../api/types';
-import { seedProfiles, resetProfileFixture, makeProfile } from '../../../tests/profile-fixture';
-import { resetFakeStoreGates } from '../../../tests/fake-store-gates';
+import { ALL_PROFILES_ID, asProfileId, mintVirtualProfileId } from '../../../api/types';
+import { seedProfiles, resetProfileFixture, makeProfile, fakeApiClient } from '../../../tests/profile-fixture';
+import { installApiClient, resetFakeStoreGates } from '../../../tests/fake-store-gates';
 import { useProfileStore } from '../../../stores/profile';
 import { useDashboardStore } from '../../../stores/dashboard';
 
-vi.mock('@tanstack/react-query', () => ({
-  useQuery: () => ({
-    data: {
-      monitors: [
-        { Monitor: { Id: '1', Name: 'Front Door', Deleted: false } },
-        { Monitor: { Id: '2', Name: 'Back Door', Deleted: false } },
-      ],
-    },
-  }),
-}));
+function monitorList(names: string[]) {
+  return {
+    monitors: names.map((Name, i) => ({ Monitor: { Id: String(i + 1), Name, Function: 'Modect', Enabled: '1', Deleted: false } })),
+  };
+}
+
+function renderConfig() {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <DashboardConfig />
+    </QueryClientProvider>
+  );
+}
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -31,6 +36,7 @@ vi.mock('react-i18next', () => ({
 describe('DashboardConfig', () => {
   beforeEach(() => {
     seedProfiles([makeProfile('profile-1', { name: 'Home' })]);
+    installApiClient(asProfileId('profile-1'), fakeApiClient({ '/monitors.json': monitorList(['Front Door', 'Back Door']) }));
   });
 
   afterEach(() => {
@@ -39,11 +45,11 @@ describe('DashboardConfig', () => {
     useDashboardStore.setState({ widgets: {}, isEditing: false });
   });
 
-  it('adds a monitor widget when a monitor is selected', () => {
-    render(<DashboardConfig />);
+  it('adds a monitor widget when a monitor is selected', async () => {
+    renderConfig();
 
     fireEvent.click(screen.getByTestId('add-widget-trigger'));
-    fireEvent.click(screen.getByTestId('monitor-checkbox-1'));
+    fireEvent.click(await screen.findByTestId('monitor-checkbox-1'));
     fireEvent.change(screen.getByTestId('widget-title-input'), {
       target: { value: 'My Monitor' },
     });
@@ -59,7 +65,7 @@ describe('DashboardConfig', () => {
   });
 
   it('adds an events widget without requiring a monitor selection', () => {
-    render(<DashboardConfig />);
+    renderConfig();
 
     fireEvent.click(screen.getByTestId('add-widget-trigger'));
     fireEvent.click(screen.getByTestId('widget-type-events'));
@@ -82,7 +88,7 @@ describe('DashboardConfig', () => {
       virtualProfiles: [{ id: group, name: 'Backyard', memberProfileIds: [asProfileId('profile-1')] }],
     });
 
-    render(<DashboardConfig />);
+    renderConfig();
 
     fireEvent.click(screen.getByTestId('add-widget-trigger'));
     fireEvent.click(screen.getByTestId('widget-type-events'));
@@ -91,5 +97,49 @@ describe('DashboardConfig', () => {
     const widgets = useDashboardStore.getState().widgets[group];
     expect(widgets).toHaveLength(1);
     expect(widgets[0]).toMatchObject({ type: 'events' });
+  });
+
+  // In an aggregate one widget can hold monitors from several servers,
+  // each saved with its owning server (refs #529).
+  describe('in an aggregate', () => {
+    const home = makeProfile('home', { name: 'Home' });
+    const work = makeProfile('work', { name: 'Work' });
+
+    beforeEach(() => {
+      seedProfiles([home, work], { current: ALL_PROFILES_ID });
+      installApiClient(home.id, fakeApiClient({ '/monitors.json': monitorList(['Porch']) }));
+      installApiClient(work.id, fakeApiClient({ '/monitors.json': monitorList(['Lobby']) }));
+    });
+
+    it('adds a monitor widget holding one monitor from each server', async () => {
+      renderConfig();
+
+      fireEvent.click(screen.getByTestId('add-widget-trigger'));
+      expect(screen.queryByTestId('widget-profile-picker')).not.toBeInTheDocument();
+      fireEvent.click(await screen.findByTestId(`monitor-checkbox-${home.id}-1`));
+      fireEvent.click(await screen.findByTestId(`monitor-checkbox-${work.id}-1`));
+      fireEvent.click(screen.getByTestId('widget-add-button'));
+
+      const [added] = useDashboardStore.getState().widgets[ALL_PROFILES_ID];
+      expect(added.settings).toEqual({
+        monitorRefs: [{ profileId: home.id, monitorId: '1' }, { profileId: work.id, monitorId: '1' }],
+        feedFit: 'contain',
+      });
+    });
+
+    it('adds an events widget filtered to one server\'s monitor', async () => {
+      renderConfig();
+
+      fireEvent.click(screen.getByTestId('add-widget-trigger'));
+      fireEvent.click(screen.getByTestId('widget-type-events'));
+      fireEvent.click(await screen.findByTestId(`monitor-checkbox-${work.id}-1`));
+      fireEvent.click(screen.getByTestId('widget-add-button'));
+
+      const [added] = useDashboardStore.getState().widgets[ALL_PROFILES_ID];
+      expect(added.settings).toEqual({
+        monitorRefs: [{ profileId: work.id, monitorId: '1' }],
+        eventCount: 5,
+      });
+    });
   });
 });
