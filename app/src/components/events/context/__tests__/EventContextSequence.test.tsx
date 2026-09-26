@@ -104,10 +104,11 @@ describe('EventContextSequence', () => {
     act(() => vi.advanceTimersByTime(0));
     expect(playingIds()).toEqual(['a']);
 
+    // The button names the mode it is in.
     const toggle = screen.getByTestId('event-context-sequence-together');
-    expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    expect(toggle).toHaveTextContent('events.around.sequence_play_sequence');
     fireEvent.click(toggle);
-    expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    expect(toggle).toHaveTextContent('events.around.sequence_play_all');
     act(() => vi.advanceTimersByTime(0));
     expect(playingIds()).toEqual(['a', 'b', 'c']);
 
@@ -139,6 +140,19 @@ describe('EventContextSequence', () => {
     fireEvent.click(screen.getByTestId('event-context-sequence-together'));
     act(() => vi.advanceTimersByTime(0));
     expect(playingIds()).toHaveLength(7);
+  });
+
+  it('scrolls each tile into view as it starts playing', () => {
+    // jsdom has no scrollIntoView; record which element asked for it.
+    const scrolled: string[] = [];
+    Element.prototype.scrollIntoView = function (this: Element) {
+      scrolled.push(this.getAttribute('data-testid') ?? '');
+    };
+    renderGrid();
+    act(() => vi.advanceTimersByTime(0));
+    act(() => vi.advanceTimersByTime(5_000));
+    expect(scrolled).toEqual(['event-context-sequence-tile-a', 'event-context-sequence-tile-b']);
+    delete (Element.prototype as Partial<Element>).scrollIntoView;
   });
 
   it('starts over from the first tile on replay', () => {

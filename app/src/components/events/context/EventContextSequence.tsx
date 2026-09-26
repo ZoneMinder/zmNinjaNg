@@ -9,13 +9,14 @@
  * which owns its connkey and sends CMD_QUIT when it unmounts: at the end of
  * its slot, on replay, on close, or when a tile opens its event.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { LayoutGrid, RotateCcw } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../ui/dialog';
+import { LayoutGrid, ListVideo, RotateCcw } from 'lucide-react';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '../../ui/dialog';
 import { Button } from '../../ui/button';
 import { EventThumbnail } from '../EventThumbnail';
+import { ReturnFlashArrow } from '../ReturnFlashArrow';
 import { EventZmsHoverPlayer } from '../EventThumbnailHoverPreview';
 import { useProfileById } from '../../../hooks/useCurrentProfile';
 import { useFreshAccessToken } from '../../../hooks/useFreshAccessToken';
@@ -81,6 +82,19 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
     };
   }, [open, schedule, run]);
 
+  // A tile that starts playing below the fold scrolls into view. Only newly
+  // started tiles count, so a tile that ends never pulls the view back.
+  const gridRef = useRef<HTMLDivElement>(null);
+  const shownRef = useRef<ReadonlySet<string>>(new Set());
+  useEffect(() => {
+    const started = tiles.find(({ event }) => playing.has(event.Id) && !shownRef.current.has(event.Id));
+    shownRef.current = playing;
+    if (!started) return;
+    gridRef.current
+      ?.querySelector(`[data-testid="event-context-sequence-tile-${started.event.Id}"]`)
+      ?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+  }, [playing, tiles]);
+
   const openEvent = (eventId: string) => {
     markViewed(eventId);
     // Same route the panel's list rows take (CompactEventRow).
@@ -90,14 +104,32 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="h-[100dvh] max-h-[100dvh] max-w-none rounded-none sm:h-auto sm:max-h-[calc(100dvh-2rem)] sm:max-w-3xl sm:rounded-lg"
+        className="h-[100dvh] max-h-[100dvh] max-w-none gap-1 rounded-none p-1.5 sm:h-auto sm:max-h-[calc(100dvh-2rem)] sm:max-w-3xl sm:rounded-lg sm:p-2"
         data-testid="event-context-sequence"
       >
-        <DialogHeader>
-          <DialogTitle>{t('events.around.sequence_title')}</DialogTitle>
-          <DialogDescription>{t('events.around.sequence_desc', { count: tiles.length })}</DialogDescription>
-        </DialogHeader>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {/* Only the toolbar and the tiles take space; the title and
+            description are for screen readers. */}
+        <DialogTitle className="sr-only">{t('events.around.sequence_title')}</DialogTitle>
+        <DialogDescription className="sr-only">{t('events.around.sequence_desc', { count: tiles.length })}</DialogDescription>
+        {/* pr-8 clears the dialog's own close button in the top corner. */}
+        <div className="flex items-center gap-1 border-b border-border/50 pb-1 pr-8">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 px-2 text-xs"
+            onClick={() => setTogether((v) => !v)}
+            data-mode={together ? 'together' : 'sequence'}
+            data-testid="event-context-sequence-together"
+          >
+            {together ? <LayoutGrid className="h-3.5 w-3.5" /> : <ListVideo className="h-3.5 w-3.5" />}
+            {t(together ? 'events.around.sequence_play_all' : 'events.around.sequence_play_sequence')}
+          </Button>
+          <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => setRun((n) => n + 1)} data-testid="event-context-sequence-replay">
+            <RotateCcw className="h-3.5 w-3.5" />
+            {t('events.around.sequence_replay')}
+          </Button>
+        </div>
+        <div ref={gridRef} className="grid grid-cols-2 gap-1 sm:grid-cols-3">
           {tiles.map(({ event, offsetMs, isAnchor }) => {
             const { urls, aspectRatio } = buildRowThumbnail(event, {
               portalUrl: profile?.portalUrl || '',
@@ -118,30 +150,24 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
                 title={monitorName}
                 data-testid={`event-context-sequence-tile-${event.Id}`}
                 data-playing={isPlaying}
-                // The border marks what is playing; the anchor keeps its
-                // "This event" badge instead, so the two never look alike.
-                className={cn(
-                  'min-w-0 rounded-md border text-left hover:bg-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                  isPlaying && 'border-primary ring-2 ring-primary'
-                )}
+                className="min-w-0 rounded-sm border border-border/40 text-left hover:bg-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <div
-                  className={cn(
-                    'relative w-full overflow-hidden rounded-t-md bg-black transition-opacity',
-                    !isPlaying && 'opacity-60'
-                  )}
-                  style={{ aspectRatio: String(aspectRatio) }}
-                >
-                  {isPlaying ? (
-                    <EventZmsHoverPlayer
-                      descriptor={{ eventId: event.Id, monitorId: event.MonitorId, name: event.Name, profileId }}
-                    />
-                  ) : (
-                    <EventThumbnail urls={urls} cacheKey={event.Id} alt={event.Name} className="h-full w-full" objectFit="cover" />
-                  )}
+                <div className="relative w-full overflow-hidden rounded-t-sm bg-black" style={{ aspectRatio: String(aspectRatio) }}>
+                  {/* The same blinking triangle that marks a returned-to
+                      event, here marking the tiles playing now. */}
+                  {isPlaying && <ReturnFlashArrow className="top-1" />}
+                  <div className={cn('h-full w-full transition-opacity', !isPlaying && 'opacity-60')}>
+                    {isPlaying ? (
+                      <EventZmsHoverPlayer
+                        descriptor={{ eventId: event.Id, monitorId: event.MonitorId, name: event.Name, profileId }}
+                      />
+                    ) : (
+                      <EventThumbnail urls={urls} cacheKey={event.Id} alt={event.Name} className="h-full w-full" objectFit="cover" />
+                    )}
+                  </div>
                   <span
                     className={cn(
-                      'absolute right-1 top-1 rounded px-1 text-xs',
+                      'absolute right-0.5 top-0.5 rounded-sm px-1 text-[10px]',
                       isAnchor ? 'bg-blue-500/80 text-white' : 'bg-black/60 text-white'
                     )}
                     title={t('events.around.offset_title')}
@@ -149,27 +175,10 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
                     {isAnchor ? t('events.around.this_event') : offsetLabel(offsetMs)}
                   </span>
                 </div>
-                <div className="truncate px-1.5 py-1 text-xs">{monitorName}</div>
+                <div className="truncate px-1 py-0.5 text-[11px] leading-tight">{monitorName}</div>
               </button>
             );
           })}
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant={together ? 'default' : 'outline'}
-            size="sm"
-            aria-pressed={together}
-            onClick={() => setTogether((v) => !v)}
-            title={t('events.around.sequence_together')}
-            aria-label={t('events.around.sequence_together')}
-            data-testid="event-context-sequence-together"
-          >
-            <LayoutGrid className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="sm" className="flex-1" onClick={() => setRun((n) => n + 1)} data-testid="event-context-sequence-replay">
-            <RotateCcw className="h-4 w-4" />
-            {t('events.around.sequence_replay')}
-          </Button>
         </div>
       </DialogContent>
     </Dialog>

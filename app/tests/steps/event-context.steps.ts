@@ -108,7 +108,7 @@ When('I switch sequence play to play all together', async ({ page }) => {
   if (!sequenceListIds) return;
   const toggle = page.getByTestId('event-context-sequence-together');
   await toggle.click();
-  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  await expect(toggle).toHaveAttribute('data-mode', 'together');
 });
 
 // Together mode starts every tile, up to five on a server without multiport,
