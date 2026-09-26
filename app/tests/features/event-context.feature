@@ -17,3 +17,12 @@ Feature: Events around an event
     When I open the around-this-event panel on the first event
     And I choose the 60 minute window
     Then the event context list should reflect the 60 minute window
+
+  @all
+  Scenario: The grid replays nearby events in time order
+    When I open the around-this-event panel on the first event
+    And I choose the 60 minute window
+    And I open the nearby events grid if there are two events
+    Then the grid shows the nearby events in time order, playing
+    When I open the first grid tile
+    Then that grid tile's event detail opens

@@ -269,6 +269,48 @@ describe('EventContextPanel', () => {
 });
 
 describe('EventContextPanel history navigation (refs #494)', () => {
+  it('offers the grid only once there are two events to put in it', async () => {
+    seedProfiles([makeProfile('p1')]);
+    installApiClient(
+      P1,
+      fakeApiClient({
+        '/monitors.json': { monitors: [{ Monitor: { Id: '3', Name: 'Front Door' } }] },
+        '/groups.json': { groups: [] },
+        '/events/index': { events: [{ Event: event }], pagination: { count: 1 } },
+      })
+    );
+    renderWithClient(
+      <>
+        <EventContextButton event={event} profileId={P1} />
+        <EventContextPanel />
+      </>
+    );
+    fireEvent.click(screen.getByTestId('event-context-open'));
+    await screen.findByTestId(`event-context-row-${event.Id}`);
+    expect(screen.getByTestId('event-context-grid-open')).toBeDisabled();
+    fireEvent.click(screen.getByTestId('event-context-close'));
+  });
+
+  it('opens the grid on both events, anchor included', async () => {
+    seedProfiles([makeProfile('p1')]);
+    installApiClient(P1, twoEventsServer());
+    renderWithClient(
+      <>
+        <EventContextButton event={event} profileId={P1} />
+        <EventContextPanel />
+      </>
+    );
+    fireEvent.click(screen.getByTestId('event-context-open'));
+    await screen.findByTestId(`event-context-row-${event2.Id}`);
+    fireEvent.click(screen.getByTestId('event-context-grid-open'));
+    const grid = within(await screen.findByTestId('event-context-grid'));
+    expect(grid.getAllByTestId(/^event-context-grid-tile-/).map((el) => el.dataset.testid)).toEqual([
+      `event-context-grid-tile-${event.Id}`,
+      `event-context-grid-tile-${event2.Id}`,
+    ]);
+    expect(grid.getByTestId(`event-context-grid-tile-${event.Id}`)).toHaveAttribute('aria-current', 'true');
+  });
+
   it('reopens on the same anchor, window and scope after going back from an event opened inside it', async () => {
     seedProfiles([makeProfile('p1')], { settings: { p1: { eventContext: { windowMinutes: 10, scope: 'all' } } } });
     installApiClient(P1, twoEventsServer());

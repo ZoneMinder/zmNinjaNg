@@ -73,6 +73,45 @@ describe('useEventsAround', () => {
     expect(result.current.monitorNames.get('3')).toBe('Door');
   });
 
+  it('fills outward from the anchor: before it newest first, after it oldest first', async () => {
+    seedProfiles([P]);
+    // The upper bound on StartDateTime marks the before-the-anchor request.
+    const before = 'StartDateTime%20%3C%3D';
+    const client = fakeApiClient({
+      '/monitors.json': { monitors: [{ Monitor: { Id: '3', Name: 'Door', LinkedMonitors: '' } }] },
+      '/groups.json': { groups: [] },
+      '/events/index': (url: string) =>
+        url.includes(before)
+          ? {
+              events: [
+                { Event: { ...anchorEvent } },
+                { Event: { ...anchorEvent, Id: '405', StartDateTime: '2026-09-17 21:13:03' } },
+              ],
+              pagination: { count: 2 },
+            }
+          : {
+              events: [
+                { Event: { ...anchorEvent } },
+                { Event: { ...anchorEvent, Id: '408', StartDateTime: '2026-09-17 21:15:03' } },
+              ],
+              pagination: { count: 2 },
+            },
+    });
+    installApiClient(P, client);
+
+    const { result } = renderHook(
+      () => useEventsAround(anchor, P, { windowMinutes: 60, scope: 'all', enabled: true }),
+      { wrapper }
+    );
+
+    await waitFor(() => expect(result.current.rows).toHaveLength(3));
+    expect(result.current.rows.map((r) => r.event.Id)).toEqual(['405', '406', '408']);
+    const urls = client.calls.map((c) => decodeURIComponent(c.url)).filter((u) => u.includes('/events/index'));
+    expect(urls).toHaveLength(2);
+    expect(urls.some((u) => u.includes('StartDateTime <=:2026-09-17 21:14:03'))).toBe(true);
+    expect(urls.some((u) => u.includes('StartDateTime >=:2026-09-17 21:14:03'))).toBe(true);
+  });
+
   it('filters to the linked cameras when the scope asks for them', async () => {
     seedProfiles([P]);
     const client = fakeApiClient({

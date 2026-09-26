@@ -153,6 +153,9 @@ export async function getEvents(client: ApiClient, profileId: ProfileId, filters
     const formattedStart = filters.startDateTime.replace('T', ' ');
     addFilterSegment(`StartDateTime >=:${formattedStart}`);
   }
+  if (filters.startDateTimeMax) {
+    addFilterSegment(`StartDateTime <=:${filters.startDateTimeMax.replace('T', ' ')}`);
+  }
   if (filters.endDateTime) {
     const formattedEnd = filters.endDateTime.replace('T', ' ');
     addFilterSegment(`EndDateTime <=:${formattedEnd}`);

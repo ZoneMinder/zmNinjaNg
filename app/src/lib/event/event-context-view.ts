@@ -72,6 +72,48 @@ export function buildRowThumbnail(event: Event, opts: RowThumbnailOptions) {
   return { urls, aspectRatio: tw / th };
 }
 
+/** The `max` rows nearest the anchor on either side, in time order (refs
+ *  #534). The anchor is at offset zero, so it is always kept. */
+export function nearestFirst<T extends { offsetMs: number }>(rows: T[], max: number): T[] {
+  return [...rows]
+    .sort((a, b) => Math.abs(a.offsetMs) - Math.abs(b.offsetMs))
+    .slice(0, max)
+    .sort((a, b) => a.offsetMs - b.offsetMs);
+}
+
+export interface ReplaySlot {
+  eventId: string;
+  /** Milliseconds after the replay starts. */
+  playAtMs: number;
+  /** Null for an event with no length yet, which plays until the replay closes. */
+  stopAtMs: number | null;
+}
+
+/**
+ * When each grid tile starts and stops in the synced replay (refs #534).
+ * Events keep their real spacing, so overlapping events play together, but
+ * a stretch where nothing is recording is cut out: the next event starts the
+ * moment the last one playing ends. `ratePercent` is ZMS's `rate` (200 = 2x),
+ * the same rate the tiles stream at. Rows must be in time order.
+ */
+export function buildReplaySchedule(rows: EventAroundRow[], ratePercent: number): ReplaySlot[] {
+  const scale = 100 / ratePercent;
+  let frontier: number | null = null;
+  let skipped = 0;
+  const first = rows[0]?.offsetMs ?? 0;
+  return rows.map(({ event, offsetMs }) => {
+    if (frontier !== null && offsetMs > frontier) skipped += offsetMs - frontier;
+    const lengthMs = (Number(event.Length) || 0) * 1000;
+    frontier = Math.max(frontier ?? offsetMs, offsetMs + lengthMs);
+    const start = offsetMs - first - skipped;
+    return {
+      eventId: event.Id,
+      playAtMs: start * scale,
+      stopAtMs: lengthMs > 0 ? (start + lengthMs) * scale : null,
+    };
+  });
+}
+
 export interface RibbonDot {
   eventId: string;
   offsetMs: number;

@@ -3373,11 +3373,23 @@ third should ask for.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/lib/event/event-context.ts>`__
    · → :doc:`07-api-and-data-fetching`
 
+#. **The events query is two requests that fill outward from the anchor.**
+   One asks for events that started between the window start and the anchor,
+   newest first (``startDateTimeMax``, which becomes ZoneMinder's
+   ``StartDateTime <=`` filter); the other for events from the anchor to the
+   window end, oldest first. Each is capped at ``EVENT_CONTEXT.maxResults``.
+   A single oldest-first request would spend that cap on the far edge of a busy
+   window and drop the events right after the anchor. Both requests include the
+   anchor's own second, so the merge drops duplicates by event id.
+   `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/hooks/useEventsAround.ts>`__
+   · → :doc:`07-api-and-data-fetching`
+
 #. **Rows carry their own offset from the anchor, and the anchor is one of them.**
-   The events query result is mapped to ``{ event, offsetMs, isAnchor }`` with
-   ``eventInstant(item, timezone) - window.anchorMs``, then sorted by that offset,
-   so the anchor's own event always appears in its rightful place in the list
-   rather than needing to be spliced back in.
+   The merged result is mapped to ``{ event, offsetMs, isAnchor }`` with
+   ``eventInstant(item, timezone) - window.anchorMs``, then passed through
+   ``nearestFirst``, which keeps the ``maxResults`` rows with the smallest
+   absolute offset and returns them in time order. The anchor's offset is zero,
+   so it is always kept and appears in its rightful place in the list.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/hooks/useEventsAround.ts>`__
    · → :doc:`07-api-and-data-fetching`
 
@@ -3391,6 +3403,19 @@ third should ask for.
    collapsed, showing the lane count instead; the choice persists per device
    in ``localStorage`` under ``STORAGE_KEYS.eventContextRibbonOpen``.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/events/context/EventContextRibbon.tsx>`__
+   · → :doc:`05-component-architecture`
+
+#. **The grid replays the nearest rows on one clock.** The Grid button, enabled
+   from two rows up, opens ``EventContextGrid`` in a dialog. It takes
+   ``nearestFirst(rows, EVENT_CONTEXT.gridMaxTiles)`` and hands them to
+   ``buildReplaySchedule``, which gives each tile a start and stop time: events
+   keep their real spacing, stretches with no event running are cut, and times
+   are divided by the hover preview rate the streams play at. One effect sets a
+   timeout per start and stop, and a tile inside its slot renders
+   ``EventZmsHoverPlayer`` instead of its thumbnail. That player owns a connkey
+   and sends CMD_QUIT when it unmounts, so the end of a slot, **Replay**,
+   closing the dialog, and opening a tile each tear down that tile's stream.
+   `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/events/context/EventContextGrid.tsx>`__
    · → :doc:`05-component-architecture`
 
 The panel has no footer. Opening a row is the only way out besides closing

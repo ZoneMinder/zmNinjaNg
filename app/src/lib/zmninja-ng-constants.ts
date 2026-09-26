@@ -260,6 +260,8 @@ export const EVENT_CONTEXT = {
   defaultWindowMinutes: 10,
   /** Rows one window may return before the list says it truncated. */
   maxResults: 200,
+  /** Tiles in the grid; the events nearest the anchor win (refs #534). */
+  gridMaxTiles: 12,
   /** Above this many monitor ids the request drops the MonitorId filter and
    *  asks for every camera in the window instead, because ZoneMinder's filter
    *  URLs cap out near 8KB. Nothing narrows the answer afterwards: a wider

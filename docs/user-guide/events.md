@@ -135,6 +135,10 @@ A camera scope with nothing to offer (the camera has no linked cameras, or belon
 
 A ribbon above the list shows one row per camera with a dot for each of its events in the window, so you can see at a glance which cameras were also busy; tapping a dot jumps to that event in the list below. From there, **Events** opens the same window and cameras on that page.
 
+**Grid** opens the events nearest the one you tapped, up to 12, as a grid of thumbnails in time order. The 12 are picked by how close each event is to yours, on either side, so with a ±60 minute window a burst a minute after your event is shown before anything from an hour earlier. The grid then replays them together: each tile starts playing at the moment its event started and goes back to its thumbnail when the event ends, so cameras that caught the same moment play it side by side. Stretches where no camera was recording are skipped. Playback runs at the hover preview **playback speed** set in {doc}`settings`, and **Replay** starts it over. Tapping a tile opens that event. The button stays greyed out until the window holds at least two events.
+
+When a busy window holds more events than the list can show, the list keeps the ones nearest your event on both sides.
+
 The window and camera choice you last picked is remembered per profile and used the next time you open the panel.
 
 ## Event Montage
