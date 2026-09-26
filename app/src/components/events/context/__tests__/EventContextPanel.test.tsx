@@ -269,7 +269,7 @@ describe('EventContextPanel', () => {
 });
 
 describe('EventContextPanel history navigation (refs #494)', () => {
-  it('offers the grid only once there are two events to put in it', async () => {
+  it('offers Sequence play only once there are two events to put in it', async () => {
     seedProfiles([makeProfile('p1')]);
     installApiClient(
       P1,
@@ -287,11 +287,11 @@ describe('EventContextPanel history navigation (refs #494)', () => {
     );
     fireEvent.click(screen.getByTestId('event-context-open'));
     await screen.findByTestId(`event-context-row-${event.Id}`);
-    expect(screen.getByTestId('event-context-grid-open')).toBeDisabled();
+    expect(screen.getByTestId('event-context-sequence-open')).toBeDisabled();
     fireEvent.click(screen.getByTestId('event-context-close'));
   });
 
-  it('opens the grid on both events, anchor included', async () => {
+  it('opens Sequence play on both events, anchor included', async () => {
     seedProfiles([makeProfile('p1')]);
     installApiClient(P1, twoEventsServer());
     renderWithClient(
@@ -302,13 +302,13 @@ describe('EventContextPanel history navigation (refs #494)', () => {
     );
     fireEvent.click(screen.getByTestId('event-context-open'));
     await screen.findByTestId(`event-context-row-${event2.Id}`);
-    fireEvent.click(screen.getByTestId('event-context-grid-open'));
-    const grid = within(await screen.findByTestId('event-context-grid'));
-    expect(grid.getAllByTestId(/^event-context-grid-tile-/).map((el) => el.dataset.testid)).toEqual([
-      `event-context-grid-tile-${event.Id}`,
-      `event-context-grid-tile-${event2.Id}`,
+    fireEvent.click(screen.getByTestId('event-context-sequence-open'));
+    const sequence = within(await screen.findByTestId('event-context-sequence'));
+    expect(sequence.getAllByTestId(/^event-context-sequence-tile-/).map((el) => el.dataset.testid)).toEqual([
+      `event-context-sequence-tile-${event.Id}`,
+      `event-context-sequence-tile-${event2.Id}`,
     ]);
-    expect(grid.getByTestId(`event-context-grid-tile-${event.Id}`)).toHaveAttribute('aria-current', 'true');
+    expect(sequence.getByTestId(`event-context-sequence-tile-${event.Id}`)).toHaveAttribute('aria-current', 'true');
   });
 
   it('reopens on the same anchor, window and scope after going back from an event opened inside it', async () => {

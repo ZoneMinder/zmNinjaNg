@@ -20,7 +20,7 @@
  */
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LayoutGrid } from 'lucide-react';
+import { ListVideo } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useShallow } from 'zustand/react/shallow';
 import { cn } from '../../../lib/utils';
@@ -34,14 +34,14 @@ import { Button } from '../../ui/button';
 import { EventContextControls } from './EventContextControls';
 import { EventContextList } from './EventContextList';
 import { EventContextRibbon } from './EventContextRibbon';
-import { EventContextGrid } from './EventContextGrid';
+import { EventContextSequence } from './EventContextSequence';
 import { buildRibbonLanes } from '../../../lib/event/event-context-view';
 import { EVENT_CONTEXT } from '../../../lib/zmninja-ng-constants';
 import type { EventData, ProfileId } from '../../../api/types';
 
 function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId: ProfileId | undefined }) {
   const { t } = useTranslation();
-  const [gridOpen, setGridOpen] = useState(false);
+  const [sequenceOpen, setSequenceOpen] = useState(false);
   const settings = useSettingsStore(useShallow((s) => s.getProfileSettings(profileId ?? '')));
   const [context, setContext] = useState<EventContextSettings>(settings.eventContext);
 
@@ -102,16 +102,16 @@ function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId:
           size="sm"
           variant="outline"
           disabled={rows.length < 2}
-          onClick={() => setGridOpen(true)}
-          data-testid="event-context-grid-open"
+          onClick={() => setSequenceOpen(true)}
+          data-testid="event-context-sequence-open"
         >
-          <LayoutGrid className="h-4 w-4" />
-          {t('events.around.grid')}
+          <ListVideo className="h-4 w-4" />
+          {t('events.around.sequence')}
         </Button>
       </EventContextControls>
-      <EventContextGrid
-        open={gridOpen}
-        onOpenChange={setGridOpen}
+      <EventContextSequence
+        open={sequenceOpen}
+        onOpenChange={setSequenceOpen}
         rows={rows}
         profileId={profileId}
         monitorNames={monitorNames}

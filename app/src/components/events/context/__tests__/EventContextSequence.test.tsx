@@ -1,5 +1,5 @@
 /**
- * The grid replays its tiles on one shared clock (refs #534): each tile
+ * Sequence play replays its tiles on one shared clock (refs #534): each tile
  * streams only inside its own slot, then falls back to its thumbnail, which
  * unmounts the player and quits its ZMS stream. Real stores; the clock is
  * faked.
@@ -21,7 +21,7 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-import { EventContextGrid } from '../EventContextGrid';
+import { EventContextSequence } from '../EventContextSequence';
 import { seedProfiles, resetProfileFixture, asProfileId } from '../../../../tests/profile-fixture';
 import { resetFakeStoreGates } from '../../../../tests/fake-store-gates';
 import { sendDelayedCmdQuit } from '../../../../lib/zm/zms-quit';
@@ -45,16 +45,16 @@ const rows = [row('a', -60_000, 10), row('b', 0, 38), row('c', 20 * 60_000, 5)];
 function renderGrid(open = true) {
   return render(
     <MemoryRouter>
-      <EventContextGrid open={open} onOpenChange={() => {}} rows={rows} profileId={P} monitorNames={new Map([['3', 'Door']])} />
+      <EventContextSequence open={open} onOpenChange={() => {}} rows={rows} profileId={P} monitorNames={new Map([['3', 'Door']])} />
     </MemoryRouter>
   );
 }
 
 const playingIds = () =>
   screen
-    .queryAllByTestId(/^event-context-grid-tile-/)
+    .queryAllByTestId(/^event-context-sequence-tile-/)
     .filter((el) => el.getAttribute('data-playing') === 'true')
-    .map((el) => el.getAttribute('data-testid')!.replace('event-context-grid-tile-', ''));
+    .map((el) => el.getAttribute('data-testid')!.replace('event-context-sequence-tile-', ''));
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -68,7 +68,7 @@ afterEach(() => {
   resetFakeStoreGates();
 });
 
-describe('EventContextGrid', () => {
+describe('EventContextSequence', () => {
   it('plays each tile inside its own slot, one after another across a cut gap', () => {
     renderGrid();
     act(() => vi.advanceTimersByTime(0));
@@ -86,12 +86,25 @@ describe('EventContextGrid', () => {
     expect(quitIds()).toEqual(['a', 'b', 'c']);
   });
 
+  it('runs the clock and the streams at the hover preview speed', () => {
+    seedProfiles([P], { settings: { p1: { hoverPreviewPlaybackRate: 100 } } });
+    renderGrid();
+    // At 1x, a plays 0-10s; at the default 2x it would have ended at 5s.
+    act(() => vi.advanceTimersByTime(6_000));
+    expect(playingIds()).toEqual(['a']);
+    const img = screen.getByTestId('event-context-sequence-tile-a').querySelector('img');
+    expect(img?.getAttribute('src')).toMatch(/[?&]rate=100(&|$)/);
+
+    act(() => vi.advanceTimersByTime(4_000));
+    expect(playingIds()).toEqual(['b']);
+  });
+
   it('starts over from the first tile on replay', () => {
     renderGrid();
     act(() => vi.advanceTimersByTime(30_000));
     expect(playingIds()).toEqual([]);
 
-    fireEvent.click(screen.getByTestId('event-context-grid-replay'));
+    fireEvent.click(screen.getByTestId('event-context-sequence-replay'));
     act(() => vi.advanceTimersByTime(0));
     expect(playingIds()).toEqual(['a']);
   });
@@ -103,11 +116,11 @@ describe('EventContextGrid', () => {
 
     rerender(
       <MemoryRouter>
-        <EventContextGrid open={false} onOpenChange={() => {}} rows={rows} profileId={P} monitorNames={new Map()} />
+        <EventContextSequence open={false} onOpenChange={() => {}} rows={rows} profileId={P} monitorNames={new Map()} />
       </MemoryRouter>
     );
     act(() => vi.advanceTimersByTime(30_000));
-    expect(screen.queryByTestId('event-context-grid')).toBeNull();
+    expect(screen.queryByTestId('event-context-sequence')).toBeNull();
     // One 6s step batches a's start and stop, so only b ever mounted.
     expect(quitIds()).toEqual(['b']);
   });

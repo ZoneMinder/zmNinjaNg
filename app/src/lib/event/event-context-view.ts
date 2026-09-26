@@ -90,7 +90,7 @@ export interface ReplaySlot {
 }
 
 /**
- * When each grid tile starts and stops in the synced replay (refs #534).
+ * When each Sequence play tile starts and stops in the synced replay (refs #534).
  * Events keep their real spacing, so overlapping events play together, but
  * a stretch where nothing is recording is cut out: the next event starts the
  * moment the last one playing ends. `ratePercent` is ZMS's `rate` (200 = 2x),

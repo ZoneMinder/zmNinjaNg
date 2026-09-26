@@ -1,7 +1,7 @@
 /**
- * Nearby events as a grid that replays them in sync (refs #534).
+ * Sequence play: nearby events as tiles that replay in sync (refs #534).
  *
- * The tiles are the `gridMaxTiles` events nearest the anchor, in time order.
+ * The tiles are the `sequenceMaxTiles` events nearest the anchor, in time order.
  * When the dialog opens, a shared clock (buildReplaySchedule) starts each
  * tile's stream at its own moment and stops it when the event ends, so
  * cameras that recorded the same moment play it together. A tile that is not
@@ -28,7 +28,7 @@ import { cn } from '../../../lib/utils';
 import type { EventAroundRow } from '../../../hooks/useEventsAround';
 import type { ProfileId } from '../../../api/types';
 
-export interface EventContextGridProps {
+export interface EventContextSequenceProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   rows: EventAroundRow[];
@@ -36,7 +36,7 @@ export interface EventContextGridProps {
   monitorNames: Map<string, string>;
 }
 
-export function EventContextGrid({ open, onOpenChange, rows, profileId, monitorNames }: EventContextGridProps) {
+export function EventContextSequence({ open, onOpenChange, rows, profileId, monitorNames }: EventContextSequenceProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const markViewed = useReturnHighlightStore((s) => s.markViewed);
@@ -45,7 +45,7 @@ export function EventContextGrid({ open, onOpenChange, rows, profileId, monitorN
   const minStreamingPort = resolveMinStreamingPort(profile?.minStreamingPort, settings.forceDisableMultiPort);
   const rate = settings.hoverPreviewPlaybackRate ?? DEFAULT_HOVER_PREVIEW_PLAYBACK_RATE;
 
-  const tiles = useMemo(() => nearestFirst(rows, EVENT_CONTEXT.gridMaxTiles), [rows]);
+  const tiles = useMemo(() => nearestFirst(rows, EVENT_CONTEXT.sequenceMaxTiles), [rows]);
   const schedule = useMemo(() => buildReplaySchedule(tiles, rate), [tiles, rate]);
   const [playing, setPlaying] = useState<ReadonlySet<string>>(new Set());
   const [run, setRun] = useState(0);
@@ -79,11 +79,11 @@ export function EventContextGrid({ open, onOpenChange, rows, profileId, monitorN
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="h-[100dvh] max-h-[100dvh] max-w-none rounded-none sm:h-auto sm:max-h-[calc(100dvh-2rem)] sm:max-w-3xl sm:rounded-lg"
-        data-testid="event-context-grid"
+        data-testid="event-context-sequence"
       >
         <DialogHeader>
-          <DialogTitle>{t('events.around.grid_title')}</DialogTitle>
-          <DialogDescription>{t('events.around.grid_desc', { count: tiles.length })}</DialogDescription>
+          <DialogTitle>{t('events.around.sequence_title')}</DialogTitle>
+          <DialogDescription>{t('events.around.sequence_desc', { count: tiles.length })}</DialogDescription>
         </DialogHeader>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {tiles.map(({ event, offsetMs, isAnchor }) => {
@@ -104,7 +104,7 @@ export function EventContextGrid({ open, onOpenChange, rows, profileId, monitorN
                 aria-current={isAnchor ? 'true' : undefined}
                 aria-label={`${t('common.view')}: ${event.Name}`}
                 title={monitorName}
-                data-testid={`event-context-grid-tile-${event.Id}`}
+                data-testid={`event-context-sequence-tile-${event.Id}`}
                 data-playing={isPlaying}
                 className={cn(
                   'min-w-0 rounded-md border text-left hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary',
@@ -134,9 +134,9 @@ export function EventContextGrid({ open, onOpenChange, rows, profileId, monitorN
             );
           })}
         </div>
-        <Button variant="outline" size="sm" onClick={() => setRun((n) => n + 1)} data-testid="event-context-grid-replay">
+        <Button variant="outline" size="sm" onClick={() => setRun((n) => n + 1)} data-testid="event-context-sequence-replay">
           <RotateCcw className="h-4 w-4" />
-          {t('events.around.grid_replay')}
+          {t('events.around.sequence_replay')}
         </Button>
       </DialogContent>
     </Dialog>

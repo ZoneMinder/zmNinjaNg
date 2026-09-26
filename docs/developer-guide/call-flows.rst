@@ -3405,17 +3405,19 @@ third should ask for.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/events/context/EventContextRibbon.tsx>`__
    · → :doc:`05-component-architecture`
 
-#. **The grid replays the nearest rows on one clock.** The Grid button, enabled
-   from two rows up, opens ``EventContextGrid`` in a dialog. It takes
-   ``nearestFirst(rows, EVENT_CONTEXT.gridMaxTiles)`` and hands them to
-   ``buildReplaySchedule``, which gives each tile a start and stop time: events
-   keep their real spacing, stretches with no event running are cut, and times
-   are divided by the hover preview rate the streams play at. One effect sets a
+#. **Sequence play replays the nearest rows on one clock.** The Sequence
+   button, enabled from two rows up, opens ``EventContextSequence`` in a
+   dialog. It takes ``nearestFirst(rows, EVENT_CONTEXT.sequenceMaxTiles)`` and
+   hands them to ``buildReplaySchedule``, which gives each tile a start and
+   stop time: events keep their real spacing, stretches with no event running
+   are cut, and times are divided by ``hoverPreviewPlaybackRate``.
+   ``EventZmsHoverPlayer`` reads the same setting for its stream's ``rate``, so
+   the clock and the streams stay in step. One effect sets a
    timeout per start and stop, and a tile inside its slot renders
    ``EventZmsHoverPlayer`` instead of its thumbnail. That player owns a connkey
    and sends CMD_QUIT when it unmounts, so the end of a slot, **Replay**,
    closing the dialog, and opening a tile each tear down that tile's stream.
-   `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/events/context/EventContextGrid.tsx>`__
+   `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/events/context/EventContextSequence.tsx>`__
    · → :doc:`05-component-architecture`
 
 The panel has no footer. Opening a row is the only way out besides closing

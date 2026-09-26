@@ -62,55 +62,55 @@ Then('the event context list should reflect the {int} minute window', async ({ p
   log.info('E2E event-context window widened', { component: 'e2e', minutes });
 });
 
-// The grid needs two events (refs #534). Whether the window has them comes
+// Sequence play needs two events (refs #534). Whether the window has them comes
 // from the server's data, rendered as list rows; with fewer, the button must
-// be disabled and the grid steps below have nothing to check.
-let gridListIds: string[] | null = null;
-let gridTileEventId: string | null = null;
+// be disabled and the sequence play steps below have nothing to check.
+let sequenceListIds: string[] | null = null;
+let sequenceTileEventId: string | null = null;
 
-When('I open the nearby events grid if there are two events', async ({ page }) => {
+When('I open sequence play if there are two events', async ({ page }) => {
   const rows = contextRows(page);
   await expect(rows.first()).toBeVisible({ timeout: testConfig.timeouts.transition * 3 });
   const ids = await rows.evaluateAll((els) =>
     els.map((el) => el.getAttribute('data-testid')!.replace('event-context-row-', ''))
   );
-  const button = panel(page).getByTestId('event-context-grid-open');
+  const button = panel(page).getByTestId('event-context-sequence-open');
   if (ids.length < 2) {
     await expect(button).toBeDisabled();
-    gridListIds = null;
-    log.info('E2E event-context grid: fewer than two events, grid disabled', { component: 'e2e' });
+    sequenceListIds = null;
+    log.info('E2E event-context sequence play: fewer than two events, button disabled', { component: 'e2e' });
     return;
   }
-  gridListIds = ids;
+  sequenceListIds = ids;
   await button.click();
-  await expect(page.getByTestId('event-context-grid')).toBeVisible({ timeout: testConfig.timeouts.transition });
+  await expect(page.getByTestId('event-context-sequence')).toBeVisible({ timeout: testConfig.timeouts.transition });
 });
 
-Then('the grid shows the nearby events in time order, playing', async ({ page }) => {
-  if (!gridListIds) return;
-  const grid = page.getByTestId('event-context-grid');
-  const tiles = grid.locator('[data-testid^="event-context-grid-tile-"]');
+Then('sequence play shows the nearby events in time order, playing', async ({ page }) => {
+  if (!sequenceListIds) return;
+  const sequence = page.getByTestId('event-context-sequence');
+  const tiles = sequence.locator('[data-testid^="event-context-sequence-tile-"]');
   const tileIds = await tiles.evaluateAll((els) =>
-    els.map((el) => el.getAttribute('data-testid')!.replace('event-context-grid-tile-', ''))
+    els.map((el) => el.getAttribute('data-testid')!.replace('event-context-sequence-tile-', ''))
   );
   // The list is in time order, so the tiles must be a run of it in the same order.
-  const start = gridListIds.indexOf(tileIds[0]);
+  const start = sequenceListIds.indexOf(tileIds[0]);
   expect(start).toBeGreaterThanOrEqual(0);
-  expect(gridListIds.slice(start, start + tileIds.length)).toEqual(tileIds);
-  await expect(grid.locator('[aria-current="true"]')).toHaveCount(1);
+  expect(sequenceListIds.slice(start, start + tileIds.length)).toEqual(tileIds);
+  await expect(sequence.locator('[aria-current="true"]')).toHaveCount(1);
   // The first tile's slot starts at zero, so it is streaming the event now.
   await expect(tiles.first()).toHaveAttribute('data-playing', 'true', { timeout: testConfig.timeouts.transition });
   await expect(tiles.first().locator('img')).toHaveAttribute('src', new RegExp(`source=event&event=${tileIds[0]}\\b`));
-  gridTileEventId = tileIds[0];
+  sequenceTileEventId = tileIds[0];
 });
 
-When('I open the first grid tile', async ({ page }) => {
-  if (!gridTileEventId) return;
-  await page.getByTestId(`event-context-grid-tile-${gridTileEventId}`).click();
+When('I open the first sequence play tile', async ({ page }) => {
+  if (!sequenceTileEventId) return;
+  await page.getByTestId(`event-context-sequence-tile-${sequenceTileEventId}`).click();
 });
 
-Then("that grid tile's event detail opens", async ({ page }) => {
-  if (!gridTileEventId) return;
-  await expect(page).toHaveURL(new RegExp(`/events/(.+/)?${gridTileEventId}$`), { timeout: testConfig.timeouts.transition });
-  await expect(page.getByTestId('event-context-grid')).toBeHidden();
+Then("that sequence play tile's event detail opens", async ({ page }) => {
+  if (!sequenceTileEventId) return;
+  await expect(page).toHaveURL(new RegExp(`/events/(.+/)?${sequenceTileEventId}$`), { timeout: testConfig.timeouts.transition });
+  await expect(page.getByTestId('event-context-sequence')).toBeHidden();
 });

@@ -16,7 +16,7 @@ export interface EventContextControlsProps {
   value: EventContextSettings;
   onChange: (next: EventContextSettings) => void;
   available: { linked: boolean; group: boolean };
-  /** Extra controls at the end of the row (the grid button). */
+  /** Extra controls at the end of the row (the Sequence button). */
   children?: ReactNode;
 }
 
