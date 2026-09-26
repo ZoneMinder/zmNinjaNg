@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { nearestFirst, buildReplaySchedule } from '../event-context-view';
+import { nearestFirst, buildReplaySchedule, buildTogetherSchedule } from '../event-context-view';
 import type { EventAroundRow } from '../../../hooks/useEventsAround';
 import type { Event } from '../../../api/types';
 
@@ -50,5 +50,28 @@ describe('buildReplaySchedule', () => {
 
   it('leaves an event with no length playing until the replay is closed', () => {
     expect(buildReplaySchedule([row('live', 0, 0)], 100)).toEqual([{ eventId: 'live', playAtMs: 0, stopAtMs: null }]);
+  });
+});
+
+describe('buildTogetherSchedule', () => {
+  it('starts every tile at once when the stream budget allows', () => {
+    const rows = [row('a', -MIN, 10), row('b', 0, 20), row('c', 30 * MIN, 0)];
+    expect(buildTogetherSchedule(rows, 200, Infinity)).toEqual([
+      { eventId: 'a', playAtMs: 0, stopAtMs: 5_000 },
+      { eventId: 'b', playAtMs: 0, stopAtMs: 10_000 },
+      { eventId: 'c', playAtMs: 0, stopAtMs: null },
+    ]);
+  });
+
+  it('starts a waiting tile in the first stream slot to free up', () => {
+    // Two slots: a and b start at once, c takes a's slot when a ends at 10s,
+    // d takes b's when b ends at 20s.
+    const rows = [row('a', 0, 10), row('b', 1_000, 20), row('c', 2_000, 30), row('d', 3_000, 5)];
+    expect(buildTogetherSchedule(rows, 100, 2)).toEqual([
+      { eventId: 'a', playAtMs: 0, stopAtMs: 10_000 },
+      { eventId: 'b', playAtMs: 0, stopAtMs: 20_000 },
+      { eventId: 'c', playAtMs: 10_000, stopAtMs: 40_000 },
+      { eventId: 'd', playAtMs: 20_000, stopAtMs: 25_000 },
+    ]);
   });
 });

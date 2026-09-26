@@ -24,5 +24,7 @@ Feature: Events around an event
     And I choose the 60 minute window
     And I open sequence play if there are two events
     Then sequence play shows the nearby events in time order, playing
+    When I switch sequence play to play all together
+    Then more than one sequence play tile plays at once
     When I open the first sequence play tile
     Then that sequence play tile's event detail opens

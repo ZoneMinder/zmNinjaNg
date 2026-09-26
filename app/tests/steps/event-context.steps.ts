@@ -104,6 +104,21 @@ Then('sequence play shows the nearby events in time order, playing', async ({ pa
   sequenceTileEventId = tileIds[0];
 });
 
+When('I switch sequence play to play all together', async ({ page }) => {
+  if (!sequenceListIds) return;
+  const toggle = page.getByTestId('event-context-sequence-together');
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+});
+
+// Together mode starts every tile, up to five on a server without multiport,
+// so any two tiles play at once; sequence mode only overlaps real overlaps.
+Then('more than one sequence play tile plays at once', async ({ page }) => {
+  if (!sequenceListIds) return;
+  const playing = page.getByTestId('event-context-sequence').locator('[data-playing="true"]');
+  await expect.poll(() => playing.count(), { timeout: testConfig.timeouts.transition }).toBeGreaterThan(1);
+});
+
 When('I open the first sequence play tile', async ({ page }) => {
   if (!sequenceTileEventId) return;
   await page.getByTestId(`event-context-sequence-tile-${sequenceTileEventId}`).click();

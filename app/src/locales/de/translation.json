@@ -289,6 +289,7 @@
       "sequence_desc_one": "Das {{count}} Ereignis, das diesem am nächsten liegt, im zeitlichen Ablauf.",
       "sequence_desc_other": "Die {{count}} Ereignisse, die diesem am nächsten liegen, im zeitlichen Ablauf.",
       "sequence_replay": "Erneut abspielen",
+      "sequence_together": "Alle gleichzeitig abspielen",
       "close": "Schließen",
       "window": "Fenster",
       "scope": "Monitore",

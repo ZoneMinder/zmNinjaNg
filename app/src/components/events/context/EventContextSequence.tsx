@@ -12,7 +12,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { RotateCcw } from 'lucide-react';
+import { LayoutGrid, RotateCcw } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../ui/dialog';
 import { Button } from '../../ui/button';
 import { EventThumbnail } from '../EventThumbnail';
@@ -21,7 +21,7 @@ import { useProfileById } from '../../../hooks/useCurrentProfile';
 import { useFreshAccessToken } from '../../../hooks/useFreshAccessToken';
 import { useReturnHighlightStore } from '../../../stores/returnHighlight';
 import { resolveMinStreamingPort } from '../../../lib/monitor/multiport';
-import { buildReplaySchedule, buildRowThumbnail, nearestFirst, offsetLabel } from '../../../lib/event/event-context-view';
+import { buildReplaySchedule, buildRowThumbnail, buildTogetherSchedule, nearestFirst, offsetLabel } from '../../../lib/event/event-context-view';
 import { EVENT_CONTEXT } from '../../../lib/zmninja-ng-constants';
 import { DEFAULT_HOVER_PREVIEW_PLAYBACK_RATE } from '../../../stores/settings';
 import { cn } from '../../../lib/utils';
@@ -46,7 +46,15 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
   const rate = settings.hoverPreviewPlaybackRate ?? DEFAULT_HOVER_PREVIEW_PLAYBACK_RATE;
 
   const tiles = useMemo(() => nearestFirst(rows, EVENT_CONTEXT.sequenceMaxTiles), [rows]);
-  const schedule = useMemo(() => buildReplaySchedule(tiles, rate), [tiles, rate]);
+  const [together, setTogether] = useState(false);
+  // Multi-port streaming spreads streams over several ports, each with its own
+  // six-connection pool, so only a single-port server needs the cap. Snapshot
+  // mode does not change this: event playback always streams.
+  const maxStreams = minStreamingPort ? Infinity : EVENT_CONTEXT.togetherMaxStreams;
+  const schedule = useMemo(
+    () => (together ? buildTogetherSchedule(tiles, rate, maxStreams) : buildReplaySchedule(tiles, rate)),
+    [together, tiles, rate, maxStreams]
+  );
   const [playing, setPlaying] = useState<ReadonlySet<string>>(new Set());
   const [run, setRun] = useState(0);
 
@@ -59,10 +67,14 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
         else next.delete(id);
         return next;
       });
-    const timers = schedule.flatMap(({ eventId, playAtMs, stopAtMs }) => [
-      setTimeout(() => toggle(eventId, true), playAtMs),
-      ...(stopAtMs === null ? [] : [setTimeout(() => toggle(eventId, false), stopAtMs)]),
-    ]);
+    // A tile queued behind streams that never end (events with no length
+    // yet) has an infinite start and never plays.
+    const timers = schedule
+      .filter((slot) => Number.isFinite(slot.playAtMs))
+      .flatMap(({ eventId, playAtMs, stopAtMs }) => [
+        setTimeout(() => toggle(eventId, true), playAtMs),
+        ...(stopAtMs === null ? [] : [setTimeout(() => toggle(eventId, false), stopAtMs)]),
+      ]);
     return () => {
       timers.forEach(clearTimeout);
       setPlaying(new Set());
@@ -106,12 +118,20 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
                 title={monitorName}
                 data-testid={`event-context-sequence-tile-${event.Id}`}
                 data-playing={isPlaying}
+                // The border marks what is playing; the anchor keeps its
+                // "This event" badge instead, so the two never look alike.
                 className={cn(
-                  'min-w-0 rounded-md border text-left hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary',
-                  isAnchor && 'ring-2 ring-primary/60 bg-primary/5'
+                  'min-w-0 rounded-md border text-left hover:bg-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  isPlaying && 'border-primary ring-2 ring-primary'
                 )}
               >
-                <div className="relative w-full overflow-hidden rounded-t-md bg-black" style={{ aspectRatio: String(aspectRatio) }}>
+                <div
+                  className={cn(
+                    'relative w-full overflow-hidden rounded-t-md bg-black transition-opacity',
+                    !isPlaying && 'opacity-60'
+                  )}
+                  style={{ aspectRatio: String(aspectRatio) }}
+                >
                   {isPlaying ? (
                     <EventZmsHoverPlayer
                       descriptor={{ eventId: event.Id, monitorId: event.MonitorId, name: event.Name, profileId }}
@@ -134,10 +154,23 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
             );
           })}
         </div>
-        <Button variant="outline" size="sm" onClick={() => setRun((n) => n + 1)} data-testid="event-context-sequence-replay">
-          <RotateCcw className="h-4 w-4" />
-          {t('events.around.sequence_replay')}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant={together ? 'default' : 'outline'}
+            size="sm"
+            aria-pressed={together}
+            onClick={() => setTogether((v) => !v)}
+            title={t('events.around.sequence_together')}
+            aria-label={t('events.around.sequence_together')}
+            data-testid="event-context-sequence-together"
+          >
+            <LayoutGrid className="h-4 w-4" />
+          </Button>
+          <Button variant="outline" size="sm" className="flex-1" onClick={() => setRun((n) => n + 1)} data-testid="event-context-sequence-replay">
+            <RotateCcw className="h-4 w-4" />
+            {t('events.around.sequence_replay')}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );

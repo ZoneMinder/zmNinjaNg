@@ -262,6 +262,10 @@ export const EVENT_CONTEXT = {
   maxResults: 200,
   /** Tiles in Sequence play; the events nearest the anchor win (refs #534). */
   sequenceMaxTiles: 12,
+  /** Streams Sequence play's together mode runs at once without multi-port
+   *  streaming: one under the browser's six connections per host, leaving
+   *  one for thumbnails and API calls (refs #534). */
+  togetherMaxStreams: 5,
   /** Above this many monitor ids the request drops the MonitorId filter and
    *  asks for every camera in the window instead, because ZoneMinder's filter
    *  URLs cap out near 8KB. Nothing narrows the answer afterwards: a wider

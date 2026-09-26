@@ -3417,6 +3417,11 @@ third should ask for.
    ``EventZmsHoverPlayer`` instead of its thumbnail. That player owns a connkey
    and sends CMD_QUIT when it unmounts, so the end of a slot, **Replay**,
    closing the dialog, and opening a tile each tear down that tile's stream.
+   The together toggle swaps in ``buildTogetherSchedule``, which starts every
+   tile at zero up to ``EVENT_CONTEXT.togetherMaxStreams`` streams and queues
+   the rest into the first slot to free up. The cap applies only without
+   multi-port streaming: each playing tile holds one of the browser's six
+   connections per host, and event playback streams even in Snapshot mode.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/events/context/EventContextSequence.tsx>`__
    · → :doc:`05-component-architecture`
 

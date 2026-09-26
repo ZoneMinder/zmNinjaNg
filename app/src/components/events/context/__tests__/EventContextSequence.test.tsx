@@ -22,7 +22,7 @@ vi.mock('react-i18next', () => ({
 }));
 
 import { EventContextSequence } from '../EventContextSequence';
-import { seedProfiles, resetProfileFixture, asProfileId } from '../../../../tests/profile-fixture';
+import { seedProfiles, resetProfileFixture, asProfileId, makeProfile } from '../../../../tests/profile-fixture';
 import { resetFakeStoreGates } from '../../../../tests/fake-store-gates';
 import { sendDelayedCmdQuit } from '../../../../lib/zm/zms-quit';
 
@@ -97,6 +97,48 @@ describe('EventContextSequence', () => {
 
     act(() => vi.advanceTimersByTime(4_000));
     expect(playingIds()).toEqual(['b']);
+  });
+
+  it('plays every tile at once after the together toggle is pressed', () => {
+    renderGrid();
+    act(() => vi.advanceTimersByTime(0));
+    expect(playingIds()).toEqual(['a']);
+
+    const toggle = screen.getByTestId('event-context-sequence-together');
+    expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    act(() => vi.advanceTimersByTime(0));
+    expect(playingIds()).toEqual(['a', 'b', 'c']);
+
+    // Each still stops at its own end: c (5s, so 2.5s at 2x) first.
+    act(() => vi.advanceTimersByTime(2_500));
+    expect(playingIds()).toEqual(['a', 'b']);
+  });
+
+  it('holds together mode to the stream budget of a server without multiport', () => {
+    const many = Array.from({ length: 7 }, (_, i) => row(`e${i}`, i * 1_000, 10));
+    render(
+      <MemoryRouter>
+        <EventContextSequence open onOpenChange={() => {}} rows={many} profileId={P} monitorNames={new Map()} />
+      </MemoryRouter>
+    );
+    fireEvent.click(screen.getByTestId('event-context-sequence-together'));
+    act(() => vi.advanceTimersByTime(0));
+    expect(playingIds()).toHaveLength(5);
+  });
+
+  it('lifts the stream budget when the server has multiport', () => {
+    seedProfiles([makeProfile('p1', { minStreamingPort: 30000 })]);
+    const many = Array.from({ length: 7 }, (_, i) => row(`e${i}`, i * 1_000, 10));
+    render(
+      <MemoryRouter>
+        <EventContextSequence open onOpenChange={() => {}} rows={many} profileId={P} monitorNames={new Map()} />
+      </MemoryRouter>
+    );
+    fireEvent.click(screen.getByTestId('event-context-sequence-together'));
+    act(() => vi.advanceTimersByTime(0));
+    expect(playingIds()).toHaveLength(7);
   });
 
   it('starts over from the first tile on replay', () => {

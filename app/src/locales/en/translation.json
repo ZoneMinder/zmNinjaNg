@@ -289,6 +289,7 @@
       "sequence_desc_one": "The {{count}} event nearest this one, played as it happened.",
       "sequence_desc_other": "The {{count}} events nearest this one, played as they happened.",
       "sequence_replay": "Replay",
+      "sequence_together": "Play all together",
       "close": "Close",
       "window": "Window",
       "scope": "Cameras",

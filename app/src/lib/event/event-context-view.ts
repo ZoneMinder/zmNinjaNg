@@ -114,6 +114,26 @@ export function buildReplaySchedule(rows: EventAroundRow[], ratePercent: number)
   });
 }
 
+/**
+ * Together mode (refs #534): every tile starts at once, up to
+ * `maxConcurrent` streams, and each waiting tile takes the first stream slot
+ * to free up. The cap exists because a browser opens six connections per host
+ * and each playing tile holds one; on a single port the seventh stream, and
+ * every thumbnail and API call behind it, would sit queued.
+ */
+export function buildTogetherSchedule(rows: EventAroundRow[], ratePercent: number, maxConcurrent: number): ReplaySlot[] {
+  const scale = 100 / ratePercent;
+  const slots: number[] = [];
+  return rows.map(({ event }) => {
+    const slot = slots.length < maxConcurrent ? slots.push(0) - 1 : slots.indexOf(Math.min(...slots));
+    const playAtMs = slots[slot];
+    const lengthMs = (Number(event.Length) || 0) * 1000 * scale;
+    const stopAtMs = lengthMs > 0 ? playAtMs + lengthMs : null;
+    slots[slot] = stopAtMs ?? Infinity;
+    return { eventId: event.Id, playAtMs, stopAtMs };
+  });
+}
+
 export interface RibbonDot {
   eventId: string;
   offsetMs: number;

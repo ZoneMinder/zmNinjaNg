@@ -289,6 +289,7 @@
       "sequence_desc_one": "L'événement le plus proche de celui-ci ({{count}}), lu tel qu'il s'est produit.",
       "sequence_desc_other": "Les {{count}} événements les plus proches de celui-ci, lus tels qu'ils se sont produits.",
       "sequence_replay": "Rejouer",
+      "sequence_together": "Tout lire en même temps",
       "close": "Fermer",
       "window": "Fenêtre",
       "scope": "Moniteurs",
