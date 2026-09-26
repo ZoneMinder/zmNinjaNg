@@ -65,8 +65,13 @@ When('I pan the view with the {string} arrow key', async ({ page }, key: string)
 
 When('I drag the monitor view with the mouse', async ({ page }) => {
   panTransformBefore = await readZoomTransform(page);
-  const box = await page.getByTestId('monitor-zoom-content').boundingBox();
-  if (!box) throw new Error('monitor-zoom-content has no bounding box');
+  // Aim at the card, not the zoomed content: the content's box is scaled and
+  // shifted, so its centre can sit under the sticky header once the page has
+  // scrolled. hover() scrolls the card into view and checks it is the hit target.
+  const player = page.getByTestId('monitor-player');
+  await player.hover();
+  const box = await player.boundingBox();
+  if (!box) throw new Error('monitor-player has no bounding box');
   const cx = box.x + box.width / 2;
   const cy = box.y + box.height / 2;
   await page.mouse.move(cx, cy);
