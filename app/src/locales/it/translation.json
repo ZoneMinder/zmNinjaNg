@@ -868,7 +868,8 @@
     "orientation_270": "Ruota a sinistra (270°)",
     "settings_description": "Monitor #{{id}} · {{type}}",
     "settings_restricted_account": "Le impostazioni della telecamera sono di sola lettura. Per modificarle serve il permesso Sistema: Modifica sul tuo account ZoneMinder.",
-    "settings_restricted_monitor": "Le impostazioni della telecamera sono di sola lettura. ZoneMinder limita questo monitor per il tuo account."
+    "settings_restricted_monitor": "Le impostazioni della telecamera sono di sola lettura. ZoneMinder limita questo monitor per il tuo account.",
+    "wrapped_around": "All'altro capo"
   },
   "montage": {
     "title": "Montage",

@@ -60,6 +60,20 @@ Feature: Monitor Detail Page
     Then the monitor should change to previous in list
 
   @all
+  Scenario: Stepping wraps around at either end of the monitor list
+    When I step forward past the last monitor
+    Then I should see the wrapped around notice
+    When I step back from the first monitor
+    Then I should see the wrapped around notice after stepping back
+
+  @web
+  Scenario: Arrow keys step between monitors when not zoomed
+    When I press the "ArrowRight" key on the monitor view
+    Then the monitor should have changed
+    When I press the "ArrowLeft" key on the monitor view
+    Then the monitor should have changed
+
+  @all
   Scenario: Switching monitor updates the live stream, not just the name
     Then I should see the monitor player
     When I note the current monitor stream source

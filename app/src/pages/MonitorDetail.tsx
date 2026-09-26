@@ -31,6 +31,7 @@ import { cn } from '../lib/utils';
 import { toast } from 'sonner';
 import { downloadSnapshotFromElement } from '../services/download';
 import { useTranslation } from 'react-i18next';
+import { useTvMode } from '../hooks/useTvMode';
 import { useInsomnia } from '../hooks/useInsomnia';
 import { PTZControls } from '../components/monitors/PTZControls';
 import { LiveMonitorPlayer } from '../components/monitors/LiveMonitorPlayer';
@@ -149,15 +150,18 @@ export default function MonitorDetail() {
   });
 
   // Custom hooks for extracted logic
-  const { isSliding, enabledMonitors, hasPrev, hasNext, onSwipeLeft, onSwipeRight } = useMonitorNavigation({
+  const { isSliding, enabledMonitors, hasPrev, hasNext, onSwipeLeft, onSwipeRight, wrapNotice } = useMonitorNavigation({
     currentMonitorId: id,
     cycleSeconds: settings.monitorDetailCycleSeconds,
     profileId: routeProfileId,
   });
 
   // Pinch-to-zoom and pan (zooms around focal point, pan when zoomed, swipe when not)
+  // Swiping also claims the left/right arrow keys at 1x, which TV mode needs
+  // for d-pad focus movement, so TV steps with the prev/next buttons instead.
+  const { isTvMode } = useTvMode();
   const zoomPan = useZoomPan({
-    swipeEnabled: !!enabledMonitors && enabledMonitors.length > 1,
+    swipeEnabled: !isTvMode && !!enabledMonitors && enabledMonitors.length > 1,
     onSwipeLeft,
     onSwipeRight,
   });
@@ -484,6 +488,17 @@ export default function MonitorDetail() {
                 : 'top-2'
             )}
           />
+          {/* Stays mounted so screen readers announce the pill when it appears. */}
+          <div role="status" className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
+            {wrapNotice && (
+              <span
+                data-testid="monitor-wrap-notice"
+                className="px-4 py-2 rounded-full bg-black/50 backdrop-blur-sm text-white text-sm font-medium animate-in fade-in duration-200"
+              >
+                {t('monitor_detail.wrapped_around')}
+              </span>
+            )}
+          </div>
           {settings.showProtocolLabel && (
             <span className="absolute bottom-2 right-2 z-10 text-[10px] px-1.5 py-0.5 rounded bg-black/50 text-white/90 font-medium pointer-events-none">
               {protocol}

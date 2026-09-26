@@ -868,7 +868,8 @@
     "orientation_270": "چرخش چپ (۲۷۰°)",
     "settings_description": "مانیتور #{{id}} · {{type}}",
     "settings_restricted_account": "تنظیمات دوربین فقط‌خواندنی است. ویرایش نیاز به مجوز ویرایش سیستم در حساب ZoneMinder دارد.",
-    "settings_restricted_monitor": "تنظیمات دوربین فقط‌خواندنی است. ZoneMinder این مانیتور را برای حساب شما محدود کرده است."
+    "settings_restricted_monitor": "تنظیمات دوربین فقط‌خواندنی است. ZoneMinder این مانیتور را برای حساب شما محدود کرده است.",
+    "wrapped_around": "دور کامل شد"
   },
   "montage": {
     "title": "مونتاژ",

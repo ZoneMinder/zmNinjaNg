@@ -61,6 +61,7 @@ vi.mock('../../../hooks/useGroupFilter', () => ({
 }));
 
 import { useMonitorNavigation } from '../useMonitorNavigation';
+import { MONITOR_NAVIGATION } from '../../../lib/zmninja-ng-constants';
 
 const profileB = asProfileId('profile-b');
 
@@ -295,5 +296,74 @@ describe('useMonitorNavigation respects the monitor group (refs #527)', () => {
     act(() => result.current.onSwipeLeft());
 
     expect(navigateMock).toHaveBeenCalledWith('/all/monitors/profile-b/2', expect.anything());
+  });
+});
+
+describe('useMonitorNavigation wraps around at either end (refs #533)', () => {
+  beforeEach(() => {
+    navigateMock.mockClear();
+    seedProfiles(['profile-a'], { current: 'profile-a' });
+    mockLocation = { pathname: '/monitors/3', state: { from: '/montage' } };
+  });
+
+  afterEach(() => {
+    resetProfileFixture();
+    resetFakeStoreGates();
+    mockMonitors = defaultMonitors();
+  });
+
+  it('next on the last monitor opens the first and flags the wrap', () => {
+    const { result } = renderHook(() => useMonitorNavigation({ currentMonitorId: '3' }));
+
+    expect(result.current.hasNext).toBe(true);
+    act(() => result.current.onSwipeLeft());
+
+    expect(navigateMock).toHaveBeenCalledWith('/monitors/1', { replace: true, state: { from: '/montage' } });
+    expect(result.current.wrapNotice).toBe(true);
+  });
+
+  it('prev on the first monitor opens the last and flags the wrap', () => {
+    const { result } = renderHook(() => useMonitorNavigation({ currentMonitorId: '1' }));
+
+    expect(result.current.hasPrev).toBe(true);
+    act(() => result.current.onSwipeRight());
+
+    expect(navigateMock).toHaveBeenCalledWith('/monitors/3', expect.anything());
+    expect(result.current.wrapNotice).toBe(true);
+  });
+
+  it('does not flag an ordinary step', () => {
+    const { result } = renderHook(() => useMonitorNavigation({ currentMonitorId: '2' }));
+
+    act(() => result.current.onSwipeLeft());
+
+    expect(navigateMock).toHaveBeenCalledWith('/monitors/3', expect.anything());
+    expect(result.current.wrapNotice).toBe(false);
+  });
+
+  it('clears the notice after a moment', () => {
+    vi.useFakeTimers();
+    try {
+      const { result } = renderHook(() => useMonitorNavigation({ currentMonitorId: '3' }));
+
+      act(() => result.current.onSwipeLeft());
+      expect(result.current.wrapNotice).toBe(true);
+
+      act(() => vi.advanceTimersByTime(MONITOR_NAVIGATION.wrapNoticeMs));
+      expect(result.current.wrapNotice).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('stays put with a single monitor', () => {
+    mockMonitors = [liveMonitor('1')];
+    const { result } = renderHook(() => useMonitorNavigation({ currentMonitorId: '1' }));
+
+    expect(result.current.hasPrev).toBe(false);
+    expect(result.current.hasNext).toBe(false);
+    act(() => result.current.onSwipeLeft());
+
+    expect(navigateMock).not.toHaveBeenCalled();
   });
 });

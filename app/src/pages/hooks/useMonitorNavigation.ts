@@ -40,6 +40,8 @@ interface UseMonitorNavigationReturn {
   isSliding: boolean;
   onSwipeLeft: () => void;
   onSwipeRight: () => void;
+  /** Whether the last step wrapped past an end, while its notice shows (refs #533). */
+  wrapNotice: boolean;
 }
 
 /**
@@ -76,6 +78,7 @@ export function useMonitorNavigation({
   const navigate = useNavigate();
   const location = useLocation();
   const [isSliding, setIsSliding] = useState(false);
+  const [wrapNotice, setWrapNotice] = useState(false);
   const { currentProfile } = useCurrentProfile();
   const effectiveProfileId = profileId ?? currentProfile?.id;
   const monitorPath = (id: string) => (profileId ? `/all/monitors/${profileId}/${id}` : `/monitors/${id}`);
@@ -112,8 +115,10 @@ export function useMonitorNavigation({
     return {
       enabledMonitors: enabled,
       currentIndex: idx,
-      hasPrev: idx > 0,
-      hasNext: idx < enabled.length - 1,
+      // Stepping wraps around at either end (refs #533), so any second monitor
+      // gives both directions somewhere to go.
+      hasPrev: idx >= 0 && enabled.length > 1,
+      hasNext: idx >= 0 && enabled.length > 1,
     };
   }, [monitorsData?.monitors, currentMonitorId, skipOffline, groupIds]);
 
@@ -122,17 +127,19 @@ export function useMonitorNavigation({
   // `from` referrer forward, so the back button returns to the view the user
   // came from (e.g. montage), not the previously viewed monitor. refs #180
   const onSwipeLeft = () => {
-    if (hasNext) {
-      const nextMonitor = enabledMonitors[currentIndex + 1];
-      navigate(monitorPath(nextMonitor.Monitor.Id), { replace: true, state: location.state });
-    }
+    if (!hasNext) return;
+    const wrapped = currentIndex === enabledMonitors.length - 1;
+    const nextMonitor = enabledMonitors[wrapped ? 0 : currentIndex + 1];
+    navigate(monitorPath(nextMonitor.Monitor.Id), { replace: true, state: location.state });
+    setWrapNotice(wrapped);
   };
 
   const onSwipeRight = () => {
-    if (hasPrev) {
-      const prevMonitor = enabledMonitors[currentIndex - 1];
-      navigate(monitorPath(prevMonitor.Monitor.Id), { replace: true, state: location.state });
-    }
+    if (!hasPrev) return;
+    const wrapped = currentIndex === 0;
+    const prevMonitor = enabledMonitors[wrapped ? enabledMonitors.length - 1 : currentIndex - 1];
+    navigate(monitorPath(prevMonitor.Monitor.Id), { replace: true, state: location.state });
+    setWrapNotice(wrapped);
   };
 
   // Swipe navigation between monitors
@@ -150,6 +157,12 @@ export function useMonitorNavigation({
     const timeout = window.setTimeout(() => setIsSliding(false), MONITOR_NAVIGATION.slideAnimationMs);
     return () => window.clearTimeout(timeout);
   }, [currentMonitorId]);
+
+  useEffect(() => {
+    if (!wrapNotice) return;
+    const timeout = window.setTimeout(() => setWrapNotice(false), MONITOR_NAVIGATION.wrapNoticeMs);
+    return () => window.clearTimeout(timeout);
+  }, [wrapNotice]);
 
   // Auto-cycle through monitors
   useEffect(() => {
@@ -175,5 +188,6 @@ export function useMonitorNavigation({
     isSliding,
     onSwipeLeft,
     onSwipeRight,
+    wrapNotice,
   };
 }

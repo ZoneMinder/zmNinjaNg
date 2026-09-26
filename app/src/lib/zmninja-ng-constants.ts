@@ -1138,6 +1138,8 @@ export const MONITOR_NAVIGATION = {
   // How long the slide-transition state stays active after switching monitors,
   // matching the CSS slide animation duration (ms)
   slideAnimationMs: 450,
+  // How long the "back to the first/last monitor" pill stays over the feed (ms)
+  wrapNoticeMs: 1500,
 } as const;
 
 /**

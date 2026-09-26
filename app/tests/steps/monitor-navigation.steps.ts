@@ -2,6 +2,7 @@ import { createBdd } from 'playwright-bdd';
 import { expect } from '@playwright/test';
 import { testConfig } from '../helpers/config';
 import { log } from '../../src/lib/logger';
+import en from '../../src/locales/en/translation.json' with { type: 'json' };
 
 const { When, Then } = createBdd();
 
@@ -108,3 +109,68 @@ Then('the monitor should change to previous in list', async ({ page }) => {
     .not.toBe(navMonitorIdBeforePrev);
 });
 
+
+// Wrap around at the end of the list (refs #533)
+let wrapStartId: string | null = null;
+let wrapSeen = false;
+
+When('I step forward past the last monitor', async ({ page }) => {
+  const nextBtn = page.getByTestId('monitor-detail-next');
+  const wrapPill = page.getByTestId('monitor-wrap-notice').filter({ hasText: en.monitor_detail.wrapped_around });
+  wrapSeen = false;
+  if (!(await nextBtn.isEnabled().catch(() => false))) return;
+  // Walk forward one monitor at a time until the list wraps. The bound only
+  // stops a broken wrap from looping forever.
+  for (let i = 0; i < 100 && !wrapSeen; i++) {
+    wrapStartId = urlMonitorId(page);
+    await nextBtn.click();
+    await expect.poll(() => urlMonitorId(page), { timeout: testConfig.timeouts.transition }).not.toBe(wrapStartId);
+    wrapSeen = await wrapPill.isVisible().catch(() => false);
+  }
+});
+
+async function hasSecondMonitor(page: import('@playwright/test').Page): Promise<boolean> {
+  return page.getByTestId('monitor-detail-next').isEnabled().catch(() => false);
+}
+
+Then('I should see the wrapped around notice', async ({ page }) => {
+  if (!(await hasSecondMonitor(page))) {
+    log.info('E2E: Skipping wrap assertion - single monitor', { component: 'e2e' });
+    return;
+  }
+  expect(wrapSeen).toBe(true);
+});
+
+When('I step back from the first monitor', async ({ page }) => {
+  if (!(await hasSecondMonitor(page))) return;
+  // Let the forward wrap's notice go first, so the next one is new.
+  await expect(page.getByTestId('monitor-wrap-notice')).toBeHidden({ timeout: testConfig.timeouts.transition });
+  wrapStartId = urlMonitorId(page);
+  await page.getByTestId('monitor-detail-prev').click();
+});
+
+Then('I should see the wrapped around notice after stepping back', async ({ page }) => {
+  if (!(await hasSecondMonitor(page))) return;
+  await expect.poll(() => urlMonitorId(page), { timeout: testConfig.timeouts.transition }).not.toBe(wrapStartId);
+  await expect(
+    page.getByTestId('monitor-wrap-notice').filter({ hasText: en.monitor_detail.wrapped_around }),
+  ).toBeVisible({ timeout: testConfig.timeouts.transition });
+});
+
+// Arrow keys step like a swipe at 1x (refs #533)
+let keyStepStartId: string | null = null;
+
+When('I press the {string} key on the monitor view', async ({ page }, key: string) => {
+  // The keys only step once the monitor list has loaded, which is also when
+  // the next button enables. A single-monitor server never gets there.
+  await expect(page.getByTestId('monitor-detail-next'))
+    .toBeEnabled({ timeout: testConfig.timeouts.transition })
+    .catch(() => undefined);
+  keyStepStartId = urlMonitorId(page);
+  await page.keyboard.press(key);
+});
+
+Then('the monitor should have changed', async ({ page }) => {
+  if (!(await hasSecondMonitor(page))) return;
+  await expect.poll(() => urlMonitorId(page), { timeout: testConfig.timeouts.transition }).not.toBe(keyStepStartId);
+});

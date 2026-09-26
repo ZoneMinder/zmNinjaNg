@@ -292,12 +292,12 @@ export function useZoomPan({
     },
   );
 
-  // Keyboard pan when zoomed (desktop). Only intercepts arrows while zoomed so
-  // native page scrolling and other shortcuts keep working at 1x. Ignores
-  // arrows while typing in a form field.
+  // Keyboard pan when zoomed (desktop). At 1x, left/right step between items
+  // like a swipe when swiping is on (refs #533); otherwise arrows pass through
+  // so native page scrolling and other shortcuts keep working. Ignores arrows
+  // while typing in a form field.
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (stateRef.current.scale <= ZOOM_THRESHOLD) return;
       const el = document.activeElement as HTMLElement | null;
       if (
         el &&
@@ -306,6 +306,19 @@ export function useZoomPan({
           el.tagName === 'SELECT' ||
           el.isContentEditable)
       ) {
+        return;
+      }
+      if (stateRef.current.scale <= ZOOM_THRESHOLD) {
+        // A focused slider or menu may already have used the arrow, and a
+        // modified arrow belongs to the browser (Alt+Left is back).
+        if (!swipeEnabled || e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+        if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          onSwipeLeft?.();
+        } else if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          onSwipeRight?.();
+        }
         return;
       }
       switch (e.key) {
@@ -329,7 +342,7 @@ export function useZoomPan({
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [panLeft, panRight, panUp, panDown]);
+  }, [panLeft, panRight, panUp, panDown, swipeEnabled, onSwipeLeft, onSwipeRight]);
 
   // Grab cursor when zoomed so desktop users discover drag-to-pan.
   useEffect(() => {

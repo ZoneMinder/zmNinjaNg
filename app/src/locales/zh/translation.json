@@ -868,7 +868,8 @@
     "orientation_270": "向左旋转 (270°)",
     "settings_description": "Monitor #{{id}} · {{type}}",
     "settings_restricted_account": "摄像机设置为只读。编辑需要 ZoneMinder 账户具备 System: Edit 权限。",
-    "settings_restricted_monitor": "摄像机设置为只读。ZoneMinder 对你的账户限制了此监视器。"
+    "settings_restricted_monitor": "摄像机设置为只读。ZoneMinder 对你的账户限制了此监视器。",
+    "wrapped_around": "已循环"
   },
   "montage": {
     "title": "蒙太奇",

@@ -868,7 +868,8 @@
     "orientation_270": "Rotate Left (270°)",
     "settings_description": "Monitor #{{id}} · {{type}}",
     "settings_restricted_account": "Camera settings are read-only. Editing needs System: Edit permission on your ZoneMinder account.",
-    "settings_restricted_monitor": "Camera settings are read-only. ZoneMinder restricts this monitor for your account."
+    "settings_restricted_monitor": "Camera settings are read-only. ZoneMinder restricts this monitor for your account.",
+    "wrapped_around": "Wrapped around"
   },
   "montage": {
     "title": "Montage",

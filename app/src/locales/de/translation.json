@@ -868,7 +868,8 @@
     "orientation_270": "Links drehen (270°)",
     "settings_description": "Monitor #{{id}} · {{type}}",
     "settings_restricted_account": "Kamera-Einstellungen sind schreibgeschützt. Zum Bearbeiten braucht dein ZoneMinder-Konto System: Edit.",
-    "settings_restricted_monitor": "Kamera-Einstellungen sind schreibgeschützt. ZoneMinder sperrt diesen Monitor für dein Konto."
+    "settings_restricted_monitor": "Kamera-Einstellungen sind schreibgeschützt. ZoneMinder sperrt diesen Monitor für dein Konto.",
+    "wrapped_around": "Zum anderen Ende"
   },
   "montage": {
     "title": "Montage",

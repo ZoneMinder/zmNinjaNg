@@ -63,6 +63,8 @@ The maximize button on the Monitor Detail toolbar fills the screen with the feed
 
 Go2RTC feeds in the Monitors list start muted. The speaker icon next to a monitor's name unmutes it, and the app remembers that choice per monitor until you mute it again. The Monitor Detail page's volume control shares the same memory, so unmuting there carries to the card and the montage tile and back.
 
+On Monitor Detail, the arrows beside the monitor name, a sideways swipe, and the left and right arrow keys (when the view is not zoomed in) step to the previous or next monitor. In TV mode the arrow keys keep moving focus, so use the arrows beside the name. Stepping follows the group picked on the Monitors page and passes over monitors that are not capturing when **Skip offline monitors** is on. Stepping past the last monitor goes to the first, and stepping back from the first goes to the last. A short message in the middle of the video says when that happens.
+
 For tile views (Monitors list, Montage, Dashboard widgets), the *Streaming Mode* setting does apply, see {doc}`settings` for details.
 
 #### Scroll Pad
@@ -87,7 +89,7 @@ The zoom controls in the corner of the live view zoom into the streamed image (t
 Once zoomed in, you can pan the view in several ways:
 
 - **On-screen arrows**: the directional buttons that appear next to the zoom controls when zoomed.
-- **Keyboard arrow keys**: pan the zoomed view (desktop). Arrow keys only pan while zoomed in; at normal zoom they behave as usual.
+- **Keyboard arrow keys**: pan the zoomed view (desktop). Arrow keys only pan while zoomed in. At normal zoom, left and right step to the previous or next monitor.
 - **Mouse drag**: click and drag the image to move it. The pointer shows a grab cursor when the view is zoomed.
 - **Touch**: pinch to zoom, then drag with one finger to pan. Until you zoom
   in, dragging up and down over the image scrolls the page instead, so a phone

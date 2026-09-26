@@ -160,3 +160,79 @@ describe('useZoomPan keyboard pan', () => {
     expect(container.style.touchAction).toBe('pan-y');
   });
 });
+
+describe('useZoomPan arrow keys step between items at 1x (refs #533)', () => {
+  const onSwipeLeft = vi.fn();
+  const onSwipeRight = vi.fn();
+  function SwipeHarness({ swipeEnabled }: { swipeEnabled: boolean }) {
+    const { ref, innerRef } = useZoomPan({ swipeEnabled, onSwipeLeft, onSwipeRight });
+    return (
+      <div ref={ref} data-testid="container">
+        <div ref={innerRef} />
+      </div>
+    );
+  }
+
+  function press(key: string, init: KeyboardEventInit = {}) {
+    const ev = new KeyboardEvent('keydown', { key, cancelable: true, ...init });
+    act(() => {
+      window.dispatchEvent(ev);
+    });
+    return ev;
+  }
+
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+    onSwipeLeft.mockClear();
+    onSwipeRight.mockClear();
+  });
+
+  it('right arrow goes to the next item and left arrow to the previous', () => {
+    render(<SwipeHarness swipeEnabled />);
+
+    expect(press('ArrowRight').defaultPrevented).toBe(true);
+    expect(onSwipeLeft).toHaveBeenCalledTimes(1);
+
+    press('ArrowLeft');
+    expect(onSwipeRight).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves the keys alone when swiping is off', () => {
+    render(<SwipeHarness swipeEnabled={false} />);
+
+    expect(press('ArrowRight').defaultPrevented).toBe(false);
+    expect(onSwipeLeft).not.toHaveBeenCalled();
+  });
+
+  it('leaves modified arrows alone, such as Alt+Left for browser back', () => {
+    render(<SwipeHarness swipeEnabled />);
+
+    expect(press('ArrowLeft', { altKey: true }).defaultPrevented).toBe(false);
+    expect(onSwipeRight).not.toHaveBeenCalled();
+  });
+
+  it('leaves arrows a focused control already handled, such as a slider', () => {
+    render(<SwipeHarness swipeEnabled />);
+    const ev = new KeyboardEvent('keydown', { key: 'ArrowRight', cancelable: true });
+    ev.preventDefault();
+
+    act(() => {
+      window.dispatchEvent(ev);
+    });
+
+    expect(onSwipeLeft).not.toHaveBeenCalled();
+  });
+
+  it('ignores arrows while typing in a form field', () => {
+    render(<SwipeHarness swipeEnabled />);
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+    input.focus();
+
+    press('ArrowRight');
+
+    expect(onSwipeLeft).not.toHaveBeenCalled();
+    document.body.removeChild(input);
+  });
+});
