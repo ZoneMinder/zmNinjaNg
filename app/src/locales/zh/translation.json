@@ -674,7 +674,11 @@
       }
     },
     "monitors_per_page": "每页监视器数量",
-    "monitors_per_page_desc": "监视器很多（超过 30 个）且服务器未启用多端口流时有用。填 0 关闭分页。"
+    "monitors_per_page_desc": "监视器很多（超过 30 个）且服务器未启用多端口流时有用。填 0 关闭分页。",
+    "search": {
+      "placeholder": "搜索设置",
+      "no_results": "没有匹配的设置"
+    }
   },
   "ssl": {
     "trust_dialog_title": "不受信任的证书",

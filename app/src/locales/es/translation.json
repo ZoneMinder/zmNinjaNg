@@ -674,7 +674,11 @@
       }
     },
     "monitors_per_page": "Monitores por página",
-    "monitors_per_page_desc": "Útil con muchos monitores (más de 30) cuando el servidor no tiene streaming multipuerto. 0 desactiva las páginas."
+    "monitors_per_page_desc": "Útil con muchos monitores (más de 30) cuando el servidor no tiene streaming multipuerto. 0 desactiva las páginas.",
+    "search": {
+      "placeholder": "Buscar ajustes",
+      "no_results": "Ningún ajuste coincide"
+    }
   },
   "ssl": {
     "trust_dialog_title": "Certificado no confiable",

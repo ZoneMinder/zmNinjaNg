@@ -674,7 +674,11 @@
       }
     },
     "monitors_per_page": "Monitore pro Seite",
-    "monitors_per_page_desc": "Nützlich bei vielen Monitoren (über 30), wenn der Server kein Multi-Port-Streaming hat. 0 schaltet das Blättern ab."
+    "monitors_per_page_desc": "Nützlich bei vielen Monitoren (über 30), wenn der Server kein Multi-Port-Streaming hat. 0 schaltet das Blättern ab.",
+    "search": {
+      "placeholder": "Einstellungen durchsuchen",
+      "no_results": "Keine passenden Einstellungen"
+    }
   },
   "ssl": {
     "trust_dialog_title": "Nicht vertrauenswürdiges Zertifikat",

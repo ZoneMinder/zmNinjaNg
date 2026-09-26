@@ -674,7 +674,11 @@
       }
     },
     "monitors_per_page": "Monitor per pagina",
-    "monitors_per_page_desc": "Utile con molti monitor (oltre 30) quando il server non ha lo streaming multi-porta. 0 disattiva le pagine."
+    "monitors_per_page_desc": "Utile con molti monitor (oltre 30) quando il server non ha lo streaming multi-porta. 0 disattiva le pagine.",
+    "search": {
+      "placeholder": "Cerca impostazioni",
+      "no_results": "Nessuna impostazione corrisponde"
+    }
   },
   "ssl": {
     "trust_dialog_title": "Certificato non attendibile",

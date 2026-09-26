@@ -4,6 +4,8 @@ Settings are stored per profile. Each ZoneMinder server profile has its own inde
 
 Every section heading on this screen collapses. Click or tap a heading to fold that section away, and the app remembers which sections you left closed. Advanced starts closed; the rest start open.
 
+To find a setting, tap the search icon at the top right of the page and type part of its name, its description, or its current value. Only the matching settings stay on screen, including ones in sections you have collapsed. Typing a section's name shows that whole section. Tap the X or press Esc to clear the search. The sections you collapsed are still collapsed afterwards.
+
 ## Appearance
 
 | Setting | Description |

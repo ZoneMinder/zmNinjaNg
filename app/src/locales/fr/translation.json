@@ -674,7 +674,11 @@
       }
     },
     "monitors_per_page": "Moniteurs par page",
-    "monitors_per_page_desc": "Utile avec beaucoup de moniteurs (plus de 30) quand le serveur n'a pas de diffusion multi-port. 0 désactive la pagination."
+    "monitors_per_page_desc": "Utile avec beaucoup de moniteurs (plus de 30) quand le serveur n'a pas de diffusion multi-port. 0 désactive la pagination.",
+    "search": {
+      "placeholder": "Rechercher dans les réglages",
+      "no_results": "Aucun réglage ne correspond"
+    }
   },
   "ssl": {
     "trust_dialog_title": "Certificat non fiable",

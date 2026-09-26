@@ -11,6 +11,12 @@ Path: `getProfileSettings` / `updateProfileSettings` (`app/src/stores/settings.t
 Never: reaching storage directly for a profile-scoped preference; non-profile-scoped preference keys; coercions outside the merge (reactive readers such as `useCurrentProfile` bypass per-getter fixes); a coercion that can rebuild a nested settings object on repeated merges of one persisted value, which loops every `useShallow` reader of the merge ("Maximum update depth exceeded") as soon as a key is added to that object; cache the repair by the persisted object's identity. Per-device UI state belongs in `localStorage` under `STORAGE_KEYS`.
 Gate: `app/src/stores/__tests__/settings.test.ts` (repaired identity is stable across merges); `app/src/components/events/context/__tests__/EventContextPanel.realstore.test.tsx`; review for the rest.
 
+### Settings search
+Owns: what the Settings page search can find.
+Path: `filterSettings` / `useSettingsSearching` (`app/src/components/settings/settings-search.ts`); each setting is one direct child of a `SettingsCard`; anything that folds ORs `useSettingsSearching()` into its open state and sets `aria-expanded`.
+Never: setting text outside a card row or section label (it survives every search) unless marked `data-settings-search-keep`; a disclosure that stays closed while searching (its unmounted rows cannot match).
+Gate: `app/src/pages/__tests__/Settings.test.tsx`; `app/src/pages/__tests__/Settings.allmode.test.tsx`; `app/src/components/settings/__tests__/settings-search.test.tsx`.
+
 ### Polling
 Owns: every recurring refresh interval.
 Path: `useBandwidthSettings` / `getBandwidthSettings` (`app/src/hooks/useBandwidthSettings.ts`).

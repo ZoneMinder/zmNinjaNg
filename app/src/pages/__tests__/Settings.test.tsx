@@ -8,6 +8,7 @@ import type { ReactNode } from 'react';
 import { seedProfiles, resetProfileFixture, asProfileId } from '../../tests/profile-fixture';
 import { resetFakeStoreGates } from '../../tests/fake-store-gates';
 import { useSettingsStore } from '../../stores/settings';
+import { collapsedDisclosures, unfilterableText, visibleText } from '../../tests/settings-search-gate';
 
 vi.mock('../../api/store-gates', () => import('../../tests/fake-store-gates'));
 // AdvancedSection's kiosk-PIN check calls hasSecureValue, which
@@ -76,6 +77,8 @@ describe('Settings Page', () => {
   beforeEach(() => {
     seedProfiles(['profile-1']);
     changeLanguage.mockClear();
+    // Section open state persists; start every test from the defaults.
+    localStorage.clear();
   });
 
   afterEach(() => {
@@ -117,5 +120,35 @@ describe('Settings Page', () => {
     await user.click(screen.getByText('languages.es'));
 
     expect(changeLanguage).toHaveBeenCalledWith('es');
+  });
+
+  // Search gate (refs #531): the whole page, so new settings are covered too.
+  it('search opens every disclosure and can hide every piece of text', async () => {
+    const user = userEvent.setup();
+    render(<Settings />, { wrapper: queryWrapper });
+
+    await user.click(screen.getByTestId('settings-search-button'));
+    await user.type(screen.getByTestId('settings-search-input'), 'zz-no-such-setting');
+
+    const sections = screen.getByTestId('settings-sections');
+    expect(collapsedDisclosures(sections)).toEqual([]);
+    expect(unfilterableText(sections)).toEqual([]);
+    expect(visibleText(sections)).toEqual([]);
+    expect(screen.getByTestId('settings-search-empty').textContent).toBe('settings.search.no_results');
+  });
+
+  it('search finds a row in a collapsed section, and clearing restores the page', async () => {
+    const user = userEvent.setup();
+    render(<Settings />, { wrapper: queryWrapper });
+    expect(screen.queryByTestId('settings-log-redaction-switch')).toBeNull();
+
+    await user.click(screen.getByTestId('settings-search-button'));
+    await user.type(screen.getByTestId('settings-search-input'), 'log_redaction');
+    const sections = screen.getByTestId('settings-sections');
+    expect(visibleText(sections)).toContain('settings.disable_log_redaction');
+
+    await user.click(screen.getByTestId('settings-search-clear'));
+    expect(screen.queryByTestId('settings-log-redaction-switch')).toBeNull();
+    expect(visibleText(sections)).toContain('settings.section_appearance');
   });
 });

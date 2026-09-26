@@ -18,6 +18,7 @@ import { Label } from '../ui/label';
 import { API_REQUEST } from '../../lib/zmninja-ng-constants';
 import { CertTrustDialog } from '../CertTrustDialog';
 import { CollapsibleSection, SettingsCard, SettingsRow, RowLabel } from './SettingsLayout';
+import { useSettingsSearching } from './settings-search';
 import { useDeveloperNoticeStore } from '../../stores/developerNotices';
 import { Platform } from '../../lib/platform';
 import { log, LogLevel } from '../../lib/logger';
@@ -470,6 +471,8 @@ function ComponentLogLevels({
 }: AdvancedSectionProps) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
+  const searching = useSettingsSearching();
+  const shown = expanded || searching;
 
   const overrides = settings.componentLogLevels || {};
   const globalLevel = settings.logLevel;
@@ -522,21 +525,23 @@ function ComponentLogLevels({
     LOG_LEVEL_OPTIONS.find((o) => o.value === level)?.label ?? 'INFO';
 
   return (
-    <div className="mt-4">
+    <div className="mt-4" data-settings-section>
       <button
         type="button"
         className="flex items-center gap-1.5 text-sm font-semibold text-primary uppercase tracking-wide mb-2 cursor-pointer"
         onClick={() => setExpanded((v) => !v)}
+        aria-expanded={shown}
+        data-settings-section-label
         data-testid="component-log-levels-toggle"
       >
-        {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+        {shown ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
         {t('settings.component_log_levels')}
         <span className="text-xs font-normal text-muted-foreground">
           ({levelLabel(globalLevel)}{overrideCount > 0 ? `, ${overrideCount} custom` : ''})
         </span>
       </button>
 
-      {expanded && (
+      {shown && (
         <SettingsCard>
           <div className="px-4 py-3">
             {/* Global level: changes all components */}

@@ -131,70 +131,73 @@ export function LiveStreamingSection({
           </div>
         </SettingsRow>
 
-        {/* Streaming Mode */}
-        <SettingsRow>
-          <RowLabel
-            label={t('settings.streaming_mode')}
-            desc={
-              settings.viewMode === 'streaming'
-                ? t('settings.streaming_mode_desc')
-                : t('settings.snapshot_mode_desc')
-            }
-          />
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {recommendation.mode === 'snapshot' && (
-              <Badge
-                variant="secondary"
-                className="text-xs"
-                data-testid="settings-view-mode-recommended-snapshot"
-              >
-                {t('settings.recommended')}
-              </Badge>
-            )}
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Image className="h-3.5 w-3.5" />
-              <span>{t('settings.snapshot')}</span>
-            </div>
-            <Switch
-              id="view-mode"
-              checked={settings.viewMode === 'streaming'}
-              onCheckedChange={(checked) =>
-                currentProfile &&
-                updateSettings(currentProfile.id, {
-                  viewMode: checked ? 'streaming' : 'snapshot',
-                  viewModeChosen: true,
-                })
+        {/* Streaming Mode, with its reason line: one card row, so search and
+            the card dividers treat them as one setting. */}
+        <div>
+          <SettingsRow>
+            <RowLabel
+              label={t('settings.streaming_mode')}
+              desc={
+                settings.viewMode === 'streaming'
+                  ? t('settings.streaming_mode_desc')
+                  : t('settings.snapshot_mode_desc')
               }
-              data-testid="settings-view-mode-switch"
             />
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <VideoIcon className="h-3.5 w-3.5" />
-              <span>{t('settings.streaming')}</span>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {recommendation.mode === 'snapshot' && (
+                <Badge
+                  variant="secondary"
+                  className="text-xs"
+                  data-testid="settings-view-mode-recommended-snapshot"
+                >
+                  {t('settings.recommended')}
+                </Badge>
+              )}
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Image className="h-3.5 w-3.5" />
+                <span>{t('settings.snapshot')}</span>
+              </div>
+              <Switch
+                id="view-mode"
+                checked={settings.viewMode === 'streaming'}
+                onCheckedChange={(checked) =>
+                  currentProfile &&
+                  updateSettings(currentProfile.id, {
+                    viewMode: checked ? 'streaming' : 'snapshot',
+                    viewModeChosen: true,
+                  })
+                }
+                data-testid="settings-view-mode-switch"
+              />
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <VideoIcon className="h-3.5 w-3.5" />
+                <span>{t('settings.streaming')}</span>
+              </div>
+              {recommendation.mode === 'streaming' && (
+                <Badge
+                  variant="secondary"
+                  className="text-xs"
+                  data-testid="settings-view-mode-recommended-streaming"
+                >
+                  {t('settings.recommended')}
+                </Badge>
+              )}
             </div>
-            {recommendation.mode === 'streaming' && (
-              <Badge
-                variant="secondary"
-                className="text-xs"
-                data-testid="settings-view-mode-recommended-streaming"
-              >
-                {t('settings.recommended')}
-              </Badge>
-            )}
-          </div>
-        </SettingsRow>
+          </SettingsRow>
 
-        {/* Why that mode is recommended. The toggle above still wins; this only
-            explains what this server's size and multi-port support imply. */}
-        {monitorData && (
-          <p
-            className="px-4 pb-3 -mt-2 text-xs text-muted-foreground"
-            data-testid="settings-view-mode-reason"
-          >
-            {t(VIEW_MODE_REASON_KEYS[recommendation.reason], {
-              monitorCount: monitorData.monitors.length,
-            })}
-          </p>
-        )}
+          {/* Why that mode is recommended. The toggle above still wins; this only
+              explains what this server's size and multi-port support imply. */}
+          {monitorData && (
+            <p
+              className="px-4 pb-3 -mt-2 text-xs text-muted-foreground"
+              data-testid="settings-view-mode-reason"
+            >
+              {t(VIEW_MODE_REASON_KEYS[recommendation.reason], {
+                monitorCount: monitorData.monitors.length,
+              })}
+            </p>
+          )}
+        </div>
 
         {/* Snapshot Refresh Interval (only in snapshot mode: child of Streaming Mode) */}
         {settings.viewMode === 'snapshot' && (

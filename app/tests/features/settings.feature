@@ -74,6 +74,17 @@ Feature: Application Settings
     Then the force-disable multiport toggle should be enabled
 
   @all
+  Scenario: Search finds a setting inside a collapsed section
+    When I navigate to the "Settings" page
+    And I collapse the Advanced settings section
+    And I search settings for "multi-port"
+    Then the force-disable multiport toggle should be visible
+    And the "appearance" settings section should be hidden
+    When I clear the settings search
+    Then the Advanced settings section should be collapsed
+    And the "appearance" settings section should be visible
+
+  @all
   Scenario: Disabling log redaction warns that credentials will be logged
     When I navigate to the "Settings" page
     And I expand the Advanced settings section

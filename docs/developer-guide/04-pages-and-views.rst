@@ -1059,6 +1059,28 @@ Streaming and Playback, Advanced) delegating to components under
 ``src/components/settings/``. Every write goes through
 ``updateProfileSettings(currentProfile.id, patch)``.
 
+The search field in the Settings header filters the rendered page, not a list
+of setting names (``filterSettings`` in
+``src/components/settings/settings-search.ts``). It shows each direct child of
+a ``SettingsCard`` whose text contains the query, and hides the rest, along
+with cards and sections left empty. A new setting is searchable without any
+registration if it follows two rules:
+
+- Put the whole setting, label and any note under it, in one direct child of a
+  ``SettingsCard``. Text outside a card row or a section label is never hidden.
+  Content that should stay visible during a search, such as the aggregate
+  server picker, carries ``data-settings-search-keep``.
+- Anything that folds must open while searching, because collapsed content is
+  unmounted and has no text to match. Call ``useSettingsSearching()`` and OR it
+  into the open state, and set ``aria-expanded`` on the toggle.
+  ``CollapsibleSection`` already does both.
+
+``src/pages/__tests__/Settings.test.tsx`` and ``Settings.allmode.test.tsx``
+check both rules over the whole page with a search active, and
+``src/components/settings/__tests__/settings-search.test.tsx`` fails when a
+settings file renders a ``Collapsible`` or ``aria-expanded`` without calling
+``useSettingsSearching()``.
+
 **DeveloperNotice** (``src/pages/DeveloperNotice.tsx``) lists notices fetched
 from a feed, unread first.
 
