@@ -10,6 +10,7 @@ import { useProfileStore } from '../../stores/profile';
 import { getMonitors } from '../../api/monitors';
 import { seedProfiles, resetProfileFixture, fakeApiClient, makeProfile } from '../../tests/profile-fixture';
 import { installApiClient, resetFakeStoreGates } from '../../tests/fake-store-gates';
+import { collapsedDisclosures, unfilterableText } from '../../tests/settings-search-gate';
 
 vi.mock('../../api/store-gates', () => import('../../tests/fake-store-gates'));
 vi.mock('../../lib/security/secureStorage', () => import('../../tests/fake-secure-storage'));
@@ -127,6 +128,17 @@ describe('Settings page - All mode two-tier picker (refs #337)', () => {
     fireEvent.click(screen.getByTestId('settings-tv-mode'));
 
     expect(useSettingsStore.getState().getProfileSettings(profileA.id).tvMode).toBe(true);
+  });
+
+  // Search gate (refs #531) over the sections only aggregate mode renders.
+  it('search opens every disclosure and can hide every piece of text', () => {
+    render(<Settings />, { wrapper: queryWrapper });
+    fireEvent.click(screen.getByTestId('settings-search-button'));
+    fireEvent.change(screen.getByTestId('settings-search-input'), { target: { value: 'zz' } });
+
+    const sections = screen.getByTestId('settings-sections');
+    expect(collapsedDisclosures(sections)).toEqual([]);
+    expect(unfilterableText(sections)).toEqual([]);
   });
 
   it('shows the picker above the server-scoped block, defaulted to the first profile', () => {

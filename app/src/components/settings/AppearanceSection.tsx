@@ -24,6 +24,7 @@ import {
 } from '../ui/select';
 import { Switch } from '../ui/switch';
 import { CollapsibleSection, SettingsCard, SettingsRow, RowLabel } from './SettingsLayout';
+import { useSettingsSearching } from './settings-search';
 import { cn } from '../../lib/utils';
 import { validateFormatString } from '../../lib/format-date-time';
 import { Platform } from '../../lib/platform';
@@ -336,8 +337,10 @@ function HoverPreviewEditor({ value, onChange, playbackRate, onPlaybackRateChang
     { key: 'eventContext', labelKey: 'settings.appearance.hover_preview.event_context' },
   ];
 
+  const searching = useSettingsSearching();
+
   return (
-    <Collapsible open={open} onOpenChange={handleOpenChange}>
+    <Collapsible open={open || searching} onOpenChange={handleOpenChange}>
       <CollapsibleTrigger
         className="flex w-full items-center justify-between px-4 py-3 text-left"
         data-testid="settings-hover-preview-trigger"
@@ -453,8 +456,10 @@ function ThumbnailFallbackChainEditor({ chain, onChange }: ThumbnailFallbackChai
     onChange(next);
   };
 
+  const searching = useSettingsSearching();
+
   return (
-    <Collapsible open={open} onOpenChange={handleOpenChange}>
+    <Collapsible open={open || searching} onOpenChange={handleOpenChange}>
       <CollapsibleTrigger
         className="flex w-full items-center justify-between px-4 py-3 text-left"
         data-testid="settings-thumbnail-chain-trigger"

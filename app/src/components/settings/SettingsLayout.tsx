@@ -8,6 +8,7 @@ import type React from 'react';
 import { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { STORAGE_KEYS } from '../../lib/zmninja-ng-constants';
+import { useSettingsSearching } from './settings-search';
 
 /**
  * A whole settings section behind its own header. The open state is remembered
@@ -17,6 +18,8 @@ import { STORAGE_KEYS } from '../../lib/zmninja-ng-constants';
  * Collapsed content is unmounted rather than hidden, which is what makes
  * collapsing worth doing here: a closed Assistant section stops probing its
  * backend, and a closed Advanced section stops rendering the log-level table.
+ * A search shows every section's content, so it can match collapsed ones,
+ * without touching the remembered state.
  */
 export function CollapsibleSection({
   id,
@@ -39,6 +42,8 @@ export function CollapsibleSection({
     } catch { /* ignore */ }
     return defaultOpen;
   });
+  const searching = useSettingsSearching();
+  const shown = open || searching;
 
   const toggle = () => {
     const next = !open;
@@ -47,25 +52,25 @@ export function CollapsibleSection({
   };
 
   return (
-    <section data-testid={`settings-section-${id}`}>
+    <section data-testid={`settings-section-${id}`} data-settings-section>
       <button
         type="button"
         onClick={toggle}
-        aria-expanded={open}
+        aria-expanded={shown}
         data-testid={`settings-section-${id}-toggle`}
         className="flex w-full items-center gap-1.5 text-sm font-semibold text-primary uppercase tracking-wide mb-2 cursor-pointer"
       >
-        {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-        {label}
+        {shown ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+        <span data-settings-section-label>{label}</span>
       </button>
-      {open && children}
+      {shown && children}
     </section>
   );
 }
 
 export function SettingsCard({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-lg border bg-card divide-y">
+    <div className="rounded-lg border bg-card divide-y" data-settings-card>
       {children}
     </div>
   );

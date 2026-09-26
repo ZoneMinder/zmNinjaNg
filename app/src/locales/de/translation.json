@@ -585,8 +585,8 @@
     "show_protocol_label_desc": "Streaming-Protokoll auf Videofeeds anzeigen",
     "live_fullscreen": "Live-Ansicht im Vollbild öffnen",
     "live_fullscreen_desc": "Jeder Monitor öffnet maximiert. Für einen einzelnen Monitor: Im Vollbild öffnen in dessen Einstellungen",
-    "skip_offline_monitors": "Monitore ohne Aufnahme überspringen",
-    "skip_offline_monitors_desc": "Monitore mit Aufnahme „None“ erscheinen nicht im Raster, in der Montage und beim Wischen in der Live-Ansicht. Eine Kamera, die aufnehmen soll, bleibt auch bei Ausfall sichtbar",
+    "skip_offline_monitors": "Offline-Monitore überspringen",
+    "skip_offline_monitors_desc": "Offline-Monitore (Aufnahme/Funktion „None“) werden im Raster, in der Montage und beim Wischen in der Live-Ansicht übersprungen",
     "webrtc_use_stun": "STUN-Server",
     "webrtc_use_stun_desc": "Nur für go2rtc direkt über das Internet aktivieren. Aus im LAN oder VPN.",
     "webrtc_protocols": "Streaming-Protokolle",
@@ -674,7 +674,11 @@
       }
     },
     "monitors_per_page": "Monitore pro Seite",
-    "monitors_per_page_desc": "Nützlich bei vielen Monitoren (über 30), wenn der Server kein Multi-Port-Streaming hat. 0 schaltet das Blättern ab."
+    "monitors_per_page_desc": "Nützlich bei vielen Monitoren (über 30), wenn der Server kein Multi-Port-Streaming hat. 0 schaltet das Blättern ab.",
+    "search": {
+      "placeholder": "Einstellungen durchsuchen",
+      "no_results": "Keine passenden Einstellungen"
+    }
   },
   "ssl": {
     "trust_dialog_title": "Nicht vertrauenswürdiges Zertifikat",

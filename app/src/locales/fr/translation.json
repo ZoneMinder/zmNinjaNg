@@ -585,8 +585,8 @@
     "show_protocol_label_desc": "Afficher le protocole sur les flux vidéo",
     "live_fullscreen": "Ouvrir la vue en direct en plein écran",
     "live_fullscreen_desc": "Chaque moniteur s'ouvre maximisé. Pour un seul moniteur, utilisez Ouvrir en plein écran dans ses réglages",
-    "skip_offline_monitors": "Ignorer les moniteurs qui ne capturent pas",
-    "skip_offline_monitors_desc": "Les moniteurs dont la capture est None sont exclus de la grille, de la mosaïque et du balayage en direct. Une caméra censée capturer reste visible même hors service",
+    "skip_offline_monitors": "Ignorer les moniteurs hors ligne",
+    "skip_offline_monitors_desc": "Les moniteurs hors ligne (capture/fonction sur None) sont ignorés dans la grille, la mosaïque et le balayage en direct",
     "webrtc_use_stun": "Serveurs STUN",
     "webrtc_use_stun_desc": "À activer uniquement pour go2rtc accessible directement via Internet. Désactivé en LAN ou VPN.",
     "webrtc_protocols": "Protocoles de Streaming",
@@ -674,7 +674,11 @@
       }
     },
     "monitors_per_page": "Moniteurs par page",
-    "monitors_per_page_desc": "Utile avec beaucoup de moniteurs (plus de 30) quand le serveur n'a pas de diffusion multi-port. 0 désactive la pagination."
+    "monitors_per_page_desc": "Utile avec beaucoup de moniteurs (plus de 30) quand le serveur n'a pas de diffusion multi-port. 0 désactive la pagination.",
+    "search": {
+      "placeholder": "Rechercher dans les réglages",
+      "no_results": "Aucun réglage ne correspond"
+    }
   },
   "ssl": {
     "trust_dialog_title": "Certificat non fiable",

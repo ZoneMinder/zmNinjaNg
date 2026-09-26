@@ -585,8 +585,8 @@
     "show_protocol_label_desc": "Mostrar protocolo en los feeds de video",
     "live_fullscreen": "Abrir vista en vivo a pantalla completa",
     "live_fullscreen_desc": "Cada monitor se abre maximizado. Para un solo monitor, use Abrir en pantalla completa en sus ajustes",
-    "skip_offline_monitors": "Omitir monitores que no capturan",
-    "skip_offline_monitors_desc": "Los monitores con captura en None quedan fuera de la cuadrícula, el montaje y el deslizamiento en vista en vivo. Una cámara que debe capturar sigue visible aunque esté caída",
+    "skip_offline_monitors": "Omitir monitores sin conexión",
+    "skip_offline_monitors_desc": "Los monitores sin conexión (captura/función en None) se omiten en la cuadrícula, el montaje y el deslizamiento en vista en vivo",
     "webrtc_use_stun": "Servidores STUN",
     "webrtc_use_stun_desc": "Actívalo solo para go2rtc accesible directamente por Internet. Desactivado en LAN o VPN.",
     "webrtc_protocols": "Protocolos de Streaming",
@@ -674,7 +674,11 @@
       }
     },
     "monitors_per_page": "Monitores por página",
-    "monitors_per_page_desc": "Útil con muchos monitores (más de 30) cuando el servidor no tiene streaming multipuerto. 0 desactiva las páginas."
+    "monitors_per_page_desc": "Útil con muchos monitores (más de 30) cuando el servidor no tiene streaming multipuerto. 0 desactiva las páginas.",
+    "search": {
+      "placeholder": "Buscar ajustes",
+      "no_results": "Ningún ajuste coincide"
+    }
   },
   "ssl": {
     "trust_dialog_title": "Certificado no confiable",

@@ -14,11 +14,13 @@
  * wrong answers about their cameras rather than anything that looks like a
  * setting having been changed.
  */
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronDown } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 import { Input } from '../ui/input';
 import { RowLabel } from './SettingsLayout';
+import { useSettingsSearching } from './settings-search';
 import { ASSISTANT } from '../../lib/zmninja-ng-constants';
 import type { ProfileSettings } from '../../stores/settings';
 
@@ -41,9 +43,11 @@ function clamp(raw: string, min: number, max: number, fallback: number): number 
 
 export function AssistantAdvancedSection({ settings, update }: Props) {
   const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const searching = useSettingsSearching();
 
   return (
-    <Collapsible defaultOpen={false}>
+    <Collapsible open={open || searching} onOpenChange={setOpen}>
       <CollapsibleTrigger asChild>
         <button
           type="button"

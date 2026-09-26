@@ -585,8 +585,8 @@
     "show_protocol_label_desc": "在视频源上显示流协议",
     "live_fullscreen": "以全屏打开实时视图",
     "live_fullscreen_desc": "每个监视器都最大化打开。单个监视器请在其设置中使用“以全屏打开”",
-    "skip_offline_monitors": "跳过未采集的监视器",
-    "skip_offline_monitors_desc": "采集设置为 None 的监视器不会出现在网格、多画面和实时视图滑动中。应当采集的摄像机即使掉线也仍会显示",
+    "skip_offline_monitors": "跳过离线监视器",
+    "skip_offline_monitors_desc": "离线监视器（采集/功能设置为 None）会在网格、多画面和实时视图滑动中被跳过",
     "webrtc_use_stun": "STUN 服务器",
     "webrtc_use_stun_desc": "仅当通过公网直接访问 go2rtc 时启用。局域网或 VPN 下关闭。",
     "webrtc_protocols": "流媒体协议",
@@ -674,7 +674,11 @@
       }
     },
     "monitors_per_page": "每页监视器数量",
-    "monitors_per_page_desc": "监视器很多（超过 30 个）且服务器未启用多端口流时有用。填 0 关闭分页。"
+    "monitors_per_page_desc": "监视器很多（超过 30 个）且服务器未启用多端口流时有用。填 0 关闭分页。",
+    "search": {
+      "placeholder": "搜索设置",
+      "no_results": "没有匹配的设置"
+    }
   },
   "ssl": {
     "trust_dialog_title": "不受信任的证书",

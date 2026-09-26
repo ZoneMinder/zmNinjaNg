@@ -327,6 +327,44 @@ When('I expand the Advanced settings section', async ({ page }) => {
   await expect(page.getByTestId('settings-force-disable-multiport-switch')).toBeVisible();
 });
 
+// Settings search (refs #531): a collapsed section unmounts its rows, so a
+// match inside one proves the search opens it.
+When('I collapse the Advanced settings section', async ({ page }) => {
+  const trigger = page.getByTestId('settings-section-advanced-toggle');
+  await expect(trigger).toBeVisible({ timeout: testConfig.timeouts.pageLoad });
+  if ((await trigger.getAttribute('aria-expanded')) === 'true') {
+    await trigger.click();
+  }
+  await expect(page.getByTestId('settings-force-disable-multiport-switch')).toHaveCount(0);
+});
+
+When('I search settings for {string}', async ({ page }, text: string) => {
+  await page.getByTestId('settings-search-button').click();
+  await page.getByTestId('settings-search-input').fill(text);
+});
+
+When('I clear the settings search', async ({ page }) => {
+  await page.getByTestId('settings-search-clear').click();
+  await expect(page.getByTestId('settings-search-input')).toBeHidden();
+});
+
+Then('the force-disable multiport toggle should be visible', async ({ page }) => {
+  await expect(page.getByTestId('settings-force-disable-multiport-switch')).toBeVisible();
+});
+
+Then('the {string} settings section should be hidden', async ({ page }, id: string) => {
+  await expect(page.getByTestId(`settings-section-${id}`)).toBeHidden();
+});
+
+Then('the {string} settings section should be visible', async ({ page }, id: string) => {
+  await expect(page.getByTestId(`settings-section-${id}`)).toBeVisible();
+});
+
+Then('the Advanced settings section should be collapsed', async ({ page }) => {
+  await expect(page.getByTestId('settings-section-advanced-toggle')).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.getByTestId('settings-force-disable-multiport-switch')).toHaveCount(0);
+});
+
 When('I enable the force-disable multiport toggle', async ({ page }) => {
   const toggle = page.getByTestId('settings-force-disable-multiport-switch');
   if (!(await toggle.isChecked().catch(() => false))) {
