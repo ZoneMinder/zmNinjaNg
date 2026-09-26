@@ -41,7 +41,17 @@ import type { EventData, ProfileId } from '../../../api/types';
 
 function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId: ProfileId | undefined }) {
   const { t } = useTranslation();
-  const [sequenceOpen, setSequenceOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  // Sequence play is its own history entry over the panel's, so back from an
+  // event opened in it lands on it again (refs #534).
+  const historyState = location.state as EventContextHistoryState | null;
+  const sequence = historyState?.eventContextSequence;
+  const openSequence = () =>
+    navigate(
+      { pathname: location.pathname, search: location.search },
+      { state: { ...historyState, eventContextSequence: {} } satisfies EventContextHistoryState }
+    );
   const settings = useSettingsStore(useShallow((s) => s.getProfileSettings(profileId ?? '')));
   const [context, setContext] = useState<EventContextSettings>(settings.eventContext);
 
@@ -102,20 +112,24 @@ function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId:
           size="sm"
           variant="outline"
           disabled={rows.length < 2}
-          onClick={() => setSequenceOpen(true)}
+          onClick={openSequence}
           data-testid="event-context-sequence-open"
         >
           <ListVideo className="h-4 w-4" />
           {t('events.around.sequence')}
         </Button>
       </EventContextControls>
-      <EventContextSequence
-        open={sequenceOpen}
-        onOpenChange={setSequenceOpen}
-        rows={rows}
-        profileId={profileId}
-        monitorNames={monitorNames}
-      />
+      {/* Mounted only while open, so each open or return starts fresh. */}
+      {sequence && (
+        <EventContextSequence
+          open
+          onOpenChange={(next) => { if (!next) navigate(-1); }}
+          rows={rows}
+          profileId={profileId}
+          monitorNames={monitorNames}
+          returnedFrom={sequence.returnedFrom}
+        />
+      )}
       <EventContextRibbon lanes={lanes} onSelect={onSelect} />
       <div ref={listRef} className="contents">
         <EventContextList

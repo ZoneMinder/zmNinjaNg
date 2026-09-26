@@ -28,3 +28,5 @@ Feature: Events around an event
     Then more than one sequence play tile plays at once
     When I open the first sequence play tile
     Then that sequence play tile's event detail opens
+    When I go back from the sequence play tile's event
+    Then sequence play is back, marking the tile I opened

@@ -3417,6 +3417,12 @@ third should ask for.
    ``EventZmsHoverPlayer`` instead of its thumbnail. That player owns a connkey
    and sends CMD_QUIT when it unmounts, so the end of a slot, **Replay**,
    closing the dialog, and opening a tile each tear down that tile's stream.
+   Opening Sequence play pushes a history entry carrying
+   ``eventContextSequence`` over the panel's own, and the panel mounts the
+   dialog only while that entry is current. A tile first replaces the entry
+   with ``{ returnedFrom: eventId }`` and then navigates to its event, so back
+   remounts the dialog with playback held and ``useReturnFlash`` blinking that
+   tile, the same hook the Events list uses for a returned-to row.
    The Play all / Play sequence button swaps in ``buildTogetherSchedule``, which starts every
    tile at zero up to ``EVENT_CONTEXT.togetherMaxStreams`` streams and queues
    the rest into the first slot to free up. The cap applies only without

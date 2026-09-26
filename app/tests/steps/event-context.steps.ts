@@ -129,3 +129,17 @@ Then("that sequence play tile's event detail opens", async ({ page }) => {
   await expect(page).toHaveURL(new RegExp(`/events/(.+/)?${sequenceTileEventId}$`), { timeout: testConfig.timeouts.transition });
   await expect(page.getByTestId('event-context-sequence')).toBeHidden();
 });
+
+When("I go back from the sequence play tile's event", async ({ page }) => {
+  if (!sequenceTileEventId) return;
+  await page.goBack();
+});
+
+Then('sequence play is back, marking the tile I opened', async ({ page }) => {
+  if (!sequenceTileEventId) return;
+  const tile = page.getByTestId(`event-context-sequence-tile-${sequenceTileEventId}`);
+  await expect(tile).toBeVisible({ timeout: testConfig.timeouts.transition });
+  await expect(tile).toHaveAttribute('data-flash', 'true');
+  // Playback holds on return, so the triangle means "you came from here".
+  await expect(page.getByTestId('event-context-sequence').locator('[data-playing="true"]')).toHaveCount(0);
+});

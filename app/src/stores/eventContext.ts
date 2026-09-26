@@ -20,6 +20,9 @@ import type { EventData, ProfileId } from '../api/types';
  *  or discards the panel by restoring or discarding that entry. */
 export interface EventContextHistoryState {
   eventContextAnchor?: { eventId: string; profileId: ProfileId | undefined };
+  /** Sequence play is open over the panel (refs #534). A tile that opens its
+   *  event first records itself here, so back reopens Sequence play on it. */
+  eventContextSequence?: { returnedFrom?: string };
 }
 
 interface EventContextState {

@@ -25,6 +25,7 @@ import { EventContextSequence } from '../EventContextSequence';
 import { seedProfiles, resetProfileFixture, asProfileId, makeProfile } from '../../../../tests/profile-fixture';
 import { resetFakeStoreGates } from '../../../../tests/fake-store-gates';
 import { sendDelayedCmdQuit } from '../../../../lib/zm/zms-quit';
+import { useReturnHighlightStore } from '../../../../stores/returnHighlight';
 
 /** Event ids whose streams were told to quit, in order. */
 const quitIds = () =>
@@ -64,6 +65,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.useRealTimers();
+  useReturnHighlightStore.getState().clear();
   resetProfileFixture();
   resetFakeStoreGates();
 });
@@ -153,6 +155,26 @@ describe('EventContextSequence', () => {
     act(() => vi.advanceTimersByTime(5_000));
     expect(scrolled).toEqual(['event-context-sequence-tile-a', 'event-context-sequence-tile-b']);
     delete (Element.prototype as Partial<Element>).scrollIntoView;
+  });
+
+  it('holds playback on return and flashes the tile the user came back from', () => {
+    // Opening a tile marks it viewed; back remounts the dialog with it.
+    useReturnHighlightStore.getState().markViewed('b');
+    render(
+      <MemoryRouter>
+        <EventContextSequence open onOpenChange={() => {}} rows={rows} profileId={P} monitorNames={new Map()} returnedFrom="b" />
+      </MemoryRouter>
+    );
+    act(() => vi.advanceTimersByTime(0));
+    expect(screen.getByTestId('event-context-sequence-tile-b')).toHaveAttribute('data-flash', 'true');
+    expect(screen.getByTestId('event-context-sequence-tile-a')).toHaveAttribute('data-flash', 'false');
+
+    act(() => vi.advanceTimersByTime(10_000));
+    expect(playingIds()).toEqual([]);
+
+    fireEvent.click(screen.getByTestId('event-context-sequence-replay'));
+    act(() => vi.advanceTimersByTime(0));
+    expect(playingIds()).toEqual(['a']);
   });
 
   it('starts over from the first tile on replay', () => {

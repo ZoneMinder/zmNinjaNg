@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { render, screen, fireEvent, within, act, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, within, act, cleanup, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
 
@@ -309,6 +309,33 @@ describe('EventContextPanel history navigation (refs #494)', () => {
       `event-context-sequence-tile-${event2.Id}`,
     ]);
     expect(sequence.getByTestId(`event-context-sequence-tile-${event.Id}`)).toHaveAttribute('aria-current', 'true');
+  });
+
+  it('comes back to Sequence play, flashing the tile, after going back from an event opened in it', async () => {
+    seedProfiles([makeProfile('p1')]);
+    installApiClient(P1, twoEventsServer());
+    renderWithClient(
+      <>
+        <EventContextButton event={event} profileId={P1} />
+        <EventContextPanel />
+        <GoBack />
+      </>
+    );
+    fireEvent.click(screen.getByTestId('event-context-open'));
+    await screen.findByTestId(`event-context-row-${event2.Id}`);
+    fireEvent.click(screen.getByTestId('event-context-sequence-open'));
+    fireEvent.click(await screen.findByTestId(`event-context-sequence-tile-${event2.Id}`));
+    expect(screen.queryByTestId('event-context-sequence')).toBeNull();
+
+    fireEvent.click(screen.getByTestId('go-back'));
+    const tile = await screen.findByTestId(`event-context-sequence-tile-${event2.Id}`);
+    expect(tile).toHaveAttribute('data-flash', 'true');
+    expect(tile).toHaveAttribute('data-playing', 'false');
+
+    // Closing it goes back to the panel, not past it.
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByTestId('event-context-sequence')).toBeNull());
+    expect(screen.getByTestId('event-context-anchor')).toHaveTextContent(event.Name);
   });
 
   it('reopens on the same anchor, window and scope after going back from an event opened inside it', async () => {
