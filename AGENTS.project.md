@@ -7,9 +7,9 @@ The sanctioned path is the only path; a bypass is a bug even when it works.
 
 ### Settings
 Owns: all profile-scoped user preferences.
-Path: `getProfileSettings` / `updateProfileSettings` (`app/src/stores/settings.ts`); every coercion or default lives in `mergeProfileSettings`.
-Never: reaching storage directly for a profile-scoped preference; non-profile-scoped preference keys; coercions outside the merge (reactive readers such as `useCurrentProfile` bypass per-getter fixes); a coercion that can rebuild a nested settings object on repeated merges of one persisted value, which loops every `useShallow` reader of the merge ("Maximum update depth exceeded") as soon as a key is added to that object; cache the repair by the persisted object's identity. Per-device UI state belongs in `localStorage` under `STORAGE_KEYS`.
-Gate: `app/src/stores/__tests__/settings.test.ts` (repaired identity is stable across merges); `app/src/components/events/context/__tests__/EventContextPanel.realstore.test.tsx`; review for the rest.
+Path: `getProfileSettings` / `updateProfileSettings` (`app/src/stores/settings.ts`); every coercion or default lives in `mergeProfileSettings`. Every key the Settings page edits is listed in `app/src/stores/settings-scope.ts`: `SELECTION_SCOPED_SETTINGS` are written to and read from the current selection (`useCurrentProfile`, which is the aggregate's own bucket in a group), `SERVER_SCOPED_SETTINGS` from the owning profile (`useProfileById`).
+Never: reaching storage directly for a profile-scoped preference; non-profile-scoped preference keys; coercions outside the merge (reactive readers such as `useCurrentProfile` bypass per-getter fixes); a coercion that can rebuild a nested settings object on repeated merges of one persisted value, which loops every `useShallow` reader of the merge ("Maximum update depth exceeded") as soon as a key is added to that object; cache the repair by the persisted object's identity; a server-scoped key read off `useCurrentProfile()` settings outside the Settings page. Per-device UI state belongs in `localStorage` under `STORAGE_KEYS`.
+Gate: `app/src/stores/__tests__/settings.test.ts` (repaired identity is stable across merges); `app/src/components/events/context/__tests__/EventContextPanel.realstore.test.tsx`; `app/src/tests/agents-contracts.test.ts` (no server-scoped key off `useCurrentProfile()`); `app/src/pages/__tests__/Settings.test.tsx` (server-scoped rows sit in the server sub-card); review for the rest.
 
 ### Settings search
 Owns: what the Settings page search can find.

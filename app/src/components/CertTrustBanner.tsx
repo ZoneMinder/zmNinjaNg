@@ -11,7 +11,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ShieldAlert, X } from 'lucide-react';
 import { Platform } from '../lib/platform';
-import { useCurrentProfile } from '../hooks/useCurrentProfile';
+import { useCurrentProfile, useProfileById } from '../hooks/useCurrentProfile';
 import { useCertTrustPrompt } from '../hooks/useCertTrustPrompt';
 import { CertTrustDialog } from './CertTrustDialog';
 import { Button } from './ui/button';
@@ -19,12 +19,15 @@ import { HintButton } from './ui/button';
 
 export function CertTrustBanner() {
   const { t } = useTranslation();
-  const { settings } = useCurrentProfile();
+  // Certificate trust is server-scoped: read the selected profile's own bucket.
+  // An aggregate has no single server to trust, so the banner stays hidden.
+  const { currentProfile } = useCurrentProfile();
+  const { settings } = useProfileById(currentProfile?.id);
   const { prompt, verifying, dialogProps } = useCertTrustPrompt();
   const [dismissed, setDismissed] = useState(false);
 
   const needsTrust =
-    Platform.isNative && settings.allowSelfSignedCerts && !settings.trustedCertFingerprint;
+    Platform.isNative && !!currentProfile && settings.allowSelfSignedCerts && !settings.trustedCertFingerprint;
 
   return (
     <>

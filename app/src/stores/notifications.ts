@@ -742,6 +742,13 @@ export const useNotificationStore = create<NotificationState>()(
 // imports. The store assembles their store-derived dependencies here and
 // injects them at connect/start time.
 
+/** Bandwidth mode is selection-scoped: every connection follows the current
+ *  selection's choice, not the bucket of the profile it serves (refs #536). */
+function selectionBandwidthMode(): BandwidthMode {
+  const currentProfileId = useProfileStore.getState().currentProfileId ?? '';
+  return useSettingsStore.getState().getProfileSettings(currentProfileId).bandwidthMode;
+}
+
 /**
  * Build the providers injected into ZMNotificationService.connect.
  */
@@ -753,10 +760,7 @@ function _buildServiceProviders(profileId: string, portalUrl: string): ZMNotific
         token: token ?? undefined,
         width: NOTIFICATIONS_SERVICE.snapshotImageWidth,
       }),
-    getKeepaliveIntervalMs: () => {
-      const profileSettings = useSettingsStore.getState().getProfileSettings(profileId);
-      return getBandwidthSettings(profileSettings.bandwidthMode).wsKeepaliveInterval;
-    },
+    getKeepaliveIntervalMs: () => getBandwidthSettings(selectionBandwidthMode()).wsKeepaliveInterval,
   };
 }
 
@@ -791,9 +795,8 @@ export function startEventPoller(profileId: string): Promise<void> {
       useNotificationStore.getState().getProfileSettings(profileId).onlyDetectedEvents,
     getFreshAccessToken: () => useAuthStore.getState().getFreshAccessToken(asProfileId(profileId)),
     getPollIntervalMs: () => {
-      const { bandwidthMode } = useSettingsStore.getState().getProfileSettings(profileId);
       const { pollingInterval } = useNotificationStore.getState().getProfileSettings(profileId);
-      return resolvePollIntervalMs(bandwidthMode, pollingInterval);
+      return resolvePollIntervalMs(selectionBandwidthMode(), pollingInterval);
     },
     getPortalUrl: () => {
       // This profile's own portal, not the app's currently-viewed profile:

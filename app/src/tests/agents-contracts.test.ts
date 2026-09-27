@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { SERVER_SCOPED_SETTINGS } from '../stores/settings-scope';
 
 const repoRoot = path.resolve(__dirname, '../../..');
 const appSrc = path.resolve(repoRoot, 'app/src');
@@ -429,6 +430,32 @@ describe('contract Never clauses a grep can decide', () => {
       offenders(/\bformat\([^;\n]*?,\s*['"][^'"]*(?:yyyy|MM|dd|HH|mm|ss)/, (f) =>
         !/^(components|pages)\//.test(f),
       ),
+    ).toEqual([]);
+  });
+
+  it('Settings: no server-scoped key read off useCurrentProfile() settings', () => {
+    // With an aggregate selected, useCurrentProfile() is the aggregate's own
+    // bucket, so a server-scoped key read there ignores the owning server's
+    // value. Read it from useProfileById(ownerProfileId) instead. The Settings
+    // page edits these keys and is exempt; its writers are its own contract.
+    const keys = SERVER_SCOPED_SETTINGS.join('|');
+    const readsServerKey = (code: string) =>
+      [...code.matchAll(/\{([^}]*)\}\s*=\s*useCurrentProfile\(\)/g)]
+        .map((m) => /\bsettings\s*(?::\s*(\w+))?/.exec(m[1]))
+        .filter((m): m is RegExpExecArray => m !== null)
+        .map((m) => m[1] ?? 'settings')
+        .some((name) =>
+          new RegExp(
+            String.raw`\b${name}\??\.(?:${keys})\b|\{[^}]*\b(?:${keys})\b[^}]*\}\s*=\s*${name}\b`,
+          ).test(code),
+        ) || new RegExp(String.raw`useCurrentProfile\(\)\.settings\??\.(?:${keys})\b`).test(code);
+    expect(
+      codeFiles()
+        .filter(
+          ([rel, code]) =>
+            !rel.startsWith('components/settings/') && rel !== 'pages/Settings.tsx' && readsServerKey(code),
+        )
+        .map(([rel]) => rel),
     ).toEqual([]);
   });
 

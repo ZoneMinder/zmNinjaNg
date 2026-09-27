@@ -17,6 +17,7 @@ const mockProfile = vi.hoisted(() => ({
 
 vi.mock('../useCurrentProfile', () => ({
   useCurrentProfile: () => mockProfile.value,
+  useProfileById: () => ({ profile: mockProfile.value.currentProfile, settings: mockProfile.value.settings }),
 }));
 
 vi.mock('../useBandwidthSettings', () => ({

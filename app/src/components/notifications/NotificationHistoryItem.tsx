@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { CheckCheck, ExternalLink, Wifi, Smartphone, RefreshCw } from 'lucide-react';
 import type { NotificationEvent } from '../../stores/notifications';
 import type { ProfileId } from '../../api/types';
-import { useProfileById } from '../../hooks/useCurrentProfile';
+import { useCurrentProfile, useProfileById } from '../../hooks/useCurrentProfile';
 import { useFreshAccessToken } from '../../hooks/useFreshAccessToken';
 import { resolveMinStreamingPort } from '../../lib/monitor/multiport';
 import { buildThumbnailChain } from '../../lib/event/thumbnail-chain';
@@ -49,6 +49,9 @@ function SourceIcon({ source }: { source: string }) {
 function NotificationHistoryItemComponent({ event, showProfileChip, onView, onMarkRead }: NotificationHistoryItemProps) {
   const { t } = useTranslation();
   const { profile, settings } = useProfileById(event.profileId);
+  // Previews are selection-scoped: they follow the current selection, not
+  // the owning server (refs #536).
+  const { settings: selectionSettings } = useCurrentProfile();
   const { token: accessToken, isFresh: isAccessTokenFresh } = useFreshAccessToken(event.profileId);
   const { fmtDateTimeShort } = useDateTimeFormat();
 
@@ -81,7 +84,7 @@ function NotificationHistoryItemComponent({ event, showProfileChip, onView, onMa
       {/* Thumbnail */}
       {canView ? (
         <div className="h-14 w-20 rounded border overflow-hidden bg-muted/30 flex-shrink-0">
-          {settings.hoverPreview.notifications ? (
+          {selectionSettings.hoverPreview.notifications ? (
             <HoverPreview
               aspectRatio={16 / 9}
               testId="event-thumbnail-hover-preview"

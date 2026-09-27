@@ -14,7 +14,7 @@ import type { ProfileId } from '../api/types';
 import { getCurrentSession } from '../services/sessions';
 import { getMonitors } from '../api/monitors';
 import { resolveMinStreamingPort } from '../lib/monitor/multiport';
-import { useCurrentProfile } from '../hooks/useCurrentProfile';
+import { useCurrentProfile, useProfileById } from '../hooks/useCurrentProfile';
 import { useProfileScope } from '../hooks/useProfileScope';
 import { useScopedEvents } from '../hooks/useScopedEvents';
 import { useScopedMonitors } from '../hooks/useScopedMonitors';
@@ -58,6 +58,9 @@ export default function Events() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const { currentProfile, settings, isAllMode } = useCurrentProfile();
+  // Server-scoped keys (hidden monitors, multi-port) come from the selected
+  // profile's own bucket; aggregate rows read their owner's (refs #536).
+  const { settings: serverSettings } = useProfileById(currentProfile?.id);
   // Settings-update target: the real profile id in single mode, or the
   // active aggregate's id while aggregating (currentProfile stays null there)
   // - same pattern Monitors.tsx uses so view-level toggles persist in both
@@ -195,8 +198,8 @@ export default function Events() {
     // No explicit filter: if monitors are excluded, send the included set so the
     // server's totalCount and "Load More" exclude them too, instead of counting
     // events that get dropped after fetching (refs #205). Otherwise fetch all.
-    return includedMonitorIdParam(allMonitors, settings.excludedMonitorIds);
-  }, [filters.monitorId, isGroupFilterActive, groupMonitorIds, allMonitors, settings.excludedMonitorIds]);
+    return includedMonitorIdParam(allMonitors, serverSettings.excludedMonitorIds);
+  }, [filters.monitorId, isGroupFilterActive, groupMonitorIds, allMonitors, serverSettings.excludedMonitorIds]);
 
   // Build filters with server-formatted dates for passing to EventDetail
   const serverFilters: EventFilters = useMemo(() => ({
@@ -789,7 +792,7 @@ export default function Events() {
             onLoadMore={loadNextPage}
             eventTagMap={eventTagMap}
             eventFilters={serverFilters}
-            minStreamingPort={resolveMinStreamingPort(currentProfile?.minStreamingPort, settings.forceDisableMultiPort)}
+            minStreamingPort={resolveMinStreamingPort(currentProfile?.minStreamingPort, serverSettings.forceDisableMultiPort)}
             groupByScopeId={isAllMode && settings.eventsGroupByServer ? currentProfileId ?? undefined : undefined}
           />
         ) : (
@@ -805,7 +808,7 @@ export default function Events() {
             onLoadMore={loadNextPage}
             eventTagMap={eventTagMap}
             eventFilters={serverFilters}
-            minStreamingPort={resolveMinStreamingPort(currentProfile?.minStreamingPort, settings.forceDisableMultiPort)}
+            minStreamingPort={resolveMinStreamingPort(currentProfile?.minStreamingPort, serverSettings.forceDisableMultiPort)}
             groupByScopeId={isAllMode && settings.eventsGroupByServer ? currentProfileId ?? undefined : undefined}
           />
         )}

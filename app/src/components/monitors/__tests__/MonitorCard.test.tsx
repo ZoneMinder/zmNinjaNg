@@ -24,7 +24,9 @@ vi.mock('../LiveMonitorPlayer', () => ({
 }));
 
 vi.mock('../MonitorHoverPreview', () => ({
-  MonitorHoverPreview: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  MonitorHoverPreview: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="monitor-hover-preview">{children}</div>
+  ),
 }));
 
 const mockNavigate = vi.fn();
@@ -293,5 +295,19 @@ describe('MonitorCard', () => {
     render(card);
     expect(screen.getByTestId('video-player')).toHaveAttribute('data-muted', 'false');
     expect(screen.getByTestId('monitor-volume-btn')).toHaveAttribute('aria-label', 'monitor_detail.mute');
+  });
+  it('takes hover preview from the selected group, not the owning server (refs #536)', () => {
+    // hoverPreview is selection-scoped: with a group selected the card follows
+    // the group's own bucket even though it streams from its owning server.
+    const group = useProfileStore.getState().addVirtualProfile('Both', [asProfileId('test'), OTHER_PROFILE_ID]);
+    useSettingsStore.getState().updateProfileSettings(group, {
+      hoverPreview: { ...useSettingsStore.getState().getProfileSettings('test').hoverPreview, monitorsList: false },
+    });
+    useProfileStore.setState({ currentProfileId: group });
+
+    render(<MonitorCard monitor={monitor} status={status} profileId={asProfileId('test')} onShowSettings={vi.fn()} />);
+
+    expect(screen.getByTestId('video-player')).toHaveTextContent('Front Door');
+    expect(screen.queryByTestId('monitor-hover-preview')).toBeNull();
   });
 });

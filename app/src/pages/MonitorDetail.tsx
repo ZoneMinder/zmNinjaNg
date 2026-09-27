@@ -14,7 +14,7 @@ import { getZones } from '../api/zones';
 import { getSession, tryGetCurrentSession } from '../services/sessions';
 import type { ApiClient } from '../api/client';
 import { resolveMinStreamingPort } from '../lib/monitor/multiport';
-import { useProfileById } from '../hooks/useCurrentProfile';
+import { useCurrentProfile, useProfileById } from '../hooks/useCurrentProfile';
 import { useMonitorMuted } from '../hooks/useMonitorMuted';
 import { useMonitorFlag } from '../hooks/useMonitorFlag';
 import { MonitorInfoPopover } from '../components/monitors/MonitorInfoPopover';
@@ -111,10 +111,13 @@ export default function MonitorDetail() {
   // unknown profile, so the existing error state below covers both cases
   // without new branching (refs #337).
   const { profile: ownerProfile, settings } = useProfileById(routeProfileId);
+  // Open-in-fullscreen and keep-awake are selection-scoped: they follow the
+  // current selection, not the monitor's server (refs #536).
+  const { settings: selectionSettings } = useCurrentProfile();
   const [isMuted, setMuted] = useMonitorMuted(ownerProfile?.id, id ?? '');
   const [openFullscreen] = useMonitorFlag(ownerProfile?.id, id ?? '', 'fullscreenMonitorIds');
   const [isFullscreen, setFullscreen] = useAutoFullscreen({
-    startFullscreen: settings.monitorDetailFullscreen || openFullscreen,
+    startFullscreen: selectionSettings.monitorDetailFullscreen || openFullscreen,
     resetKey: id,
   });
   // One value for the picture and the zone overlay on top of it: the overlay
@@ -126,7 +129,7 @@ export default function MonitorDetail() {
   const dataEnabled = !!id && !!ownerProfile;
 
   // Keep screen awake when Insomnia is enabled
-  useInsomnia({ enabled: settings.insomnia });
+  useInsomnia({ enabled: selectionSettings.insomnia });
 
   // Fetch monitor data
   const { data: monitor, isLoading, error, refetch } = useQuery({

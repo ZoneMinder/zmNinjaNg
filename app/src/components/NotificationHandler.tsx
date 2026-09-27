@@ -16,7 +16,7 @@ import { useNotificationStore } from '../stores/notifications';
 import { useShallow } from 'zustand/react/shallow';
 import { Platform } from '../lib/platform';
 import { resolveMinStreamingPort } from '../lib/monitor/multiport';
-import { useCurrentProfile } from '../hooks/useCurrentProfile';
+import { useCurrentProfile, useProfileById } from '../hooks/useCurrentProfile';
 import { useProfileScope } from '../hooks/useProfileScope';
 import { useProfileStore } from '../stores/profile';
 import { useFreshAccessToken } from '../hooks/useFreshAccessToken';
@@ -48,7 +48,10 @@ import { ProfileNotificationConnector } from './notifications/ProfileNotificatio
  */
 export function NotificationHandler() {
   const navigate = useNavigate();
-  const { currentProfile, settings: profileSettings } = useCurrentProfile();
+  const { currentProfile } = useCurrentProfile();
+  // The toast path below serves the current profile's own events, so its
+  // server-scoped thumbnail settings come from that profile (refs #536).
+  const { settings: profileSettings } = useProfileById(currentProfile?.id);
   const scope = useProfileScope();
   const getDecryptedPassword = useProfileStore((state) => state.getDecryptedPassword);
   const switchProfile = useProfileStore((state) => state.switchProfile);

@@ -19,7 +19,7 @@ import { downloadSnapshotFromElement } from '../../services/download';
 import { toast } from 'sonner';
 import { LiveMonitorPlayer } from './LiveMonitorPlayer';
 import { MonitorHoverPreview } from './MonitorHoverPreview';
-import { useProfileById } from '../../hooks/useCurrentProfile';
+import { useCurrentProfile, useProfileById } from '../../hooks/useCurrentProfile';
 import type { MonitorCardProps, ProfileId } from '../../api/types';
 import { log, LogLevel } from '../../lib/logger';
 import { useTranslation } from 'react-i18next';
@@ -65,6 +65,9 @@ function MonitorCardComponent({
   // settings, and go2rtc URL all come from the monitor's OWN server instead
   // of the globally-selected profile.
   const { profile: ownerProfile, settings } = useProfileById(profileId);
+  // Previews are selection-scoped: they follow the current selection, not
+  // the owning server (refs #536).
+  const { settings: selectionSettings } = useCurrentProfile();
   const zmVersion = useAuthSlice(ownerProfile?.id ?? null).version;
   const openMonitorEvents = useOpenMonitorEvents();
   const resolvedFit = (objectFit === 'flex' ? 'cover' : (objectFit ?? 'cover')) as 'contain' | 'cover' | 'fill' | 'none' | 'scale-down';
@@ -74,7 +77,7 @@ function MonitorCardComponent({
   const isRTC = monitor.Go2RTCEnabled === true && !!ownerProfile?.go2rtcUrl;
   const aspectRatio = getMonitorAspectRatio(monitor.Width, monitor.Height, monitor.Orientation);
   const mediaRef = useRef<HTMLImageElement | HTMLVideoElement | null>(null);
-  const showHover = compact ? settings.hoverPreview.monitorsGrid : settings.hoverPreview.monitorsList;
+  const showHover = compact ? selectionSettings.hoverPreview.monitorsGrid : selectionSettings.hoverPreview.monitorsList;
 
   const videoPlayer = (
     <LiveMonitorPlayer

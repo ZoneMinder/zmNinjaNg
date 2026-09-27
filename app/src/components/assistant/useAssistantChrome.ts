@@ -8,7 +8,8 @@
  */
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useCurrentProfile } from '../../hooks/useCurrentProfile';
+import { useCurrentProfile, useProfileById } from '../../hooks/useCurrentProfile';
+import { useAssistantEnabled } from '../../hooks/useAssistantEnabled';
 import { useAssistantStore } from '../../stores/assistant';
 import { useAssistantPanelStore } from '../../stores/assistantPanel';
 import { assistantBackendLabel } from '../../lib/assistant/providers/provider';
@@ -37,8 +38,11 @@ export interface AssistantChrome {
 
 export function useAssistantChrome(): AssistantChrome {
   const { t } = useTranslation();
-  const { currentProfile, settings } = useCurrentProfile();
+  const { currentProfile } = useCurrentProfile();
   const profileId = currentProfile?.id;
+  // Backend settings are server-scoped: read the profile that carries the
+  // assistant configuration, the one AskPanel pins to by default (refs #536).
+  const { settings } = useProfileById(useAssistantEnabled().profileId);
 
   const running = useAssistantStore((s) => s.running);
   const threadLength = useAssistantStore((s) => (profileId ? (s.threads[profileId]?.length ?? 0) : 0));

@@ -589,11 +589,13 @@ export function AskPanel() {
         accessToken: accessTokenFresh ? accessToken : null,
         minStreamingPort: resolveMinStreamingPort(currentProfile?.minStreamingPort, settings.forceDisableMultiPort),
         thumbnailFallbackChain: settings.thumbnailFallbackChain,
+        // Date and time formats are selection-scoped: the current selection's,
+        // even when an aggregate pins the panel to one member (refs #536).
         dateTimeFormat: {
-          dateFormat: settings.dateFormat,
-          timeFormat: settings.timeFormat,
-          customDateFormat: settings.customDateFormat,
-          customTimeFormat: settings.customTimeFormat,
+          dateFormat: singleSettings.dateFormat,
+          timeFormat: singleSettings.timeFormat,
+          customDateFormat: singleSettings.customDateFormat,
+          customTimeFormat: singleSettings.customTimeFormat,
         },
         // Same expression as `system`'s `timezone` above (refs #246): list_events'
         // `range` input must resolve "today"/"yesterday" against the identical

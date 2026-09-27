@@ -14,7 +14,7 @@ import { EmptyState } from '../../ui/empty-state';
 import { Button } from '../../ui/button';
 import { resolveQueryError } from '../../../lib/query/query-error';
 import { offsetLabel, buildRowThumbnail } from '../../../lib/event/event-context-view';
-import { useProfileById } from '../../../hooks/useCurrentProfile';
+import { useCurrentProfile, useProfileById } from '../../../hooks/useCurrentProfile';
 import { useFreshAccessToken } from '../../../hooks/useFreshAccessToken';
 import { resolveMinStreamingPort } from '../../../lib/monitor/multiport';
 import { cn } from '../../../lib/utils';
@@ -36,6 +36,9 @@ export interface EventContextListProps {
 export function EventContextList({ rows, profileId, monitorNames, isLoading, error, truncated, onWiden }: EventContextListProps) {
   const { t } = useTranslation();
   const { profile, settings } = useProfileById(profileId);
+  // Previews are selection-scoped: they follow the current selection, not
+  // the owning server (refs #536).
+  const { settings: selectionSettings } = useCurrentProfile();
   const { token: accessToken, isFresh } = useFreshAccessToken(profileId);
   const minStreamingPort = resolveMinStreamingPort(profile?.minStreamingPort, settings.forceDisableMultiPort);
   const portalUrl = profile?.portalUrl || '';
@@ -115,7 +118,7 @@ export function EventContextList({ rows, profileId, monitorNames, isLoading, err
                 profileId={profileId}
                 ownerProfileId={profileId}
                 monitorName={monitorNames.get(event.MonitorId) ?? event.MonitorId}
-                hoverPreview={settings.hoverPreview.eventContext}
+                hoverPreview={selectionSettings.hoverPreview.eventContext}
                 badgeLabel={isAnchor ? t('events.around.this_event') : offsetLabel(offsetMs)}
                 badgeTitle={t('events.around.offset_title')}
                 badgeClassName={isAnchor ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' : undefined}

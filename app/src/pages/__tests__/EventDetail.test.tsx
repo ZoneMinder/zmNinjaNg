@@ -12,6 +12,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import EventDetail from '../EventDetail';
 import { useEventFavoritesStore } from '../../stores/eventFavorites';
 import { useSettingsStore } from '../../stores/settings';
+import { useProfileStore } from '../../stores/profile';
 import { getEvent } from '../../api/events';
 import { seedProfiles, resetProfileFixture, fakeApiClient, asProfileId, type FakeApiClient } from '../../tests/profile-fixture';
 import { installApiClient, resetFakeStoreGates } from '../../tests/fake-store-gates';
@@ -134,7 +135,8 @@ vi.mock('../../components/ui/zoom-controls', () => ({
 }));
 
 vi.mock('../../components/events/Mp4EventPlayer', () => ({
-  Mp4EventPlayer: ({ onEnded, onError, muted, onMutedChange, fill, onFullscreenChange }: {
+  Mp4EventPlayer: ({ onEnded, onError, muted, onMutedChange, fill, onFullscreenChange, autoplay }: {
+    autoplay?: boolean;
     onEnded?: () => void;
     onError?: () => void;
     muted?: boolean;
@@ -142,7 +144,7 @@ vi.mock('../../components/events/Mp4EventPlayer', () => ({
     fill?: boolean;
     onFullscreenChange?: (fullscreen: boolean) => void;
   }) => (
-    <div data-testid="mp4-player" data-muted={String(muted ?? true)} data-fill={String(fill ?? false)}>
+    <div data-testid="mp4-player" data-muted={String(muted ?? true)} data-fill={String(fill ?? false)} data-autoplay={String(autoplay ?? false)}>
       <button data-testid="mp4-fire-ended" onClick={() => onEnded?.()} />
       <button data-testid="mp4-fire-error" onClick={() => onError?.()} />
       <button data-testid="mp4-fire-unmute" onClick={() => onMutedChange?.(false)} />
@@ -643,5 +645,34 @@ describe('EventDetail around-this-event trigger (refs #494 Task 9)', () => {
     fireEvent.click(screen.getByTestId('event-context-open'));
 
     expect(useEventContextStore.getState().profileId).toBe('profile-b');
+  });
+});
+
+describe('EventDetail playback preferences in a group (refs #536)', () => {
+  afterEach(() => {
+    h.routeParams = { id: '101' };
+  });
+
+  it('autoplays per the selected group, not the owning server', () => {
+    // eventVideoAutoplay is selection-scoped: the group's own bucket decides,
+    // even on the deep route that fetches from a member server.
+    h.locationState = {};
+    useQueryMock.mockReset();
+    useQueryMock.mockImplementation(({ queryKey }: { queryKey: readonly unknown[] }) => {
+      if (queryKey[0] === 'event') {
+        return { data: { Event: { ...event.Event, DefaultVideo: '101-video.mp4', Videoed: '1' } }, isLoading: false, error: null };
+      }
+      if (queryKey[0] === 'monitor') return { data: monitorData, isLoading: false, error: null };
+      return { data: null, isLoading: false, error: null };
+    });
+    setSettings(PROFILE_B, { eventVideoAutoplay: false });
+    const group = useProfileStore.getState().addVirtualProfile('Both', [PROFILE_1, PROFILE_B]);
+    setSettings(group, { eventVideoAutoplay: true });
+    useProfileStore.setState({ currentProfileId: group });
+    h.routeParams = { profileId: 'profile-b', eventId: '101' };
+
+    render(<EventDetail />);
+
+    expect(screen.getByTestId('mp4-player')).toHaveAttribute('data-autoplay', 'true');
   });
 });

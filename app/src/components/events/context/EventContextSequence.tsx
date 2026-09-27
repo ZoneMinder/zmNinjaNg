@@ -26,7 +26,7 @@ import { Button } from '../../ui/button';
 import { EventThumbnail } from '../EventThumbnail';
 import { ReturnFlashArrow } from '../ReturnFlashArrow';
 import { EventZmsHoverPlayer } from '../EventThumbnailHoverPreview';
-import { useProfileById } from '../../../hooks/useCurrentProfile';
+import { useCurrentProfile, useProfileById } from '../../../hooks/useCurrentProfile';
 import { useFreshAccessToken } from '../../../hooks/useFreshAccessToken';
 import { useReturnHighlightStore } from '../../../stores/returnHighlight';
 import { useReturnFlash } from '../../../hooks/useReturnFlash';
@@ -76,9 +76,12 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
   const location = useLocation();
   const markViewed = useReturnHighlightStore((s) => s.markViewed);
   const { profile, settings } = useProfileById(profileId);
+  // Previews are selection-scoped: they follow the current selection, not
+  // the owning server (refs #536).
+  const { settings: selectionSettings } = useCurrentProfile();
   const { token: accessToken, isFresh } = useFreshAccessToken(profileId);
   const minStreamingPort = resolveMinStreamingPort(profile?.minStreamingPort, settings.forceDisableMultiPort);
-  const rate = settings.hoverPreviewPlaybackRate ?? DEFAULT_HOVER_PREVIEW_PLAYBACK_RATE;
+  const rate = selectionSettings.hoverPreviewPlaybackRate ?? DEFAULT_HOVER_PREVIEW_PLAYBACK_RATE;
 
   const tiles = useMemo(() => nearestFirst(rows, EVENT_CONTEXT.sequenceMaxTiles), [rows]);
   // The screen stays awake for as long as the replay is open, on top of (never

@@ -9,7 +9,7 @@
  * header, so it stops polling when the panel closes.
  */
 import { useQuery } from '@tanstack/react-query';
-import { useCurrentProfile } from './useCurrentProfile';
+import { useCurrentProfile, useProfileById } from './useCurrentProfile';
 import { useBandwidthSettings } from './useBandwidthSettings';
 import { getSecureValue } from '../lib/security/secureStorage';
 import { listOpenAiModels, suggestOllamaBaseUrl } from '../lib/assistant/providers/openai';
@@ -26,7 +26,9 @@ export interface OllamaHealth {
 }
 
 export function useOllamaHealth(): OllamaHealth {
-  const { currentProfile, settings } = useCurrentProfile();
+  const { currentProfile } = useCurrentProfile();
+  // Assistant keys are server-scoped: read the probed profile's own bucket (refs #536).
+  const { settings } = useProfileById(currentProfile?.id);
   const bandwidth = useBandwidthSettings();
   // Same resolution the panel and Settings use: an unset URL falls back to the
   // profile's own ZoneMinder host, so the status dot reports on the server the

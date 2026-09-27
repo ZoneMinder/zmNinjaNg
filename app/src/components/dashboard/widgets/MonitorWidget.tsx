@@ -24,7 +24,7 @@ import type { MonitorRef } from '../../../stores/dashboard';
 import { monitorCacheKey } from '../../../stores/monitors';
 import { LiveMonitorPlayer } from '../../monitors/LiveMonitorPlayer';
 import { MonitorHoverPreview } from '../../monitors/MonitorHoverPreview';
-import { useProfileById } from '../../../hooks/useCurrentProfile';
+import { useCurrentProfile, useProfileById } from '../../../hooks/useCurrentProfile';
 import { useProfileScope } from '../../../hooks/useProfileScope';
 import { AlertTriangle } from 'lucide-react';
 import { Skeleton } from '../../ui/skeleton';
@@ -53,6 +53,9 @@ function SingleMonitor({ monitorId, objectFit, profileId }: { monitorId: string;
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { profile: currentProfile, settings } = useProfileById(profileId);
+    // Previews are selection-scoped: they follow the current selection, not
+    // the owning server (refs #536).
+    const { settings: selectionSettings } = useCurrentProfile();
     const [protocol, setProtocol] = useState('MJPEG');
     const { data: monitor, isLoading, error } = useQuery({
         queryKey: queryKeys.monitor(currentProfile?.id, monitorId),
@@ -88,7 +91,7 @@ function SingleMonitor({ monitorId, objectFit, profileId }: { monitorId: string;
             onClick={() => navigate(monitorPath, { state: { from: '/dashboard' } })}
             onKeyDown={activateOnEnterOrSpace(() => navigate(monitorPath, { state: { from: '/dashboard' } }))}
         >
-            {settings.hoverPreview.dashboard ? (
+            {selectionSettings.hoverPreview.dashboard ? (
                 <MonitorHoverPreview monitor={monitor.Monitor} profileId={profileId}>
                     <LiveMonitorPlayer
                         monitor={monitor.Monitor}

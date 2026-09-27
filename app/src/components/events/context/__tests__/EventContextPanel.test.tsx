@@ -181,11 +181,13 @@ describe('EventContextPanel', () => {
     fireEvent.click(screen.getByTestId('event-context-close'));
   });
 
-  it('re-seeds from the newly opened profile, not whatever the panel showed before', async () => {
+  it('re-seeds from the current setting on each open, not whatever the panel showed before', async () => {
+    // eventContext is selection-scoped (refs #536), so both opens read p1, the
+    // current profile; the second open must pick up the value saved since.
     seedProfiles([makeProfile('p1'), makeProfile('p2')], {
       settings: {
         p1: { eventContext: { windowMinutes: 10, scope: 'all' } },
-        p2: { eventContext: { windowMinutes: 60, scope: 'group' } },
+        p2: { eventContext: { windowMinutes: 1, scope: 'all' } },
       },
     });
     installApiClient(P1, emptyServer());
@@ -203,6 +205,7 @@ describe('EventContextPanel', () => {
     await screen.findByTestId('event-context-empty');
     expect(screen.getByTestId('event-context-window-10')).toHaveAttribute('aria-pressed', 'true');
     fireEvent.click(screen.getByTestId('event-context-close'));
+    act(() => useSettingsStore.getState().updateProfileSettings(P1, { eventContext: { windowMinutes: 60, scope: 'all' } }));
 
     fireEvent.click(openP2);
     await screen.findByTestId('event-context-empty');

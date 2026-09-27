@@ -15,7 +15,7 @@ import { EventThumbnail } from '../events/EventThumbnail';
 import { HoverPreview } from '../ui/hover-preview';
 import { EventZmsHoverPlayer } from '../events/EventThumbnailHoverPreview';
 import { resolveMinStreamingPort } from '../../lib/monitor/multiport';
-import { useProfileById } from '../../hooks/useCurrentProfile';
+import { useCurrentProfile, useProfileById } from '../../hooks/useCurrentProfile';
 import { useFreshAccessToken } from '../../hooks/useFreshAccessToken';
 import { asProfileId, type MonitorsResponse } from '../../api/types';
 import { useDateTimeFormat } from '../../hooks/useDateTimeFormat';
@@ -100,6 +100,9 @@ function ScrubberThumbnail({
   // profile and the plain monitorId, matching prior behavior exactly.
   const ownerProfileId = event.profileId ? asProfileId(event.profileId) : undefined;
   const { profile: ownerProfile, settings } = useProfileById(ownerProfileId);
+  // Previews are selection-scoped: they follow the current selection, not
+  // the owning server (refs #536).
+  const { settings: selectionSettings } = useCurrentProfile();
   const { token: accessToken, isFresh: isAccessTokenFresh } = useFreshAccessToken(ownerProfileId);
   const { fmtTimeShort } = useDateTimeFormat();
   const queryClient = useQueryClient();
@@ -139,7 +142,7 @@ function ScrubberThumbnail({
     </button>
   );
 
-  if (!settings.hoverPreview.timeline) return button;
+  if (!selectionSettings.hoverPreview.timeline) return button;
 
   return (
     <HoverPreview

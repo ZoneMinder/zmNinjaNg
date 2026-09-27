@@ -22,7 +22,7 @@ import { resolveFallbackFids } from '../lib/event/thumbnail-chain';
 import { resolveBackNavigation } from '../lib/back-navigation';
 import { getMonitor } from '../api/monitors';
 import { resolveMinStreamingPort } from '../lib/monitor/multiport';
-import { useProfileById } from '../hooks/useCurrentProfile';
+import { useCurrentProfile, useProfileById } from '../hooks/useCurrentProfile';
 import { useAutoFullscreen } from '../hooks/useAutoFullscreen';
 import { FullscreenExitButton } from '../components/ui/fullscreen-exit-button';
 import { useFreshAccessToken } from '../hooks/useFreshAccessToken';
@@ -118,6 +118,9 @@ export default function EventDetail() {
   // existing error state below covers both cases without new branching
   // (refs #337).
   const { profile: ownerProfile, settings } = useProfileById(routeProfileId);
+  // Autoplay and open-in-fullscreen are selection-scoped: they follow the
+  // current selection, not the event's server (refs #536).
+  const { settings: selectionSettings } = useCurrentProfile();
   // A primitive, so the archive callback depends on the id rather than on the
   // profile object identity.
   const ownerProfileId = ownerProfile?.id;
@@ -186,7 +189,7 @@ export default function EventDetail() {
   // "Open events in fullscreen" on, which left every later event fullscreen
   // with Settings as the only way out (#476). The player's own fullscreen
   // button takes the page along (and back) through the same setter.
-  const [isFullscreen, setFullscreen] = useAutoFullscreen({ startFullscreen: settings.eventPlaybackFullscreen });
+  const [isFullscreen, setFullscreen] = useAutoFullscreen({ startFullscreen: selectionSettings.eventPlaybackFullscreen });
 
   // Guards against a stray second 'ended' (video.js can emit it during teardown)
   // triggering a double advance. Re-armed for each event by the id-change effect.
@@ -719,7 +722,7 @@ export default function EventDetail() {
                         type={videoMimeType}
                         className="w-full h-full"
                         poster={posterUrl}
-                        autoplay={settings.eventVideoAutoplay || continuousPlay}
+                        autoplay={selectionSettings.eventVideoAutoplay || continuousPlay}
                         markers={videoMarkers}
                         onMarkerClick={handleMarkerClick}
                         eventId={event.Event.Id}

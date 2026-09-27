@@ -15,7 +15,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { getStreamUrl } from '../api/monitors';
 import { resolveMinStreamingPort } from '../lib/monitor/multiport';
-import { useProfileById } from './useCurrentProfile';
+import { useCurrentProfile, useProfileById } from './useCurrentProfile';
 import { useViewPrefs } from './useViewPrefs';
 import { useBandwidthSettings } from './useBandwidthSettings';
 import { useStreamLifecycle } from './useStreamLifecycle';
@@ -152,10 +152,12 @@ export function useMonitorStream({
   // and gets the quicker schedule (see lib/monitor/reconnect-backoff).
   const streamStartedAtRef = useRef(0);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Mirror settings.insomnia into a ref so the scheduleReconnect closure
-  // reads the latest value without re-running its effect.
-  const insomniaRef = useRef(settings.insomnia);
-  insomniaRef.current = settings.insomnia;
+  // Mirror insomnia into a ref so the scheduleReconnect closure reads the
+  // latest value without re-running its effect. Keep-awake is selection-scoped,
+  // so it comes from the current selection, not the monitor's server (refs #536).
+  const { settings: selectionSettings } = useCurrentProfile();
+  const insomniaRef = useRef(selectionSettings.insomnia);
+  insomniaRef.current = selectionSettings.insomnia;
   const [imageSrc, setImageSrc] = useState<string>('');
   // The src that last fired `load`. Compared against the current one rather
   // than kept as a boolean flag, so a src swap withdraws the frame during the
