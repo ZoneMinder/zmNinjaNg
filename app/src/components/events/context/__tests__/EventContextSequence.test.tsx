@@ -178,21 +178,35 @@ describe('EventContextSequence', () => {
     expect(playingIds()).toEqual(['a']);
   });
 
-  it('plays only the tapped tile, stopping the replay, until its event ends', () => {
+  it('continues the replay from the tapped tile, skipping the ones before it', () => {
     renderGrid();
     act(() => vi.advanceTimersByTime(0));
     expect(playingIds()).toEqual(['a']);
 
-    fireEvent.click(screen.getByTestId('event-context-sequence-tile-c'));
+    fireEvent.click(screen.getByTestId('event-context-sequence-tile-b'));
     act(() => vi.advanceTimersByTime(0));
-    expect(playingIds()).toEqual(['c']);
+    expect(playingIds()).toEqual(['b']);
     expect(quitIds()).toEqual(['a']);
 
-    // c is 5s long, 2.5s at 2x; nothing else starts after it.
+    // b runs 38s at 2x (19s); the 20 minute gap is cut, so c follows at once.
+    act(() => vi.advanceTimersByTime(19_000));
+    expect(playingIds()).toEqual(['c']);
     act(() => vi.advanceTimersByTime(2_500));
     expect(playingIds()).toEqual([]);
+    // a is never replayed from here.
     act(() => vi.advanceTimersByTime(30_000));
     expect(playingIds()).toEqual([]);
+  });
+
+  it('in All, starts the tapped tile and every later one together', () => {
+    renderGrid();
+    fireEvent.click(screen.getByTestId('event-context-sequence-together'));
+    act(() => vi.advanceTimersByTime(0));
+    expect(playingIds()).toEqual(['a', 'b', 'c']);
+
+    fireEvent.click(screen.getByTestId('event-context-sequence-tile-b'));
+    act(() => vi.advanceTimersByTime(0));
+    expect(playingIds()).toEqual(['b', 'c']);
   });
 
   it('opens the event on a double tap', () => {

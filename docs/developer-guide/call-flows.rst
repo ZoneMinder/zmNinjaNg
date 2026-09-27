@@ -3418,8 +3418,8 @@ third should ask for.
    ``EventZmsHoverPlayer`` instead of its thumbnail. That player owns a connkey
    and sends CMD_QUIT when it unmounts, so the end of a slot, **Restart**,
    closing the dialog, and opening a tile each tear down that tile's stream.
-   One tap on a tile swaps the schedule for that tile alone
-   (``buildTogetherSchedule`` over one row); a second tap within
+   One tap on a tile rebuilds the schedule, in the current mode, over the
+   tiles from that one on, so the replay continues from it; a second tap within
    ``EVENT_CONTEXT.doubleTapMs``, timed from the click events' own
    ``timeStamp`` rather than ``dblclick``, opens its event.
    Opening the dialog pushes a history entry carrying

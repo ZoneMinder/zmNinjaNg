@@ -14,8 +14,8 @@
  * from, the way the Events list marks a returned-to row, until Replay or the
  * mode button starts playback again.
  *
- * One tap on a tile plays it alone in place of the schedule; a second tap
- * right after opens its event.
+ * One tap on a tile restarts the replay from that tile, in the current
+ * mode; a second tap right after opens its event.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -74,25 +74,24 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
   // six-connection pool, so only a single-port server needs the cap. Snapshot
   // mode does not change this: event playback always streams.
   const maxStreams = minStreamingPort ? Infinity : EVENT_CONTEXT.togetherMaxStreams;
-  const schedule = useMemo(
-    () => (together ? buildTogetherSchedule(tiles, rate, maxStreams) : buildReplaySchedule(tiles, rate)),
-    [together, tiles, rate, maxStreams]
-  );
+  // A tapped tile becomes the start of the replay: it plays at once and the
+  // tiles after it follow in the current mode; the ones before it are skipped.
+  const [startFrom, setStartFrom] = useState<string | null>(null);
   const [playing, setPlaying] = useState<ReadonlySet<string>>(new Set());
   const [run, setRun] = useState(0);
   const [held, setHeld] = useState(Boolean(returnedFrom));
-  // A tapped tile plays alone, in place of the schedule, until it ends.
-  const [solo, setSolo] = useState<string | null>(null);
   const restart = () => {
-    setSolo(null);
+    setStartFrom(null);
     setHeld(false);
     setRun((n) => n + 1);
   };
 
   const active = useMemo(() => {
-    if (solo) return buildTogetherSchedule(tiles.filter(({ event }) => event.Id === solo), rate, 1);
-    return held ? [] : schedule;
-  }, [solo, held, tiles, rate, schedule]);
+    if (held) return [];
+    const from = Math.max(0, tiles.findIndex(({ event }) => event.Id === startFrom));
+    const queue = tiles.slice(from);
+    return together ? buildTogetherSchedule(queue, rate, maxStreams) : buildReplaySchedule(queue, rate);
+  }, [held, tiles, startFrom, together, rate, maxStreams]);
 
   useEffect(() => {
     if (!open) return;
@@ -148,7 +147,8 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
       openEvent(eventId);
       return;
     }
-    setSolo(eventId);
+    setStartFrom(eventId);
+    setHeld(false);
     setRun((n) => n + 1);
   };
 
