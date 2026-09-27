@@ -442,6 +442,25 @@ describe('Events Page', () => {
   });
 
   describe('All mode', () => {
+    it('never narrows the query by the group bucket\'s hidden monitors (refs #536)', () => {
+      // excludedMonitorIds is server-scoped. In a group each server's own list
+      // applies per event at the API boundary (api/events getExcludedMonitorIdSet),
+      // so the page must not turn the group's bucket into a monitor filter,
+      // even when monitor data is on hand under the unscoped key.
+      allScope();
+      useSettingsStore.getState().updateProfileSettings(ALL_PROFILES_ID, { excludedMonitorIds: ['1'] });
+      useSettingsStore.getState().updateProfileSettings(asProfileId('profile-1'), { excludedMonitorIds: ['2'] });
+      useQueryMock.mockImplementation(({ queryKey }: { queryKey: (string | object)[] }) =>
+        queryKey[0] === 'monitors'
+          ? { data: { monitors: ['1', '2', '3'].map((Id) => ({ Monitor: { Id, Name: `Cam ${Id}` } })) }, isLoading: false, error: null, refetch: vi.fn() }
+          : { data: null, isLoading: false, error: null, refetch: vi.fn() }
+      );
+
+      render(<Events />);
+
+      expect(useScopedEventsMock.mock.lastCall?.[0]).toMatchObject({ monitorId: undefined });
+    });
+
     it('renders both profiles\' events with a profile chip per row', () => {
       allScope();
       scopedEvents({
