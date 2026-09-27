@@ -21,7 +21,6 @@ import type { Monitor, ProfileId } from '../../api/types';
 import type { MonitorFunction } from '../../pages/hooks/useModeControl';
 import { isZmVersionAtLeast } from '../../lib/zm/zm-version';
 import { maskUrlCredentials, restoreUrlCredentials } from '../../lib/security/url-credentials';
-import { useSettingsStore } from '../../stores/settings';
 import { useCurrentProfile } from '../../hooks/useCurrentProfile';
 import { SettingsRow } from './SettingsRow';
 import { MonitorAppPreferences } from './MonitorAppPreferences';
@@ -69,10 +68,8 @@ export function MonitorSettingsDialog({
   const { t } = useTranslation();
   const editable = !!onSave;
   const is138Plus = isZmVersionAtLeast(zmVersion, '1.38.0');
-  const { currentProfile } = useCurrentProfile();
-  const effectiveProfileId = profileId ?? currentProfile?.id;
-  const getProfileSettings = useSettingsStore((state) => state.getProfileSettings);
-  const profileSettings = effectiveProfileId ? getProfileSettings(effectiveProfileId) : null;
+  // Log redaction is selection-scoped, so the current selection decides (refs #536).
+  const { settings: selectionSettings } = useCurrentProfile();
 
   // A camera's password lives in the source URL as userinfo, and on pre-1.38
   // servers that is the only place it can live. While log redaction is on, the
@@ -80,7 +77,7 @@ export function MonitorSettingsDialog({
   // Pass field, so a screenshot or a shoulder-surfer gets nothing (refs #307).
   // Both fields stay editable: the real password is restored on save whenever
   // the mask survives the edit.
-  const maskCredentials = !profileSettings?.disableLogRedaction;
+  const maskCredentials = !selectionSettings.disableLogRedaction;
   const displayedPath = maskCredentials
     ? maskUrlCredentials(monitor.Path ?? '')
     : monitor.Path ?? '';

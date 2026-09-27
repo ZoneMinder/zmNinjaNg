@@ -50,10 +50,13 @@ async function renderSection(
   render(
     <QueryClientProvider client={client}>
       <LiveStreamingSection
-        settings={{ ...DEFAULT_SETTINGS, ...settings }}
+        settings={{ ...DEFAULT_SETTINGS }}
         update={vi.fn()}
-        currentProfile={profile(minStreamingPort)}
+        serverProfile={profile(minStreamingPort)}
+        serverSettings={{ ...DEFAULT_SETTINGS, ...settings }}
+        updateServer={vi.fn()}
         updateSettings={vi.fn()}
+        aggregateName={null}
       />
     </QueryClientProvider>
   );
@@ -102,7 +105,15 @@ describe('LiveStreamingSection Streaming Mode recommendation', () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
       <QueryClientProvider client={client}>
-        <LiveStreamingSection settings={{ ...DEFAULT_SETTINGS }} update={update} currentProfile={profile()} updateSettings={vi.fn()} />
+        <LiveStreamingSection
+          settings={{ ...DEFAULT_SETTINGS }}
+          update={update}
+          serverProfile={profile()}
+          serverSettings={{ ...DEFAULT_SETTINGS }}
+          updateServer={vi.fn()}
+          updateSettings={vi.fn()}
+          aggregateName={null}
+        />
       </QueryClientProvider>
     );
     const toggle = screen.getByTestId('settings-live-fullscreen-switch');

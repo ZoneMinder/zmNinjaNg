@@ -340,9 +340,10 @@ describe('MonitorSettingsDialog owning-profile scoping (refs #337)', () => {
     expect(useSettingsStore.getState().getProfileSettings(asProfileId('p1')).forceZmsMonitorIds).toEqual([]);
   });
 
-  it('reads credential masking from the owning profile (B), independent of the current profile (A=p1)', () => {
-    // A (current, unused here) keeps redaction on; B has turned it off.
-    seedSettings({ profileB: { disableLogRedaction: true } });
+  it('reads credential masking from the current selection (A=p1), not the owning profile (B) (refs #536)', () => {
+    // disableLogRedaction is selection-scoped: A (current) has turned redaction
+    // off, B (the monitor's server) keeps it on, and A decides.
+    seedSettings({ disableLogRedaction: true, profileB: { disableLogRedaction: false } });
 
     render(
       <MonitorSettingsDialog

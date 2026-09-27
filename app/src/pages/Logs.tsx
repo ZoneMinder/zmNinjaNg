@@ -2,12 +2,15 @@ import { useLogStore } from '../stores/logs';
 import { logger, log, LogLevel } from '../lib/logger';
 import { useCurrentProfile, useProfileById } from '../hooks/useCurrentProfile';
 import { useProfileScope } from '../hooks/useProfileScope';
+import { useProfileStore } from '../stores/profile';
 import { useSettingsStore } from '../stores/settings';
 import { ProfilePicker } from '../components/profile-picker';
+import { ComponentLogLevels } from '../components/logs/ComponentLogLevels';
 import type { ProfileId } from '../api/types';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
+import { Switch } from '../components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { ScrollText, Trash2, Download, Share2, ChevronDown, ChevronUp, Server, Smartphone } from 'lucide-react';
 import { PageContainer } from '../components/common/PageContainer';
@@ -87,17 +90,24 @@ export default function Logs() {
     const isNative = Platform.isNative;
     const logFile = getLogFile();
     const showShareFile = logFile.capabilities.share;      // Capacitor only
-    const { currentProfile: singleProfile, settings: singleSettings } = useCurrentProfile();
+    const { currentProfile: singleProfile, settings: selectionSettings } = useCurrentProfile();
+    const currentProfileId = useProfileStore((state) => state.currentProfileId);
     const scope = useProfileScope();
     const isAllMode = scope?.mode === 'all';
     const [pickedProfileId, setPickedProfileId] = useState<ProfileId | undefined>(undefined);
     const defaultPickedId = isAllMode ? (pickedProfileId ?? scope.profiles[0]?.id) : undefined;
-    const { profile: allModeProfile, settings: allModeSettings } = useProfileById(defaultPickedId);
-    // Single mode: the page's own current profile/settings, byte-identical to
-    // before. All mode: the picked profile (defaults to the first in scope).
+    const { profile: allModeProfile } = useProfileById(defaultPickedId);
+    // Single mode: the page's own current profile, byte-identical to before.
+    // All mode: the picked profile, used only for fetching that server's own
+    // ZM logs - unrelated to the picker. Timestamps always format with
+    // `selectionSettings` (the aggregate's own bucket in a group), since
+    // dateFormat/timeFormat are selection-scoped, not the picked member's
+    // (refs #536).
     const currentProfile = isAllMode ? allModeProfile : singleProfile;
-    const settings = isAllMode ? allModeSettings : singleSettings;
-    const { logLevel, componentLogLevels } = settings;
+    // Log level, component overrides and redaction are selection-scoped: they
+    // read and write the current selection's bucket (the aggregate's own
+    // bucket in All mode), never the picked member's (refs #536).
+    const { logLevel, componentLogLevels, disableLogRedaction } = selectionSettings;
     const updateProfileSettings = useSettingsStore((state) => state.updateProfileSettings);
     const [selectedComponentsZmng, setSelectedComponentsZmng] = useState<string[]>([]);
     const [selectedComponentsServer, setSelectedComponentsServer] = useState<string[]>([]);
@@ -139,13 +149,24 @@ export default function Logs() {
     const handleLevelChange = (value: string) => {
         const level = parseInt(value, 10) as LogLevel;
         logger.setLevel(level);
-        if (currentProfile?.id) {
-            updateProfileSettings(currentProfile.id, { logLevel: level });
+        if (currentProfileId) {
+            // This is the page's one global-level control (refs #536 fix
+            // round 1): changing it clears per-component overrides, same as
+            // the old Settings global selector it replaces, so a component
+            // pinned to a stale level doesn't silently outlive the level
+            // that pin was relative to.
+            updateProfileSettings(currentProfileId, { logLevel: level, componentLogLevels: {} });
         }
         toast({
             title: t('common.success'),
             description: t('logs.level_updated'),
         });
+    };
+
+    const handleRedactionChange = (checked: boolean) => {
+        if (currentProfileId) {
+            updateProfileSettings(currentProfileId, { disableLogRedaction: checked });
+        }
     };
 
     // Map log level strings to numeric values for filtering
@@ -230,7 +251,7 @@ export default function Logs() {
         return zmLogs.map((zmLog) => ({
             id: zmLog.Id.toString(),
             rawTimestamp: parseFloat(zmLog.TimeKey) * 1000,
-            timestamp: formatAppDateTime(new Date(parseFloat(zmLog.TimeKey) * 1000), settings),
+            timestamp: formatAppDateTime(new Date(parseFloat(zmLog.TimeKey) * 1000), selectionSettings),
             level: getZMLogLevel(zmLog.Level),
             // ZoneMinder's own logs carry the ffmpeg command line, camera
             // credential and all. They are displayed, saved, and shared through
@@ -554,6 +575,35 @@ export default function Logs() {
                     )}
                 </div>
             </div>
+            <div className="flex flex-wrap items-start justify-between gap-4 shrink-0" data-testid="logs-log-settings">
+                <ComponentLogLevels
+                    settings={selectionSettings}
+                    profileId={currentProfileId}
+                    updateSettings={updateProfileSettings}
+                />
+                <div className="min-w-0 flex items-start gap-2">
+                    <div className="min-w-0">
+                        <div className="text-sm font-medium">{t('settings.disable_log_redaction')}</div>
+                        <div className="text-xs text-muted-foreground">
+                            {t('settings.disable_log_redaction_desc')}
+                        </div>
+                        {disableLogRedaction && (
+                            <p
+                                className="text-xs text-orange-600 dark:text-orange-400 mt-1 font-medium"
+                                data-testid="settings-log-redaction-warning"
+                            >
+                                {t('settings.disable_log_redaction_warning')}
+                            </p>
+                        )}
+                    </div>
+                    <Switch
+                        id="log-redaction"
+                        checked={disableLogRedaction}
+                        onCheckedChange={handleRedactionChange}
+                        data-testid="settings-log-redaction-switch"
+                    />
+                </div>
+            </div>
             {logFile.capabilities.available && (
                 <div
                     className="text-xs text-muted-foreground px-1 py-1 flex flex-col gap-0.5 shrink-0"
@@ -598,7 +648,7 @@ export default function Logs() {
                                         </div>
                                         <div className="min-w-0 flex-1 space-y-2">
                                             <div className="flex items-center gap-2 text-muted-foreground text-[10px] sm:text-xs">
-                                                <span>{log.rawTimestamp ? formatAppDateTime(new Date(log.rawTimestamp), settings) : log.timestamp}</span>
+                                                <span>{log.rawTimestamp ? formatAppDateTime(new Date(log.rawTimestamp), selectionSettings) : log.timestamp}</span>
                                                 {(() => {
                                                     const component = log.context?.component;
                                                     if (component && typeof component === 'string') {

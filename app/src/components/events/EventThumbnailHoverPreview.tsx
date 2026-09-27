@@ -9,7 +9,7 @@
 import { useEffect, useMemo, type ReactNode } from 'react';
 import { HoverPreview } from '../ui/hover-preview';
 import { resolveMinStreamingPort } from '../../lib/monitor/multiport';
-import { useProfileById } from '../../hooks/useCurrentProfile';
+import { useCurrentProfile, useProfileById } from '../../hooks/useCurrentProfile';
 import { useFreshAccessToken } from '../../hooks/useFreshAccessToken';
 import { getEventZmsUrl, getZmsControlUrl } from '../../lib/zm/url-builder';
 import { log, LogLevel } from '../../lib/logger';
@@ -70,6 +70,9 @@ export function EventThumbnailHoverPreview({
 export function EventZmsHoverPlayer({ descriptor }: { descriptor: EventZmsHoverDescriptor }) {
   const ownerProfileId = descriptor.profileId ? asProfileId(descriptor.profileId) : undefined;
   const { profile: ownerProfile, settings } = useProfileById(ownerProfileId);
+  // Previews are selection-scoped: they follow the current selection, not
+  // the owning server (refs #536).
+  const { settings: selectionSettings } = useCurrentProfile();
   const { token: accessToken, isFresh: isAccessTokenFresh } = useFreshAccessToken(ownerProfileId);
 
   const connkey = useMemo(
@@ -85,7 +88,7 @@ export function EventZmsHoverPlayer({ descriptor }: { descriptor: EventZmsHoverD
     monitorId: descriptor.monitorId,
   };
 
-  const rate = settings.hoverPreviewPlaybackRate ?? DEFAULT_HOVER_PREVIEW_PLAYBACK_RATE;
+  const rate = selectionSettings.hoverPreviewPlaybackRate ?? DEFAULT_HOVER_PREVIEW_PLAYBACK_RATE;
 
   const streamUrl = portalUrl && isAccessTokenFresh
     ? getEventZmsUrl(portalUrl, descriptor.eventId, {

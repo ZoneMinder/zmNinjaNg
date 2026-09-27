@@ -32,22 +32,28 @@ A status line below the action row shows the current entry count (e.g. *4,237 of
 
 ## Filtering and log levels
 
-The on-disk file mirrors the in-memory Logs view, so anything filtered out by your level / component settings is not persisted either. To configure:
+The on-disk file mirrors the in-memory Logs view, so anything filtered out by your level or component settings is not persisted either. Two controls on this page set what gets recorded:
 
-- Global level and per-component overrides: **Settings → Advanced → Component Logs** (collapsible section). The global level sets the floor; per-component selectors override it for individual loggers.
-- The Logs page itself only filters which entries are *displayed*. The component multi-select at the top of the page narrows the visible entries; it does not change the level being recorded.
+- **Level**: the picker in the toolbar (DEBUG, INFO, WARN, ERROR) sets the global level, the floor for every logger. Changing it also clears any per-component levels, so every component follows the new level until you set one again.
+- **Component Logs**: the fold below the toolbar. Its heading shows the global level and how many components are set differently. Open it to give one component its own level (DEBUG, INFO, WARN, ERROR, or NONE). **Reset** puts every component back on the global level.
+
+The **Disable Log Redaction** switch sits next to Component Logs; see [What gets redacted](#what-gets-redacted).
+
+The component multi-select in the toolbar only narrows which entries are *displayed*. It does not change what is recorded.
 
 Lowering the level (e.g. to DEBUG for a specific component) writes more to disk; raising it writes less.
 
+The level, the component levels, and the redaction switch belong to what is selected in the app, the same way the rows outside the server boxes on {doc}`settings` do. With one profile selected they save to that profile. With a Virtual Profile Group selected they save to the group and leave each server's own values alone. In a group the page also shows a **Profile** picker. That picker chooses which server's ZoneMinder logs the **ZM** tab shows, and timestamps on the page use that server's date and time format. It has no effect on the level, component, or redaction settings.
+
 ## What gets redacted
 
-Unless you turn on **Settings → Advanced → Disable log redaction**, entries are scrubbed before they are displayed, written to the file, or shared:
+Unless you turn on **Disable log redaction** on this page, entries are scrubbed before they are displayed, written to the file, or shared:
 
 - Passwords, tokens, API keys, session cookies, and `Authorization` headers are replaced by placeholders. Tokens keep their first few characters so two log lines can still be matched up; passwords are removed outright.
 - Credentials embedded in a URL (`rtsp://user:password@camera/stream`) lose the password, whatever the scheme. This is the form a camera password takes in a monitor's source path, and the form ZoneMinder itself writes into its logs when it starts a capture.
 - Hostnames are shortened to their first six characters.
 
-This applies to the **Server** tab as well, which shows ZoneMinder's own logs rather than the app's. Those lines are redacted on the way in, so the file you share carries the same protection.
+This applies to the **ZM** tab as well, which shows ZoneMinder's own logs rather than the app's. Those lines are redacted on the way in, so the file you share carries the same protection.
 
 Redaction is a safety net for logs you share, not a security boundary. Anything the app can display, the ZoneMinder API already handed to your account.
 

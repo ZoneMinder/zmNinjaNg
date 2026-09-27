@@ -15,11 +15,10 @@ import { buildThumbnailChain, eventHasAlarmFrame } from '../../lib/event/thumbna
 import { buildMonitorMap, calculateThumbnailDimensions, EVENT_GRID_CONSTANTS, getMonitorDimensions } from '../../lib/event/event-utils';
 import { groupByOwningProfile } from '../../lib/profile/profile-sections';
 import { ProfileSectionList } from '../profiles/ProfileSectionList';
-import { useCurrentProfile, useProfileById } from '../../hooks/useCurrentProfile';
+import { useProfileById } from '../../hooks/useCurrentProfile';
 import { useFreshAccessToken } from '../../hooks/useFreshAccessToken';
 import { resolveMinStreamingPort } from '../../lib/monitor/multiport';
 import type { EventData, Monitor, ProfileId, Tag } from '../../api/types';
-import type { ThumbnailFallbackEntry } from '../../stores/settings';
 import { scopedEventKey } from '../../lib/event/scoped-event-key';
 
 /** An event tagged with its owning profile - set only in All mode
@@ -63,7 +62,6 @@ const EventItem = memo(function EventItem({
   eventTagMap,
   eventFilters,
   minStreamingPort,
-  thumbnailChain,
 }: {
   event: ScopedEventItem;
   monitorMap: Map<string, Monitor>;
@@ -73,7 +71,6 @@ const EventItem = memo(function EventItem({
   eventTagMap?: Map<string, Tag[]>;
   eventFilters?: EventFilters;
   minStreamingPort?: number;
-  thumbnailChain: ThumbnailFallbackEntry[];
 }) {
   const { Event, profileId, profileChip } = event;
 
@@ -119,7 +116,7 @@ const EventItem = memo(function EventItem({
   // instead of getPortalUrlForEvent(), which would re-run its own
   // O(monitors) find() over the full monitors array.
   const eventPortalUrl = getPortalUrlForMonitor(monitorData?.ServerId, effectivePortalUrl, profileId);
-  const thumbnailUrls = buildThumbnailChain(eventPortalUrl, Event.Id, thumbnailChain, {
+  const thumbnailUrls = buildThumbnailChain(eventPortalUrl, Event.Id, ownerSettings.thumbnailFallbackChain, {
     token: effectiveAccessToken,
     width: thumbnailWidth,
     height: thumbnailHeight,
@@ -130,7 +127,7 @@ const EventItem = memo(function EventItem({
 
   // Full-size image chain used by the desktop hover preview. No width/height
   // is passed so ZM returns the original image, which the view scales down.
-  const largeThumbnailUrls = buildThumbnailChain(eventPortalUrl, Event.Id, thumbnailChain, {
+  const largeThumbnailUrls = buildThumbnailChain(eventPortalUrl, Event.Id, ownerSettings.thumbnailFallbackChain, {
     token: effectiveAccessToken,
     minStreamingPort: effectiveMinStreamingPort,
     monitorId: Event.MonitorId,
@@ -175,8 +172,6 @@ export const EventListView = ({
   groupByScopeId,
 }: EventListViewProps) => {
   const { t } = useTranslation();
-  const { settings } = useCurrentProfile();
-  const thumbnailChain = settings.thumbnailFallbackChain;
 
   // id -> Monitor lookup, rebuilt only when the monitors array reference
   // changes. Replaces a monitors.find() per event per render (O(events x
@@ -233,7 +228,6 @@ export const EventListView = ({
       eventTagMap={eventTagMap}
       eventFilters={eventFilters}
       minStreamingPort={minStreamingPort}
-      thumbnailChain={thumbnailChain}
     />
   );
 

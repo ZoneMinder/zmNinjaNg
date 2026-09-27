@@ -159,7 +159,6 @@ export interface ProfileSettings {
   monitorDetailRecentEventsCount: number;
   /** Monitor IDs whose recent-events list is collapsed/hidden on the detail page. */
   monitorDetailRecentEventsHidden: string[];
-  dashboardRefreshInterval: number; // in seconds, for dashboard widgets (events/timeline)
   // Per-group live montage layout state. Key = group ID or ALL_GROUPS_KEY.
   montageByGroup: Record<string, MontageGroupLayout>;
   // Per-group event montage state (column count). Key = group ID or ALL_GROUPS_KEY.
@@ -253,6 +252,10 @@ export interface ProfileSettings {
    *  monitors stay in the rotation: they only start capturing once viewed. */
   skipOfflineMonitors: boolean;
   insomnia: boolean; // Global: Keep screen awake across all pages
+  /** Add fullscreen when a phone or tablet turns sideways, on top of
+   *  `monitorDetailFullscreen` / `eventPlaybackFullscreen`. Selection-scoped
+   *  (refs #536). */
+  landscapeFullscreen: boolean;
   monitorDetailInsomnia: boolean; // @deprecated - use global insomnia instead
   montageInsomnia: boolean; // @deprecated - use global insomnia instead
   eventMontageFilters: {
@@ -472,7 +475,6 @@ export const DEFAULT_SETTINGS: ProfileSettings = {
   defaultEventLimit: 100,
   monitorDetailRecentEventsCount: 20,
   monitorDetailRecentEventsHidden: [],
-  dashboardRefreshInterval: 30,
   montageByGroup: {},
   eventMontageByGroup: {},
   montageIsFullscreen: false,
@@ -508,6 +510,7 @@ export const DEFAULT_SETTINGS: ProfileSettings = {
   // On by default: zmNinja 1.6 stepped through live monitors only (refs #527)
   skipOfflineMonitors: true,
   insomnia: false,
+  landscapeFullscreen: true,
   monitorDetailInsomnia: false,
   montageInsomnia: false,
   eventMontageFilters: {

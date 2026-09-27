@@ -12,7 +12,7 @@
 
 import { useCallback, useState } from 'react';
 import { Platform } from '../lib/platform';
-import { useCurrentProfile } from './useCurrentProfile';
+import { useCurrentProfile, useProfileById } from './useCurrentProfile';
 import { useSettingsStore } from '../stores/settings';
 import { log, LogLevel } from '../lib/logger';
 import type { CertInfo } from '../lib/security/ssl-trust';
@@ -35,7 +35,9 @@ export interface UseCertTrustPromptResult {
 }
 
 export function useCertTrustPrompt(): UseCertTrustPromptResult {
-  const { currentProfile, settings } = useCurrentProfile();
+  const { currentProfile } = useCurrentProfile();
+  // Certificate trust is server-scoped: read the profile being trusted (refs #536).
+  const { settings } = useProfileById(currentProfile?.id);
   const updateProfileSettings = useSettingsStore((state) => state.updateProfileSettings);
 
   const [open, setOpen] = useState(false);

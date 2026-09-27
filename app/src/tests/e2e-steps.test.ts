@@ -220,7 +220,7 @@ describe('e2e step definitions', () => {
     'hidden-monitors.steps.ts': 1,
     'kiosk.steps.ts': 5,
     'profiles.steps.ts': 2,
-    'settings.steps.ts': 6,
+    'settings.steps.ts': 4,
     'timeline.steps.ts': 2,
   };
 

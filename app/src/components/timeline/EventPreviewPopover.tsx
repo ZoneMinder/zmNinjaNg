@@ -19,7 +19,7 @@ import { getPortalUrlForEvent } from '../../lib/zm/server-resolver';
 import { resolveFallbackFids } from '../../lib/event/thumbnail-chain';
 import { resolveMinStreamingPort } from '../../lib/monitor/multiport';
 import { parseDetectedObjects } from '../../lib/event/event-detection';
-import { useProfileById } from '../../hooks/useCurrentProfile';
+import { useCurrentProfile, useProfileById } from '../../hooks/useCurrentProfile';
 import { useDateTimeFormat } from '../../hooks/useDateTimeFormat';
 import { useFreshAccessToken } from '../../hooks/useFreshAccessToken';
 import { asProfileId, type MonitorsResponse } from '../../api/types';
@@ -68,6 +68,9 @@ export const EventPreviewPopover = memo(function EventPreviewPopover({
   // hooks fall back to the current profile, matching prior behavior exactly.
   const ownerProfileId = event.profileId ? asProfileId(event.profileId) : undefined;
   const { profile: ownerProfile, settings } = useProfileById(ownerProfileId);
+  // Previews are selection-scoped: they follow the current selection, not
+  // the owning server (refs #536).
+  const { settings: selectionSettings } = useCurrentProfile();
   const { fmtDate, fmtTime } = useDateTimeFormat();
   const { token: accessToken, isFresh: isAccessTokenFresh } = useFreshAccessToken(ownerProfileId);
   const queryClient = useQueryClient();
@@ -169,7 +172,7 @@ export const EventPreviewPopover = memo(function EventPreviewPopover({
               <VideoOff className="h-8 w-8 text-muted-foreground/40" />
             </div>
           ) : resolvedSrc ? (
-            settings.hoverPreview.timeline ? (
+            selectionSettings.hoverPreview.timeline ? (
               <HoverPreview
                 aspectRatio={16 / 9}
                 testId="event-thumbnail-hover-preview"

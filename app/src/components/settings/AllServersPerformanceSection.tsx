@@ -21,15 +21,19 @@
  * two-state control is already its own way back.
  */
 
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { RotateCcw } from 'lucide-react';
+import { ChevronDown, RotateCcw } from 'lucide-react';
 import { Button } from '../ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Switch } from '../ui/switch';
-import { CollapsibleSection, SettingsCard, SettingsRow, RowLabel } from './SettingsLayout';
+import { SettingsRow, RowLabel } from './SettingsLayout';
+import { useSettingsSearching } from './settings-search';
+import { cn } from '../../lib/utils';
 import { useClampedNumberField } from '../../hooks/useClampedNumberField';
-import { ALL_MODE_PERFORMANCE } from '../../lib/zmninja-ng-constants';
+import { ALL_MODE_PERFORMANCE, STORAGE_KEYS } from '../../lib/zmninja-ng-constants';
 import { DEFAULT_SETTINGS } from '../../stores/settings';
 import type { AllModeStreamTuning, ProfileSettings } from '../../stores/settings';
 
@@ -144,13 +148,36 @@ export function AllServersPerformanceSection({
   name,
 }: AllServersPerformanceSectionProps) {
   const { t } = useTranslation();
+  // Same key the section header used, so a remembered fold survives.
+  const storageKey = `${STORAGE_KEYS.settingsSectionOpenPrefix}all-servers-performance`;
+  const [open, setOpen] = useState(() => {
+    try {
+      return localStorage.getItem(storageKey) !== 'false';
+    } catch { return true; }
+  });
+  const searching = useSettingsSearching();
+  const shown = open || searching;
+
+  const handleOpenChange = (next: boolean) => {
+    setOpen(next);
+    try { localStorage.setItem(storageKey, String(next)); } catch { /* ignore */ }
+  };
 
   return (
-    <CollapsibleSection
-      id="all-servers-performance"
-      label={t('settings.all_mode_perf.title', { name })}
-    >
-      <SettingsCard>
+    <Collapsible open={shown} onOpenChange={handleOpenChange}>
+      <CollapsibleTrigger
+        className="flex w-full items-center justify-between px-4 py-3 text-left"
+        data-testid="settings-all-servers-performance-trigger"
+      >
+        <RowLabel label={t('settings.all_mode_perf.title', { name })} />
+        <ChevronDown
+          className={cn(
+            'h-4 w-4 text-muted-foreground transition-transform duration-200 shrink-0 ml-2',
+            shown && 'rotate-180'
+          )}
+        />
+      </CollapsibleTrigger>
+      <CollapsibleContent className="divide-y border-t">
         <NumberRow
           id="all-mode-max-streams"
           label={t('settings.all_mode_perf.max_streams_label')}
@@ -269,7 +296,7 @@ export function AllServersPerformanceSection({
           max={ALL_MODE_PERFORMANCE.maxIdleMinutes}
           onCommit={(next) => update('allModeIdleMinutes', next)}
         />
-      </SettingsCard>
-    </CollapsibleSection>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }

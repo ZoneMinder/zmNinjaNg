@@ -16,14 +16,16 @@
 import { useTranslation } from 'react-i18next';
 import { useAssistantEnabled } from '../../hooks/useAssistantEnabled';
 import { useAssistantPanelStore } from '../../stores/assistantPanel';
-import { useCurrentProfile } from '../../hooks/useCurrentProfile';
+import { useProfileById } from '../../hooks/useCurrentProfile';
 import { NINJII_LOGO_URL } from '../../lib/assistant/ninjii-logo';
 import { Button } from '../ui/button';
 
 export function NinjiiToolbarButton() {
   const { t } = useTranslation();
-  const { enabled } = useAssistantEnabled();
-  const { settings } = useCurrentProfile();
+  // The toolbar flag is server-scoped, like every assistant key: read it from
+  // the profile that carries the assistant configuration (refs #536).
+  const { enabled, profileId } = useAssistantEnabled();
+  const { settings } = useProfileById(profileId);
   const open = useAssistantPanelStore((s) => s.open);
 
   if (!enabled || !settings.assistantInToolbar) return null;

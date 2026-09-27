@@ -24,7 +24,7 @@ Feature: Delete developer notices
   @web
   Scenario: Turning off Show Developer Notices hides the sidebar entry
     When I navigate to the "Settings" page
-    And I expand the Advanced settings section
+    And I expand the "general" settings section
     And I turn off developer notices in settings
     Then the developer notices sidebar entry should be hidden
     When I turn on developer notices in settings

@@ -37,7 +37,6 @@ import { groupByOwningProfile } from '../../lib/profile/profile-sections';
 import { ProfileSectionList } from '../profiles/ProfileSectionList';
 import { ZM_INTEGRATION, RELATIVE_TIME_LIST_WINDOW_DAYS } from '../../lib/zmninja-ng-constants';
 import type { Event, Monitor, ProfileId, Tag } from '../../api/types';
-import type { ThumbnailFallbackEntry } from '../../stores/settings';
 import { TagChipList } from './TagChip';
 import { ReturnFlashArrow } from './ReturnFlashArrow';
 import { useReturnFlash } from '../../hooks/useReturnFlash';
@@ -57,7 +56,6 @@ interface EventMontageTileProps {
   monitorMap: Map<string, Monitor>;
   /** Off hides the text drawn over the image (refs #525). */
   showThumbnailLabels: boolean;
-  thumbnailChain: ThumbnailFallbackEntry[];
   showHover: boolean;
   portalUrl: string;
   accessToken?: string;
@@ -76,7 +74,6 @@ const EventMontageTile = memo(function EventMontageTile({
   profileChip,
   monitorMap,
   showThumbnailLabels,
-  thumbnailChain,
   showHover,
   portalUrl,
   accessToken,
@@ -131,7 +128,7 @@ const EventMontageTile = memo(function EventMontageTile({
   );
 
   const eventPortalUrl = getPortalUrlForMonitor(monitorData?.ServerId, effectivePortalUrl, profileId);
-  const thumbnailUrls = buildThumbnailChain(eventPortalUrl, event.Id, thumbnailChain, {
+  const thumbnailUrls = buildThumbnailChain(eventPortalUrl, event.Id, ownerSettings.thumbnailFallbackChain, {
     token: effectiveAccessToken,
     width: thumbnailWidth,
     height: thumbnailHeight,
@@ -317,7 +314,6 @@ export const EventMontageView = ({
 }: EventMontageViewProps) => {
   const { t } = useTranslation();
   const { settings } = useCurrentProfile();
-  const thumbnailChain = settings.thumbnailFallbackChain;
   const showHover = settings.hoverPreview.eventsGrid;
 
   // id -> Monitor lookup, rebuilt only when the monitors array reference
@@ -341,7 +337,6 @@ export const EventMontageView = ({
       profileChip={eventData.profileChip}
       monitorMap={monitorMap}
       showThumbnailLabels={showThumbnailLabels}
-      thumbnailChain={thumbnailChain}
       showHover={showHover}
       portalUrl={portalUrl}
       accessToken={accessToken}

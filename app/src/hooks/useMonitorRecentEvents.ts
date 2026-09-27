@@ -8,7 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getEvents } from '../api/events';
 import { getSession, getCurrentSession } from '../services/sessions';
 import type { EventData, ProfileId } from '../api/types';
-import { useProfileById } from './useCurrentProfile';
+import { useCurrentProfile, useProfileById } from './useCurrentProfile';
 import { useAuthSlice } from '../stores/auth';
 import { useSettingsStore } from '../stores/settings';
 import { useBandwidthSettings } from './useBandwidthSettings';
@@ -33,12 +33,14 @@ export interface UseMonitorRecentEvents {
 /** @param profileId - Owning profile for an /all/ deep route; defaults to the current profile. */
 export function useMonitorRecentEvents(monitorId: string, profileId?: ProfileId): UseMonitorRecentEvents {
   const { profile: ownerProfile, settings } = useProfileById(profileId);
+  // How many to show is selection-scoped (refs #536).
+  const { settings: selectionSettings } = useCurrentProfile();
   const effectiveProfileId = ownerProfile?.id;
   const isAuthenticated = useAuthSlice(effectiveProfileId ?? null).isAuthenticated;
   const updateProfileSettings = useSettingsStore((s) => s.updateProfileSettings);
   const bandwidth = useBandwidthSettings();
 
-  const count = clampRecentEventsCount(settings.monitorDetailRecentEventsCount);
+  const count = clampRecentEventsCount(selectionSettings.monitorDetailRecentEventsCount);
   const hiddenList = settings.monitorDetailRecentEventsHidden;
   const hidden = isMonitorRecentEventsHidden(hiddenList, monitorId);
 

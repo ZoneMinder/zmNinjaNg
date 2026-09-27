@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { nearestFirst, buildReplaySchedule, buildTogetherSchedule } from '../event-context-view';
+import { balancedAroundAnchor, buildReplaySchedule, buildTogetherSchedule } from '../event-context-view';
 import type { EventAroundRow } from '../../../hooks/useEventsAround';
 import type { Event } from '../../../api/types';
 
@@ -9,22 +9,48 @@ function row(id: string, offsetMs: number, lengthSeconds = 10): EventAroundRow {
   return { event: { Id: id, Length: String(lengthSeconds) } as Event, offsetMs, isAnchor: offsetMs === 0 };
 }
 
-describe('nearestFirst', () => {
-  it('keeps the events closest to the anchor, not the ones from the window edge', () => {
-    // ±60m window, cap of 4: three events a minute after the anchor beat the
-    // two near the -60m edge even though those come first in time.
-    const rows = [row('a', -58 * MIN), row('b', -30 * MIN), row('anchor', 0), row('c', MIN), row('d', MIN + 5_000), row('e', MIN + 9_000)];
-    expect(nearestFirst(rows, 4).map((r) => r.event.Id)).toEqual(['anchor', 'c', 'd', 'e']);
+describe('balancedAroundAnchor', () => {
+  it('splits the cap evenly before and after, even when one side is closer in time', () => {
+    // Six events within seconds before the anchor, two far after it. A pick by
+    // time distance would take only the before side.
+    const before = [1, 2, 3, 4, 5, 6].map((s) => row(`b${s}`, -s * 1000));
+    const rows = [...before, row('anchor', 0), row('a1', 30 * MIN), row('a2', 40 * MIN)];
+    expect(balancedAroundAnchor(rows, 5).map((r) => r.event.Id)).toEqual(['b2', 'b1', 'anchor', 'a1', 'a2']);
   });
 
-  it('returns what it keeps in time order', () => {
-    const rows = [row('late', 2 * MIN), row('anchor', 0), row('early', -MIN), row('far', -50 * MIN)];
-    expect(nearestFirst(rows, 3).map((r) => r.event.Id)).toEqual(['early', 'anchor', 'late']);
+  it('fills from the other side when one side runs out', () => {
+    const after = [1, 2, 3, 4, 5].map((m) => row(`a${m}`, m * MIN));
+    const rows = [row('b1', -MIN), row('anchor', 0), ...after];
+    expect(balancedAroundAnchor(rows, 5).map((r) => r.event.Id)).toEqual(['b1', 'anchor', 'a1', 'a2', 'a3']);
+  });
+
+  it('takes the nearest events on each side, in time order', () => {
+    const rows = [row('late', 2 * MIN), row('anchor', 0), row('early', -MIN), row('far', -50 * MIN), row('later', 9 * MIN)];
+    expect(balancedAroundAnchor(rows, 3).map((r) => r.event.Id)).toEqual(['early', 'anchor', 'late']);
   });
 
   it('returns every row when there are fewer than the cap', () => {
     const rows = [row('anchor', 0), row('x', MIN)];
-    expect(nearestFirst(rows, 12)).toHaveLength(2);
+    expect(balancedAroundAnchor(rows, 12)).toHaveLength(2);
+  });
+
+  // The maintainer's examples: a 5 minute window, 12 tiles, one of them the anchor.
+  const sides = (before: number, after: number) => [
+    ...Array.from({ length: before }, (_, i) => row(`b${i + 1}`, -(i + 1) * 5_000)),
+    row('anchor', 0),
+    ...Array.from({ length: after }, (_, i) => row(`a${i + 1}`, (i + 1) * 5_000)),
+  ];
+  const count = (kept: EventAroundRow[]) => ({
+    before: kept.filter((r) => r.offsetMs < 0).length,
+    after: kept.filter((r) => r.offsetMs > 0).length,
+  });
+
+  it('keeps 6 before and 5 after around the anchor when both sides have 20', () => {
+    expect(count(balancedAroundAnchor(sides(20, 20), 12))).toEqual({ before: 6, after: 5 });
+  });
+
+  it('keeps 8 before and all 3 after when the after side has only 3', () => {
+    expect(count(balancedAroundAnchor(sides(40, 3), 12))).toEqual({ before: 8, after: 3 });
   });
 });
 

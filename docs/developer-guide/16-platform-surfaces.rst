@@ -132,7 +132,7 @@ Face ID). On Electron and web it returns ``false`` / ``{ success: false }``.
 Both functions catch every error and return a safe value, so callers never
 need their own try/catch.
 
-PIN set, change, and clear live in the Settings page (Advanced section), which
+PIN set, change, and clear live in the Settings page (General section), which
 renders a "Kiosk PIN" row (``settings-kiosk-change-pin``,
 ``settings-kiosk-clear-pin``). Change and Clear verify identity first, with
 biometrics if available and the current PIN otherwise; Clear then calls
@@ -177,7 +177,7 @@ Wiring in AppLayout
 
 ``useTvMode()`` (``src/hooks/useTvMode.ts``) is a thin read of
 ``settings.tvMode``, a profile-scoped setting with a manual toggle in
-Settings > Appearance (``settings-tv-mode``). ``AppLayout`` runs
+Settings > General (``settings-tv-mode``). ``AppLayout`` runs
 ``checkIsTV()`` once per profile switch, and if the device is a TV while
 ``tvMode`` is off it turns the setting on through ``updateProfileSettings``.
 

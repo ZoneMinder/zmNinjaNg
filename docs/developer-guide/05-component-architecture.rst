@@ -179,11 +179,17 @@ the two player pages, ``MonitorDetail`` (seeded by the monitor's
 ``fullscreenMonitorIds`` entry, the "Open in fullscreen" switch in
 ``MonitorAppPreferences``) and ``EventDetail`` (seeded by
 ``eventPlaybackFullscreen``, "Open events in fullscreen" in
-``PlaybackSection``). It returns ``[isFullscreen, setFullscreen]``.
+``EventsPlaybackSection``). It returns ``[isFullscreen, setFullscreen]``.
 ``isFullscreen`` is true when the setting is on, when a touch device is in
-landscape, or when the page's own maximize/exit button set a session override
-through ``setFullscreen``. The landscape term makes a rotated phone fill the
-screen while a desktop window, landscape all day, does not.
+landscape and the ``landscape`` option is true, or when the page's own
+maximize/exit button set a session override through ``setFullscreen``. The
+landscape term makes a rotated phone fill the screen while a desktop window,
+landscape all day, does not. Both pages pass ``landscapeFullscreen`` from the
+current selection's settings as ``landscape`` ("Fullscreen when turned
+sideways" in ``GeneralSection``, default true). With it off, rotation no
+longer turns fullscreen on, and the setting and the session override still
+apply. A rotation still clears the session override whatever ``landscape``
+is, so a maximize done in portrait ends when the device turns.
 ``(pointer: coarse)`` is the touch test.
 
 The orientation comes from ``screen.orientation`` where it exists, with the
@@ -1213,10 +1219,10 @@ An aggregate sends requests to every server in it. Each setting that limits
 that load is a row here: the montage stream cap, the Live Activity watch cap
 and poll floor, the notification grouping window, and four connection
 settings (stream tuning, pausing hidden streams, viewport gating, and idle
-minutes). Settings.tsx renders it only while
-``isAllMode``, above the profile picker, next to
-``AllServersStreamingSection``, because these bound the aggregate rather than
-the server picked below.
+minutes). ``LiveStreamingSection`` renders it only while
+an aggregate is selected, as a disclosure row under the aggregate's "For
+<name>" divider, in one card with ``AllServersStreamingSection``, because these bound the aggregate rather
+than the profile picked at the top of the page.
 
 Each row's value lives in the current aggregate's settings bucket and its
 default is the named constant its consumer reads, so

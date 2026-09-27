@@ -28,7 +28,7 @@ import {
   type EventContextScope,
 } from '../lib/event/event-context';
 import { eventInstant } from '../lib/event/event-instant';
-import { nearestFirst } from '../lib/event/event-context-view';
+import { balancedAroundAnchor } from '../lib/event/event-context-view';
 import { resolveProfileTimezone } from '../lib/time';
 import { useProfileById } from './useCurrentProfile';
 import { ownFilterIds } from './useScopedEvents';
@@ -203,7 +203,7 @@ export function useEventsAround(
       offsetMs: eventInstant(item, timezone) - window.anchorMs,
       isAnchor: item.Event.Id === anchor?.Event.Id,
     }));
-    return nearestFirst(events, EVENT_CONTEXT.maxResults);
+    return balancedAroundAnchor(events, EVENT_CONTEXT.maxResults);
   }, [eventsQuery.data, timezone, window.anchorMs, anchor]);
 
   const monitorNames = useMemo(
@@ -222,7 +222,7 @@ export function useEventsAround(
     isLoading: active && (monitorsQuery.isPending || groupsQuery.isPending || eventsQuery.isPending),
     error: monitorsQuery.error ?? groupsQuery.error ?? eventsQuery.error,
     // Either side having more than it returned, or the two sides together
-    // outrunning the cap nearestFirst applies, means rows were dropped.
+    // outrunning the cap balancedAroundAnchor applies, means rows were dropped.
     truncated:
       !!eventsQuery.data &&
       (eventsQuery.data.truncated || eventsQuery.data.events.length > EVENT_CONTEXT.maxResults),

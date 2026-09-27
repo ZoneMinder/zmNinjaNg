@@ -4,11 +4,11 @@
  * backdrop, Escape and focus trapping; `useIsMobile` decides which edge it
  * comes from.
  *
- * The window/scope choice lives in local state seeded from the anchor
- * profile's settings, and is written back through `updateProfileSettings` on
+ * The window/scope choice lives in local state seeded from the current
+ * selection's settings, and is written back through `updateProfileSettings` on
  * every change so the next open starts where the last one ended. That state
  * lives in `EventContextBody`, keyed by profile+anchor, so each open mounts a
- * fresh instance seeded from that profile's *current* setting rather than
+ * fresh instance seeded from the *current* setting rather than
  * whatever was on screen the first time the (always-mounted) panel rendered.
  *
  * Task 6 mounts `<EventContextList/>`, Task 7 `<EventContextRibbon/>`.
@@ -29,6 +29,8 @@ import { useReturnHighlightStore } from '../../../stores/returnHighlight';
 import { useIsMobile } from '../../../hooks/useIsMobile';
 import { useEventsAround } from '../../../hooks/useEventsAround';
 import { useSettingsStore, type EventContextSettings } from '../../../stores/settings';
+import { useProfileStore } from '../../../stores/profile';
+import { useCurrentProfile } from '../../../hooks/useCurrentProfile';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from '../../ui/sheet';
 import { Button } from '../../ui/button';
 import { EventContextControls } from './EventContextControls';
@@ -52,7 +54,10 @@ function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId:
       { pathname: location.pathname, search: location.search },
       { state: { ...historyState, eventContextSequence: {} } satisfies EventContextHistoryState }
     );
-  const settings = useSettingsStore(useShallow((s) => s.getProfileSettings(profileId ?? '')));
+  // eventContext is selection-scoped: read and saved on the current selection,
+  // not on the anchor's server (refs #536).
+  const { settings } = useCurrentProfile();
+  const currentProfileId = useProfileStore((s) => s.currentProfileId);
   const [context, setContext] = useState<EventContextSettings>(settings.eventContext);
 
   // The Events page behind the panel, if any, publishes its query for the
@@ -73,9 +78,9 @@ function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId:
       // anchor forced is about the open panel, not about their default.
       const merged = next.scope === effectiveScope ? { ...next, scope: context.scope } : next;
       setContext(merged);
-      if (profileId) useSettingsStore.getState().updateProfileSettings(profileId, { eventContext: merged });
+      if (currentProfileId) useSettingsStore.getState().updateProfileSettings(currentProfileId, { eventContext: merged });
     },
-    [profileId, context.scope, effectiveScope]
+    [currentProfileId, context.scope, effectiveScope]
   );
 
   const lanes = useMemo(

@@ -1,8 +1,11 @@
 /**
  * Settings Page
  *
- * Three-section flat settings layout: Appearance, Streaming & Playback, Advanced.
- * Each section is extracted into its own component under components/settings/.
+ * Sections by topic: General, Live Streaming, Events & Playback, Network,
+ * Ninjii and More settings, each in its own file under components/settings/.
+ * Selection-scoped rows save to the current selection through `update`;
+ * server-scoped rows sit in each section's server sub-card and save to the
+ * picked (aggregate) or current profile (stores/settings-scope.ts).
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -17,15 +20,13 @@ import { useSettingsStore } from '../stores/settings';
 import { useCurrentProfile, useProfileById } from '../hooks/useCurrentProfile';
 import { useProfileScope } from '../hooks/useProfileScope';
 import { type ProfileId } from '../api/types';
-import { AppearanceSection } from '../components/settings/AppearanceSection';
-import { AllServersStreamingSection } from '../components/settings/AllServersStreamingSection';
-import { AllServersPerformanceSection } from '../components/settings/AllServersPerformanceSection';
+import { GeneralSection } from '../components/settings/GeneralSection';
 import { LiveStreamingSection } from '../components/settings/LiveStreamingSection';
-import { PlaybackSection } from '../components/settings/PlaybackSection';
+import { EventsPlaybackSection } from '../components/settings/EventsPlaybackSection';
+import { NetworkSection } from '../components/settings/NetworkSection';
 import { AssistantSection } from '../components/settings/AssistantSection';
-import { AdvancedSection } from '../components/settings/AdvancedSection';
-import { HiddenMonitorsSection } from '../components/settings/HiddenMonitorsSection';
-import { SettingsSearchContext, useSettingsFilter } from '../components/settings/settings-search';
+import { MoreSettingsSection } from '../components/settings/MoreSettingsSection';
+import { SettingsAggregateContext, SettingsSearchContext, useSettingsFilter } from '../components/settings/settings-search';
 import type { ProfileSettings } from '../stores/settings';
 
 export default function Settings() {
@@ -33,8 +34,7 @@ export default function Settings() {
   const { currentProfile, settings, isAllMode } = useCurrentProfile();
   const updateSettings = useSettingsStore((state) => state.updateProfileSettings);
 
-  // Server-scoped sections (connection/exclusions/streaming/playback/
-  // assistant/advanced) need a real picked profile while aggregating - an
+  // Server sub-cards need a real picked profile while aggregating - an
   // aggregate bucket makes no sense for per-server data. Picker defaults to
   // the first profile in scope (refs #337).
   const scope = useProfileScope();
@@ -44,8 +44,8 @@ export default function Settings() {
   const aggregateName =
     (scope?.mode === 'all' ? scope.aggregateName : null) ?? t('profiles.all_servers');
 
-  // View-level update helper: AppearanceSection and the aggregate sections.
-  // Targets the active aggregate's own bucket while aggregating so
+  // View-level update helper: every selection-scoped row and the aggregate
+  // sub-card. Targets the active aggregate's own bucket while aggregating so
   // language/date-format/etc. stay editable there, and the current profile's
   // bucket otherwise (unchanged single-mode behavior). Every aggregate keeps
   // its own bucket, so a group's knobs never write All Servers'.
@@ -142,48 +142,49 @@ export default function Settings() {
       )}
 
       <SettingsSearchContext.Provider value={query.trim()}>
+      <SettingsAggregateContext.Provider value={isAllMode}>
         <div ref={sectionsRef} className="space-y-6" data-testid="settings-sections">
-          <AppearanceSection settings={settings} update={update} />
-
           {isAllMode && (
-            <>
-              {/* Governs every tile from every server in the aggregate; above the
-                  picker so it does not read as another row belonging to the picked
-                  profile. */}
-              <AllServersStreamingSection
-                value={settings.allModeViewMode}
-                onChange={(value) => update('allModeViewMode', value)}
-                name={aggregateName}
+            // Kept while searching: it picks whose settings every server
+            // sub-card shows.
+            <div data-settings-search-keep>
+              <ProfilePicker
+                profiles={scope?.profiles ?? []}
+                value={defaultPickedId}
+                onChange={setPickedProfileId}
               />
-              {/* Same reasoning, same placement: every knob in here bounds the
-                  aggregate as a whole, so it belongs above the picker too. */}
-              <AllServersPerformanceSection settings={settings} update={update} name={aggregateName} />
-              {/* Kept while searching: it picks whose settings the rows below are. */}
-              <div data-settings-search-keep>
-                <ProfilePicker
-                  profiles={scope?.profiles ?? []}
-                  value={defaultPickedId}
-                  onChange={setPickedProfileId}
-                />
-              </div>
-            </>
+            </div>
           )}
 
+          <GeneralSection
+            settings={settings}
+            update={update}
+            serverProfile={serverScopedProfile}
+            serverSettings={serverScopedSettings}
+            updateSettings={updateSettings}
+          />
           <LiveStreamingSection
-            settings={serverScopedSettings}
-            update={updateServerScoped}
-            currentProfile={serverScopedProfile}
+            settings={settings}
+            update={update}
+            serverProfile={serverScopedProfile}
+            serverSettings={serverScopedSettings}
+            updateServer={updateServerScoped}
             updateSettings={updateSettings}
+            aggregateName={isAllMode ? aggregateName : null}
           />
-          <PlaybackSection
-            settings={serverScopedSettings}
-            update={updateServerScoped}
-            currentProfile={serverScopedProfile}
-            updateSettings={updateSettings}
+          <EventsPlaybackSection
+            settings={settings}
+            update={update}
+            serverProfile={serverScopedProfile}
+            serverSettings={serverScopedSettings}
+            updateServer={updateServerScoped}
           />
-          <HiddenMonitorsSection
-            settings={serverScopedSettings}
-            currentProfile={serverScopedProfile}
+          <NetworkSection
+            settings={settings}
+            update={update}
+            isAllMode={isAllMode}
+            serverProfile={serverScopedProfile}
+            serverSettings={serverScopedSettings}
             updateSettings={updateSettings}
           />
           <AssistantSection
@@ -192,12 +193,9 @@ export default function Settings() {
             currentProfile={serverScopedProfile}
             updateSettings={updateSettings}
           />
-          <AdvancedSection
-            settings={serverScopedSettings}
-            currentProfile={serverScopedProfile}
-            updateSettings={updateSettings}
-          />
+          <MoreSettingsSection />
         </div>
+      </SettingsAggregateContext.Provider>
       </SettingsSearchContext.Provider>
     </PageContainer>
   );

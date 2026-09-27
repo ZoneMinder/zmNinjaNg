@@ -4,7 +4,7 @@ Live Activity shows only the cameras that ZoneMinder currently reports as alarmi
 
 Tapping a tile's video opens that camera's monitor page, the same as tapping one in Montage; on a computer the tile outlines itself as you hover to show it will. The X in the corner dismisses a tile instead, and the buttons in its header still do their own jobs.
 
-On a computer, hovering a tile can also open an enlarged live preview, the same one the monitor and event lists offer. It is off here by default, since a tile is already streaming that camera at size and the preview opens a second connection for a bigger copy; turn it on under Settings ▸ Appearance ▸ Hover preview ▸ **Live Activity tiles**.
+On a computer, hovering a tile can also open an enlarged live preview, the same one the monitor and event lists offer. It is off here by default, since a tile is already streaming that camera at size and the preview opens a second connection for a bigger copy; turn it on under Settings ▸ General ▸ Previews ▸ **Live Activity tiles**.
 
 ## Why a monitor lingers after its alarm clears
 
@@ -51,7 +51,7 @@ A push notification for a monitor promotes it onto the page immediately, rather 
 
 ## In a virtual profile group
 
-While aggregating in a {doc}`profiles` group, the page watches every member's monitors at once, each tile carrying a chip naming its server. The total watched across the group is capped, drawn round-robin from each member so one busy server can't crowd the rest out; hitting the cap adds an overflow line reporting how many monitors aren't being watched, on top of the usual "+N more active" overflow for tiles that are alarming but don't fit the grid. That cap is **Monitors watched for alarms** under **Aggregate performance** in {doc}`settings`, alongside **Fastest alarm polling**, which stops the combined poll running faster than a set interval however low you set the check interval here. Check interval, dwell window, and maximum tiles stay one shared group-wide setting. **Monitors to watch** is still per server: the gear icon's ignore-list section gets its own profile picker while aggregating, so turning a monitor off here only affects that one server's list.
+While aggregating in a {doc}`profiles` group, the page watches every member's monitors at once, each tile carrying a chip naming its server. The total watched across the group is capped, drawn round-robin from each member so one busy server can't crowd the rest out; hitting the cap adds an overflow line reporting how many monitors aren't being watched, on top of the usual "+N more active" overflow for tiles that are alarming but don't fit the grid. That cap is **Monitors watched for alarms** in the group's performance section (for example **All Servers performance**) under Live Streaming in [Settings](settings.md#group-performance), alongside **Fastest alarm polling**, which stops the combined poll running faster than a set interval however low you set the check interval here. Check interval, dwell window, and maximum tiles stay one shared group-wide setting. **Monitors to watch** is still per server: the gear icon's ignore-list section gets its own profile picker while aggregating, so turning a monitor off here only affects that one server's list.
 
 The stacking button in the header (the layers icon) sections the tiles by server, each server under its own heading that folds away. It shares its on/off state with the same button on Monitors and Montage.
 

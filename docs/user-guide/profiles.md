@@ -95,7 +95,7 @@ Passwords are never stored in plaintext.
 **"Connection failed"**
 - Verify the Portal URL is correct and accessible from your device
 - Check that ZoneMinder API is enabled (`OPT_USE_API = 1` in ZoneMinder options)
-- If using a self-signed certificate, enable **Allow self-signed certificates** in Settings > Advanced (or toggle it when adding the profile)
+- If using a self-signed certificate, enable **Allow self-signed certificates** in Settings > Network (or toggle it when adding the profile)
 - On Android, if only the LAN address fails while a remote URL works, the device may be withholding local network permission, see {doc}`faq`
 
 **"Authentication failed"**

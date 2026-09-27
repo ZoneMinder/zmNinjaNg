@@ -442,6 +442,36 @@ Adding a per-getter fix somewhere else is the recurring violation of the
 Settings contract (``AGENTS.project.md``), because reactive readers such as
 ``useCurrentProfile`` bypass it.
 
+Each settings object in the store is a bucket keyed by a profile id or an
+aggregate id, and a setting belongs to one of two scopes that decide which
+bucket its writer and readers use.
+`stores/settings-scope.ts <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/stores/settings-scope.ts>`__
+lists every key the Settings page edits in one of two arrays:
+
+- ``SELECTION_SCOPED_SETTINGS`` describe how the user uses the app (theme,
+  start screen, fullscreen defaults, ``bandwidthMode``, the log settings).
+  They are written to and read from the current selection's bucket:
+  ``useCurrentProfile().settings`` in a component, or
+  ``getProfileSettings(currentProfileId)`` outside React. With an aggregate
+  selected that is the aggregate's own bucket, so changing one never touches
+  a member profile.
+- ``SERVER_SCOPED_SETTINGS`` describe how one server sends video and data
+  (``viewMode``, stream FPS and scale, ``thumbnailFallbackChain``, TLS,
+  timeouts, the ``assistant*`` keys). They are read from the bucket of the
+  profile that owns the monitor or event: ``useProfileById(ownerProfileId)``,
+  or ``getProfileSettings(ownerProfileId)``.
+
+With one profile selected both paths resolve to the same bucket. With an
+aggregate selected they differ: a montage tile owned by profile B reads B's
+stream settings but the aggregate's ``hoverPreview``.
+`tests/agents-contracts.test.ts <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/tests/agents-contracts.test.ts>`__
+reads
+``SERVER_SCOPED_SETTINGS`` and fails when a file other than the Settings page
+and ``components/settings/`` reads one of those keys off
+``useCurrentProfile()``.
+The aggregate-only keys (``allModeViewMode`` and the ``allMode*``
+performance limits) are in neither list and live in the aggregate's bucket.
+
 **Auth** (``stores/auth.ts``) owns access and refresh tokens, under the Auth
 tokens contract (``AGENTS.project.md``). For concurrency, a module-level
 ``pendingLogin`` promise means several callers racing a fresh-start login (profile bootstrap and the

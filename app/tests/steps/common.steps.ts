@@ -124,7 +124,7 @@ Then('I should see the page heading {string}', async ({ page }, heading: string)
 
 // Generic assertions used across multiple features
 Then('I should be on the {string} page', async ({ page }, pageName: string) => {
-  const pageRoutes: Record<string, string> = { 'Events': 'events', 'Live Activity': 'live-activity' };
+  const pageRoutes: Record<string, string> = { 'Events': 'events', 'Live Activity': 'live-activity', 'Logs': 'logs' };
   const route = pageRoutes[pageName];
   if (!route) {
     throw new Error(`E2E: no route mapped for page "${pageName}"`);

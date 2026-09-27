@@ -1,12 +1,38 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { createContext, useContext } from 'react';
+import type { ReactNode } from 'react';
 import Logs from '../Logs';
-import { seedProfiles, resetProfileFixture } from '../../tests/profile-fixture';
+import { seedProfiles, resetProfileFixture, asProfileId } from '../../tests/profile-fixture';
 import { resetFakeStoreGates } from '../../tests/fake-store-gates';
+import { useSettingsStore } from '../../stores/settings';
 
 vi.mock('../../api/store-gates', () => import('../../tests/fake-store-gates'));
 vi.mock('../../lib/security/secureStorage', () => import('../../tests/fake-secure-storage'));
+
+// Real Radix Select needs pointer capture jsdom doesn't implement; mock it to
+// plain buttons like Logs.allmode.test.tsx and Settings.test.tsx do, so the
+// level picker is directly clickable.
+const SelectContext = createContext<{ onValueChange?: (value: string) => void }>({});
+vi.mock('../../components/ui/select', () => ({
+  Select: ({ children, onValueChange }: { children: ReactNode; onValueChange?: (value: string) => void }) => (
+    <SelectContext.Provider value={{ onValueChange }}>{children}</SelectContext.Provider>
+  ),
+  SelectTrigger: ({ children, ...props }: { children: ReactNode }) => (
+    <button type="button" {...props}>{children}</button>
+  ),
+  SelectValue: ({ placeholder }: { placeholder: string }) => <span>{placeholder}</span>,
+  SelectContent: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  SelectItem: ({ children, value, ...props }: { children: ReactNode; value: string }) => {
+    const ctx = useContext(SelectContext);
+    return (
+      <button type="button" {...props} onClick={() => ctx.onValueChange?.(value)}>
+        {children}
+      </button>
+    );
+  },
+}));
 
 const clearLogs = vi.fn();
 const logs = [
@@ -54,6 +80,7 @@ vi.mock('../../lib/logger', () => ({
     INFO: 2,
     WARN: 3,
     ERROR: 4,
+    NONE: 5,
   },
 }));
 
@@ -165,5 +192,28 @@ describe('Logs Page', () => {
     const entry = await screen.findByText(/Starting capture/);
     expect(entry.textContent).not.toContain('S3cret');
     expect(entry.textContent).toContain('cam.lan');
+  });
+
+  it('saves the log level, a component override and log redaction to the current profile, and the level control clears overrides (refs #536)', async () => {
+    const user = userEvent.setup();
+    render(<Logs />);
+
+    // The level picker is the page's one global-level control: set an
+    // override first, then prove changing the level wipes it.
+    fireEvent.click(screen.getByTestId('component-log-levels-toggle'));
+    fireEvent.change(screen.getByTestId('component-log-level-Auth'), { target: { value: '1' } });
+    expect(useSettingsStore.getState().getProfileSettings(asProfileId('profile-1')).componentLogLevels.Auth).toBe(1);
+
+    fireEvent.click(screen.getByTestId('log-level-option-ERROR'));
+    let stored = useSettingsStore.getState().getProfileSettings(asProfileId('profile-1'));
+    expect(stored.logLevel).toBe(4);
+    expect(stored.componentLogLevels).toEqual({});
+
+    fireEvent.change(screen.getByTestId('component-log-level-Auth'), { target: { value: '1' } });
+    await user.click(screen.getByTestId('settings-log-redaction-switch'));
+
+    stored = useSettingsStore.getState().getProfileSettings(asProfileId('profile-1'));
+    expect(stored.componentLogLevels.Auth).toBe(1);
+    expect(stored.disableLogRedaction).toBe(true);
   });
 });

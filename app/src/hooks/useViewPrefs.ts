@@ -26,8 +26,9 @@
  * can stay in. Analysis frames stay two-state: off is a coherent default.
  *
  * Only preferences that describe the view belong here. Connection-level
- * settings (timeouts, multi-port, bandwidth) stay with the owning profile,
- * since they describe that server rather than what the user is looking at.
+ * settings (timeouts, multi-port) stay with the owning profile, since they
+ * describe that server rather than what the user is looking at. Bandwidth
+ * mode follows the current selection (stores/settings-scope.ts).
  */
 
 import { useProfileById } from './useCurrentProfile';

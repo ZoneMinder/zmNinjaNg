@@ -1192,10 +1192,12 @@ changes their cadence together.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/hooks/useMonitors.ts>`__
    · → :doc:`07-api-and-data-fetching`
 
-#. **The seeded path.** Toggling low mode in ``LiveStreamingSection`` copies the
-   preset's stream knobs (scale, fps, snapshot refresh) into the profile settings,
-   which is why ``useMonitorStream`` reads them as ``settings.*``.
-   `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/settings/LiveStreamingSection.tsx>`__
+#. **The seeded path.** Toggling low mode in ``NetworkSection`` with one profile
+   selected copies the preset's stream knobs (scale, fps, snapshot refresh) into
+   that profile's settings, which is why ``useMonitorStream`` reads them as
+   ``settings.*``. With an aggregate selected, ``bandwidthMode`` is written to the
+   aggregate's bucket and no member profile's stream knobs change.
+   `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/settings/NetworkSection.tsx>`__
    · → :doc:`03-state-management-zustand`
 
 #. **The non-React consumers.** Outside React, the notification keepalive and the
@@ -1315,9 +1317,9 @@ idle timeout and no auto-lock on backgrounding.
        Pin->>Store: verifyPin, count failed attempts
        Store-->>Overlay: unlock (or 30s cooldown after 5 misses)
 
-#. **Set the PIN.** ``AdvancedSection`` hosts setting, changing, and clearing the
+#. **Set the PIN.** ``KioskPinRow`` hosts setting, changing, and clearing the
    global kiosk PIN, each gated behind biometric-then-PIN re-verification.
-   `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/settings/AdvancedSection.tsx>`__
+   `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/settings/KioskPinRow.tsx>`__
    · → :doc:`04-pages-and-views`
 
 #. **The PIN secret.** ``kioskPin.ts`` stores a salted SHA-256 of the PIN in secure
@@ -3394,9 +3396,11 @@ third should ask for.
 #. **Rows carry their own offset from the anchor, and the anchor is one of them.**
    The merged result is mapped to ``{ event, offsetMs, isAnchor }`` with
    ``eventInstant(item, timezone) - window.anchorMs``, then passed through
-   ``nearestFirst``, which keeps the ``maxResults`` rows with the smallest
-   absolute offset and returns them in time order. The anchor's offset is zero,
-   so it is always kept and appears in its rightful place in the list.
+   ``balancedAroundAnchor``, which keeps up to ``maxResults`` rows and returns
+   them in time order. It keeps the rows at offset zero first, then takes the
+   nearest row before and the nearest after in turn, so both sides get an
+   equal share. When one side runs out, the other fills the rest. The anchor's
+   offset is zero, so it is always kept.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/hooks/useEventsAround.ts>`__
    · → :doc:`07-api-and-data-fetching`
 
@@ -3412,10 +3416,10 @@ third should ask for.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/events/context/EventContextRibbon.tsx>`__
    · → :doc:`05-component-architecture`
 
-#. **Replay plays the nearest rows on one clock.** The Replay button,
+#. **Replay plays the rows around the anchor on one clock.** The Replay button,
    enabled from two rows up, opens ``EventContextSequence`` in a dialog. Its
    code and locale keys still use the working name "sequence". It takes
-   ``nearestFirst(rows, EVENT_CONTEXT.sequenceMaxTiles)`` and hands them to
+   ``balancedAroundAnchor(rows, EVENT_CONTEXT.sequenceMaxTiles)`` and hands them to
    ``buildReplaySchedule``, which gives each tile a start and
    stop time: events keep their real spacing, stretches with no event running
    are cut, and times are divided by ``hoverPreviewPlaybackRate``.

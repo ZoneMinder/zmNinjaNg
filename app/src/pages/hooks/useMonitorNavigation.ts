@@ -11,7 +11,6 @@ import { getMonitors } from '../../api/monitors';
 import { getSession, getCurrentSession } from '../../services/sessions';
 import { filterEnabledMonitors } from '../../lib/monitor/filters';
 import { isCaptureEnabled } from '../../hooks/useSkipOfflineMonitors';
-import { useSettingsStore } from '../../stores/settings';
 import { useCurrentProfile } from '../../hooks/useCurrentProfile';
 import { useGroupFilter } from '../../hooks/useGroupFilter';
 import { useSwipeNavigation } from '../../hooks/useSwipeNavigation';
@@ -79,7 +78,7 @@ export function useMonitorNavigation({
   const location = useLocation();
   const [isSliding, setIsSliding] = useState(false);
   const [wrapNotice, setWrapNotice] = useState(false);
-  const { currentProfile } = useCurrentProfile();
+  const { currentProfile, settings } = useCurrentProfile();
   const effectiveProfileId = profileId ?? currentProfile?.id;
   const monitorPath = (id: string) => (profileId ? `/all/monitors/${profileId}/${id}` : `/monitors/${id}`);
 
@@ -97,9 +96,8 @@ export function useMonitorNavigation({
   // current-profile-scoped, so an /all/ deep route skips it, as those pages do.
   const { isFilterActive, filteredMonitorIds } = useGroupFilter();
   const groupIds = !profileId && isFilterActive ? filteredMonitorIds : null;
-  const skipOffline = useSettingsStore((state) =>
-    effectiveProfileId ? state.getProfileSettings(effectiveProfileId).skipOfflineMonitors : false,
-  );
+  // Selection-scoped: the current selection decides, not the monitor's server (refs #536).
+  const skipOffline = settings.skipOfflineMonitors;
 
   // Get enabled monitors list and find current monitor index
   const { enabledMonitors, currentIndex, hasPrev, hasNext } = useMemo(() => {

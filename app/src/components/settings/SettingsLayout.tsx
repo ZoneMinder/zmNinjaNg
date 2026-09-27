@@ -5,10 +5,11 @@
  */
 
 import type React from 'react';
-import { useState } from 'react';
+import { Children, createContext, isValidElement, useContext, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { STORAGE_KEYS } from '../../lib/zmninja-ng-constants';
-import { useSettingsSearching } from './settings-search';
+import { SettingsAggregateContext, useSettingsSearching } from './settings-search';
 
 /**
  * A whole settings section behind its own header. The open state is remembered
@@ -17,9 +18,8 @@ import { useSettingsSearching } from './settings-search';
  *
  * Collapsed content is unmounted rather than hidden, which is what makes
  * collapsing worth doing here: a closed Assistant section stops probing its
- * backend, and a closed Advanced section stops rendering the log-level table.
- * A search shows every section's content, so it can match collapsed ones,
- * without touching the remembered state.
+ * backend. A search shows every section's content, so it can match collapsed
+ * ones, without touching the remembered state.
  */
 export function CollapsibleSection({
   id,
@@ -68,12 +68,27 @@ export function CollapsibleSection({
   );
 }
 
+/** True for a SettingsSubCard placed in a SettingsCard, where with one
+ *  profile selected it continues the card's rows. */
+const InCardContext = createContext(false);
+
+/**
+ * A card of rows. A SettingsSubCard among its direct children continues the
+ * card with one profile selected; while aggregating the card lifts it out to
+ * sit below, behind its "For <name>" divider.
+ */
 export function SettingsCard({ children }: { children: React.ReactNode }) {
-  return (
+  const aggregating = useContext(SettingsAggregateContext);
+  const all = Children.toArray(children);
+  const isSub = (c: React.ReactNode) => isValidElement(c) && c.type === SettingsSubCard;
+  const lifted = aggregating ? all.filter(isSub) : [];
+  const rows = aggregating ? all.filter((c) => !isSub(c)) : all;
+  const card = rows.length > 0 && (
     <div className="rounded-lg border bg-card divide-y" data-settings-card>
-      {children}
+      <InCardContext.Provider value>{rows}</InCardContext.Provider>
     </div>
   );
+  return lifted.length ? <>{card}{lifted}</> : card;
 }
 
 export function SettingsRow({ children }: { children: React.ReactNode }) {
@@ -89,6 +104,54 @@ export function RowLabel({ label, desc }: { label: string; desc?: string }) {
     <div className="min-w-0 flex-1">
       <div className="text-sm font-medium">{label}</div>
       {desc && <div className="text-xs text-muted-foreground">{desc}</div>}
+    </div>
+  );
+}
+
+/**
+ * Rows that belong to one server (or, for the aggregate-only knobs, to the
+ * aggregate). With one profile selected they are plain rows: placed in a
+ * SettingsCard they continue that card, and on their own they get a card.
+ * While aggregating, a quiet "For <name>" divider marks where they start,
+ * with the rows in their own card below it; the divider is a section label to
+ * search, so it stays above any of its rows that match, and searching the
+ * name shows every row under it.
+ */
+export function SettingsSubCard({
+  name,
+  testId,
+  children,
+}: {
+  name: string;
+  testId: 'settings-server-subcard' | 'settings-aggregate-subcard';
+  children: React.ReactNode;
+}) {
+  const { t } = useTranslation();
+  const aggregating = useContext(SettingsAggregateContext);
+  const inCard = useContext(InCardContext);
+  if (!aggregating) {
+    // In a card this is one of its rows (so the card's divider runs above
+    // it) holding the server rows; search treats it as a card of its own.
+    return inCard ? (
+      <div className="divide-y" data-settings-rows data-testid={testId}>{children}</div>
+    ) : (
+      <div data-testid={testId}><SettingsCard>{children}</SettingsCard></div>
+    );
+  }
+  const label = t('settings.server_rows_for', { name });
+  return (
+    <div className="space-y-3" data-settings-section data-testid={testId}>
+      <div className="flex min-w-0 items-center gap-2 px-1" title={label}>
+        <span
+          className="min-w-0 truncate text-xs text-muted-foreground"
+          data-settings-section-label
+          data-testid="settings-subcard-name"
+        >
+          {label}
+        </span>
+        <div className="h-px min-w-4 flex-1 bg-border" aria-hidden="true" />
+      </div>
+      <SettingsCard>{children}</SettingsCard>
     </div>
   );
 }

@@ -59,7 +59,7 @@ The small info button next to each monitor's name, on the Monitors page and at t
 
 How a feed fills its tile (**Fit whole image** or **Crop to fill**) and **Analysis frames** live in the ⋮ menu at the end of the toolbar, on both the Monitors and Monitor Detail screens. The protocol label (enabled in {doc}`settings`) shows which streaming protocol is active on each feed. The Monitor Detail page also shows native video controls (play, pause, volume) for Go2RTC streams.
 
-The maximize button on the Monitor Detail toolbar fills the screen with the feed and hides everything else. A translucent close button in the top corner brings the page back; nothing else sits over the picture. Both change only the monitor you are looking at, until you leave the page. To have one monitor open maximized every time, turn on **Open in fullscreen** in its Settings dialog (Video tab). To open every monitor maximized, turn on **Open live view in fullscreen** in {doc}`settings` instead. On a phone or tablet, turning the device to landscape also fills the screen for as long as it stays landscape. Leaving fullscreen while landscape keeps the normal view until the next rotation.
+The maximize button on the Monitor Detail toolbar fills the screen with the feed and hides everything else. A translucent close button in the top corner brings the page back; nothing else sits over the picture. Both change only the monitor you are looking at, until you leave the page. To have one monitor open maximized every time, turn on **Open in fullscreen** in its Settings dialog (Video tab). To open every monitor maximized, turn on **Open live view in fullscreen** in {doc}`settings` instead. On a phone or tablet, turning the device to landscape also fills the screen for as long as it stays landscape, unless **Fullscreen when turned sideways** is off in {doc}`settings`. Leaving fullscreen while landscape keeps the normal view until the next rotation.
 
 Go2RTC feeds in the Monitors list start muted. The speaker icon next to a monitor's name unmutes it, and the app remembers that choice per monitor until you mute it again. The Monitor Detail page's volume control shares the same memory, so unmuting there carries to the card and the montage tile and back.
 
@@ -154,7 +154,7 @@ While **Disable log redaction** is off (the default), the app hides those passwo
 
 Both fields remain editable. Changing the camera's hostname while the password is masked keeps the stored password: the app puts the real value back when it saves, as long as you leave the dots alone. Type over the dots and what you typed becomes the new password.
 
-To read a stored password, turn on **Settings → Advanced → Disable log redaction**, then turn it off again when you are done. Note that ZoneMinder's API returns these credentials to any account that can view the monitor, so hiding them in the app is not a substitute for restricting who has an account on your server.
+To read a stored password, turn on **Disable log redaction** on the Logs page, then turn it off again when you are done. Note that ZoneMinder's API returns these credentials to any account that can view the monitor, so hiding them in the app is not a substitute for restricting who has an account on your server.
 
 The dialog only offers these fields to an account with the System: Edit permission. Anything less opens a read-only panel instead, with the app's own per-monitor settings and a few read-only facts, and no camera address or credentials at all. See [What your account can do](server.md#what-your-account-can-do).
 

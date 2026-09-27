@@ -19,7 +19,7 @@ zmNinjaNg runs on Android, iOS, Windows, macOS, Linux, and the web from a single
 
 - ZoneMinder 1.36 or newer
 - API access enabled (`OPT_USE_API = 1`)
-- A valid SSL certificate (or plain HTTP). For self-signed certificates, enable **Allow self-signed certificates** in Settings > Advanced. On desktop, you may also need to add your CA to the system trust store. [Let's Encrypt](https://letsencrypt.org/) is one option.
+- A valid SSL certificate (or plain HTTP). For self-signed certificates, enable **Allow self-signed certificates** in Settings > Network. On desktop, you may also need to add your CA to the system trust store. [Let's Encrypt](https://letsencrypt.org/) is one option.
 
 ### Client
 

@@ -16,6 +16,9 @@ vi.mock('../../../lib/security/secureStorage', () => import('../../../tests/fake
 
 import { EventCard } from '../EventCard';
 import { EventMontageView } from '../EventMontageView';
+import { EventListView } from '../EventListView';
+import { useProfileStore } from '../../../stores/profile';
+import { useSettingsStore } from '../../../stores/settings';
 import { setEventArchived } from '../../../api/events';
 import { httpRequest } from '../../../lib/http';
 // Real store, not mocked: its module scope registers services/download's
@@ -288,5 +291,30 @@ describe('grid/list view parity (refs #494)', () => {
     fireEvent.click(screen.getByTestId('event-context-open'));
     expect(useEventContextStore.getState().anchor?.Event.Id).toBe('701');
     unmount(tile);
+  });
+  it('builds thumbnails from the owning server\'s chain in both views while a group is selected (refs #536)', () => {
+    // thumbnailFallbackChain is server-scoped: the group's own bucket must not
+    // decide which frame a member server's event shows.
+    seedProfiles([makeProfile('home'), makeProfile('shed')], {
+      current: 'home',
+      settings: { home: { thumbnailFallbackChain: [{ type: 'snapshot', enabled: true }] } },
+    });
+    const home = asProfileId('home');
+    const group = useProfileStore.getState().addVirtualProfile('Both', [home, asProfileId('shed')]);
+    useSettingsStore.getState().updateProfileSettings(group, {
+      thumbnailFallbackChain: [{ type: 'objdetect', enabled: true }],
+    });
+    useProfileStore.setState({ currentProfileId: group });
+    const events = [{ Event: sharedEvent, profileId: home } as ScopedEventItem];
+    const props = { events, monitors: [], showThumbnailLabels: true, portalUrl: 'https://zm.example.test', batchSize: 20, onLoadMore: vi.fn() };
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    const list = render(<QueryClientProvider client={client}><EventListView {...props} /></QueryClientProvider>);
+    expect(decodeURIComponent(screen.getByTestId('event-thumbnail').getAttribute('data-url') ?? '')).toContain('fid=snapshot');
+    unmount(list);
+
+    const grid = render(<QueryClientProvider client={client}><EventMontageView {...props} gridCols={3} /></QueryClientProvider>);
+    expect(decodeURIComponent(screen.getByTestId('event-thumbnail').getAttribute('data-url') ?? '')).toContain('fid=snapshot');
+    unmount(grid);
   });
 });

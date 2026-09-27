@@ -1,10 +1,11 @@
 /**
  * Regression test for the around-this-event render loop (refs #494).
  *
- * `EventContextPanel` reads its settings with
- * `useSettingsStore(useShallow((s) => s.getProfileSettings(id)))`. That merge
- * runs on every read, so a coercion that rebuilds `eventContext` each time
- * hands the shallow compare a new nested identity on every call, and
+ * `EventContextPanel` used to read its settings with
+ * `useSettingsStore(useShallow((s) => s.getProfileSettings(id)))`, and now
+ * reads them through `useCurrentProfile` (refs #536). Under the first shape
+ * the merge ran on every read, so a coercion that rebuilt `eventContext` each
+ * time handed the shallow compare a new nested identity on every call, and
  * `useSyncExternalStore` re-renders until React throws "Maximum update depth
  * exceeded". A profile written with a half-shaped blob, or one still
  * carrying a retired key such as `view`, is exactly the kind of value that
@@ -35,6 +36,7 @@ import {
 } from '../../../../tests/profile-fixture';
 import { installApiClient, resetFakeStoreGates } from '../../../../tests/fake-store-gates';
 import { useSettingsStore, type ProfileSettings } from '../../../../stores/settings';
+import { useProfileStore } from '../../../../stores/profile';
 
 const P1 = asProfileId('p1');
 
@@ -139,5 +141,40 @@ describe('EventContextPanel - real store render loop regression (refs #494)', ()
     // location update in startTransition; act() keeps that inside the test.
     act(() => { fireEvent.click(screen.getByTestId('event-context-close')); });
     onError.mockRestore();
+  });
+  it('asks for the selected group\'s window and saves a change to the group, not the server (refs #536)', async () => {
+    // eventContext is selection-scoped: in a group the panel queries with the
+    // group's window, and moving it leaves the owning server's value alone.
+    seedProfiles([makeProfile('p1'), makeProfile('p2')], {
+      settings: { p1: { eventContext: { windowMinutes: 5, scope: 'all' } } },
+    });
+    const group = useProfileStore.getState().addVirtualProfile('Both', [P1, asProfileId('p2')]);
+    useSettingsStore.getState().updateProfileSettings(group, { eventContext: { windowMinutes: 60, scope: 'all' } });
+    useProfileStore.setState({ currentProfileId: group });
+    const client = emptyServer();
+    installApiClient(P1, client);
+
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <EventContextButton event={anchorEvent} profileId={P1} />
+          <EventContextPanel />
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+    fireEvent.click(screen.getByTestId('event-context-open'));
+    await screen.findByTestId('event-context-empty');
+
+    expect(screen.getByTestId('event-context-window-60')).toHaveAttribute('aria-pressed', 'true');
+    const eventUrls = client.calls.map((c) => decodeURIComponent(c.url)).filter((u) => u.includes('/events/index'));
+    expect(eventUrls.some((u) => u.includes('20:14:03'))).toBe(true);
+
+    fireEvent.click(screen.getByTestId('event-context-window-15'));
+    const { getProfileSettings } = useSettingsStore.getState();
+    expect(getProfileSettings(group).eventContext.windowMinutes).toBe(15);
+    expect(getProfileSettings(P1).eventContext.windowMinutes).toBe(5);
+
+    act(() => { fireEvent.click(screen.getByTestId('event-context-close')); });
   });
 });

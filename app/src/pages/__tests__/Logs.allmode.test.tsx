@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { createContext, useContext } from 'react';
 import type { ReactNode } from 'react';
 import Logs from '../Logs';
@@ -8,19 +9,23 @@ import { getSession } from '../../services/sessions';
 import { ALL_PROFILES_ID } from '../../api/types';
 import { seedProfiles, resetProfileFixture, makeProfile } from '../../tests/profile-fixture';
 import { resetFakeStoreGates } from '../../tests/fake-store-gates';
+import { useSettingsStore } from '../../stores/settings';
 
 vi.mock('../../api/store-gates', () => import('../../tests/fake-store-gates'));
 vi.mock('../../lib/security/secureStorage', () => import('../../tests/fake-secure-storage'));
 
+const { logStoreState } = vi.hoisted(() => ({
+  logStoreState: { logs: [] as Array<Record<string, unknown>>, clearLogs: () => {} },
+}));
+
 vi.mock('../../stores/logs', () => ({
-  useLogStore: (selector: (state: { logs: unknown[]; clearLogs: () => void }) => unknown) =>
-    selector({ logs: [], clearLogs: vi.fn() }),
+  useLogStore: (selector: (state: typeof logStoreState) => unknown) => selector(logStoreState),
 }));
 
 vi.mock('../../lib/logger', () => ({
   logger: { getLevel: () => 1, setLevel: vi.fn() },
   log: { server: vi.fn(), profileService: vi.fn(), auth: vi.fn() },
-  LogLevel: { DEBUG: 1, INFO: 2, WARN: 3, ERROR: 4 },
+  LogLevel: { DEBUG: 1, INFO: 2, WARN: 3, ERROR: 4, NONE: 5 },
 }));
 
 vi.mock('../../api/logs', () => ({
@@ -80,6 +85,7 @@ describe('Logs page - All mode profile picker (refs #337)', () => {
   afterEach(() => {
     resetProfileFixture();
     resetFakeStoreGates();
+    logStoreState.logs = [];
   });
 
   it('shows the picker defaulted to the first profile, and switches the server-log source on pick', async () => {
@@ -100,5 +106,63 @@ describe('Logs page - All mode profile picker (refs #337)', () => {
 
     fireEvent.click(screen.getByTestId('page-profile-picker-option-profile-b'));
     await waitFor(() => expect(vi.mocked(getZMLogs).mock.calls.at(-1)?.[0]).toBe(getSession(profileB.id).client));
+  });
+
+  it('saves the log level, a component override and log redaction to the aggregate bucket, leaving the member unchanged (refs #536)', async () => {
+    const user = userEvent.setup();
+    const [profileA] = seedProfiles(
+      [makeProfile('profile-a', { name: 'Home' }), makeProfile('profile-b', { name: 'Work' })],
+      { current: ALL_PROFILES_ID },
+    );
+
+    render(<Logs />);
+
+    // The top-toolbar level picker: must write the aggregate's own bucket,
+    // never the picked member's (this is the fix under review; it used to
+    // write via `currentProfile?.id`, which in All mode is the picked
+    // member's id).
+    fireEvent.click(screen.getByTestId('log-level-option-ERROR'));
+    fireEvent.click(screen.getByTestId('component-log-levels-toggle'));
+    fireEvent.change(screen.getByTestId('component-log-level-Auth'), { target: { value: '1' } });
+    await user.click(screen.getByTestId('settings-log-redaction-switch'));
+
+    const { getProfileSettings } = useSettingsStore.getState();
+    expect(getProfileSettings(ALL_PROFILES_ID).logLevel).toBe(4);
+    expect(getProfileSettings(ALL_PROFILES_ID).componentLogLevels.Auth).toBe(1);
+    expect(getProfileSettings(ALL_PROFILES_ID).disableLogRedaction).toBe(true);
+    expect(getProfileSettings(profileA.id).logLevel).not.toBe(4);
+    expect(getProfileSettings(profileA.id).componentLogLevels.Auth).toBeUndefined();
+    expect(getProfileSettings(profileA.id).disableLogRedaction).toBe(false);
+  });
+
+  it('formats app-log timestamps with the aggregate\'s date format, not the picked member\'s (refs #536)', async () => {
+    const [profileA] = seedProfiles(
+      [makeProfile('profile-a', { name: 'Home' }), makeProfile('profile-b', { name: 'Work' })],
+      {
+        current: ALL_PROFILES_ID,
+        settings: {
+          'profile-a': { dateFormat: 'custom', customDateFormat: 'yyyy~MMM~dd' },
+        },
+      },
+    );
+    void profileA;
+    logStoreState.logs = [{
+      id: 'log-1',
+      timestamp: 'unused',
+      rawTimestamp: new Date('2026-01-15T10:30:00Z').getTime(),
+      level: 'ERROR',
+      message: 'boom',
+      args: [],
+    }];
+
+    render(<Logs />);
+
+    const timestamp = await waitFor(() => {
+      const entry = screen.getByTestId('log-entry');
+      return entry.querySelector('span')?.textContent ?? '';
+    });
+    // The member's custom pattern uses '~' as a separator; the aggregate's
+    // own bucket stays on the default preset, which never produces one.
+    expect(timestamp).not.toContain('~');
   });
 });

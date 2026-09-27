@@ -1054,10 +1054,34 @@ version, load, storage areas, daemon status, and the ZM run-state controls.
 **Profiles** (``src/pages/Profiles.tsx``) switches, edits, and deletes server
 profiles.
 
-**Settings** (``src/pages/Settings.tsx``) is three flat sections (Appearance,
-Streaming and Playback, Advanced) delegating to components under
-``src/components/settings/``. Every write goes through
-``updateProfileSettings(currentProfile.id, patch)``.
+**Settings** (``src/pages/Settings.tsx``) renders six sections, each a
+component under ``src/components/settings/``: ``GeneralSection``,
+``LiveStreamingSection``, ``EventsPlaybackSection``, ``NetworkSection``,
+``AssistantSection``, and ``MoreSettingsSection`` (links to the
+Notifications, Live Activity, and Logs pages). The page follows the two
+setting scopes described in :doc:`03-state-management-zustand`. Rows at the
+top of a section are selection-scoped and save through the page's
+``update``, which writes the aggregate's bucket when an aggregate is
+selected and the current profile's otherwise. Server-scoped rows sit in a
+``SettingsSubCard`` and save to that one profile, through ``updateServerScoped`` or ``updateSettings(serverProfile.id,
+...)``. With an aggregate selected, a ``ProfilePicker`` above the first
+section (marked ``data-settings-search-keep``) chooses that profile,
+defaulting to the first one in scope. With one profile selected it is the
+current profile. The
+aggregate-only rows (``AllServersStreamingSection`` and
+``AllServersPerformanceSection``, a disclosure row) sit in a second sub-card
+in ``LiveStreamingSection``. A section puts its server sub-card as the last
+child of its ``SettingsCard``. With one profile selected the sub-card is a
+``data-settings-rows`` group inside that card, so its rows continue the card
+with the usual divider; search filters the group's rows the way it filters a
+card's. While aggregating, ``SettingsAggregateContext`` (``settings-search.ts``,
+provided by the page) makes the card lift the sub-card out below itself, where
+it draws a quiet "For <name>" divider, naming the picked profile or the
+aggregate, above its rows in a card of their own. A sub-card outside any card,
+such as Ninjii's, draws its own card. Only the six sections use ``CollapsibleSection`` headers; anything
+folding inside a section is a disclosure row. The Settings page
+test checks that every server-scoped row renders inside a server sub-card
+and no selection-scoped row does.
 
 The search field in the Settings header filters the rendered page, not a list
 of setting names (``filterSettings`` in
