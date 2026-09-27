@@ -525,8 +525,6 @@
     "monitor_recent_events_count_desc": "How many recent events to show under the live view",
     "dashboard_settings": "Dashboard Settings",
     "dashboard_settings_desc": "Configure dashboard widgets",
-    "dashboard_refresh_interval": "Dashboard Refresh Interval",
-    "dashboard_refresh_interval_desc": "How often dashboard widgets refresh (except monitor streams)",
     "bandwidth_mode": "Bandwidth Mode",
     "bandwidth_normal": "Normal",
     "bandwidth_low": "Low",

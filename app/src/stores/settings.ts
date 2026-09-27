@@ -159,7 +159,6 @@ export interface ProfileSettings {
   monitorDetailRecentEventsCount: number;
   /** Monitor IDs whose recent-events list is collapsed/hidden on the detail page. */
   monitorDetailRecentEventsHidden: string[];
-  dashboardRefreshInterval: number; // in seconds, for dashboard widgets (events/timeline)
   // Per-group live montage layout state. Key = group ID or ALL_GROUPS_KEY.
   montageByGroup: Record<string, MontageGroupLayout>;
   // Per-group event montage state (column count). Key = group ID or ALL_GROUPS_KEY.
@@ -472,7 +471,6 @@ export const DEFAULT_SETTINGS: ProfileSettings = {
   defaultEventLimit: 100,
   monitorDetailRecentEventsCount: 20,
   monitorDetailRecentEventsHidden: [],
-  dashboardRefreshInterval: 30,
   montageByGroup: {},
   eventMontageByGroup: {},
   montageIsFullscreen: false,

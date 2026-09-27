@@ -525,8 +525,6 @@
     "monitor_recent_events_count_desc": "چند رویداد اخیر زیر نمای زنده نشان داده شود",
     "dashboard_settings": "تنظیمات داشبورد",
     "dashboard_settings_desc": "پیکربندی ویجت‌های داشبورد",
-    "dashboard_refresh_interval": "بازه بروزرسانی داشبورد",
-    "dashboard_refresh_interval_desc": "هر چند وقت ویجت‌های داشبورد (به‌جز استریم مانیتور) بروزرسانی شوند",
     "bandwidth_mode": "حالت پهنای باند",
     "bandwidth_normal": "عادی",
     "bandwidth_low": "کم",

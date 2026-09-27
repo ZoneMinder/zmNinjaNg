@@ -155,43 +155,6 @@ export function PlaybackSection({
             </div>
           </div>
         </div>
-
-        {/* Dashboard Refresh */}
-        <div className="px-4 py-3 space-y-2">
-          <RowLabel
-            label={t('settings.dashboard_refresh_interval')}
-            desc={t('settings.dashboard_refresh_interval_desc')}
-          />
-          <div className="flex flex-wrap items-center gap-3">
-            <Input
-              id="dashboard-refresh"
-              type="number"
-              min="5"
-              max="300"
-              step="5"
-              value={settings.dashboardRefreshInterval || 30}
-              onChange={(e) =>
-                currentProfile &&
-                updateSettings(currentProfile.id, { dashboardRefreshInterval: Number(e.target.value) })
-              }
-              className="w-24"
-              data-testid="dashboard-refresh-input"
-            />
-            <span className="text-xs text-muted-foreground">{t('settings.seconds')}</span>
-            <div className="flex gap-1.5">
-              {[10, 30, 60].map((val) => (
-                <Button key={val} variant="outline" size="sm" className="h-7 text-xs px-2"
-                  onClick={() =>
-                    currentProfile &&
-                    updateSettings(currentProfile.id, { dashboardRefreshInterval: val })
-                  }
-                  data-testid={`dashboard-refresh-preset-${val}`}>
-                  {val}{val === 30 ? ` (${t('settings.default')})` : ''}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </div>
       </SettingsCard>
     </CollapsibleSection>
   );

@@ -543,8 +543,6 @@
     "monitor_recent_events_count_desc": "Сколько последних событий отображать в режиме прямой трансляции",
     "dashboard_settings": "Настройки панели",
     "dashboard_settings_desc": "Настройка виджетов панели",
-    "dashboard_refresh_interval": "Интервал обновления панели",
-    "dashboard_refresh_interval_desc": "Как часто обновляются виджеты панели (кроме просмотра трансляций)",
     "bandwidth_mode": "Режим трафика",
     "bandwidth_normal": "Обычный",
     "bandwidth_low": "Низкий",

@@ -525,8 +525,6 @@
     "monitor_recent_events_count_desc": "实时画面下方显示的事件数量",
     "dashboard_settings": "仪表板设置",
     "dashboard_settings_desc": "配置仪表板小部件",
-    "dashboard_refresh_interval": "仪表板刷新间隔",
-    "dashboard_refresh_interval_desc": "仪表板小部件刷新频率（监控流除外）",
     "bandwidth_mode": "带宽模式",
     "bandwidth_normal": "正常",
     "bandwidth_low": "低",
