@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { createContext, useContext } from 'react';
 import type { ReactNode } from 'react';
 import Logs from '../Logs';
@@ -8,6 +9,7 @@ import { getSession } from '../../services/sessions';
 import { ALL_PROFILES_ID } from '../../api/types';
 import { seedProfiles, resetProfileFixture, makeProfile } from '../../tests/profile-fixture';
 import { resetFakeStoreGates } from '../../tests/fake-store-gates';
+import { useSettingsStore } from '../../stores/settings';
 
 vi.mock('../../api/store-gates', () => import('../../tests/fake-store-gates'));
 vi.mock('../../lib/security/secureStorage', () => import('../../tests/fake-secure-storage'));
@@ -20,7 +22,7 @@ vi.mock('../../stores/logs', () => ({
 vi.mock('../../lib/logger', () => ({
   logger: { getLevel: () => 1, setLevel: vi.fn() },
   log: { server: vi.fn(), profileService: vi.fn(), auth: vi.fn() },
-  LogLevel: { DEBUG: 1, INFO: 2, WARN: 3, ERROR: 4 },
+  LogLevel: { DEBUG: 1, INFO: 2, WARN: 3, ERROR: 4, NONE: 5 },
 }));
 
 vi.mock('../../api/logs', () => ({
@@ -100,5 +102,25 @@ describe('Logs page - All mode profile picker (refs #337)', () => {
 
     fireEvent.click(screen.getByTestId('page-profile-picker-option-profile-b'));
     await waitFor(() => expect(vi.mocked(getZMLogs).mock.calls.at(-1)?.[0]).toBe(getSession(profileB.id).client));
+  });
+
+  it('saves component log levels and log redaction to the aggregate bucket, leaving the member unchanged (refs #536)', async () => {
+    const user = userEvent.setup();
+    const [profileA] = seedProfiles(
+      [makeProfile('profile-a', { name: 'Home' }), makeProfile('profile-b', { name: 'Work' })],
+      { current: ALL_PROFILES_ID },
+    );
+
+    render(<Logs />);
+
+    fireEvent.click(screen.getByTestId('component-log-levels-toggle'));
+    fireEvent.change(screen.getByTestId('global-log-level-select'), { target: { value: '4' } });
+    await user.click(screen.getByTestId('settings-log-redaction-switch'));
+
+    const { getProfileSettings } = useSettingsStore.getState();
+    expect(getProfileSettings(ALL_PROFILES_ID).logLevel).toBe(4);
+    expect(getProfileSettings(ALL_PROFILES_ID).disableLogRedaction).toBe(true);
+    expect(getProfileSettings(profileA.id).logLevel).not.toBe(4);
+    expect(getProfileSettings(profileA.id).disableLogRedaction).toBe(false);
   });
 });

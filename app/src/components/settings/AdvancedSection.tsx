@@ -4,9 +4,9 @@
  * Self-signed certificates, log redaction, and kiosk PIN settings.
  */
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { RefreshCw, Lock, ChevronDown, ChevronRight } from 'lucide-react';
+import { RefreshCw, Lock } from 'lucide-react';
 import { hasPinStored, storePin, clearPin, verifyPin } from '../../lib/kioskPin';
 import { checkBiometricAvailability, authenticateWithBiometrics } from '../../hooks/useBiometricAuth';
 import { PinPad, type PinPadMode } from '../kiosk/PinPad';
@@ -18,32 +18,12 @@ import { Label } from '../ui/label';
 import { API_REQUEST } from '../../lib/zmninja-ng-constants';
 import { CertTrustDialog } from '../CertTrustDialog';
 import { CollapsibleSection, SettingsCard, SettingsRow, RowLabel } from './SettingsLayout';
-import { useSettingsSearching } from './settings-search';
 import { useDeveloperNoticeStore } from '../../stores/developerNotices';
 import { Platform } from '../../lib/platform';
 import { log, LogLevel } from '../../lib/logger';
 import type { CertInfo } from '../../lib/security/ssl-trust';
 import type { Profile } from '../../api/types';
 import type { ProfileSettings } from '../../stores/settings';
-
-/** All component logger names, matching Logger's component loggers. */
-const COMPONENT_NAMES = [
-  'API', 'App', 'Auth', 'Crypto', 'Dashboard', 'Discovery', 'Download',
-  'ErrorBoundary', 'EventCard', 'EventDetail', 'HTTP',
-  'ImageError', 'Kiosk', 'Monitor', 'MonitorCard', 'MonitorDetail',
-  'MontageMonitor', 'Navigation', 'NotificationHandler', 'Notifications',
-  'NotificationSettings', 'Profile', 'ProfileForm', 'ProfileService',
-  'ProfileSwitcher', 'Push', 'QueryCache', 'SecureImage', 'SecureStorage',
-  'Server', 'SSLTrust', 'Time', 'VideoMarkers', 'VideoPlayer', 'ZmsEventPlayer',
-] as const;
-
-const LOG_LEVEL_OPTIONS = [
-  { value: LogLevel.DEBUG, label: 'DEBUG' },
-  { value: LogLevel.INFO, label: 'INFO' },
-  { value: LogLevel.WARN, label: 'WARN' },
-  { value: LogLevel.ERROR, label: 'ERROR' },
-  { value: LogLevel.NONE, label: 'NONE' },
-] as const;
 
 export interface AdvancedSectionProps {
   settings: ProfileSettings;
@@ -259,7 +239,6 @@ export function AdvancedSection({
         label={t('settings.section_advanced', 'Advanced')}
         defaultOpen={false}
       >
-        <>
         <SettingsCard>
           {/* Self-signed certs: only relevant for HTTPS */}
           {currentProfile?.portalUrl?.startsWith('https') && (<><SettingsRow>
@@ -375,33 +354,6 @@ export function AdvancedSection({
             </div>
           </div>
 
-          {/* Log Redaction */}
-          <SettingsRow>
-            <div className="min-w-0 flex-1">
-              <div className="text-sm font-medium">{t('settings.disable_log_redaction')}</div>
-              <div className="text-xs text-muted-foreground">
-                {t('settings.disable_log_redaction_desc')}
-              </div>
-              {settings.disableLogRedaction && (
-                <p
-                  className="text-xs text-orange-600 dark:text-orange-400 mt-1 font-medium"
-                  data-testid="settings-log-redaction-warning"
-                >
-                  {t('settings.disable_log_redaction_warning')}
-                </p>
-              )}
-            </div>
-            <Switch
-              id="log-redaction"
-              checked={settings.disableLogRedaction}
-              onCheckedChange={(checked) =>
-                currentProfile &&
-                updateSettings(currentProfile.id, { disableLogRedaction: checked })
-              }
-              data-testid="settings-log-redaction-switch"
-            />
-          </SettingsRow>
-
           {/* Kiosk PIN */}
           <SettingsRow>
             <RowLabel
@@ -433,14 +385,6 @@ export function AdvancedSection({
             </div>
           </SettingsRow>
         </SettingsCard>
-
-        {/* Component Log Levels: nested inside the Advanced collapsible */}
-        <ComponentLogLevels
-          settings={settings}
-          currentProfile={currentProfile}
-          updateSettings={updateSettings}
-        />
-        </>
       </CollapsibleSection>
 
       <CertTrustDialog
@@ -463,152 +407,3 @@ export function AdvancedSection({
   );
 }
 
-/** Collapsible section for log level control: global + per-component. */
-function ComponentLogLevels({
-  settings,
-  currentProfile,
-  updateSettings,
-}: AdvancedSectionProps) {
-  const { t } = useTranslation();
-  const [expanded, setExpanded] = useState(false);
-  const searching = useSettingsSearching();
-  const shown = expanded || searching;
-
-  const overrides = settings.componentLogLevels || {};
-  const globalLevel = settings.logLevel;
-  const overrideCount = useMemo(
-    () => Object.values(overrides).filter((v) => v !== globalLevel).length,
-    [overrides, globalLevel],
-  );
-
-  // Get effective level for a component (override or global)
-  const getEffective = useCallback(
-    (component: string) => overrides[component] ?? globalLevel,
-    [overrides, globalLevel],
-  );
-
-  // Change global level: sets all components to this level (clears overrides)
-  const handleGlobalChange = useCallback(
-    (value: number) => {
-      if (!currentProfile) return;
-      updateSettings(currentProfile.id, {
-        logLevel: value as LogLevel,
-        componentLogLevels: {},
-      });
-    },
-    [currentProfile, updateSettings],
-  );
-
-  // Change a single component's level
-  const handleComponentChange = useCallback(
-    (component: string, value: number) => {
-      if (!currentProfile) return;
-      const next = { ...overrides };
-      if (value === globalLevel) {
-        // Same as global: remove override
-        delete next[component];
-      } else {
-        next[component] = value;
-      }
-      updateSettings(currentProfile.id, { componentLogLevels: next });
-    },
-    [currentProfile, overrides, globalLevel, updateSettings],
-  );
-
-  // Reset all overrides to global
-  const handleReset = useCallback(() => {
-    if (!currentProfile) return;
-    updateSettings(currentProfile.id, { componentLogLevels: {} });
-  }, [currentProfile, updateSettings]);
-
-  const levelLabel = (level: number) =>
-    LOG_LEVEL_OPTIONS.find((o) => o.value === level)?.label ?? 'INFO';
-
-  return (
-    <div className="mt-4" data-settings-section>
-      <button
-        type="button"
-        className="flex items-center gap-1.5 text-sm font-semibold text-primary uppercase tracking-wide mb-2 cursor-pointer"
-        onClick={() => setExpanded((v) => !v)}
-        aria-expanded={shown}
-        data-settings-section-label
-        data-testid="component-log-levels-toggle"
-      >
-        {shown ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-        {t('settings.component_log_levels')}
-        <span className="text-xs font-normal text-muted-foreground">
-          ({levelLabel(globalLevel)}{overrideCount > 0 ? `, ${overrideCount} custom` : ''})
-        </span>
-      </button>
-
-      {shown && (
-        <SettingsCard>
-          <div className="px-4 py-3">
-            {/* Global level: changes all components */}
-            <div className="flex items-center justify-between mb-3 pb-3 border-b">
-              <div>
-                <div className="text-sm font-medium">{t('settings.global_log_level')}</div>
-                <p className="text-xs text-muted-foreground">{t('settings.global_log_level_desc')}</p>
-              </div>
-              <select
-                className="text-xs bg-background border rounded px-2 py-1 min-w-[5rem] font-medium"
-                value={globalLevel}
-                onChange={(e) => handleGlobalChange(parseInt(e.target.value, 10))}
-                data-testid="global-log-level-select"
-              >
-                {LOG_LEVEL_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Per-component overrides */}
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-muted-foreground">
-                {t('settings.component_log_levels_desc')}
-              </p>
-              {overrideCount > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 text-xs text-destructive hover:text-destructive"
-                  onClick={handleReset}
-                  data-testid="component-log-levels-reset"
-                >
-                  {t('settings.component_log_reset')}
-                </Button>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1.5">
-              {COMPONENT_NAMES.map((name) => {
-                const effective = getEffective(name);
-                const isOverridden = overrides[name] !== undefined && overrides[name] !== globalLevel;
-                return (
-                  <div key={name} className="flex items-center justify-between gap-1 min-w-0">
-                    <span
-                      className={`text-xs truncate min-w-0 ${isOverridden ? 'font-medium text-primary' : ''}`}
-                      title={name}
-                    >
-                      {name}
-                    </span>
-                    <select
-                      className={`text-xs bg-background border rounded px-1 py-0.5 min-w-[5rem] ${isOverridden ? 'border-primary' : ''}`}
-                      value={effective}
-                      onChange={(e) => handleComponentChange(name, parseInt(e.target.value, 10))}
-                      data-testid={`component-log-level-${name}`}
-                    >
-                      {LOG_LEVEL_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </SettingsCard>
-      )}
-    </div>
-  );
-}

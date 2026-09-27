@@ -192,11 +192,9 @@ The Advanced section is a single flat section containing the following controls 
 | **Allow self-signed certificates** | Shown only when the Portal URL uses HTTPS. Enable when your ZoneMinder server uses a self-signed certificate. On native platforms (iOS/Android/desktop) the app pins the certificate fingerprint on first connection; toggling this off and back on lets you re-pin. |
 | **Force disable multi-port streaming** | Off by default (auto): when the server reports `ZM_MIN_STREAMING_PORT`, the app routes each monitor to its own port (`base port + monitor ID`). Turn this on to ignore that config and use the portal's default port for all streams. Use it when the per-monitor ports are not reachable (firewall, reverse proxy, or partial server config). Scoped per profile. |
 | **API timeout** | Seconds to wait for a server API request before it is aborted, so a stalled request errors and retries instead of leaving a screen stuck loading. Default 15. Set `0` to disable the timeout (wait forever). Does not apply to downloads. Scoped per profile. |
-| **Disable log redaction** | Stop redacting URLs and credentials from logs. Also un-masks the camera credentials in a monitor's Settings dialog. Enable only temporarily when sharing logs for troubleshooting. |
 | **Auto-restart** (desktop only) | The desktop app's webview accumulates memory over long sessions that only a restart reclaims, so this is **on by default**: it restarts the app automatically on an interval, in minutes (default 120, minimum 1). Turn it off to disable. A **Restart now** button next to it restarts immediately. The window size and position are preserved across the restart. |
-| **Component Logs** (collapsible) | Sets the global log level (the floor for everything) and per-component overrides. Includes a Reset button to clear all per-component overrides. |
 
-For information about persistent log files, file locations, and the Share / Open / Clear buttons, see {doc}`logs`.
+Log level, per-component overrides, and log redaction moved to the Logs page; see {doc}`logs`, which also covers persistent log files, file locations, and the Share / Open / Clear buttons.
 
 ### Kiosk PIN
 

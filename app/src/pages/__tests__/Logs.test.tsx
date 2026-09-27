@@ -1,9 +1,10 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Logs from '../Logs';
-import { seedProfiles, resetProfileFixture } from '../../tests/profile-fixture';
+import { seedProfiles, resetProfileFixture, asProfileId } from '../../tests/profile-fixture';
 import { resetFakeStoreGates } from '../../tests/fake-store-gates';
+import { useSettingsStore } from '../../stores/settings';
 
 vi.mock('../../api/store-gates', () => import('../../tests/fake-store-gates'));
 vi.mock('../../lib/security/secureStorage', () => import('../../tests/fake-secure-storage'));
@@ -54,6 +55,7 @@ vi.mock('../../lib/logger', () => ({
     INFO: 2,
     WARN: 3,
     ERROR: 4,
+    NONE: 5,
   },
 }));
 
@@ -165,5 +167,20 @@ describe('Logs Page', () => {
     const entry = await screen.findByText(/Starting capture/);
     expect(entry.textContent).not.toContain('S3cret');
     expect(entry.textContent).toContain('cam.lan');
+  });
+
+  it('saves the log level, a component override and log redaction to the current profile (refs #536)', async () => {
+    const user = userEvent.setup();
+    render(<Logs />);
+
+    fireEvent.click(screen.getByTestId('component-log-levels-toggle'));
+    fireEvent.change(screen.getByTestId('global-log-level-select'), { target: { value: '4' } });
+    fireEvent.change(screen.getByTestId('component-log-level-Auth'), { target: { value: '1' } });
+    await user.click(screen.getByTestId('settings-log-redaction-switch'));
+
+    const stored = useSettingsStore.getState().getProfileSettings(asProfileId('profile-1'));
+    expect(stored.logLevel).toBe(4);
+    expect(stored.componentLogLevels.Auth).toBe(1);
+    expect(stored.disableLogRedaction).toBe(true);
   });
 });

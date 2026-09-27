@@ -101,17 +101,6 @@ describe('Settings Page', () => {
     expect(stored.defaultEventLimit).toBe(400);
   });
 
-  it('updates log redaction toggle', async () => {
-    const user = userEvent.setup();
-    render(<Settings />, { wrapper: queryWrapper });
-
-    // Advanced is collapsed by default; expand it to reach its controls.
-    await user.click(screen.getByTestId('settings-section-advanced-toggle'));
-    await user.click(screen.getByTestId('settings-log-redaction-switch'));
-    const stored = useSettingsStore.getState().getProfileSettings(asProfileId('profile-1'));
-    expect(stored.disableLogRedaction).toBe(true);
-  });
-
   it('changes language selection', async () => {
     const user = userEvent.setup();
     render(<Settings />, { wrapper: queryWrapper });
@@ -140,15 +129,15 @@ describe('Settings Page', () => {
   it('search finds a row in a collapsed section, and clearing restores the page', async () => {
     const user = userEvent.setup();
     render(<Settings />, { wrapper: queryWrapper });
-    expect(screen.queryByTestId('settings-log-redaction-switch')).toBeNull();
+    expect(screen.queryByTestId('settings-force-disable-multiport-switch')).toBeNull();
 
     await user.click(screen.getByTestId('settings-search-button'));
-    await user.type(screen.getByTestId('settings-search-input'), 'log_redaction');
+    await user.type(screen.getByTestId('settings-search-input'), 'multiport');
     const sections = screen.getByTestId('settings-sections');
-    expect(visibleText(sections)).toContain('settings.disable_log_redaction');
+    expect(visibleText(sections)).toContain('settings.force_disable_multiport');
 
     await user.click(screen.getByTestId('settings-search-clear'));
-    expect(screen.queryByTestId('settings-log-redaction-switch')).toBeNull();
+    expect(screen.queryByTestId('settings-force-disable-multiport-switch')).toBeNull();
     expect(visibleText(sections)).toContain('settings.section_appearance');
   });
 });
