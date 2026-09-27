@@ -540,6 +540,8 @@ export const STORAGE_KEYS = {
   hoverPreviewOpen: 'zmng-hover-preview-open',
   thumbnailChainOpen: 'zmng-thumbnail-chain-open',
   eventContextRibbonOpen: 'zmng-event-context-ribbon-open',
+  /** Nearby replay mode, 'in-order' or 'all' (refs #534). */
+  eventContextReplayMode: 'zmng-event-context-replay-mode',
   // Prefix, completed with a settings section id (see CollapsibleSection).
   settingsSectionOpenPrefix: 'zmng-settings-section-open-',
 

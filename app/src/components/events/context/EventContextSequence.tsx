@@ -34,11 +34,29 @@ import { useInsomnia } from '../../../hooks/useInsomnia';
 import type { EventContextHistoryState } from '../../../stores/eventContext';
 import { resolveMinStreamingPort } from '../../../lib/monitor/multiport';
 import { buildReplaySchedule, buildRowThumbnail, buildTogetherSchedule, nearestFirst, offsetLabel } from '../../../lib/event/event-context-view';
-import { EVENT_CONTEXT } from '../../../lib/zmninja-ng-constants';
+import { EVENT_CONTEXT, STORAGE_KEYS } from '../../../lib/zmninja-ng-constants';
 import { DEFAULT_HOVER_PREVIEW_PLAYBACK_RATE } from '../../../stores/settings';
 import { cn } from '../../../lib/utils';
 import type { EventAroundRow } from '../../../hooks/useEventsAround';
 import type { Event, ProfileId } from '../../../api/types';
+
+/** The mode last picked on this device: a per-device convenience, so a
+ *  blocked or missing store just starts in order (Settings contract). */
+function readStoredTogether(): boolean {
+  try {
+    return localStorage.getItem(STORAGE_KEYS.eventContextReplayMode) === 'all';
+  } catch {
+    return false;
+  }
+}
+
+function storeTogether(together: boolean) {
+  try {
+    localStorage.setItem(STORAGE_KEYS.eventContextReplayMode, together ? 'all' : 'in-order');
+  } catch {
+    /* next open starts in order */
+  }
+}
 
 export interface EventContextSequenceProps {
   open: boolean;
@@ -69,7 +87,7 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
   // next starts on separate timers, and dropping the lock in between would let
   // a phone whose idle timeout has already passed dim at once.
   useInsomnia({ enabled: open });
-  const [together, setTogether] = useState(false);
+  const [together, setTogether] = useState(readStoredTogether);
   // Multi-port streaming spreads streams over several ports, each with its own
   // six-connection pool, so only a single-port server needs the cap. Snapshot
   // mode does not change this: event playback always streams.
@@ -197,7 +215,8 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
             size="sm"
             className="h-7 px-2 text-xs"
             onClick={() => {
-              setTogether((v) => !v);
+              storeTogether(!together);
+              setTogether(!together);
               restart();
             }}
             data-mode={together ? 'together' : 'sequence'}

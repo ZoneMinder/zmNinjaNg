@@ -66,6 +66,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.useRealTimers();
+  localStorage.clear();
   useReturnHighlightStore.getState().clear();
   resetProfileFixture();
   resetFakeStoreGates();
@@ -281,6 +282,18 @@ describe('EventContextSequence', () => {
     await act(async () => {});
     expect(release).toHaveBeenCalled();
     delete (navigator as { wakeLock?: unknown }).wakeLock;
+  });
+
+  it('remembers the mode the next time the replay opens', () => {
+    const { unmount } = renderGrid();
+    fireEvent.click(screen.getByTestId('event-context-sequence-together'));
+    expect(screen.getByTestId('event-context-sequence-together')).toHaveAttribute('data-mode', 'together');
+    unmount();
+
+    renderGrid();
+    expect(screen.getByTestId('event-context-sequence-together')).toHaveAttribute('data-mode', 'together');
+    act(() => vi.advanceTimersByTime(0));
+    expect(playingIds()).toEqual(['a', 'b', 'c']);
   });
 
   it('starts over from the first tile on replay', () => {
