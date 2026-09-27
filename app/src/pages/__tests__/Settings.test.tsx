@@ -166,6 +166,27 @@ describe('Settings Page', () => {
     expect(visibleText(screen.getByTestId('settings-sections'))).not.toContain('Home');
   });
 
+  // With one profile, server rows continue the section's card: no second card
+  // and no gap between the selection rows and the server rows.
+  it('keeps server rows in the same card as the section rows before them', () => {
+    renderSettings();
+    search('zz'); // mounts every fold
+    const card = (testId: string) => screen.getByTestId(testId).closest('[data-settings-card]');
+    expect(card('hidden-monitors-dropdown')).toBe(card('settings-show-developer-notices'));
+    expect(card('stream-fps-input')).toBe(card('settings-live-fullscreen-switch'));
+    expect(card('settings-thumbnail-chain-trigger')).toBe(card('settings-event-limit'));
+    expect(card('settings-force-disable-multiport-switch')).toBe(card('settings-bandwidth-mode-switch'));
+  });
+
+  it('search filters a server row on its own with one profile selected', () => {
+    renderSettings();
+    search('force_disable_multiport');
+    const text = visibleText(screen.getByTestId('settings-section-network'));
+    expect(text).toContain('settings.force_disable_multiport');
+    expect(text).not.toContain('settings.api_timeout');
+    expect(text).not.toContain('settings.bandwidth_mode');
+  });
+
   // Only the six topics have caps headers; Hidden monitors is a row of its card.
   it('shows Hidden monitors as a card row whose button opens the monitor list', async () => {
     vi.mocked(getMonitors).mockResolvedValue({

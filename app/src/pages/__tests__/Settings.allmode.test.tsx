@@ -196,6 +196,17 @@ describe('Settings page - All mode two-tier picker (refs #337)', () => {
     );
   });
 
+  it('puts server rows in their own card under the divider while aggregating', () => {
+    render(<Settings />, { wrapper: queryWrapper });
+    const card = (testId: string) => screen.getByTestId(testId).closest('[data-settings-card]');
+    const serverCard = card('settings-force-disable-multiport-switch');
+    expect(serverCard).not.toBe(card('settings-bandwidth-mode-switch'));
+    const sub = serverCard?.closest('[data-testid="settings-server-subcard"]');
+    expect(sub?.querySelector('[data-testid="settings-subcard-name"]')?.textContent).toBe(
+      'settings.server_rows_for:{"name":"Home"}'
+    );
+  });
+
   it('has no aggregate sub-card or picker in single mode', () => {
     useProfileStore.setState({ currentProfileId: profileA.id });
     render(<Settings />, { wrapper: queryWrapper });

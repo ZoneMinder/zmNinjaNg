@@ -4,7 +4,9 @@
  * Filters the Settings page by text. It works on the rendered DOM rather than
  * on a list of setting names: rows are built by hand in each section, with
  * labels, descriptions, and current values in varied markup, and a registry
- * would drift from them. A row is a direct child of a SettingsCard; a section
+ * would drift from them. A row is a direct child of a SettingsCard, or of a
+data-settings-rows group (a single-mode SettingsSubCard's server rows, which
+is itself one row of its card and is filtered as a card of its own); a section
  * is anything marked data-settings-section with a data-settings-section-label
  * inside, such as a CollapsibleSection, and renders its content while a search
  * is active even when collapsed.
@@ -46,7 +48,9 @@ export function filterSettings(root: HTMLElement, query: string): boolean {
 
   const hitSections = new Set<Element>();
   let any = false;
-  for (const card of root.querySelectorAll<HTMLElement>('[data-settings-card]')) {
+  // Document order puts a card before the rows group inside it, so the group
+  // settles its own visibility last, to the same answer the card gave it.
+  for (const card of root.querySelectorAll<HTMLElement>('[data-settings-card], [data-settings-rows]')) {
     // Every section around the card, innermost first: a nested section is part
     // of the one around it, so either title matching shows the whole card.
     const sections: Element[] = [];

@@ -1070,11 +1070,15 @@ defaulting to the first one in scope. With one profile selected it is the
 current profile. The
 aggregate-only rows (``AllServersStreamingSection`` and
 ``AllServersPerformanceSection``, a disclosure row) sit in a second sub-card
-in ``LiveStreamingSection``. With one profile selected a sub-card is a plain
-wrapper, so its rows read as part of the section. While aggregating,
-``SettingsAggregateContext`` (``settings-search.ts``, provided by the page) makes it draw a quiet
-"For <name>" divider above its rows, naming the picked profile or the
-aggregate. Only the six sections use ``CollapsibleSection`` headers; anything
+in ``LiveStreamingSection``. A section puts its server sub-card as the last
+child of its ``SettingsCard``. With one profile selected the sub-card is a
+``data-settings-rows`` group inside that card, so its rows continue the card
+with the usual divider; search filters the group's rows the way it filters a
+card's. While aggregating, ``SettingsAggregateContext`` (``settings-search.ts``,
+provided by the page) makes the card lift the sub-card out below itself, where
+it draws a quiet "For <name>" divider, naming the picked profile or the
+aggregate, above its rows in a card of their own. A sub-card outside any card,
+such as Ninjii's, draws its own card. Only the six sections use ``CollapsibleSection`` headers; anything
 folding inside a section is a disclosure row. The Settings page
 test checks that every server-scoped row renders inside a server sub-card
 and no selection-scoped row does.

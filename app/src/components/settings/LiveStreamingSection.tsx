@@ -110,10 +110,8 @@ export function LiveStreamingSection({
               data-testid="settings-live-fullscreen-switch"
             />
           </SettingsRow>
-        </SettingsCard>
 
-        <SettingsSubCard name={serverProfile?.name ?? ''} testId="settings-server-subcard">
-          <SettingsCard>
+          <SettingsSubCard name={serverProfile?.name ?? ''} testId="settings-server-subcard">
             {/* Streaming Mode, with its reason line: one card row, so search and
                 the card dividers treat them as one setting. */}
             <div>
@@ -277,19 +275,17 @@ export function LiveStreamingSection({
             </div>
 
             <AdvancedStreamingFold settings={serverSettings} update={updateServer} />
-          </SettingsCard>
-        </SettingsSubCard>
+          </SettingsSubCard>
+        </SettingsCard>
 
         {aggregateName !== null && (
           <SettingsSubCard name={aggregateName} testId="settings-aggregate-subcard">
-            <SettingsCard>
-              <AllServersStreamingSection
-                value={settings.allModeViewMode}
-                onChange={(value) => update('allModeViewMode', value)}
-                name={aggregateName}
-              />
-              <AllServersPerformanceSection settings={settings} update={update} name={aggregateName} />
-            </SettingsCard>
+            <AllServersStreamingSection
+              value={settings.allModeViewMode}
+              onChange={(value) => update('allModeViewMode', value)}
+              name={aggregateName}
+            />
+            <AllServersPerformanceSection settings={settings} update={update} name={aggregateName} />
           </SettingsSubCard>
         )}
       </div>

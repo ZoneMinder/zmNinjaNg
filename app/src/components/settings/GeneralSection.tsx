@@ -171,15 +171,15 @@ export function GeneralSection({
               data-testid="settings-show-developer-notices"
             />
           </SettingsRow>
-        </SettingsCard>
 
-        <SettingsSubCard name={serverProfile?.name ?? ''} testId="settings-server-subcard">
-          <HiddenMonitorsSection
-            settings={serverSettings}
-            currentProfile={serverProfile}
-            updateSettings={updateSettings}
-          />
-        </SettingsSubCard>
+          <SettingsSubCard name={serverProfile?.name ?? ''} testId="settings-server-subcard">
+            <HiddenMonitorsSection
+              settings={serverSettings}
+              currentProfile={serverProfile}
+              updateSettings={updateSettings}
+            />
+          </SettingsSubCard>
+        </SettingsCard>
       </div>
     </CollapsibleSection>
   );

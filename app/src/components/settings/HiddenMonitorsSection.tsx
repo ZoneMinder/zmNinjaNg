@@ -19,7 +19,7 @@ import { queryKeys } from '../../lib/query/query-keys';
 import { Button } from '../ui/button';
 import { Checkbox } from '../ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
-import { RowLabel, SettingsCard, SettingsRow } from './SettingsLayout';
+import { RowLabel, SettingsRow } from './SettingsLayout';
 import type { Profile } from '../../api/types';
 import type { ProfileSettings } from '../../stores/settings';
 
@@ -70,8 +70,9 @@ export function HiddenMonitorsSection({
 
   const triggerDisabled = isLoading || !!error || monitors.length === 0;
 
+  // Rows, not a card: they continue the card the section places them in.
   return (
-    <SettingsCard>
+    <>
       <SettingsRow>
         <RowLabel
           label={t('settings.hidden_monitors.section')}
@@ -161,6 +162,6 @@ export function HiddenMonitorsSection({
           {t('settings.hidden_monitors.empty')}
         </div>
       )}
-    </SettingsCard>
+    </>
   );
 }

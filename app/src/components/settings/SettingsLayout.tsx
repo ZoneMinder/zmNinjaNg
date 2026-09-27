@@ -5,7 +5,7 @@
  */
 
 import type React from 'react';
-import { useContext, useState } from 'react';
+import { Children, createContext, isValidElement, useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { STORAGE_KEYS } from '../../lib/zmninja-ng-constants';
@@ -68,12 +68,27 @@ export function CollapsibleSection({
   );
 }
 
+/** True for a SettingsSubCard placed in a SettingsCard, where with one
+ *  profile selected it continues the card's rows. */
+const InCardContext = createContext(false);
+
+/**
+ * A card of rows. A SettingsSubCard among its direct children continues the
+ * card with one profile selected; while aggregating the card lifts it out to
+ * sit below, behind its "For <name>" divider.
+ */
 export function SettingsCard({ children }: { children: React.ReactNode }) {
-  return (
+  const aggregating = useContext(SettingsAggregateContext);
+  const all = Children.toArray(children);
+  const isSub = (c: React.ReactNode) => isValidElement(c) && c.type === SettingsSubCard;
+  const lifted = aggregating ? all.filter(isSub) : [];
+  const rows = aggregating ? all.filter((c) => !isSub(c)) : all;
+  const card = rows.length > 0 && (
     <div className="rounded-lg border bg-card divide-y" data-settings-card>
-      {children}
+      <InCardContext.Provider value>{rows}</InCardContext.Provider>
     </div>
   );
+  return lifted.length ? <>{card}{lifted}</> : card;
 }
 
 export function SettingsRow({ children }: { children: React.ReactNode }) {
@@ -95,10 +110,12 @@ export function RowLabel({ label, desc }: { label: string; desc?: string }) {
 
 /**
  * Rows that belong to one server (or, for the aggregate-only knobs, to the
- * aggregate). With one profile selected they are plain rows of the section.
- * While aggregating, a quiet "For <name>" divider marks where they start; it
- * is a section label to search, so it stays above any of its rows that match,
- * and searching the name shows every row under it.
+ * aggregate). With one profile selected they are plain rows: placed in a
+ * SettingsCard they continue that card, and on their own they get a card.
+ * While aggregating, a quiet "For <name>" divider marks where they start,
+ * with the rows in their own card below it; the divider is a section label to
+ * search, so it stays above any of its rows that match, and searching the
+ * name shows every row under it.
  */
 export function SettingsSubCard({
   name,
@@ -111,8 +128,15 @@ export function SettingsSubCard({
 }) {
   const { t } = useTranslation();
   const aggregating = useContext(SettingsAggregateContext);
+  const inCard = useContext(InCardContext);
   if (!aggregating) {
-    return <div className="space-y-3" data-testid={testId}>{children}</div>;
+    // In a card this is one of its rows (so the card's divider runs above
+    // it) holding the server rows; search treats it as a card of its own.
+    return inCard ? (
+      <div className="divide-y" data-settings-rows data-testid={testId}>{children}</div>
+    ) : (
+      <div data-testid={testId}><SettingsCard>{children}</SettingsCard></div>
+    );
   }
   const label = t('settings.server_rows_for', { name });
   return (
@@ -127,7 +151,7 @@ export function SettingsSubCard({
         </span>
         <div className="h-px min-w-4 flex-1 bg-border" aria-hidden="true" />
       </div>
-      {children}
+      <SettingsCard>{children}</SettingsCard>
     </div>
   );
 }

@@ -174,10 +174,8 @@ export function NetworkSection({
                 </div>
               </div>
             </SettingsRow>
-          </SettingsCard>
 
-          <SettingsSubCard name={serverProfile?.name ?? ''} testId="settings-server-subcard">
-            <SettingsCard>
+            <SettingsSubCard name={serverProfile?.name ?? ''} testId="settings-server-subcard">
               {/* Self-signed certs: only relevant for HTTPS */}
               {serverProfile?.portalUrl?.startsWith('https') && (<><SettingsRow>
                 <div className="min-w-0 flex-1">
@@ -277,8 +275,8 @@ export function NetworkSection({
                   data-testid="settings-force-disable-multiport-switch"
                 />
               </SettingsRow>
-            </SettingsCard>
-          </SettingsSubCard>
+            </SettingsSubCard>
+          </SettingsCard>
         </div>
       </CollapsibleSection>
 

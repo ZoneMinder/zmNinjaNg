@@ -169,16 +169,14 @@ export function EventsPlaybackSection({
               available={{ linked: true, group: true, filtered: true }}
             />
           </div>
-        </SettingsCard>
 
-        <SettingsSubCard name={serverProfile?.name ?? ''} testId="settings-server-subcard">
-          <SettingsCard>
+          <SettingsSubCard name={serverProfile?.name ?? ''} testId="settings-server-subcard">
             <ThumbnailFallbackChainEditor
               chain={serverSettings.thumbnailFallbackChain}
               onChange={(next) => updateServer('thumbnailFallbackChain', next)}
             />
-          </SettingsCard>
-        </SettingsSubCard>
+          </SettingsSubCard>
+        </SettingsCard>
       </div>
     </CollapsibleSection>
   );
