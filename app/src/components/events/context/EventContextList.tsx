@@ -99,6 +99,7 @@ export function EventContextList({ rows, profileId, monitorNames, isLoading, err
             <div
               key={event.Id}
               data-testid={`event-context-row-${event.Id}`}
+              data-monitor-id={event.MonitorId}
               aria-current={isAnchor ? 'true' : undefined}
               className={cn(isAnchor && 'ring-2 ring-primary/60 bg-primary/5 rounded-md')}
             >

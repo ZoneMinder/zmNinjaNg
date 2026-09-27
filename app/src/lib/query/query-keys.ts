@@ -98,7 +98,10 @@ export const queryKeys = {
     anchorId: string,
     windowMinutes: number,
     scope: string,
-  ) => ['events', profileId, 'around', anchorId, windowMinutes, scope] as const,
+    /** The Filtered scope's inputs (Events page query and favorites), so a
+     *  change to either refetches (refs #534). */
+    filtered?: unknown,
+  ) => ['events', profileId, 'around', anchorId, windowMinutes, scope, filtered] as const,
   /** Recent events for a single monitor (monitor detail list). */
   monitorRecentEvents: (
     profileId: MaybeProfileId,

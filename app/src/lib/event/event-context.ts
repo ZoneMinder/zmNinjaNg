@@ -81,7 +81,8 @@ export function resolveScopeMonitorIds(
   scope: EventContextScope,
   ids: { linked: string[]; group: string[] }
 ): string[] | undefined {
-  if (scope === 'all') return undefined;
+  // Filtered takes its cameras from the Events page query instead (useEventsAround).
+  if (scope === 'all' || scope === 'filtered') return undefined;
   const selected = scope === 'linked' ? ids.linked : ids.group;
   if (selected.length === 0 || selected.length > EVENT_CONTEXT.maxMonitorIds) return undefined;
   return selected;

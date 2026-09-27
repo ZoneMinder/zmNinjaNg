@@ -3361,6 +3361,13 @@ third should ask for.
    finds the anchor monitor in. A scope that resolves to no ids, or to more ids
    than one filter URL can carry, also falls back to ``undefined``. A window over
    every monitor is a worse answer than an error, but it is still an answer.
+   ``filtered`` resolves to ``undefined`` here too: its filters come from the
+   Events page instead. While mounted, ``Events.tsx`` publishes the query it
+   hands ``useScopedEvents`` to the ``eventContext`` store
+   (``usePublishEventsPageQuery``), and ``useEventsAround`` narrows it to the
+   anchor's server with the same ``ownFilterIds`` the page uses, dropping the
+   page's dates, limit and sort for its own window. No published query, or one
+   with no filter besides dates, greys the segment out.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/lib/event/event-context.ts>`__
    · → :doc:`07-api-and-data-fetching`
 
@@ -3373,11 +3380,23 @@ third should ask for.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/lib/event/event-context.ts>`__
    · → :doc:`07-api-and-data-fetching`
 
+#. **The events query is two requests that fill outward from the anchor.**
+   One asks for events that started between the window start and the anchor,
+   newest first (``startDateTimeMax``, which becomes ZoneMinder's
+   ``StartDateTime <=`` filter); the other for events from the anchor to the
+   window end, oldest first. Each is capped at ``EVENT_CONTEXT.maxResults``.
+   A single oldest-first request would spend that cap on the far edge of a busy
+   window and drop the events right after the anchor. Both requests include the
+   anchor's own second, so the merge drops duplicates by event id.
+   `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/hooks/useEventsAround.ts>`__
+   · → :doc:`07-api-and-data-fetching`
+
 #. **Rows carry their own offset from the anchor, and the anchor is one of them.**
-   The events query result is mapped to ``{ event, offsetMs, isAnchor }`` with
-   ``eventInstant(item, timezone) - window.anchorMs``, then sorted by that offset,
-   so the anchor's own event always appears in its rightful place in the list
-   rather than needing to be spliced back in.
+   The merged result is mapped to ``{ event, offsetMs, isAnchor }`` with
+   ``eventInstant(item, timezone) - window.anchorMs``, then passed through
+   ``nearestFirst``, which keeps the ``maxResults`` rows with the smallest
+   absolute offset and returns them in time order. The anchor's offset is zero,
+   so it is always kept and appears in its rightful place in the list.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/hooks/useEventsAround.ts>`__
    · → :doc:`07-api-and-data-fetching`
 
@@ -3391,6 +3410,37 @@ third should ask for.
    collapsed, showing the lane count instead; the choice persists per device
    in ``localStorage`` under ``STORAGE_KEYS.eventContextRibbonOpen``.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/events/context/EventContextRibbon.tsx>`__
+   · → :doc:`05-component-architecture`
+
+#. **Replay plays the nearest rows on one clock.** The Replay button,
+   enabled from two rows up, opens ``EventContextSequence`` in a dialog. Its
+   code and locale keys still use the working name "sequence". It takes
+   ``nearestFirst(rows, EVENT_CONTEXT.sequenceMaxTiles)`` and hands them to
+   ``buildReplaySchedule``, which gives each tile a start and
+   stop time: events keep their real spacing, stretches with no event running
+   are cut, and times are divided by ``hoverPreviewPlaybackRate``.
+   ``EventZmsHoverPlayer`` reads the same setting for its stream's ``rate``, so
+   the clock and the streams stay in step. One effect sets a
+   timeout per start and stop, and a tile inside its slot renders
+   ``EventZmsHoverPlayer`` instead of its thumbnail. That player owns a connkey
+   and sends CMD_QUIT when it unmounts, so the end of a slot, **Restart**,
+   closing the dialog, and opening a tile each tear down that tile's stream.
+   One tap on a tile rebuilds the schedule, in the current mode, over the
+   tiles from that one on, so the replay continues from it; a second tap within
+   ``EVENT_CONTEXT.doubleTapMs``, timed from the click events' own
+   ``timeStamp`` rather than ``dblclick``, opens its event.
+   Opening the dialog pushes a history entry carrying
+   ``eventContextSequence`` over the panel's own, and the panel mounts the
+   dialog only while that entry is current. A tile first replaces the entry
+   with ``{ returnedFrom: eventId }`` and then navigates to its event, so back
+   remounts the dialog with playback held and ``useReturnFlash`` blinking that
+   tile, the same hook the Events list uses for a returned-to row.
+   The In order / All button swaps in ``buildTogetherSchedule``, which starts every
+   tile at zero up to ``EVENT_CONTEXT.togetherMaxStreams`` streams and queues
+   the rest into the first slot to free up. The cap applies only without
+   multi-port streaming: each playing tile holds one of the browser's six
+   connections per host, and event playback streams even in Snapshot mode.
+   `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/events/context/EventContextSequence.tsx>`__
    · → :doc:`05-component-architecture`
 
 The panel has no footer. Opening a row is the only way out besides closing

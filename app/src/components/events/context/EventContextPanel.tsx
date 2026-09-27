@@ -20,6 +20,7 @@
  */
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Grid3x3, Play } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useShallow } from 'zustand/react/shallow';
 import { cn } from '../../../lib/utils';
@@ -33,18 +34,35 @@ import { Button } from '../../ui/button';
 import { EventContextControls } from './EventContextControls';
 import { EventContextList } from './EventContextList';
 import { EventContextRibbon } from './EventContextRibbon';
+import { EventContextSequence } from './EventContextSequence';
 import { buildRibbonLanes } from '../../../lib/event/event-context-view';
 import { EVENT_CONTEXT } from '../../../lib/zmninja-ng-constants';
 import type { EventData, ProfileId } from '../../../api/types';
 
 function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId: ProfileId | undefined }) {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const location = useLocation();
+  // Sequence play is its own history entry over the panel's, so back from an
+  // event opened in it lands on it again (refs #534).
+  const historyState = location.state as EventContextHistoryState | null;
+  const sequence = historyState?.eventContextSequence;
+  const openSequence = () =>
+    navigate(
+      { pathname: location.pathname, search: location.search },
+      { state: { ...historyState, eventContextSequence: {} } satisfies EventContextHistoryState }
+    );
   const settings = useSettingsStore(useShallow((s) => s.getProfileSettings(profileId ?? '')));
   const [context, setContext] = useState<EventContextSettings>(settings.eventContext);
 
+  // The Events page behind the panel, if any, publishes its query for the
+  // Filtered scope; anywhere else this is null and Filtered greys out.
+  const pageQuery = useEventContextStore((s) => s.pageQuery);
   const { rows, monitorNames, available, effectiveScope, isLoading, error, truncated } = useEventsAround(anchor, profileId, {
     windowMinutes: context.windowMinutes,
     scope: context.scope,
     enabled: true,
+    pageQuery,
   });
 
   const applyContext = useCallback(
@@ -93,7 +111,40 @@ function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId:
 
   return (
     <>
-      <EventContextControls value={shownContext} onChange={applyContext} available={available} />
+      <EventContextControls value={shownContext} onChange={applyContext} available={available}>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={rows.length < 2}
+          onClick={openSequence}
+          data-testid="event-context-sequence-open"
+        >
+          {/* One icon: a grid of tiles with a play badge on its corner. The
+              badge's stroke is the button background, so the grid lines stop
+              short of it instead of running through. */}
+          <span className="relative inline-flex h-4 w-4 shrink-0" aria-hidden>
+            <Grid3x3 className="h-4 w-4" />
+            <Play
+              className="absolute -bottom-1 -right-1 h-2.5 w-2.5 fill-current stroke-background"
+              strokeWidth={4}
+              style={{ paintOrder: 'stroke' }}
+            />
+          </span>
+          {t('events.around.sequence')}
+        </Button>
+      </EventContextControls>
+      {/* Mounted only while open, so each open or return starts fresh. */}
+      {sequence && (
+        <EventContextSequence
+          open
+          onOpenChange={(next) => { if (!next) navigate(-1); }}
+          rows={rows}
+          profileId={profileId}
+          monitorNames={monitorNames}
+          returnedFrom={sequence.returnedFrom}
+          truncated={truncated}
+        />
+      )}
       <EventContextRibbon lanes={lanes} onSelect={onSelect} />
       <div ref={listRef} className="contents">
         <EventContextList

@@ -249,8 +249,8 @@ export const TIMELINE = {
  *  here (not lib/event/event-context.ts, which re-exports it) so that module
  *  and its dependents can be value-imported without pulling the profile/store
  *  graph through it - this file imports nothing at all. */
-export type EventContextScope = 'linked' | 'group' | 'all';
-export const EVENT_CONTEXT_SCOPES: readonly EventContextScope[] = ['linked', 'group', 'all'] as const;
+export type EventContextScope = 'linked' | 'group' | 'filtered' | 'all';
+export const EVENT_CONTEXT_SCOPES: readonly EventContextScope[] = ['linked', 'group', 'filtered', 'all'] as const;
 
 /** "Around this event": the window either side of an anchor event, and the
  *  ceiling on how much of the answer one request may ask for. */
@@ -260,6 +260,16 @@ export const EVENT_CONTEXT = {
   defaultWindowMinutes: 10,
   /** Rows one window may return before the list says it truncated. */
   maxResults: 200,
+  /** Tiles in Sequence play; the events nearest the anchor win (refs #534). */
+  sequenceMaxTiles: 12,
+  /** Streams Sequence play's together mode runs at once without multi-port
+   *  streaming: one under the browser's six connections per host, leaving
+   *  one for thumbnails and API calls (refs #534). */
+  togetherMaxStreams: 5,
+  /** Two taps on one Sequence play tile this close together open its event;
+   *  one tap plays it (refs #534). Timed by hand, not `dblclick`, which touch
+   *  WebViews do not fire reliably. */
+  doubleTapMs: 350,
   /** Above this many monitor ids the request drops the MonitorId filter and
    *  asks for every camera in the window instead, because ZoneMinder's filter
    *  URLs cap out near 8KB. Nothing narrows the answer afterwards: a wider
@@ -530,6 +540,8 @@ export const STORAGE_KEYS = {
   hoverPreviewOpen: 'zmng-hover-preview-open',
   thumbnailChainOpen: 'zmng-thumbnail-chain-open',
   eventContextRibbonOpen: 'zmng-event-context-ribbon-open',
+  /** Nearby replay mode, 'in-order' or 'all' (refs #534). */
+  eventContextReplayMode: 'zmng-event-context-replay-mode',
   // Prefix, completed with a settings section id (see CollapsibleSection).
   settingsSectionOpenPrefix: 'zmng-settings-section-open-',
 

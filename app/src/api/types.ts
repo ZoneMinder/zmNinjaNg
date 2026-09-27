@@ -6,6 +6,9 @@ import { tolerantArray, withFieldCatch } from '../lib/zm/schema-tolerance';
 export interface EventFilters {
   monitorId?: string;
   startDateTime?: string;
+  /** Upper bound on StartDateTime, so a caller can ask for events that began
+   *  before a moment, newest first (refs #534). */
+  startDateTimeMax?: string;
   endDateTime?: string;
   archived?: boolean;
   minAlarmFrames?: number;

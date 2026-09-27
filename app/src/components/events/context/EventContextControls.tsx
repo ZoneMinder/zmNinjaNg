@@ -4,6 +4,7 @@
  * group) stays visible and greyed through `useDeniedControl` rather than
  * disappearing, so it can say why instead of just not being there.
  */
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../ui/button';
 import { useDeniedControl } from '../../../hooks/useDeniedControl';
@@ -14,10 +15,12 @@ import type { EventContextSettings } from '../../../stores/settings';
 export interface EventContextControlsProps {
   value: EventContextSettings;
   onChange: (next: EventContextSettings) => void;
-  available: { linked: boolean; group: boolean };
+  available: { linked: boolean; group: boolean; filtered: boolean };
+  /** Extra controls at the end of the row (the Sequence button). */
+  children?: ReactNode;
 }
 
-function isScopeEnabled(scope: EventContextScope, available: { linked: boolean; group: boolean }) {
+function isScopeEnabled(scope: EventContextScope, available: EventContextControlsProps['available']) {
   return scope === 'all' || available[scope];
 }
 
@@ -52,7 +55,7 @@ function ScopeSegment({
   );
 }
 
-export function EventContextControls({ value, onChange, available }: EventContextControlsProps) {
+export function EventContextControls({ value, onChange, available, children }: EventContextControlsProps) {
   const { t } = useTranslation();
   return (
     <div className="flex flex-wrap items-center gap-2 border-b px-4 pb-3">
@@ -83,6 +86,7 @@ export function EventContextControls({ value, onChange, available }: EventContex
           />
         ))}
       </div>
+      {children}
     </div>
   );
 }

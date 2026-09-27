@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { render, screen, fireEvent, within, act, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, within, act, cleanup, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
 
@@ -269,6 +269,100 @@ describe('EventContextPanel', () => {
 });
 
 describe('EventContextPanel history navigation (refs #494)', () => {
+  it('offers Filtered only while an Events page with filters set sits behind it', async () => {
+    seedProfiles([makeProfile('p1')]);
+    installApiClient(P1, twoEventsServer());
+    renderWithClient(
+      <>
+        <EventContextButton event={event} profileId={P1} />
+        <EventContextPanel />
+      </>
+    );
+    fireEvent.click(screen.getByTestId('event-context-open'));
+    await screen.findByTestId(`event-context-row-${event2.Id}`);
+    expect(screen.getByTestId('event-context-scope-filtered')).toHaveClass('opacity-50');
+
+    act(() => {
+      useEventContextStore.getState().setPageQuery({ filters: { archived: true }, favoritesOnly: false, active: true });
+    });
+    expect(screen.getByTestId('event-context-scope-filtered')).not.toHaveClass('opacity-50');
+    act(() => {
+      useEventContextStore.getState().setPageQuery(null);
+    });
+  });
+
+  it('offers Sequence play only once there are two events to put in it', async () => {
+    seedProfiles([makeProfile('p1')]);
+    installApiClient(
+      P1,
+      fakeApiClient({
+        '/monitors.json': { monitors: [{ Monitor: { Id: '3', Name: 'Front Door' } }] },
+        '/groups.json': { groups: [] },
+        '/events/index': { events: [{ Event: event }], pagination: { count: 1 } },
+      })
+    );
+    renderWithClient(
+      <>
+        <EventContextButton event={event} profileId={P1} />
+        <EventContextPanel />
+      </>
+    );
+    fireEvent.click(screen.getByTestId('event-context-open'));
+    await screen.findByTestId(`event-context-row-${event.Id}`);
+    expect(screen.getByTestId('event-context-sequence-open')).toBeDisabled();
+    fireEvent.click(screen.getByTestId('event-context-close'));
+  });
+
+  it('opens Sequence play on both events, anchor included', async () => {
+    seedProfiles([makeProfile('p1')]);
+    installApiClient(P1, twoEventsServer());
+    renderWithClient(
+      <>
+        <EventContextButton event={event} profileId={P1} />
+        <EventContextPanel />
+      </>
+    );
+    fireEvent.click(screen.getByTestId('event-context-open'));
+    await screen.findByTestId(`event-context-row-${event2.Id}`);
+    fireEvent.click(screen.getByTestId('event-context-sequence-open'));
+    const sequence = within(await screen.findByTestId('event-context-sequence'));
+    expect(sequence.getAllByTestId(/^event-context-sequence-tile-/).map((el) => el.dataset.testid)).toEqual([
+      `event-context-sequence-tile-${event.Id}`,
+      `event-context-sequence-tile-${event2.Id}`,
+    ]);
+    expect(sequence.getByTestId(`event-context-sequence-tile-${event.Id}`)).toHaveAttribute('aria-current', 'true');
+  });
+
+  it('comes back to Sequence play, flashing the tile, after going back from an event opened in it', async () => {
+    seedProfiles([makeProfile('p1')]);
+    installApiClient(P1, twoEventsServer());
+    renderWithClient(
+      <>
+        <EventContextButton event={event} profileId={P1} />
+        <EventContextPanel />
+        <GoBack />
+      </>
+    );
+    fireEvent.click(screen.getByTestId('event-context-open'));
+    await screen.findByTestId(`event-context-row-${event2.Id}`);
+    fireEvent.click(screen.getByTestId('event-context-sequence-open'));
+    // One tap plays the tile; the second, right after, opens its event.
+    const tile = await screen.findByTestId(`event-context-sequence-tile-${event2.Id}`);
+    fireEvent.click(tile);
+    fireEvent.click(tile);
+    expect(screen.queryByTestId('event-context-sequence')).toBeNull();
+
+    fireEvent.click(screen.getByTestId('go-back'));
+    const returned = await screen.findByTestId(`event-context-sequence-tile-${event2.Id}`);
+    expect(returned).toHaveAttribute('data-flash', 'true');
+    expect(returned).toHaveAttribute('data-playing', 'false');
+
+    // Closing it goes back to the panel, not past it.
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByTestId('event-context-sequence')).toBeNull());
+    expect(screen.getByTestId('event-context-anchor')).toHaveTextContent(event.Name);
+  });
+
   it('reopens on the same anchor, window and scope after going back from an event opened inside it', async () => {
     seedProfiles([makeProfile('p1')], { settings: { p1: { eventContext: { windowMinutes: 10, scope: 'all' } } } });
     installApiClient(P1, twoEventsServer());

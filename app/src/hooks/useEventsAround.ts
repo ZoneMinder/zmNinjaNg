@@ -7,9 +7,9 @@
  * fetched under the same keys the parented hooks use, so an open Events page
  * has usually paid for them already.
  *
- * One request per window. The scopes resolve to a MonitorId list that
- * ZoneMinder ORs together; a list too long for one filter URL degrades to the
- * unfiltered window rather than failing.
+ * Two requests per window, filling outward from the anchor. The scopes
+ * resolve to a MonitorId list that ZoneMinder ORs together; a list too long
+ * for one filter URL degrades to the unfiltered window rather than failing.
  */
 
 import { useMemo } from 'react';
@@ -28,9 +28,13 @@ import {
   type EventContextScope,
 } from '../lib/event/event-context';
 import { eventInstant } from '../lib/event/event-instant';
+import { nearestFirst } from '../lib/event/event-context-view';
 import { resolveProfileTimezone } from '../lib/time';
 import { useProfileById } from './useCurrentProfile';
-import type { Event, EventData, ProfileId } from '../api/types';
+import { ownFilterIds } from './useScopedEvents';
+import { useEventFavoritesStore } from '../stores/eventFavorites';
+import type { EventsPageQuery } from '../stores/eventContext';
+import type { Event, EventData, EventFilters, ProfileId } from '../api/types';
 
 export interface EventAroundRow {
   event: Event;
@@ -45,8 +49,9 @@ export interface UseEventsAroundResult {
   error: unknown;
   /** The server had more rows than `EVENT_CONTEXT.maxResults`. */
   truncated: boolean;
-  /** Which scope segments this server can actually offer. */
-  available: { linked: boolean; group: boolean };
+  /** Which scope segments this server can actually offer. Filtered needs an
+   *  Events page with a filter set behind the panel. */
+  available: { linked: boolean; group: boolean; filtered: boolean };
   /** The scope the query actually ran with. Equals the requested scope unless
    *  this anchor cannot offer it, in which case it is `'all'` - the panel
    *  renders this, not the request, so the pressed chip never disagrees with
@@ -59,7 +64,14 @@ export interface UseEventsAroundResult {
 export function useEventsAround(
   anchor: EventData | null,
   profileId: ProfileId | undefined,
-  options: { windowMinutes: number; scope: EventContextScope; enabled: boolean }
+  options: {
+    windowMinutes: number;
+    scope: EventContextScope;
+    enabled: boolean;
+    /** The Events page's query, for the Filtered scope; null when the panel
+     *  was not opened over the Events page. */
+    pageQuery?: EventsPageQuery | null;
+  }
 ): UseEventsAroundResult {
   // Parented to the anchor's own profile: useProfileById never falls back to
   // the current profile when an id is given, which is what makes this safe
@@ -100,10 +112,34 @@ export function useEventsAround(
     [anchor, options.windowMinutes, timezone]
   );
 
+  const pageQuery = options.pageQuery ?? null;
   const available = useMemo(
-    () => ({ linked: linked.length > 0, group: group.length > 1 }),
-    [linked, group]
+    () => ({ linked: linked.length > 0, group: group.length > 1, filtered: !!pageQuery?.active }),
+    [linked, group, pageQuery]
   );
+
+  // Filtered: the Events page query narrowed to the anchor's server the way
+  // the page's own useScopedEvents narrows it (ownFilterIds), with this
+  // panel's window standing in for the page's date range, limit and sort.
+  // ponytail: with Favorites and tags both on, the page applies the tags in a
+  // client pass over each event's tags (ZM cannot combine them server-side);
+  // Filtered applies only the favorites then. Port that pass if it matters.
+  const favorites = useEventFavoritesStore((s) => (profileId ? s.profileFavorites[profileId] : undefined));
+  const filtered = useMemo((): EventFilters | undefined => {
+    if (!pageQuery || !profileId) return undefined;
+    const { notesRegexp, archived, cause, causeExclude, minAlarmFrames } = pageQuery.filters;
+    const { monitorId, eventIds } = ownFilterIds(profileId, pageQuery.monitorId, pageQuery.favoritesOnly, favorites);
+    return {
+      notesRegexp,
+      archived,
+      cause,
+      causeExclude,
+      minAlarmFrames,
+      monitorId,
+      eventIds,
+      tagIds: pageQuery.tagIdsByProfile?.[profileId],
+    };
+  }, [pageQuery, profileId, favorites]);
 
   // A scope this anchor cannot offer (no LinkedMonitors, no shared group)
   // resolves to no MonitorId filter at all, which asks for every camera. Left
@@ -116,18 +152,44 @@ export function useEventsAround(
     scopesKnown && options.scope !== 'all' && !available[options.scope] ? 'all' : options.scope;
 
   const monitorIds = resolveScopeMonitorIds(effectiveScope, { linked, group });
+  const scopeFilters: EventFilters =
+    effectiveScope === 'filtered' && filtered ? filtered : { monitorId: monitorIds?.join(',') };
 
   const eventsQuery = useQuery({
-    queryKey: queryKeys.eventsAround(profileId, anchor?.Event.Id ?? '', options.windowMinutes, effectiveScope),
-    queryFn: () =>
-      getEvents(getSession(profileId!).client, profileId!, {
-        startDateTime: window.startDateTime,
-        endDateTime: window.endDateTime,
-        monitorId: monitorIds?.join(','),
-        sort: 'StartDateTime',
-        direction: 'asc',
-        limit: EVENT_CONTEXT.maxResults,
-      }),
+    queryKey: queryKeys.eventsAround(
+      profileId,
+      anchor?.Event.Id ?? '',
+      options.windowMinutes,
+      effectiveScope,
+      effectiveScope === 'filtered' ? scopeFilters : undefined
+    ),
+    // Two requests that fill outward from the anchor (refs #534): one sorted
+    // oldest-first from the window start would spend the whole limit on the
+    // far edge of a busy window and drop the events right after the anchor.
+    // Both include the anchor's own second; the merge drops the duplicate.
+    queryFn: async () => {
+      const client = getSession(profileId!).client;
+      const base = { ...scopeFilters, sort: 'StartDateTime', limit: EVENT_CONTEXT.maxResults };
+      const anchorStart = anchor!.Event.StartDateTime;
+      const [before, after] = await Promise.all([
+        getEvents(client, profileId!, {
+          ...base,
+          startDateTime: window.startDateTime,
+          startDateTimeMax: anchorStart,
+          endDateTime: window.endDateTime,
+          direction: 'desc',
+        }),
+        getEvents(client, profileId!, {
+          ...base,
+          startDateTime: anchorStart,
+          endDateTime: window.endDateTime,
+          direction: 'asc',
+        }),
+      ]);
+      const events = [...new Map([...before.events, ...after.events].map((e) => [e.Event.Id, e])).values()];
+      const truncated = [before, after].some((r) => (r.pagination.totalCount ?? r.events.length) > EVENT_CONTEXT.maxResults);
+      return { events, truncated };
+    },
     // isPending, not isLoading: a disabled query reports isLoading: false in
     // React Query v5 (agents/project/domain-context.md), so gating on
     // isLoading here would flip this query on before monitors/groups data
@@ -136,14 +198,12 @@ export function useEventsAround(
   });
 
   const rows = useMemo<EventAroundRow[]>(() => {
-    const events = eventsQuery.data?.events ?? [];
-    return events
-      .map((item) => ({
-        event: item.Event,
-        offsetMs: eventInstant(item, timezone) - window.anchorMs,
-        isAnchor: item.Event.Id === anchor?.Event.Id,
-      }))
-      .sort((a, b) => a.offsetMs - b.offsetMs);
+    const events = (eventsQuery.data?.events ?? []).map((item) => ({
+      event: item.Event,
+      offsetMs: eventInstant(item, timezone) - window.anchorMs,
+      isAnchor: item.Event.Id === anchor?.Event.Id,
+    }));
+    return nearestFirst(events, EVENT_CONTEXT.maxResults);
   }, [eventsQuery.data, timezone, window.anchorMs, anchor]);
 
   const monitorNames = useMemo(
@@ -161,10 +221,11 @@ export function useEventsAround(
     // (same v5 trap as the enabled gate above).
     isLoading: active && (monitorsQuery.isPending || groupsQuery.isPending || eventsQuery.isPending),
     error: monitorsQuery.error ?? groupsQuery.error ?? eventsQuery.error,
-    // pagination.count reflects the slice actually returned (capped at the
-    // request's own limit); totalCount is the server's real match count
-    // before that slice, which is what "more than we asked for" means here.
-    truncated: (eventsQuery.data?.pagination.totalCount ?? rows.length) > EVENT_CONTEXT.maxResults,
+    // Either side having more than it returned, or the two sides together
+    // outrunning the cap nearestFirst applies, means rows were dropped.
+    truncated:
+      !!eventsQuery.data &&
+      (eventsQuery.data.truncated || eventsQuery.data.events.length > EVENT_CONTEXT.maxResults),
     available,
     effectiveScope,
   };

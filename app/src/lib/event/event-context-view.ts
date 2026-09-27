@@ -72,6 +72,68 @@ export function buildRowThumbnail(event: Event, opts: RowThumbnailOptions) {
   return { urls, aspectRatio: tw / th };
 }
 
+/** The `max` rows nearest the anchor on either side, in time order (refs
+ *  #534). The anchor is at offset zero, so it is always kept. */
+export function nearestFirst<T extends { offsetMs: number }>(rows: T[], max: number): T[] {
+  return [...rows]
+    .sort((a, b) => Math.abs(a.offsetMs) - Math.abs(b.offsetMs))
+    .slice(0, max)
+    .sort((a, b) => a.offsetMs - b.offsetMs);
+}
+
+export interface ReplaySlot {
+  eventId: string;
+  /** Milliseconds after the replay starts. */
+  playAtMs: number;
+  /** Null for an event with no length yet, which plays until the replay closes. */
+  stopAtMs: number | null;
+}
+
+/**
+ * When each Sequence play tile starts and stops in the synced replay (refs #534).
+ * Events keep their real spacing, so overlapping events play together, but
+ * a stretch where nothing is recording is cut out: the next event starts the
+ * moment the last one playing ends. `ratePercent` is ZMS's `rate` (200 = 2x),
+ * the same rate the tiles stream at. Rows must be in time order.
+ */
+export function buildReplaySchedule(rows: EventAroundRow[], ratePercent: number): ReplaySlot[] {
+  const scale = 100 / ratePercent;
+  let frontier: number | null = null;
+  let skipped = 0;
+  const first = rows[0]?.offsetMs ?? 0;
+  return rows.map(({ event, offsetMs }) => {
+    if (frontier !== null && offsetMs > frontier) skipped += offsetMs - frontier;
+    const lengthMs = (Number(event.Length) || 0) * 1000;
+    frontier = Math.max(frontier ?? offsetMs, offsetMs + lengthMs);
+    const start = offsetMs - first - skipped;
+    return {
+      eventId: event.Id,
+      playAtMs: start * scale,
+      stopAtMs: lengthMs > 0 ? (start + lengthMs) * scale : null,
+    };
+  });
+}
+
+/**
+ * Together mode (refs #534): every tile starts at once, up to
+ * `maxConcurrent` streams, and each waiting tile takes the first stream slot
+ * to free up. The cap exists because a browser opens six connections per host
+ * and each playing tile holds one; on a single port the seventh stream, and
+ * every thumbnail and API call behind it, would sit queued.
+ */
+export function buildTogetherSchedule(rows: EventAroundRow[], ratePercent: number, maxConcurrent: number): ReplaySlot[] {
+  const scale = 100 / ratePercent;
+  const slots: number[] = [];
+  return rows.map(({ event }) => {
+    const slot = slots.length < maxConcurrent ? slots.push(0) - 1 : slots.indexOf(Math.min(...slots));
+    const playAtMs = slots[slot];
+    const lengthMs = (Number(event.Length) || 0) * 1000 * scale;
+    const stopAtMs = lengthMs > 0 ? playAtMs + lengthMs : null;
+    slots[slot] = stopAtMs ?? Infinity;
+    return { eventId: event.Id, playAtMs, stopAtMs };
+  });
+}
+
 export interface RibbonDot {
   eventId: string;
   offsetMs: number;
