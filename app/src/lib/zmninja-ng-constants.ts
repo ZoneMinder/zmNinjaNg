@@ -249,8 +249,8 @@ export const TIMELINE = {
  *  here (not lib/event/event-context.ts, which re-exports it) so that module
  *  and its dependents can be value-imported without pulling the profile/store
  *  graph through it - this file imports nothing at all. */
-export type EventContextScope = 'linked' | 'group' | 'all';
-export const EVENT_CONTEXT_SCOPES: readonly EventContextScope[] = ['linked', 'group', 'all'] as const;
+export type EventContextScope = 'linked' | 'group' | 'filtered' | 'all';
+export const EVENT_CONTEXT_SCOPES: readonly EventContextScope[] = ['linked', 'group', 'filtered', 'all'] as const;
 
 /** "Around this event": the window either side of an anchor event, and the
  *  ceiling on how much of the answer one request may ask for. */

@@ -19,6 +19,8 @@ import {
 } from '../../tests/profile-fixture';
 import { installApiClient, resetFakeStoreGates } from '../../tests/fake-store-gates';
 import { useEventsAround } from '../useEventsAround';
+import { useEventFavoritesStore } from '../../stores/eventFavorites';
+import type { EventsPageQuery } from '../../stores/eventContext';
 
 const P = asProfileId('p1');
 
@@ -41,6 +43,7 @@ const wrapper = ({ children }: { children: ReactNode }) => {
 };
 
 afterEach(() => {
+  useEventFavoritesStore.setState({ profileFavorites: {} });
   resetProfileFixture();
   resetFakeStoreGates();
 });
@@ -144,6 +147,120 @@ describe('useEventsAround', () => {
     expect(result.current.monitorNames.has('4')).toBe(false);
   });
 
+  describe('the Filtered scope', () => {
+    const server = () =>
+      fakeApiClient({
+        '/monitors.json': { monitors: [{ Monitor: { Id: '3', Name: 'Door', LinkedMonitors: '4' } }] },
+        '/groups.json': { groups: [] },
+        '/events/index': { events: [], pagination: { count: 0 } },
+      });
+    const eventUrls = (client: ReturnType<typeof fakeApiClient>) =>
+      client.calls.map((c) => decodeURIComponent(c.url)).filter((u) => u.includes('/events/index'));
+
+    it('asks with the Events page query, but its own window instead of the page dates', async () => {
+      seedProfiles([P]);
+      const client = server();
+      installApiClient(P, client);
+      const pageQuery: EventsPageQuery = {
+        filters: {
+          notesRegexp: 'detected:',
+          archived: true,
+          causeExclude: 'Linked',
+          startDateTime: '2020-01-01T00:00',
+          endDateTime: '2020-01-02T00:00',
+        },
+        monitorId: '3,7',
+        favoritesOnly: false,
+        active: true,
+      };
+
+      const { result } = renderHook(
+        () => useEventsAround(anchor, P, { windowMinutes: 5, scope: 'filtered', enabled: true, pageQuery }),
+        { wrapper }
+      );
+
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+      expect(result.current.effectiveScope).toBe('filtered');
+      expect(result.current.available.filtered).toBe(true);
+      const urls = eventUrls(client);
+      expect(urls).toHaveLength(2);
+      for (const u of urls) {
+        expect(u).toContain('Notes REGEXP:detected:');
+        expect(u).toContain('Archived:1');
+        expect(u).toContain('Cause NOT REGEXP:Linked');
+        expect(u).toContain('MonitorId:3');
+        expect(u).toContain('MonitorId:7');
+        // Not the Linked scope's cameras, and not the page's date range.
+        expect(u).not.toContain('MonitorId:4');
+        expect(u).not.toContain('2020-01-0');
+      }
+    });
+
+    it("narrows to the anchor server's own monitors, favorites and tags", async () => {
+      seedProfiles([P]);
+      useEventFavoritesStore.setState({ profileFavorites: { [P]: ['406', '500'] } });
+      const client = server();
+      installApiClient(P, client);
+      const pageQuery: EventsPageQuery = {
+        filters: {},
+        // All mode: composite tokens across two servers.
+        monitorId: `${P}:3,other:9`,
+        favoritesOnly: true,
+        active: true,
+      };
+
+      const { result } = renderHook(
+        () => useEventsAround(anchor, P, { windowMinutes: 5, scope: 'filtered', enabled: true, pageQuery }),
+        { wrapper }
+      );
+
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+      const urls = eventUrls(client);
+      expect(urls.length).toBeGreaterThan(0);
+      for (const u of urls) {
+        expect(u).toContain('MonitorId:3');
+        expect(u).not.toContain('MonitorId:9');
+        expect(u).toContain('Id IN:406,500');
+      }
+    });
+
+    it('applies the page tag filter for the anchor server', async () => {
+      seedProfiles([P]);
+      const client = server();
+      installApiClient(P, client);
+      const pageQuery: EventsPageQuery = {
+        filters: {},
+        favoritesOnly: false,
+        tagIdsByProfile: { [P]: ['12'] },
+        active: true,
+      };
+
+      const { result } = renderHook(
+        () => useEventsAround(anchor, P, { windowMinutes: 5, scope: 'filtered', enabled: true, pageQuery }),
+        { wrapper }
+      );
+
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+      const urls = eventUrls(client);
+      expect(urls.length).toBeGreaterThan(0);
+      for (const u of urls) expect(u).toContain('Tags.Id:12');
+    });
+
+    it('is unavailable, and falls back to every camera, without active Events page filters', async () => {
+      seedProfiles([P]);
+      installApiClient(P, server());
+
+      const { result } = renderHook(
+        () => useEventsAround(anchor, P, { windowMinutes: 5, scope: 'filtered', enabled: true, pageQuery: null }),
+        { wrapper }
+      );
+
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+      expect(result.current.available.filtered).toBe(false);
+      expect(result.current.effectiveScope).toBe('all');
+    });
+  });
+
   it('filters to the linked cameras when the scope asks for them', async () => {
     seedProfiles([P]);
     const client = fakeApiClient({
@@ -181,7 +298,7 @@ describe('useEventsAround', () => {
       { wrapper }
     );
 
-    await waitFor(() => expect(result.current.available).toEqual({ linked: false, group: true }));
+    await waitFor(() => expect(result.current.available).toEqual({ linked: false, group: true, filtered: false }));
   });
 
   it('stays loading until groups resolve, even after monitors already have', async () => {

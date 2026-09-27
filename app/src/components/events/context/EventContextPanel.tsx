@@ -55,10 +55,14 @@ function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId:
   const settings = useSettingsStore(useShallow((s) => s.getProfileSettings(profileId ?? '')));
   const [context, setContext] = useState<EventContextSettings>(settings.eventContext);
 
+  // The Events page behind the panel, if any, publishes its query for the
+  // Filtered scope; anywhere else this is null and Filtered greys out.
+  const pageQuery = useEventContextStore((s) => s.pageQuery);
   const { rows, monitorNames, available, effectiveScope, isLoading, error, truncated } = useEventsAround(anchor, profileId, {
     windowMinutes: context.windowMinutes,
     scope: context.scope,
     enabled: true,
+    pageQuery,
   });
 
   const applyContext = useCallback(

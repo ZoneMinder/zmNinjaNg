@@ -32,3 +32,11 @@ Feature: Events around an event
     Then that sequence play tile's event detail opens
     When I go back from the sequence play tile's event
     Then sequence play is back, marking the tile I opened
+
+  @all
+  Scenario: Filtered keeps to the Events page filters
+    When I filter the Events page to the first event's monitor
+    And I open the around-this-event panel on the first event
+    And I choose the 60 minute window
+    And I choose the Filtered scope
+    Then every nearby event is from the filtered monitor

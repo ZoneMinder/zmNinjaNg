@@ -129,6 +129,7 @@ Two controls at the top of the panel narrow what "close to" means:
 - **Cameras** - Which cameras to include:
   - **Linked** - The event's own camera plus any cameras ZoneMinder has linked to it.
   - **Group** - Every camera in any ZoneMinder group the event's camera belongs to.
+  - **Filtered** - The events the Events page's own filters would show: its monitor or group selection, tags, favorites, detected objects, archived, and linked recordings. The panel's window takes the place of the page's date range. Filtered is only available when you open Nearby from the Events list with a filter set; with **Favorites only** and tags both on, it applies the favorites but not the tags.
   - **All** - Every camera on the server.
 
 A camera scope with nothing to offer (the camera has no linked cameras, or belongs to no group) stays visible but greyed out rather than disappearing, so you can see why it is not an option. If the window comes up empty, a **Wider** link steps up to the next window size.

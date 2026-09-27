@@ -301,9 +301,11 @@
       "minutes_other": "±{{count}}分钟",
       "scope_linked": "关联",
       "scope_group": "分组",
+      "scope_filtered": "已筛选",
       "scope_all": "全部",
       "scope_unavailable_linked": "此监视器没有关联的监视器。",
       "scope_unavailable_group": "此监视器不属于任何分组。",
+      "scope_unavailable_filtered": "请先在事件页面设置筛选，然后从列表中打开“附近”。",
       "ribbon_count_one": "{{count}} 个监视器",
       "ribbon_count_other": "{{count}} 个监视器"
     },

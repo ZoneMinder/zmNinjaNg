@@ -274,7 +274,7 @@ export function AppearanceSection({ settings, update }: AppearanceSectionProps) 
         <EventContextControls
           value={settings.eventContext}
           onChange={(next) => update('eventContext', next)}
-          available={{ linked: true, group: true }}
+          available={{ linked: true, group: true, filtered: true }}
         />
       </SettingsCard>
       <SettingsCard>

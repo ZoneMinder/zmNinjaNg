@@ -3361,6 +3361,13 @@ third should ask for.
    finds the anchor monitor in. A scope that resolves to no ids, or to more ids
    than one filter URL can carry, also falls back to ``undefined``. A window over
    every monitor is a worse answer than an error, but it is still an answer.
+   ``filtered`` resolves to ``undefined`` here too: its filters come from the
+   Events page instead. While mounted, ``Events.tsx`` publishes the query it
+   hands ``useScopedEvents`` to the ``eventContext`` store
+   (``usePublishEventsPageQuery``), and ``useEventsAround`` narrows it to the
+   anchor's server with the same ``ownFilterIds`` the page uses, dropping the
+   page's dates, limit and sort for its own window. No published query, or one
+   with no filter besides dates, greys the segment out.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/lib/event/event-context.ts>`__
    · → :doc:`07-api-and-data-fetching`
 

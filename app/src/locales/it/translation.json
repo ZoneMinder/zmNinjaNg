@@ -301,9 +301,11 @@
       "minutes_other": "±{{count}} min",
       "scope_linked": "Collegati",
       "scope_group": "Gruppo",
+      "scope_filtered": "Filtrati",
       "scope_all": "Tutti",
       "scope_unavailable_linked": "Questo monitor non ha monitor collegati.",
       "scope_unavailable_group": "Questo monitor non è in nessun gruppo.",
+      "scope_unavailable_filtered": "Imposta un filtro nella pagina Eventi, poi apri Vicini dal suo elenco.",
       "ribbon_count_one": "{{count}} monitor",
       "ribbon_count_other": "{{count}} monitor"
     },

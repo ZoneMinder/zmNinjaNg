@@ -301,9 +301,11 @@
       "minutes_other": "±{{count}} Min.",
       "scope_linked": "Verknüpft",
       "scope_group": "Gruppe",
+      "scope_filtered": "Gefiltert",
       "scope_all": "Alle",
       "scope_unavailable_linked": "Dieser Monitor hat keine verknüpften Monitore.",
       "scope_unavailable_group": "Dieser Monitor ist in keiner Gruppe.",
+      "scope_unavailable_filtered": "Setzen Sie auf der Ereignisseite einen Filter und öffnen Sie dann „In der Nähe“ aus der Liste.",
       "ribbon_count_one": "{{count}} Monitor",
       "ribbon_count_other": "{{count}} Monitore"
     },

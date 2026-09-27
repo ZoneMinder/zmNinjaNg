@@ -269,6 +269,28 @@ describe('EventContextPanel', () => {
 });
 
 describe('EventContextPanel history navigation (refs #494)', () => {
+  it('offers Filtered only while an Events page with filters set sits behind it', async () => {
+    seedProfiles([makeProfile('p1')]);
+    installApiClient(P1, twoEventsServer());
+    renderWithClient(
+      <>
+        <EventContextButton event={event} profileId={P1} />
+        <EventContextPanel />
+      </>
+    );
+    fireEvent.click(screen.getByTestId('event-context-open'));
+    await screen.findByTestId(`event-context-row-${event2.Id}`);
+    expect(screen.getByTestId('event-context-scope-filtered')).toHaveClass('opacity-50');
+
+    act(() => {
+      useEventContextStore.getState().setPageQuery({ filters: { archived: true }, favoritesOnly: false, active: true });
+    });
+    expect(screen.getByTestId('event-context-scope-filtered')).not.toHaveClass('opacity-50');
+    act(() => {
+      useEventContextStore.getState().setPageQuery(null);
+    });
+  });
+
   it('offers Sequence play only once there are two events to put in it', async () => {
     seedProfiles([makeProfile('p1')]);
     installApiClient(

@@ -73,6 +73,31 @@ export function resolveOwnMonitorIds(monitorId: string | undefined, profileId: P
   return owned.length > 0 ? owned.join(',') : undefined;
 }
 
+/**
+ * One profile's share of the id-shaped filters.
+ *
+ * `monitorId` and `eventIds` interact: a profile that owns NONE of the
+ * selected composite monitor tokens must contribute zero events, but
+ * resolveOwnMonitorIds can only say "no monitor filter" there, which
+ * ZoneMinder reads as "every monitor". The impossible `eventIds: []` filter
+ * is what actually makes it match nothing - getEvents short-circuits an
+ * empty id set to an empty response, the same shape favoritesOnly relies on
+ * for a profile with no favorites of its own (refs #337).
+ *
+ * Exported so the Nearby panel's Filtered scope narrows the Events page query
+ * to one server exactly the way this hook does (refs #534).
+ */
+export function ownFilterIds(
+  profileId: ProfileId,
+  monitorId: string | undefined,
+  favoritesOnly: boolean | undefined,
+  favorites: string[] | undefined
+): { monitorId: string | undefined; eventIds: string[] | undefined } {
+  const ownMonitorId = resolveOwnMonitorIds(monitorId, profileId);
+  if (monitorId && ownMonitorId === undefined) return { monitorId: undefined, eventIds: [] };
+  return { monitorId: ownMonitorId, eventIds: favoritesOnly ? (favorites ?? []) : undefined };
+}
+
 export interface UseScopedEventsOptions {
   /** Base filters, applied identically to every profile in scope - the same
    *  object the caller's single-profile query passes as `filters`. */
@@ -144,29 +169,10 @@ export function useScopedEvents(options: UseScopedEventsOptions): UseScopedEvent
   // reference-stable across renders).
   const profileFavorites = useEventFavoritesStore((s) => s.profileFavorites);
 
-  /**
-   * One profile's share of the id-shaped filters.
-   *
-   * `monitorId` and `eventIds` interact: a profile that owns NONE of the
-   * selected composite monitor tokens must contribute zero events, but
-   * resolveOwnMonitorIds can only say "no monitor filter" there, which
-   * ZoneMinder reads as "every monitor". The impossible `eventIds: []` filter
-   * is what actually makes it match nothing - getEvents short-circuits an
-   * empty id set to an empty response, the same shape favoritesOnly relies on
-   * for a profile with no favorites of its own (refs #337).
-   *
-   * Shared by the fan-out and both refetch paths so the query key they
-   * compute is byte-identical to the one that ran.
-   */
-  const ownFilterIds = useCallback(
-    (profileId: ProfileId): { monitorId: string | undefined; eventIds: string[] | undefined } => {
-      const ownMonitorId = resolveOwnMonitorIds(monitorId, profileId);
-      if (monitorId && ownMonitorId === undefined) return { monitorId: undefined, eventIds: [] };
-      return {
-        monitorId: ownMonitorId,
-        eventIds: favoritesOnly ? (profileFavorites[profileId] ?? []) : undefined,
-      };
-    },
+  // Shared by the fan-out and both refetch paths so the query key they
+  // compute is byte-identical to the one that ran.
+  const profileFilterIds = useCallback(
+    (profileId: ProfileId) => ownFilterIds(profileId, monitorId, favoritesOnly, profileFavorites[profileId]),
     [monitorId, favoritesOnly, profileFavorites]
   );
 
@@ -177,7 +183,7 @@ export function useScopedEvents(options: UseScopedEventsOptions): UseScopedEvent
   // array identities even when the underlying data hasn't changed).
   const { events, errors, isLoading, isFetching, totalCount, totalCountByProfile } = useQueries({
     queries: profiles.map((p, i) => {
-      const { monitorId: ownMonitorId, eventIds } = ownFilterIds(p.id);
+      const { monitorId: ownMonitorId, eventIds } = profileFilterIds(p.id);
       const tagIds = tagIdsByProfile?.[p.id];
       return {
         queryKey: queryKeys.eventsList(p.id, filters, limit, ownMonitorId, isGroupFilterActive, eventIds, tagIds),
@@ -282,11 +288,11 @@ export function useScopedEvents(options: UseScopedEventsOptions): UseScopedEvent
   const refetchProfile = useCallback(
     (id: ProfileId): void => {
       void queryClient.refetchQueries({
-        queryKey: queryKeys.eventsList(id, filters, limit, ownFilterIds(id).monitorId, isGroupFilterActive, ownFilterIds(id).eventIds, tagIdsByProfile?.[id]),
+        queryKey: queryKeys.eventsList(id, filters, limit, profileFilterIds(id).monitorId, isGroupFilterActive, profileFilterIds(id).eventIds, tagIdsByProfile?.[id]),
         exact: true,
       });
     },
-    [queryClient, filters, limit, isGroupFilterActive, ownFilterIds, tagIdsByProfile]
+    [queryClient, filters, limit, isGroupFilterActive, profileFilterIds, tagIdsByProfile]
   );
 
   // Refetches every profile in scope and resolves once they've all settled -
@@ -296,12 +302,12 @@ export function useScopedEvents(options: UseScopedEventsOptions): UseScopedEvent
     await Promise.all(
       profiles.map((p) =>
         queryClient.refetchQueries({
-          queryKey: queryKeys.eventsList(p.id, filters, limit, ownFilterIds(p.id).monitorId, isGroupFilterActive, ownFilterIds(p.id).eventIds, tagIdsByProfile?.[p.id]),
+          queryKey: queryKeys.eventsList(p.id, filters, limit, profileFilterIds(p.id).monitorId, isGroupFilterActive, profileFilterIds(p.id).eventIds, tagIdsByProfile?.[p.id]),
           exact: true,
         })
       )
     );
-  }, [queryClient, profiles, filters, limit, isGroupFilterActive, ownFilterIds, tagIdsByProfile]);
+  }, [queryClient, profiles, filters, limit, isGroupFilterActive, profileFilterIds, tagIdsByProfile]);
 
   return { events, errors, isLoading, isFetching, totalCount, totalCountByProfile, refetchProfile, refetchAll };
 }

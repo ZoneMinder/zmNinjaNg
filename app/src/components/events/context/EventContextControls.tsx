@@ -15,12 +15,12 @@ import type { EventContextSettings } from '../../../stores/settings';
 export interface EventContextControlsProps {
   value: EventContextSettings;
   onChange: (next: EventContextSettings) => void;
-  available: { linked: boolean; group: boolean };
+  available: { linked: boolean; group: boolean; filtered: boolean };
   /** Extra controls at the end of the row (the Sequence button). */
   children?: ReactNode;
 }
 
-function isScopeEnabled(scope: EventContextScope, available: { linked: boolean; group: boolean }) {
+function isScopeEnabled(scope: EventContextScope, available: EventContextControlsProps['available']) {
   return scope === 'all' || available[scope];
 }
 

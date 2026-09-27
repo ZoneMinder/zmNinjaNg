@@ -45,6 +45,7 @@ import { EventsAllModeBar } from '../components/events/EventsAllModeBar';
 import { EventMontageGridControls } from '../components/events/EventMontageGridControls';
 import { NinjiiToolbarButton } from '../components/assistant/NinjiiToolbarButton';
 import { EventsFilterPopover } from '../components/events/EventsFilterPopover';
+import { usePublishEventsPageQuery } from '../hooks/usePublishEventsPageQuery';
 import { QuickDateRangeButtons } from '../components/ui/quick-date-range-buttons';
 import { useTranslation } from 'react-i18next';
 import { formatForServer, formatLocalDateTimeSeconds } from '../lib/time';
@@ -237,6 +238,21 @@ export default function Events() {
     }
     return resolved;
   }, [tagIdFilter, scope?.profiles, resolveOwnTagIds]);
+
+  // The same query, for the Nearby panel's Filtered scope over this page.
+  const pageQuery = useMemo(
+    () => ({
+      filters,
+      monitorId: effectiveMonitorId,
+      favoritesOnly,
+      tagIdsByProfile,
+      active: selectedMonitorIds.length > 0 || selectedTagIds.length > 0 || favoritesOnly || archivedOnly ||
+        onlyDetectedObjects || linkedFilter !== 'all' || isGroupFilterActive,
+    }),
+    [filters, effectiveMonitorId, favoritesOnly, tagIdsByProfile, selectedMonitorIds, selectedTagIds, archivedOnly,
+      onlyDetectedObjects, linkedFilter, isGroupFilterActive]
+  );
+  usePublishEventsPageQuery(pageQuery);
 
   // Manual "Load More" pagination. persistKey identifies the current result set
   // (everything the query key encodes except the limit itself) so the expanded

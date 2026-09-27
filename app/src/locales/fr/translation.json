@@ -301,9 +301,11 @@
       "minutes_other": "±{{count}} min",
       "scope_linked": "Liés",
       "scope_group": "Groupe",
+      "scope_filtered": "Filtrés",
       "scope_all": "Tous",
       "scope_unavailable_linked": "Ce moniteur n'a aucun moniteur lié.",
       "scope_unavailable_group": "Ce moniteur n'appartient à aucun groupe.",
+      "scope_unavailable_filtered": "Définissez un filtre sur la page Événements, puis ouvrez À proximité depuis sa liste.",
       "ribbon_count_one": "{{count}} moniteur",
       "ribbon_count_other": "{{count}} moniteurs"
     },

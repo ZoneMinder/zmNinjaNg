@@ -160,3 +160,37 @@ Then('sequence play is back, marking the tile I opened', async ({ page }) => {
   // Playback holds on return, so the triangle means "you came from here".
   await expect(page.getByTestId('event-context-sequence').locator('[data-playing="true"]')).toHaveCount(0);
 });
+
+// Filtered follows the Events page filters (refs #534). The monitor deep link
+// is the one filter the page applies from the URL before its first render, so
+// the filter is known exactly rather than picked from whatever the popover shows.
+let filteredMonitorId: string | null = null;
+
+When("I filter the Events page to the first event's monitor", async ({ page }) => {
+  const firstCard = page.getByTestId('event-card').first();
+  await firstCard.waitFor({ state: 'visible', timeout: testConfig.timeouts.element });
+  filteredMonitorId = await firstCard.getAttribute('data-monitor-id');
+  await page.goto(`/#/events?monitorId=${filteredMonitorId}`);
+  // Every card, not just the first: the first is from this monitor either way.
+  await expect
+    .poll(async () => [...new Set(await page.getByTestId('event-card').evaluateAll((els) => els.map((el) => el.getAttribute('data-monitor-id'))))], {
+      timeout: testConfig.timeouts.transition * 3,
+    })
+    .toEqual([filteredMonitorId]);
+});
+
+When('I choose the Filtered scope', async ({ page }) => {
+  const chip = panel(page).getByTestId('event-context-scope-filtered');
+  await chip.click();
+  await expect(chip).toHaveAttribute('aria-pressed', 'true');
+});
+
+Then('every nearby event is from the filtered monitor', async ({ page }) => {
+  const rows = contextRows(page);
+  await expect(rows.first()).toBeVisible({ timeout: testConfig.timeouts.transition * 3 });
+  await expect
+    .poll(async () => [...new Set(await rows.evaluateAll((els) => els.map((el) => el.getAttribute('data-monitor-id'))))], {
+      timeout: testConfig.timeouts.transition * 3,
+    })
+    .toEqual([filteredMonitorId]);
+});

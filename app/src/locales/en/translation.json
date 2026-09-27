@@ -301,9 +301,11 @@
       "minutes_other": "±{{count}}m",
       "scope_linked": "Linked",
       "scope_group": "Group",
+      "scope_filtered": "Filtered",
       "scope_all": "All",
       "scope_unavailable_linked": "This camera has no linked cameras.",
       "scope_unavailable_group": "This camera is in no group.",
+      "scope_unavailable_filtered": "Set a filter on the Events page, then open Nearby from its list.",
       "ribbon_count_one": "{{count}} camera",
       "ribbon_count_other": "{{count}} cameras"
     },
