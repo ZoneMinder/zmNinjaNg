@@ -51,7 +51,7 @@ On desktop (macOS, web), you can use keyboard input on the PIN pad:
 
 ## Managing Your PIN
 
-Go to **Settings > Advanced > Kiosk PIN** to manage the PIN outside of kiosk mode:
+Go to **Settings > General > Kiosk PIN** to manage the PIN outside of kiosk mode:
 
 | Action | Description |
 |--------|-------------|

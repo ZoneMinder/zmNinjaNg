@@ -1192,10 +1192,12 @@ changes their cadence together.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/hooks/useMonitors.ts>`__
    · → :doc:`07-api-and-data-fetching`
 
-#. **The seeded path.** Toggling low mode in ``LiveStreamingSection`` copies the
-   preset's stream knobs (scale, fps, snapshot refresh) into the profile settings,
-   which is why ``useMonitorStream`` reads them as ``settings.*``.
-   `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/settings/LiveStreamingSection.tsx>`__
+#. **The seeded path.** Toggling low mode in ``NetworkSection`` with one profile
+   selected copies the preset's stream knobs (scale, fps, snapshot refresh) into
+   that profile's settings, which is why ``useMonitorStream`` reads them as
+   ``settings.*``. With an aggregate selected, ``bandwidthMode`` is written to the
+   aggregate's bucket and no member profile's stream knobs change.
+   `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/settings/NetworkSection.tsx>`__
    · → :doc:`03-state-management-zustand`
 
 #. **The non-React consumers.** Outside React, the notification keepalive and the
@@ -1315,9 +1317,9 @@ idle timeout and no auto-lock on backgrounding.
        Pin->>Store: verifyPin, count failed attempts
        Store-->>Overlay: unlock (or 30s cooldown after 5 misses)
 
-#. **Set the PIN.** ``AdvancedSection`` hosts setting, changing, and clearing the
+#. **Set the PIN.** ``KioskPinRow`` hosts setting, changing, and clearing the
    global kiosk PIN, each gated behind biometric-then-PIN re-verification.
-   `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/settings/AdvancedSection.tsx>`__
+   `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/settings/KioskPinRow.tsx>`__
    · → :doc:`04-pages-and-views`
 
 #. **The PIN secret.** ``kioskPin.ts`` stores a salted SHA-256 of the PIN in secure

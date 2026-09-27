@@ -1054,10 +1054,25 @@ version, load, storage areas, daemon status, and the ZM run-state controls.
 **Profiles** (``src/pages/Profiles.tsx``) switches, edits, and deletes server
 profiles.
 
-**Settings** (``src/pages/Settings.tsx``) is three flat sections (Appearance,
-Streaming and Playback, Advanced) delegating to components under
-``src/components/settings/``. Every write goes through
-``updateProfileSettings(currentProfile.id, patch)``.
+**Settings** (``src/pages/Settings.tsx``) renders six sections, each a
+component under ``src/components/settings/``: ``GeneralSection``,
+``LiveStreamingSection``, ``EventsPlaybackSection``, ``NetworkSection``,
+``AssistantSection``, and ``MoreSettingsSection`` (links to the
+Notifications, Live Activity, and Logs pages). The page follows the two
+setting scopes described in :doc:`03-state-management-zustand`. Rows at the
+top of a section are selection-scoped and save through the page's
+``update``, which writes the aggregate's bucket when an aggregate is
+selected and the current profile's otherwise. Server-scoped rows sit in a
+``SettingsSubCard`` headed by the profile's name and save through
+``updateServerScoped`` to one profile. With an aggregate selected, a
+``ProfilePicker`` above the first section (marked
+``data-settings-search-keep``) chooses that profile, defaulting to the first
+one in scope; with one profile selected it is the current profile. The
+aggregate-only rows (``AllServersStreamingSection`` and
+``AllServersPerformanceSection``) sit in a second sub-card in
+``LiveStreamingSection``, headed by the aggregate's name. The Settings page
+test checks that every server-scoped row renders inside a server sub-card
+and no selection-scoped row does.
 
 The search field in the Settings header filters the rendered page, not a list
 of setting names (``filterSettings`` in

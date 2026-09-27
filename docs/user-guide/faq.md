@@ -8,7 +8,7 @@ ZoneMinder 1.36 or newer with API access enabled (`OPT_USE_API = 1`).
 
 ### Does zmNinjaNg work with self-signed certificates?
 
-Yes. Enable **Allow self-signed certificates** in Settings > Advanced (the toggle is shown only when the Portal URL uses HTTPS), or toggle it when adding a new profile. On native platforms (iOS/Android/desktop) the certificate fingerprint is pinned on first connection. Using [Let's Encrypt](https://letsencrypt.org/) (free) or another trusted CA is still recommended. You can also use plain HTTP if your server is on a local network.
+Yes. Enable **Allow self-signed certificates** in Settings > Network (the toggle is shown only when the Portal URL uses HTTPS), or toggle it when adding a new profile. On native platforms (iOS/Android/desktop) the certificate fingerprint is pinned on first connection. Using [Let's Encrypt](https://letsencrypt.org/) (free) or another trusted CA is still recommended. You can also use plain HTTP if your server is on a local network.
 
 ### Linux desktop: login works but live streams and images stay black
 
@@ -27,7 +27,7 @@ Then restart zmNinjaNg. This applies to both the AppImage and `.deb` builds.
 
 On a self-signed HTTPS server, API calls succeed (they go through the native HTTP layer, which accepts the cert) but live MJPEG and event thumbnails load in the WebView, which only accepts the cert once its fingerprint is pinned. If the fingerprint was never pinned (for example the trust dialog was dismissed during setup), the API works while every image fails silently.
 
-When this state is detected the app shows a **Certificate not trusted** banner at the top. Tap **Verify**, then accept the certificate in the dialog. That pins the fingerprint, and live view and thumbnails load. You can also re-pin from Settings > Advanced.
+When this state is detected the app shows a **Certificate not trusted** banner at the top. Tap **Verify**, then accept the certificate in the dialog. That pins the fingerprint, and live view and thumbnails load. You can also re-pin from Settings > Network.
 
 ### Is zmNinjaNg free?
 
@@ -48,7 +48,7 @@ zmNinjaNg is a rewrite of zmNinja using React, TypeScript, and Capacitor. Same c
 - Check that your ZoneMinder server is accessible from your device
 - Verify the Portal URL format (typically `https://your-server/zm`)
 - Ensure the ZoneMinder API is enabled
-- If using HTTPS with a self-signed certificate, make sure the self-signed certificate toggle is enabled in Settings > Advanced
+- If using HTTPS with a self-signed certificate, make sure the self-signed certificate toggle is enabled in Settings > Network
 
 ### Android: "Connection failed" on a local server, but a remote URL works
 

@@ -1,117 +1,120 @@
 # Settings
 
-Settings are stored per profile. Each ZoneMinder server profile has its own independent settings.
+The Settings page has six sections: General, Live Streaming, Events & Playback, Network, Ninjii, and More settings. Each section heading collapses. Click or tap a heading to fold that section away, and the app remembers which sections you left closed. All sections start open.
 
-Every section heading on this screen collapses. Click or tap a heading to fold that section away, and the app remembers which sections you left closed. Advanced starts closed; the rest start open.
+To find a setting, tap the search icon at the top right of the page and type part of its name, its description, or its current value. Only the matching settings stay on screen, including ones in sections you have collapsed and in folded rows such as Previews or Advanced streaming. Typing a section's name shows that whole section, and typing a server's name shows every setting in that server's box. Tap the X or press Esc to clear the search. The sections you collapsed are still collapsed afterwards.
 
-To find a setting, tap the search icon at the top right of the page and type part of its name, its description, or its current value. Only the matching settings stay on screen, including ones in sections you have collapsed. Typing a section's name shows that whole section. Tap the X or press Esc to clear the search. The sections you collapsed are still collapsed afterwards.
+## Your settings and server settings
 
-## Appearance
+Most sections have two parts. The rows at the top are about how you use the app: the theme, what opens first, whether video starts in fullscreen. Below them, a box headed with a server's name holds that server's settings: how it sends video, which of its monitors are hidden, how the app connects to it. The Ninjii section is one server box.
+
+With one profile (one saved server) selected, both parts save to that profile. The box shows the profile's name, and there is no picker.
+
+With a Virtual Profile Group selected, such as the built-in All Servers:
+
+- A **Profile** picker sits at the top of the page, above General. It chooses which server every server box on the page shows and edits. It starts on the first server in the group. The picker stays visible while you search.
+- The rows outside the server boxes save to the group itself. A group keeps its own copy of these settings, starting from the defaults, so a change you make here applies while that group is selected and leaves each server's own settings as they were. Only the server boxes change a member server's settings.
+- Live Streaming has one more box, headed with the group's name, for settings that only exist in a group. See [In a Virtual Profile Group](#settings-group-streaming-mode) and [Group performance](#group-performance).
+
+A few settings apply to the whole app on this device, whichever profile or group is selected: **Language**, **Kiosk PIN**, and **Show developer notices**.
+
+## General
 
 | Setting | Description |
 |---------|-------------|
-| **Language** | Interface language (English, German, Spanish, French, Italian, Chinese, Russian) |
-| **Start screen** | Which screen the app opens on: Last used, Dashboard, Monitors, Montage, Live Activity, Events, or Timeline. Last used is the default and reopens the page you left, down to a specific monitor or event. Each server and each group remembers its own choice. |
-| **Theme** | Light, Cream, Dark, Slate, Amber, or System (follows system setting by default). The quick toggle is in the sidebar; see {doc}`getting-started`. |
-| **Date format** | How dates are displayed throughout the app |
-| **Time format** | 12-hour or 24-hour clock |
+| **Language** | Interface language (English, German, Spanish, Persian, French, Italian, Chinese, Russian). |
+| **Theme** | Light, Cream, Dark, Slate, Amber, or System (follows the device setting). This is the same choice as the theme button in the sidebar, so changing one changes the other. See {doc}`getting-started`. |
+| **Start Screen** | Which screen the app opens on: Last used, Dashboard, Monitors, Montage, Live Activity, Events, or Timeline. Last used is the default and reopens the page you left, down to a specific monitor or event. Each server and each group remembers its own choice. |
+| **Date Format** | How dates are displayed throughout the app. Pick a preset or Custom to type your own pattern. |
+| **Time Format** | 12-hour or 24-hour clock, or Custom. |
+| **Previews** | Which screens show an enlarged live or event preview on hover (long-press on mobile), and how fast event previews play. Folded by default. See [Previews](#previews). |
+| **Insomnia** | Keeps the screen awake while viewing. This is the same setting as the Insomnia toggle in the sidebar. |
+| **Fullscreen when turned sideways** | Phones and tablets only. On by default. See [Fullscreen when turned sideways](#fullscreen-when-turned-sideways). |
 | **TV mode** | Larger touch targets and D-pad/remote navigation for TV and set-top devices. See [TV mode](#tv-mode). |
-| **Thumbnail display** | Order of frame types to try when loading event thumbnails |
-| **Hover preview** | Where an enlarged live or event preview appears on hover (long-press on mobile). See [Hover preview](#hover-preview). |
+| **Kiosk PIN** | Set, change, or clear the PIN that locks kiosk mode. See [Kiosk PIN](#kiosk-pin). |
+| **Show developer notices** | Shows maintainer announcements in the app. |
 
-### Thumbnail display
+The server box under General holds **Hidden Monitors**. See [Hidden Monitors](#hidden-monitors).
 
-Event thumbnails can come from different frame types in ZoneMinder: `alarm` (first alarmed frame), `snapshot` (representative frame), `objdetect` (object-detection frame from zmeventnotification), or a custom frame ID. Different ZoneMinder setups populate different frame types depending on motion and ML configuration, so a single fixed choice leaves some users with missing images.
+### Previews
 
-The **Thumbnail display** setting lets you pick the order in which the app tries each frame type. Each row has a drag position (up/down arrows), an enable toggle, and the frame type label. The last row is a custom slot where you can type any frame ID your setup uses (for example `1` for the first frame). Disabled rows and empty custom rows are skipped.
+Previews enlarge a feed or event in place when you hover over it on desktop, or long-press it on mobile. Each screen has its own checkbox, so you can turn previews on only where you want them:
 
-When a thumbnail loads successfully, the winning frame type is cached for the session so the app doesn't re-try earlier entries for the same event. If every entry fails, a placeholder image is shown. At no point does the app flash a broken-image icon, the thumbnail area stays blank until a frame succeeds or the chain is exhausted.
-
-The setting applies to every thumbnail surface in the app: events list, event montage, event detail hero, timeline scrubber, timeline preview popover, and notification history.
-
-### TV mode
-
-TV mode adapts the interface for televisions and set-top boxes (for example Fire TV or Android TV). It enlarges touch targets and enables D-pad and remote navigation, so you can move focus and select with a remote instead of a pointer. Turn it on when running zmNinjaNg on a TV; leave it off on phones, tablets, and desktops.
-
-### Hover preview
-
-Hover preview enlarges a feed or event in place when you hover over it on desktop, or long-press it on mobile. Each surface has its own toggle, so you can enable previews only where you want them:
-
-- Events list and Events grid
-- Monitors list and Monitors grid
+- Events (list) and Events (grid)
+- Monitors (list) and Monitors (grid)
 - Dashboard
 - Timeline
 - Notifications
 - Assistant cards (the event cards under a Ninjii answer)
 - Live Activity tiles (off by default: the tile already streams that camera, so the preview opens a second connection for a larger copy)
+- Nearby events
 
-The **playback speed** control (0.5x, 1x, 1.5x, 2x, 4x) sets how fast an event preview plays. Live monitor previews open a fresh stream while the preview is on screen and close it when you move away.
+The **Playback speed** control (0.5x, 1x, 1.5x, 2x, 4x) sets how fast an event preview plays. Live monitor previews open a fresh stream while the preview is on screen and close it when you move away.
 
-## Assistant
+### Fullscreen when turned sideways
 
-Enable and configure Ninjii, the chat assistant that answers questions about your cameras and events. It is read-only: it can look things up and take you to a screen, and cannot arm a monitor, change the run state, or delete an event. The model runs either on your device or on an Ollama server you run yourself. See {doc}`assistant` for the full guide, including the backend choice, the advanced dials, and what stays on your device.
+When this is on, turning a phone or tablet sideways makes the player fill the screen on a monitor's live view and on event playback. Turning it upright again brings the page back. When it is off, turning the device does nothing to the layout.
 
-## Hidden Monitors
+This switch only covers rotation. **Open live view in fullscreen**, **Open events in fullscreen**, a monitor's own **Open in fullscreen** setting, and the maximize button on the page all keep working either way. On a desktop computer the setting has no effect.
 
-Hide monitors you do not want to see in this profile. A hidden monitor is removed from the Monitors list, Montage, Dashboard, the Events list, and the Timeline, and its events are hidden too. The setting is per profile, so hiding a monitor in one profile does not affect another.
+### TV mode
 
-The **Hidden Monitors** section lists every monitor on the server, including ones you have already hidden, each with a toggle. Turn a toggle on to hide that monitor; turn it off to restore it. The count at the top of the section shows how many monitors are currently hidden.
+TV mode adapts the interface for televisions and set-top boxes (for example Fire TV or Android TV). It enlarges touch targets and enables D-pad and remote navigation, so you can move focus and select with a remote instead of a pointer. Turn it on when running zmNinjaNg on a TV; leave it off on phones, tablets, and desktops.
 
-Hiding a monitor does not change anything on the ZoneMinder server. It only controls what this app shows for the current profile.
+### Kiosk PIN
 
-## Bandwidth Settings
+Manage the PIN used to lock and unlock kiosk mode. See {doc}`kiosk` for full details on kiosk mode.
 
-Control how often the app fetches data. Useful on mobile data or slow connections.
+| Action | Description |
+|--------|-------------|
+| **Set PIN** | Appears when no PIN is stored. Sets a new 4-digit PIN. |
+| **Change PIN** | Requires verifying your current PIN or biometrics before setting a new one. |
+| **Clear PIN** | Removes the PIN. Requires verifying the current PIN or biometrics first. |
 
-| Mode | Description |
-|------|-------------|
-| **Normal** | Standard refresh intervals (10–30s depending on the data type) |
-| **Low** | Reduced refresh rates (2x slower) and lower image quality |
+### Hidden Monitors
 
-Low bandwidth mode affects:
+Hide monitors you do not want to see. A hidden monitor is removed from the Monitors list, Montage, Dashboard, the Events list, and the Timeline, and its events are hidden too. The list belongs to the server named on the box, so hiding a monitor on one server does not affect another.
 
-- Monitor snapshot refresh rate
-- Dashboard widget refresh intervals
-- Event list polling
-- Timeline/heatmap data loading
-- Image quality and scale
+The **Hidden Monitors** list shows every monitor on the server, including ones you have already hidden, each with a checkbox. Tick a monitor to hide it; clear the tick to restore it. The count at the top shows how many monitors are currently hidden. Its heading collapses like a section heading.
 
-:::{tip}
-Switch to **Low bandwidth mode** when on mobile data or a slow connection. You can switch back to Normal when on WiFi.
-:::
+Hiding a monitor does not change anything on the ZoneMinder server. It only controls what this app shows.
 
 ## Live Streaming
 
-Settings that control live camera feeds:
+| Setting | Description |
+|---------|-------------|
+| **Monitors per page** | How many monitors the Montage and the Monitors screen show at once, with arrows to step through the pages (0 turns paging off, the default; presets 6/12/24). Useful with many monitors (over 30) when the server has no multi-port streaming. See [Paging a long list](montage.md#paging-a-long-list). |
+| **Skip offline monitors** | Monitors whose capture or function is set to None are left out of the grid, the montage, and live-view swiping. |
+| **Open live view in fullscreen** | Every monitor's detail page opens maximized. For one monitor only, use **Open in fullscreen** in that monitor's Settings dialog instead. |
+
+The server box under Live Streaming holds how that server sends live video:
 
 | Setting | Description |
 |---------|-------------|
-| **Streaming Mode** | *Streaming* delivers continuous video. *Snapshot* fetches a periodic still image instead, lower bandwidth, lower frame rate. See [Streaming Mode](#streaming-mode) below for where this setting applies. |
-| **Enable Go2RTC** | When on, the app tries WebRTC/MSE/HLS for each monitor and falls back to MJPEG. When off, all monitors use MJPEG. |
-| **Streaming Protocols** | WebRTC, MSE, and HLS, tried in parallel when Go2RTC is configured. The first protocol to produce video wins. |
-| **Snapshot interval** | How often to refresh the still image when Streaming Mode is set to *Snapshot* (1–30 seconds) |
-| **Monitors per page** | How many monitors the Montage and the Monitors screen show at once, with arrows to step through the pages (0 turns paging off, the default; presets 6/12/24). Useful with many monitors (over 30) when the server has no multi-port streaming. See [Paging a long list](montage.md#paging-a-long-list). |
-| **Protocol Label** | Shows or hides the streaming protocol indicator (MJPEG/MSE/WebRTC) on video feeds across all pages |
-| **Open live view in fullscreen** | Every monitor's detail page opens maximized. For one monitor only, use **Open in fullscreen** in that monitor's Settings dialog instead. |
-| **Stream FPS** | Maximum frame rate for live MJPEG streams (1–30 fps, default 10; presets 5/10/15/30). Lower values reduce bandwidth and CPU. |
-| **Stream Scale** | Server-side scaling applied to MJPEG frames before they are sent (10–100%, default 50; presets 25/50/75/100). Lower values reduce bandwidth. |
+| **Streaming Mode** | *Streaming* delivers continuous video. *Snapshot* fetches a periodic still image instead, with lower bandwidth and a lower frame rate. See [Streaming Mode](#streaming-mode). |
+| **Refresh Interval** | Shown only in Snapshot mode. How often to refresh the still image (1 to 30 seconds, default 3; presets 1/3/5). |
+| **Stream FPS** | Maximum frame rate for live MJPEG streams (1 to 30 fps, default 10; presets 5/10/15/30). Lower values reduce bandwidth and CPU. |
+| **Stream Scale** | Server-side scaling applied to MJPEG frames before they are sent (10 to 100%, default 50; presets 25/50/75/100). Lower values reduce bandwidth. |
+| **Advanced streaming** | Folded by default. Holds the four rows below. |
+| **Enable WebRTC/HLS/MSE** | When on, the app tries WebRTC, MSE, and HLS through go2rtc for each monitor and falls back to MJPEG. When off, all monitors on this server use MJPEG. |
+| **Streaming Protocols** | WebRTC, MSE, and HLS, tried in parallel when go2rtc is configured. The first protocol to produce video wins. |
+| **STUN Servers** | Enable only when you reach go2rtc directly over the internet. Leave it off on a LAN or VPN. |
+| **Protocol Label** | Shows or hides the streaming protocol indicator (MJPEG/MSE/WebRTC) on this server's video feeds. |
 
-Switching to **Low bandwidth mode** resets Stream FPS, Stream Scale, and Snapshot interval to lower defaults.
+With one profile selected, switching **Bandwidth Mode** (under Network) resets Stream FPS, Stream Scale, and Refresh Interval to that mode's defaults.
 
 ### Streaming Protocols
 
-When Go2RTC is enabled, zmNinjaNg tries WebRTC, MSE, and HLS in parallel. The first protocol to produce video wins and is used for the stream. If all Go2RTC protocols fail, the app falls back to MJPEG via ZoneMinder's ZMS. The protocol label (when enabled) shows which protocol is active on each feed.
-
-You can configure which protocols to try in the Go2RTC protocol settings.
+When WebRTC/HLS/MSE is enabled, zmNinjaNg tries WebRTC, MSE, and HLS in parallel. The first protocol to produce video wins and is used for the stream. If all go2rtc protocols fail, the app falls back to MJPEG via ZoneMinder's ZMS. The protocol label (when enabled) shows which protocol is active on each feed.
 
 ### Streaming Mode
 
 The Streaming Mode toggle picks how live MJPEG feeds are fetched:
 
 - **Streaming**: continuous MJPEG over a single open connection at the configured FPS. Smooth motion, higher bandwidth and CPU.
-- **Snapshot**: a single JPEG fetched every *Snapshot interval* seconds. Lower bandwidth and CPU, choppier motion.
+- **Snapshot**: a single JPEG fetched every *Refresh Interval* seconds. Lower bandwidth and CPU, choppier motion.
 
-Streaming Mode interacts with the streaming protocol layer. When a monitor uses Go2RTC (WebRTC/MSE/HLS), it always delivers continuous video, the Streaming Mode setting is ignored for that monitor. The setting only changes behavior on the MJPEG path: either when Go2RTC is disabled globally, when it is disabled per-monitor, or when Go2RTC fails and the app falls back to MJPEG.
+Streaming Mode interacts with the streaming protocol layer. When a monitor uses go2rtc (WebRTC/MSE/HLS), it always delivers continuous video, and the Streaming Mode setting is ignored for that monitor. The setting only changes behavior on the MJPEG path: when WebRTC/HLS/MSE is disabled for the server, when it is disabled for the monitor, or when go2rtc fails and the app falls back to MJPEG.
 
 #### What a new profile starts with
 
@@ -123,13 +126,15 @@ A new profile picks its Streaming Mode from the server it just connected to:
 
 Snapshot mode needs a decoded image waiting on the server. For a monitor whose *Decoding* is *On demand*, ZoneMinder stops decoding about ten seconds after the last viewer, so the app asks such monitors for their stills in a way that counts as watching and keeps them decoding. That request is heavier on the server, and on a large montage of *On demand* cameras it makes tiles fill slowly. Monitors set to *Always*, *KeyFrames* or *KeyFrames + On demand* always have a recent picture decoded, so they get the light request; with the two keyframe settings the still advances one keyframe at a time. That request only exists in ZoneMinder 1.37.61 and later. On older servers a monitor set to *On demand* decoding freezes its snapshot tile on one frame: set it to *Decoding: Always*, or use Streaming mode for it.
 
-The count is the monitors the app shows for that server: deleted and per-profile excluded monitors are left out, disabled ones still count because they still get a tile. If the app cannot list the monitors on first connect, the mode stays at Snapshot until a later connect can decide. A profile with *Force disable multi-port streaming* on (Advanced) is treated as if the server had none.
+The count is the monitors the app shows for that server: deleted and hidden monitors are left out, disabled ones still count because they still get a tile. If the app cannot list the monitors on first connect, the mode stays at Snapshot until a later connect can decide. A profile with *Force disable multi-port streaming* on (Network) is treated as if the server had none.
 
 The row shows which mode is recommended for the server and a line explaining why. The recommendation is only the starting value: changing the toggle overrides it for that profile, and no later connection changes it back.
 
-#### While aggregating
+(settings-group-streaming-mode)=
 
-In a virtual profile group, the Streaming Mode toggle in this section belongs to the server picked below it, and a separate aggregate Streaming Mode row appears at the top of the page, named after the group. It has three options: **Per server** (the default, each server's tiles follow that server's own toggle), **Streaming**, and **Snapshot**. The last two impose one choice on every tile in the aggregate for as long as you are aggregating; neither touches any profile's own setting, and neither carries between one aggregate and another.
+#### In a Virtual Profile Group
+
+With a group selected, the Streaming Mode toggle in the server box belongs to the server chosen in the Profile picker. The group's own box, below the server box and headed with the group's name, has a separate Streaming Mode row with three options: **Per server** (the default, each server's tiles follow that server's own toggle), **Streaming**, and **Snapshot**. The last two impose one choice on every tile in the group for as long as the group is selected. Neither changes any server's own setting, and neither carries over to another group.
 
 (connection-limits-by-platform)=
 
@@ -152,9 +157,9 @@ On **iOS, Android, and the web app**, a ZoneMinder server keeps only about 6 liv
 
 | View | Affected? | Behavior |
 |------|-----------|----------|
-| Monitors list (grid/list of tiles) | Yes | Each tile honors the global setting. WebRTC tiles always stream; MJPEG tiles follow Streaming Mode. |
+| Monitors list (grid/list of tiles) | Yes | Each tile honors its server's setting. WebRTC tiles always stream; MJPEG tiles follow Streaming Mode. |
 | Montage page | Yes | Same as Monitors list, per-tile behavior. |
-| Dashboard monitor widgets | Yes | Each widget honors the global setting. |
+| Dashboard monitor widgets | Yes | Each widget honors its server's setting. |
 | **Monitor Detail page** (single monitor view) | **No, always streams** | This page ignores Streaming Mode and always uses continuous video. The stream is closed (`CMD_QUIT` sent to ZoneMinder) when you leave the page. |
 | Hover-preview popovers (over a monitor card) | No, always streams | Hardcoded to streaming for the brief time the popover is open. |
 | Event playback (Event Detail, Timeline previews) | Not applicable | These play recorded video, not live feeds. |
@@ -162,77 +167,105 @@ On **iOS, Android, and the web app**, a ZoneMinder server keeps only about 6 liv
 
 #### Why Monitor Detail always streams
 
-You opened one camera deliberately, so the bandwidth tradeoff that justifies Snapshot mode in dense grids does not apply. The page also tears the stream down on exit, so honoring snapshot mode here would just add latency without saving bandwidth.
+You opened one camera deliberately, so the bandwidth tradeoff that justifies Snapshot mode in dense grids does not apply. The page also tears the stream down on exit, so honoring snapshot mode here would add latency without saving bandwidth.
 
 ### Per-Monitor Streaming Override
 
-The global Go2RTC setting acts as the default for all monitors. To override it for a single monitor, open the monitor's Settings dialog (Video tab). When a monitor has Go2RTC enabled, a Go2RTC toggle appears. Turning it off forces MJPEG for that monitor only, leaving other monitors unaffected.
+The server's **Enable WebRTC/HLS/MSE** setting is the default for its monitors. To override it for a single monitor, open the monitor's Settings dialog (Video tab). When a monitor has go2rtc enabled, a Go2RTC toggle appears. Turning it off forces MJPEG for that monitor only, leaving other monitors unaffected.
 
-## Playback
+### Group performance
 
-Settings that affect event video playback and dashboard refresh:
+With a Virtual Profile Group selected, the group's box under Live Streaming also holds a section named after the group, for example *All Servers performance*. Every row in it governs the combined view rather than one server, and its values belong to that group. Each row shows the value it ships with, and grows a reset button once you change it.
 
-| Setting | Description |
-|---------|-------------|
-| **Event autoplay** | Start video playback automatically when opening the Event Detail page |
-| **Open events in fullscreen** | Play event video fullscreen as soon as the Event Detail page opens. Going fullscreen on the player itself lasts only for that event. |
-| **Events per page** | How many events to load per page on the Events screen (10–1000, presets at 100/300/500) |
-| **Dashboard refresh interval** | How often the dashboard widgets reload data (5–300 seconds, presets at 10/30/60) |
-
-## Notification Settings
-
-Configure how zmNinjaNg handles event notifications. See {doc}`notifications` for details.
-
-## Advanced
-
-The Advanced section is a single flat section containing the following controls (no subsection headings in the UI):
-
-| Setting | Description |
-|---------|-------------|
-| **Allow self-signed certificates** | Shown only when the Portal URL uses HTTPS. Enable when your ZoneMinder server uses a self-signed certificate. On native platforms (iOS/Android/desktop) the app pins the certificate fingerprint on first connection; toggling this off and back on lets you re-pin. |
-| **Force disable multi-port streaming** | Off by default (auto): when the server reports `ZM_MIN_STREAMING_PORT`, the app routes each monitor to its own port (`base port + monitor ID`). Turn this on to ignore that config and use the portal's default port for all streams. Use it when the per-monitor ports are not reachable (firewall, reverse proxy, or partial server config). Scoped per profile. |
-| **API timeout** | Seconds to wait for a server API request before it is aborted, so a stalled request errors and retries instead of leaving a screen stuck loading. Default 15. Set `0` to disable the timeout (wait forever). Does not apply to downloads. Scoped per profile. |
-| **Auto-restart** (desktop only) | The desktop app's webview accumulates memory over long sessions that only a restart reclaims, so this is **on by default**: it restarts the app automatically on an interval, in minutes (default 120, minimum 1). Turn it off to disable. A **Restart now** button next to it restarts immediately. The window size and position are preserved across the restart. |
-
-Log level, per-component overrides, and log redaction moved to the Logs page; see {doc}`logs`, which also covers persistent log files, file locations, and the Share / Open / Clear buttons.
-
-### Kiosk PIN
-
-Manage the PIN used to lock and unlock kiosk mode. See {doc}`kiosk` for full details on kiosk mode.
-
-| Action | Description |
-|--------|-------------|
-| **Set PIN** | Appears when no PIN is stored. Sets a new 4-digit PIN. |
-| **Change PIN** | Requires verifying your current PIN or biometrics before setting a new one. |
-| **Clear PIN** | Removes the PIN. Requires verifying the current PIN or biometrics first. |
-
-## Aggregate performance
-
-This section only appears while you are aggregating, above the server picker,
-because every row in it governs the combined view rather than one server. Its
-heading names the virtual profile group you are currently in, whose values are
-its own. Each row shows the value it ships
-with, and grows a reset button once you change it.
-
-Aggregating several servers multiplies work that one server does once: every
-tile is a separate live connection, and every watched camera is a separate
-request on every poll. The values that suit you depend on how many servers you
-combine and what your network and servers will take, which is why they are
-here rather than fixed.
+Combining several servers multiplies work that one server does once: every tile is a separate live connection, and every watched camera is a separate request on every poll. The values that suit you depend on how many servers you combine and what your network and servers will take, which is why they are settings rather than fixed.
 
 | Setting | Default | What it does |
 |---|---|---|
 | **Maximum live streams** | 16 | Tiles the montage opens across every server at once. The slots are shared out evenly, so a server with many cameras cannot take the whole budget and leave another with none. The rest collapse into an overflow notice at the top of the grid. |
 | **Monitors watched for alarms** | 24 | Cameras {doc}`live-activity` polls across every server, drawn evenly from each so one busy server can't crowd the rest out. |
-| **Fastest alarm polling** | 10 seconds | A floor under the Live Activity check interval while aggregating. A slower interval set on that page still applies; this only stops the combined poll running faster than this. |
+| **Fastest alarm polling** | 10 seconds | A floor under the Live Activity check interval while a group is selected. A slower interval set on that page still applies; this only stops the combined poll running faster than this. |
 | **Notification grouping** | 3 seconds | Events arriving from different servers within this window collapse into one summary notification instead of one each. |
-| **Stream tuning** | Off | On *Reduced*, montage tiles ask their server for 5 frames a second at quarter scale instead of what that server normally sends. A server you have already set lower than that keeps its own values, so this only ever asks for less. Go2RTC tiles are unaffected. |
+| **Stream tuning** | Off | On *Reduced*, montage tiles ask their server for 5 frames a second at quarter scale instead of what that server normally sends. A server you have already set lower than that keeps its own values, so this only ever asks for less. go2rtc tiles are unaffected. |
 | **Pause hidden streams** | Off | Stops montage streams once the app has been in the background, or the window minimized, for 30 seconds, including when it opens that way. They come back when you do. A window merely covered by another window still counts as visible. |
 | **Pause off-screen tiles** | Off | Stops a montage tile once it has been scrolled a screen's worth past the edge of the grid, and starts it again as it comes back. The limit above still decides which cameras are on the page, so scrolling never brings an overflow camera in. |
-| **Idle timeout** | 0 (never) | Drops montage tiles to periodic snapshots after this many minutes with no touch, click or keypress. Any interaction puts them back on live streams, as does returning to the app. This runs whether or not *Keep screen awake* is on, which is the case it exists for. |
+| **Idle timeout** | 0 (never) | Drops montage tiles to periodic snapshots after this many minutes with no touch, click or keypress. Any interaction puts them back on live streams, as does returning to the app. This runs whether or not *Insomnia* is on, which is the case it exists for. |
 
-None of these touch any profile's own settings, and none apply in single mode:
-a single server has nothing to fan out across.
+None of these change any server's own settings. With one profile selected the group box does not appear, since a single server has nothing to fan out across.
+
+## Events & Playback
+
+| Setting | Description |
+|---------|-------------|
+| **Events Per Page** | How many events to load per page on the Events screen (10 to 1000, default 100; presets 100/300/500). |
+| **Event Video Autoplay** | Start video playback automatically when opening the Event Detail page. |
+| **Open events in fullscreen** | Play event video fullscreen as soon as the Event Detail page opens. Going fullscreen on the player itself lasts only for that event. |
+| **Recent events on monitor** | How many recent events a monitor's live view lists under the video (1 to 50, default 20; presets 10/20/50). |
+| **Nearby events** | The default time window and cameras for nearby events. See [Nearby](events.md#nearby). |
+
+The server box under Events & Playback holds **Event thumbnails**.
+
+### Event thumbnails
+
+Event thumbnails can come from different frame types in ZoneMinder: `alarm` (first alarmed frame), `snapshot` (representative frame), `objdetect` (object-detection frame from zmeventnotification), or a custom frame ID. Different ZoneMinder setups populate different frame types depending on motion and ML configuration, so a single fixed choice leaves some users with missing images. Because this depends on the server, each server keeps its own order.
+
+The **Event thumbnails** row folds open to let you pick the order in which the app tries each frame type. Each row has up and down arrows to move it, a checkbox to enable it, and the frame type label. The last row is a custom slot where you can type any frame ID your setup uses (for example `1` for the first frame). Disabled rows and empty custom rows are skipped.
+
+When a thumbnail loads successfully, the winning frame type is cached for the session so the app doesn't re-try earlier entries for the same event. If every entry fails, a placeholder image is shown. The app never flashes a broken-image icon: the thumbnail area stays blank until a frame succeeds or the list runs out.
+
+The setting applies to every thumbnail surface in the app: events list, event montage, event detail hero, timeline scrubber, timeline preview popover, and notification history. Each event's thumbnail follows the order set for the server that recorded it.
+
+## Network
+
+| Setting | Description |
+|---------|-------------|
+| **Bandwidth Mode** | *Normal* or *Low*. Controls how often the app fetches data. See [Bandwidth Mode](#bandwidth-mode). |
+
+The server box under Network holds how the app reaches that server:
+
+| Setting | Description |
+|---------|-------------|
+| **Allow Self-Signed Certificates** | Shown only when the Portal URL uses HTTPS. Enable when your ZoneMinder server uses a self-signed certificate. On native platforms (iOS/Android/desktop) the app pins the certificate fingerprint on first connection; toggling this off and back on lets you re-pin. |
+| **API timeout** | Seconds to wait for a server API request before it is aborted, so a stalled request errors and retries instead of leaving a screen stuck loading. Default 15. Set `0` to disable the timeout (wait forever). Does not apply to downloads. |
+| **Force disable multi-port streaming** | Off by default: when the server reports `ZM_MIN_STREAMING_PORT`, the app routes each monitor to its own port (`base port + monitor ID`). Turn this on to ignore that config and use the portal's default port for all streams. Use it when the per-monitor ports are not reachable (firewall, reverse proxy, or partial server config). |
+
+### Bandwidth Mode
+
+Bandwidth Mode controls how often the app fetches data. Low mode helps on mobile data or a slow connection.
+
+| Mode | Description |
+|------|-------------|
+| **Normal** | Standard refresh intervals (10 to 30 seconds depending on the data type) |
+| **Low** | Reduced refresh rates (2x slower) and lower image quality |
+
+Low bandwidth mode affects:
+
+- Monitor snapshot refresh rate
+- Dashboard widget refresh intervals
+- Event list polling
+- Timeline/heatmap data loading
+- Image quality and scale
+
+Dashboard widgets have no refresh setting of their own. They refresh on the Bandwidth Mode schedule; see {doc}`dashboard`.
+
+With one profile selected, switching the mode also resets that profile's Stream FPS, Stream Scale, and Refresh Interval (under Live Streaming) to the mode's defaults. With a Virtual Profile Group selected, the mode belongs to the group and switching it leaves every server's stream values alone.
+
+:::{tip}
+Switch to **Low bandwidth mode** when on mobile data or a slow connection. You can switch back to Normal when on WiFi.
+:::
+
+## Ninjii
+
+Enable and configure Ninjii, the chat assistant that answers questions about your cameras and events. It is read-only: it can look things up and take you to a screen, and cannot arm a monitor, change the run state, or delete an event. The model runs either on your device or on an Ollama server you run yourself. The whole section is a server box, so each server has its own Ninjii settings. See {doc}`assistant` for the full guide, including the backend choice, the advanced dials, and what stays on your device.
+
+## More settings
+
+Some pages keep their own settings. This section links to them:
+
+- **Notifications**: how zmNinjaNg handles event notifications. See {doc}`notifications`.
+- **Live Activity**: see {doc}`live-activity`.
+- **Logs**: the log level, **Component Logs** (per-component levels), and **Disable Log Redaction** are on the Logs page. See {doc}`logs`, which also covers persistent log files, file locations, and the Share / Open / Clear buttons.
+
+Settings for one monitor are in that monitor's own Settings dialog: open the monitor, then its settings. See {doc}`monitors`.
 
 ## Multi-Server
 
@@ -245,4 +278,3 @@ In a multi-server setup:
 - Multi-port streaming (`ZM_MIN_STREAMING_PORT`) is automatically applied to per-monitor URLs
 
 For the full Server page (version, load, disk usage, daemon state, per-server metrics, storage areas, and run-state control), see {doc}`server`.
-

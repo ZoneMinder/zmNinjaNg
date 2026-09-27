@@ -207,7 +207,7 @@ The pieces: ``lib/security/ssl-trust.ts`` (JS interface),
 ``ios/App/App/SSLTrustPlugin.swift``.
 
 **Used by:** ``services/profile-bootstrap.ts``, ``pages/ProfileForm.tsx``,
-``pages/Profiles.tsx``, ``components/settings/AdvancedSection.tsx``,
+``pages/Profiles.tsx``, ``components/settings/NetworkSection.tsx``,
 ``components/layout/AppLayout.tsx``, ``hooks/useCertTrustPrompt.ts``,
 ``components/CertTrustDialog.tsx``.
 
@@ -960,7 +960,7 @@ exported for tests and not normally called directly.
 
 **Used by:** ``hooks/useKioskLock.ts`` (setup),
 ``components/kiosk/KioskOverlay.tsx`` (unlock),
-``components/settings/AdvancedSection.tsx`` (set, change, clear).
+``components/settings/KioskPinRow.tsx`` (set, change, clear).
 
 Log file (``lib/log-file/``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

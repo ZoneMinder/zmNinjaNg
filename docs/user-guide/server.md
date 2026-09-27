@@ -1,6 +1,6 @@
 # Server
 
-The Server page shows the health and configuration of your ZoneMinder server, or of every server in a multi-server cluster. Open it from the sidebar. The refresh button at the top reloads all metrics at once; otherwise they refresh on the interval set by your [Bandwidth mode](settings.md#bandwidth-settings).
+The Server page shows the health and configuration of your ZoneMinder server, or of every server in a multi-server cluster. Open it from the sidebar. The refresh button at the top reloads all metrics at once; otherwise they refresh on the interval set by your [Bandwidth Mode](settings.md#bandwidth-mode).
 
 ## Version information
 
