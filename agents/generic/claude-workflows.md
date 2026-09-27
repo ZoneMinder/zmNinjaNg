@@ -84,8 +84,9 @@ named fleet.
   required check, read what it ran: two required checks here passed on every
   PR for months, one whose workflow had been deleted and one that skipped
   itself for a missing secret (M2).
-- Merging waits for green CI, but never by polling: queue it with
-  `gh pr merge --auto` at PR creation and GitHub merges when checks pass.
+- Merging needs the maintainer's approval (P8). Once they approve, queue it
+  with `gh pr merge --auto` and GitHub merges when checks pass; never poll
+  CI. Without approval, open the PR and stop.
   Caution: if the repo's auto-merge setting is off, `--auto` silently
   falls back to an immediate merge; that landed one PR here before its
   checks finished. Confirm `allow_auto_merge` is true before relying on
