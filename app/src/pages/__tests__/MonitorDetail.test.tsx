@@ -286,6 +286,21 @@ describe('MonitorDetail All-mode deep route (refs #337)', () => {
     expect(useSettingsStore.getState().getProfileSettings('profile-1').fullscreenMonitorIds).toEqual([]);
   });
 
+  it('stays out of fullscreen on a landscape touch device when the setting is off (refs #536)', () => {
+    h.routeParams = { id: '1' };
+    useSettingsStore.getState().updateProfileSettings('profile-1', { landscapeFullscreen: false });
+    monitorQuery();
+    vi.stubGlobal('matchMedia', vi.fn(() => ({
+      matches: true, // touch pointer and landscape orientation both match
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    })));
+
+    render(<MonitorDetail />);
+    expect(screen.queryByTestId('monitor-detail-exit-fullscreen')).toBeNull();
+    vi.unstubAllGlobals();
+  });
+
   it('falls back to the current session and single-mode key when the route has no profileId', () => {
     h.routeParams = { id: '1' };
     useQueryMock.mockImplementation(({ queryKey, queryFn }: { queryKey: readonly unknown[]; queryFn: () => unknown }) => {

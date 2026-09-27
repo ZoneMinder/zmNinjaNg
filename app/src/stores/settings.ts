@@ -252,6 +252,10 @@ export interface ProfileSettings {
    *  monitors stay in the rotation: they only start capturing once viewed. */
   skipOfflineMonitors: boolean;
   insomnia: boolean; // Global: Keep screen awake across all pages
+  /** Add fullscreen when a phone or tablet turns sideways, on top of
+   *  `monitorDetailFullscreen` / `eventPlaybackFullscreen`. Selection-scoped
+   *  (refs #536). */
+  landscapeFullscreen: boolean;
   monitorDetailInsomnia: boolean; // @deprecated - use global insomnia instead
   montageInsomnia: boolean; // @deprecated - use global insomnia instead
   eventMontageFilters: {
@@ -506,6 +510,7 @@ export const DEFAULT_SETTINGS: ProfileSettings = {
   // On by default: zmNinja 1.6 stepped through live monitors only (refs #527)
   skipOfflineMonitors: true,
   insomnia: false,
+  landscapeFullscreen: true,
   monitorDetailInsomnia: false,
   montageInsomnia: false,
   eventMontageFilters: {

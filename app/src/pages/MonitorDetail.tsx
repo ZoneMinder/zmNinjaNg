@@ -119,6 +119,7 @@ export default function MonitorDetail() {
   const [isFullscreen, setFullscreen] = useAutoFullscreen({
     startFullscreen: selectionSettings.monitorDetailFullscreen || openFullscreen,
     resetKey: id,
+    landscape: selectionSettings.landscapeFullscreen,
   });
   // One value for the picture and the zone overlay on top of it: the overlay
   // has to be letterboxed or cropped exactly as the feed is, or the zones sit

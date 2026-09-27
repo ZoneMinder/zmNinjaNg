@@ -106,6 +106,21 @@ describe('useAutoFullscreen', () => {
     expect(result.current[0]).toBe(false);
   });
 
+  it('does not add fullscreen on a landscape touch device when landscape is false', () => {
+    landscape = true;
+    const { result } = renderHook(() => useAutoFullscreen({ startFullscreen: false, landscape: false }));
+    expect(result.current[0]).toBe(false);
+  });
+
+  it('still honors startFullscreen and the page buttons when landscape is false', () => {
+    landscape = true;
+    const { result } = renderHook(() => useAutoFullscreen({ startFullscreen: true, landscape: false }));
+    expect(result.current[0]).toBe(true);
+
+    act(() => result.current[1](false));
+    expect(result.current[0]).toBe(false);
+  });
+
   it('drops the session override when the subject changes', () => {
     const { result, rerender } = renderHook(
       ({ key }) => useAutoFullscreen({ startFullscreen: true, resetKey: key }),

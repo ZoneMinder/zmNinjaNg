@@ -37,18 +37,23 @@ function isLandscapeTouch(): boolean {
  *
  * A session override lasts until the next rotation or until `resetKey`
  * changes (the detail page stays mounted across monitors).
+ *
+ * `landscape` is the user's "fullscreen when turned sideways" setting
+ * (default true elsewhere); false stops a touch device's rotation from
+ * adding fullscreen, while `startFullscreen` and `setFullscreen` keep working.
  */
-export function useAutoFullscreen({ startFullscreen, resetKey }: {
+export function useAutoFullscreen({ startFullscreen, resetKey, landscape = true }: {
   startFullscreen: boolean;
   resetKey?: string;
+  landscape?: boolean;
 }): [isFullscreen: boolean, setFullscreen: (fullscreen: boolean) => void] {
-  const [landscape, setLandscape] = useState(isLandscapeTouch);
+  const [isDeviceLandscape, setIsDeviceLandscape] = useState(isLandscapeTouch);
   const [override, setOverride] = useState<{ key: string | undefined; value: boolean } | null>(null);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) return;
     const onChange = () => {
-      setLandscape(isLandscapeTouch());
+      setIsDeviceLandscape(isLandscapeTouch());
       setOverride(null);
     };
     const orientation = screenOrientation();
@@ -66,5 +71,5 @@ export function useAutoFullscreen({ startFullscreen, resetKey }: {
   }, [resetKey]);
 
   const active = override && override.key === resetKey ? override.value : null;
-  return [active ?? (startFullscreen || landscape), setFullscreen];
+  return [active ?? (startFullscreen || (landscape && isDeviceLandscape)), setFullscreen];
 }

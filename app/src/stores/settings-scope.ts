@@ -26,6 +26,7 @@ export const SELECTION_SCOPED_SETTINGS = [
   'hoverPreview',
   'hoverPreviewPlaybackRate',
   'insomnia',
+  'landscapeFullscreen',
   'tvMode',
   'monitorsPerPage',
   'skipOfflineMonitors',

@@ -189,7 +189,10 @@ export default function EventDetail() {
   // "Open events in fullscreen" on, which left every later event fullscreen
   // with Settings as the only way out (#476). The player's own fullscreen
   // button takes the page along (and back) through the same setter.
-  const [isFullscreen, setFullscreen] = useAutoFullscreen({ startFullscreen: selectionSettings.eventPlaybackFullscreen });
+  const [isFullscreen, setFullscreen] = useAutoFullscreen({
+    startFullscreen: selectionSettings.eventPlaybackFullscreen,
+    landscape: selectionSettings.landscapeFullscreen,
+  });
 
   // Guards against a stray second 'ended' (video.js can emit it during teardown)
   // triggering a double advance. Re-armed for each event by the id-change effect.
