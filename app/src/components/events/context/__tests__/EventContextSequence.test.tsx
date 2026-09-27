@@ -6,7 +6,7 @@
  */
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 
 vi.mock('../../../../api/store-gates', () => import('../../../../tests/fake-store-gates'));
 vi.mock('../../../../lib/security/secureStorage', () => import('../../../../tests/fake-secure-storage'));
@@ -16,7 +16,8 @@ vi.mock('../../../../lib/zm/zms-quit', () => ({
 }));
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string, opts?: { count?: number }) => `${key}${opts?.count !== undefined ? `:${opts.count}` : ''}`,
+    t: (key: string, opts?: { count?: number; total?: string }) =>
+      `${key}${opts?.count !== undefined ? `:${opts.count}` : ''}${opts?.total !== undefined ? `/${opts.total}` : ''}`,
     i18n: { language: 'en' },
   }),
 }));
@@ -175,6 +176,76 @@ describe('EventContextSequence', () => {
     fireEvent.click(screen.getByTestId('event-context-sequence-replay'));
     act(() => vi.advanceTimersByTime(0));
     expect(playingIds()).toEqual(['a']);
+  });
+
+  it('plays only the tapped tile, stopping the replay, until its event ends', () => {
+    renderGrid();
+    act(() => vi.advanceTimersByTime(0));
+    expect(playingIds()).toEqual(['a']);
+
+    fireEvent.click(screen.getByTestId('event-context-sequence-tile-c'));
+    act(() => vi.advanceTimersByTime(0));
+    expect(playingIds()).toEqual(['c']);
+    expect(quitIds()).toEqual(['a']);
+
+    // c is 5s long, 2.5s at 2x; nothing else starts after it.
+    act(() => vi.advanceTimersByTime(2_500));
+    expect(playingIds()).toEqual([]);
+    act(() => vi.advanceTimersByTime(30_000));
+    expect(playingIds()).toEqual([]);
+  });
+
+  it('opens the event on a double tap', () => {
+    function Path() {
+      return <div data-testid="path">{useLocation().pathname}</div>;
+    }
+    render(
+      <MemoryRouter>
+        <EventContextSequence open onOpenChange={() => {}} rows={rows} profileId={P} monitorNames={new Map()} />
+        <Path />
+      </MemoryRouter>
+    );
+    const tile = screen.getByTestId('event-context-sequence-tile-b');
+    fireEvent.click(tile);
+    act(() => vi.advanceTimersByTime(100));
+    fireEvent.click(tile);
+    expect(screen.getByTestId('path')).toHaveTextContent('/all/events/p1/b');
+  });
+
+  it('treats two taps far apart as two plays, not an open', () => {
+    function Path() {
+      return <div data-testid="path">{useLocation().pathname}</div>;
+    }
+    render(
+      <MemoryRouter>
+        <EventContextSequence open onOpenChange={() => {}} rows={rows} profileId={P} monitorNames={new Map()} />
+        <Path />
+      </MemoryRouter>
+    );
+    const tile = screen.getByTestId('event-context-sequence-tile-b');
+    fireEvent.click(tile);
+    act(() => vi.advanceTimersByTime(1_000));
+    fireEvent.click(tile);
+    act(() => vi.advanceTimersByTime(0));
+    expect(screen.getByTestId('path')).toHaveTextContent(/^\/$/);
+    expect(playingIds()).toEqual(['b']);
+  });
+
+  it('says how many of the nearby events it shows when it cannot show them all', () => {
+    const many = Array.from({ length: 15 }, (_, i) => row(`e${i}`, i * 1_000, 10));
+    const { rerender } = render(
+      <MemoryRouter>
+        <EventContextSequence open onOpenChange={() => {}} rows={many} profileId={P} monitorNames={new Map()} />
+      </MemoryRouter>
+    );
+    expect(screen.getByTestId('event-context-sequence-nearest')).toHaveTextContent('events.around.sequence_nearest:12/15');
+
+    rerender(
+      <MemoryRouter>
+        <EventContextSequence open onOpenChange={() => {}} rows={many} profileId={P} monitorNames={new Map()} truncated />
+      </MemoryRouter>
+    );
+    expect(screen.getByTestId('event-context-sequence-nearest')).toHaveTextContent('events.around.sequence_nearest:12/15+');
   });
 
   it('starts over from the first tile on replay', () => {

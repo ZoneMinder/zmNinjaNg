@@ -119,9 +119,26 @@ Then('more than one sequence play tile plays at once', async ({ page }) => {
   await expect.poll(() => playing.count(), { timeout: testConfig.timeouts.transition }).toBeGreaterThan(1);
 });
 
-When('I open the first sequence play tile', async ({ page }) => {
+// One tap plays a tile on its own, so the other tiles stop (refs #534).
+let lastTileEventId: string | null = null;
+
+When('I tap the last sequence play tile', async ({ page }) => {
+  if (!sequenceListIds) return;
+  const last = page.getByTestId('event-context-sequence').locator('[data-testid^="event-context-sequence-tile-"]').last();
+  lastTileEventId = (await last.getAttribute('data-testid'))!.replace('event-context-sequence-tile-', '');
+  await last.click();
+});
+
+Then('only the last sequence play tile plays', async ({ page }) => {
+  if (!sequenceListIds || !lastTileEventId) return;
+  const playing = page.getByTestId('event-context-sequence').locator('[data-playing="true"]');
+  await expect(playing).toHaveCount(1, { timeout: testConfig.timeouts.transition });
+  await expect(playing).toHaveAttribute('data-testid', `event-context-sequence-tile-${lastTileEventId}`);
+});
+
+When('I double tap the first sequence play tile', async ({ page }) => {
   if (!sequenceTileEventId) return;
-  await page.getByTestId(`event-context-sequence-tile-${sequenceTileEventId}`).click();
+  await page.getByTestId(`event-context-sequence-tile-${sequenceTileEventId}`).dblclick();
 });
 
 Then("that sequence play tile's event detail opens", async ({ page }) => {

@@ -13,6 +13,9 @@
  * a history entry). It then holds playback and blinks the tile the user came
  * from, the way the Events list marks a returned-to row, until Replay or the
  * mode button starts playback again.
+ *
+ * One tap on a tile plays it alone in place of the schedule; a second tap
+ * right after opens its event.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -44,9 +47,11 @@ export interface EventContextSequenceProps {
   monitorNames: Map<string, string>;
   /** The tile whose event the user just came back from, if any. */
   returnedFrom?: string;
+  /** The panel's list itself was cut off, so the total is a floor. */
+  truncated?: boolean;
 }
 
-export function EventContextSequence({ open, onOpenChange, rows, profileId, monitorNames, returnedFrom }: EventContextSequenceProps) {
+export function EventContextSequence({ open, onOpenChange, rows, profileId, monitorNames, returnedFrom, truncated }: EventContextSequenceProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
@@ -69,13 +74,21 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
   const [playing, setPlaying] = useState<ReadonlySet<string>>(new Set());
   const [run, setRun] = useState(0);
   const [held, setHeld] = useState(Boolean(returnedFrom));
+  // A tapped tile plays alone, in place of the schedule, until it ends.
+  const [solo, setSolo] = useState<string | null>(null);
   const restart = () => {
+    setSolo(null);
     setHeld(false);
     setRun((n) => n + 1);
   };
 
+  const active = useMemo(() => {
+    if (solo) return buildTogetherSchedule(tiles.filter(({ event }) => event.Id === solo), rate, 1);
+    return held ? [] : schedule;
+  }, [solo, held, tiles, rate, schedule]);
+
   useEffect(() => {
-    if (!open || held) return;
+    if (!open) return;
     const toggle = (id: string, on: boolean) =>
       setPlaying((prev) => {
         const next = new Set(prev);
@@ -85,7 +98,7 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
       });
     // A tile queued behind streams that never end (events with no length
     // yet) has an infinite start and never plays.
-    const timers = schedule
+    const timers = active
       .filter((slot) => Number.isFinite(slot.playAtMs))
       .flatMap(({ eventId, playAtMs, stopAtMs }) => [
         setTimeout(() => toggle(eventId, true), playAtMs),
@@ -95,7 +108,7 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
       timers.forEach(clearTimeout);
       setPlaying(new Set());
     };
-  }, [open, held, schedule, run]);
+  }, [open, active, run]);
 
   // A tile that starts playing below the fold scrolls into view. Only newly
   // started tiles count, so a tile that ends never pulls the view back.
@@ -118,6 +131,19 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
     returnScrolledRef.current = true;
     scrollToTile(returnedFrom, 'center');
   }, [returnedFrom, tiles]);
+
+  // One tap plays the tile; a second tap on it within doubleTapMs opens it.
+  const lastTapRef = useRef<{ eventId: string; at: number } | null>(null);
+  const tapTile = (eventId: string, now: number) => {
+    const last = lastTapRef.current;
+    lastTapRef.current = { eventId, at: now };
+    if (last?.eventId === eventId && now - last.at <= EVENT_CONTEXT.doubleTapMs) {
+      openEvent(eventId);
+      return;
+    }
+    setSolo(eventId);
+    setRun((n) => n + 1);
+  };
 
   const openEvent = (eventId: string) => {
     markViewed(eventId);
@@ -150,7 +176,7 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
             className="h-7 px-2 text-xs"
             onClick={() => {
               setTogether((v) => !v);
-              setHeld(false);
+              restart();
             }}
             data-mode={together ? 'together' : 'sequence'}
             data-testid="event-context-sequence-together"
@@ -162,6 +188,14 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
             <RotateCcw className="h-3.5 w-3.5" />
             {t('events.around.sequence_replay')}
           </Button>
+          {tiles.length < rows.length && (
+            <span className="ml-auto min-w-0 truncate text-[11px] text-muted-foreground" data-testid="event-context-sequence-nearest">
+              {t('events.around.sequence_nearest', {
+                count: tiles.length,
+                total: `${rows.length}${truncated ? '+' : ''}`,
+              })}
+            </span>
+          )}
         </div>
         <div ref={gridRef} className="grid grid-cols-2 gap-1 sm:grid-cols-3">
           {tiles.map(({ event, offsetMs, isAnchor }) => {
@@ -183,7 +217,7 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
                 monitorName={monitorNames.get(event.MonitorId) ?? event.MonitorId}
                 isPlaying={playing.has(event.Id)}
                 profileId={profileId}
-                onOpen={() => openEvent(event.Id)}
+                onTap={(at) => tapTile(event.Id, at)}
               />
             );
           })}
@@ -202,19 +236,20 @@ interface SequenceTileProps {
   monitorName: string;
   isPlaying: boolean;
   profileId: ProfileId | undefined;
-  onOpen: () => void;
+  /** Called with the click's own timestamp, in ms. */
+  onTap: (at: number) => void;
 }
 
-function SequenceTile({ event, offsetMs, isAnchor, urls, aspectRatio, monitorName, isPlaying, profileId, onOpen }: SequenceTileProps) {
+function SequenceTile({ event, offsetMs, isAnchor, urls, aspectRatio, monitorName, isPlaying, profileId, onTap }: SequenceTileProps) {
   const { t } = useTranslation();
   const flash = useReturnFlash(event.Id);
   return (
     <button
       type="button"
-      onClick={onOpen}
+      onClick={(e) => onTap(e.timeStamp)}
       aria-current={isAnchor ? 'true' : undefined}
-      aria-label={`${t('common.view')}: ${event.Name}`}
-      title={monitorName}
+      aria-label={`${monitorName}, ${event.Name}. ${t('events.around.sequence_tile_hint')}`}
+      title={`${monitorName}. ${t('events.around.sequence_tile_hint')}`}
       data-testid={`event-context-sequence-tile-${event.Id}`}
       data-playing={isPlaying}
       data-flash={flash}

@@ -128,6 +128,7 @@ function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId:
           profileId={profileId}
           monitorNames={monitorNames}
           returnedFrom={sequence.returnedFrom}
+          truncated={truncated}
         />
       )}
       <EventContextRibbon lanes={lanes} onSelect={onSelect} />

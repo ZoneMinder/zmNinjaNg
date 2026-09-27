@@ -26,7 +26,9 @@ Feature: Events around an event
     Then sequence play shows the nearby events in time order, playing
     When I switch sequence play to play all together
     Then more than one sequence play tile plays at once
-    When I open the first sequence play tile
+    When I tap the last sequence play tile
+    Then only the last sequence play tile plays
+    When I double tap the first sequence play tile
     Then that sequence play tile's event detail opens
     When I go back from the sequence play tile's event
     Then sequence play is back, marking the tile I opened

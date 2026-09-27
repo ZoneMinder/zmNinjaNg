@@ -266,6 +266,10 @@ export const EVENT_CONTEXT = {
    *  streaming: one under the browser's six connections per host, leaving
    *  one for thumbnails and API calls (refs #534). */
   togetherMaxStreams: 5,
+  /** Two taps on one Sequence play tile this close together open its event;
+   *  one tap plays it (refs #534). Timed by hand, not `dblclick`, which touch
+   *  WebViews do not fire reliably. */
+  doubleTapMs: 350,
   /** Above this many monitor ids the request drops the MonitorId filter and
    *  asks for every camera in the window instead, because ZoneMinder's filter
    *  URLs cap out near 8KB. Nothing narrows the answer afterwards: a wider

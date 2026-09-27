@@ -324,13 +324,16 @@ describe('EventContextPanel history navigation (refs #494)', () => {
     fireEvent.click(screen.getByTestId('event-context-open'));
     await screen.findByTestId(`event-context-row-${event2.Id}`);
     fireEvent.click(screen.getByTestId('event-context-sequence-open'));
-    fireEvent.click(await screen.findByTestId(`event-context-sequence-tile-${event2.Id}`));
+    // One tap plays the tile; the second, right after, opens its event.
+    const tile = await screen.findByTestId(`event-context-sequence-tile-${event2.Id}`);
+    fireEvent.click(tile);
+    fireEvent.click(tile);
     expect(screen.queryByTestId('event-context-sequence')).toBeNull();
 
     fireEvent.click(screen.getByTestId('go-back'));
-    const tile = await screen.findByTestId(`event-context-sequence-tile-${event2.Id}`);
-    expect(tile).toHaveAttribute('data-flash', 'true');
-    expect(tile).toHaveAttribute('data-playing', 'false');
+    const returned = await screen.findByTestId(`event-context-sequence-tile-${event2.Id}`);
+    expect(returned).toHaveAttribute('data-flash', 'true');
+    expect(returned).toHaveAttribute('data-playing', 'false');
 
     // Closing it goes back to the panel, not past it.
     fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });

@@ -3417,6 +3417,10 @@ third should ask for.
    ``EventZmsHoverPlayer`` instead of its thumbnail. That player owns a connkey
    and sends CMD_QUIT when it unmounts, so the end of a slot, **Replay**,
    closing the dialog, and opening a tile each tear down that tile's stream.
+   One tap on a tile swaps the schedule for that tile alone
+   (``buildTogetherSchedule`` over one row); a second tap within
+   ``EVENT_CONTEXT.doubleTapMs``, timed from the click events' own
+   ``timeStamp`` rather than ``dblclick``, opens its event.
    Opening Sequence play pushes a history entry carrying
    ``eventContextSequence`` over the panel's own, and the panel mounts the
    dialog only while that entry is current. A tile first replaces the entry
