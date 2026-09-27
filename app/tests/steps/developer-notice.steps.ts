@@ -66,7 +66,7 @@ async function setNoticeToggle(page: import('@playwright/test').Page, on: boolea
   if (checked !== on) await sw.click();
 }
 
-// Note: "I expand the Advanced settings section" is defined in settings.steps.ts
+// Note: "I expand the {string} settings section" is defined in settings.steps.ts
 // and reused here.
 
 When('I turn off developer notices in settings', async ({ page }) => {

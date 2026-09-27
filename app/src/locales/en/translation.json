@@ -383,9 +383,11 @@
     "server": "Server",
     "title": "Settings",
     "subtitle": "App configuration",
+    "section_general": "General",
     "section_live_streaming": "Live Streaming",
-    "section_playback": "Playback",
-    "section_advanced": "Advanced",
+    "section_events_playback": "Events & Playback",
+    "section_network": "Network",
+    "section_more": "More settings",
     "hidden_monitors": {
       "section": "Hidden Monitors",
       "desc": "Hide monitors from all views. Their events are also hidden.",
@@ -595,12 +597,16 @@
     "show_protocol_label_desc": "Show streaming protocol on video feeds",
     "live_fullscreen": "Open live view in fullscreen",
     "live_fullscreen_desc": "Every monitor opens maximized. For one monitor, use Open in fullscreen in that monitor's settings",
+    "landscape_fullscreen": "Fullscreen when turned sideways",
+    "landscape_fullscreen_desc": "Phones and tablets only. Applies to live view and event playback.",
     "skip_offline_monitors": "Skip offline monitors",
     "skip_offline_monitors_desc": "Offline monitors (capture/function set to None) are skipped in the grid, the montage and live-view swiping",
     "webrtc_use_stun": "STUN Servers",
     "webrtc_use_stun_desc": "Enable only for go2rtc reached directly over the internet. Off on LAN or VPN.",
     "webrtc_protocols": "Streaming Protocols",
     "webrtc_protocols_desc": "Protocols to try in parallel — first to produce video wins.",
+    "advanced_streaming": "Advanced streaming",
+    "advanced_streaming_desc": "WebRTC/HLS/MSE, STUN and the protocol label",
     "protocol_webrtc_desc": "Low-latency peer-to-peer streaming (recommended)",
     "protocol_mse_desc": "Media Source Extensions - browser-based streaming",
     "protocol_hls_desc": "HTTP Live Streaming - adaptive bitrate, higher latency",
@@ -640,7 +646,6 @@
     "allow_self_signed_certs_desc": "Accept self-signed SSL certificates",
     "allow_self_signed_certs_warning": "Reduces security. Use only on trusted networks.",
     "self_signed_certs_desktop_note": "On desktop, add your certificate to the system trust store.",
-    "section_appearance": "Appearance",
     "appearance": {
       "custom": "Custom...",
       "twelve_hour": "12-hour",
@@ -652,7 +657,7 @@
         "desc": "Default window and cameras for nearby events."
       },
       "thumbnail_chain": {
-        "title": "Thumbnail display",
+        "title": "Event thumbnails",
         "desc": "Order to try for event thumbnails. Disabled rows are skipped.",
         "alarm": "Alarm frame",
         "snapshot": "Snapshot",
@@ -663,9 +668,8 @@
         "move_down": "Move down"
       },
       "hover_preview": {
-        "title": "Hover preview",
+        "title": "Previews",
         "desc": "Show an enlarged preview when hovering thumbnails.",
-        "title_long_press": "Long press preview",
         "desc_long_press": "Long press a thumbnail to show an enlarged preview.",
         "events_list": "Events (list)",
         "events_grid": "Events (grid)",
@@ -683,6 +687,8 @@
     },
     "monitors_per_page": "Monitors per page",
     "monitors_per_page_desc": "Useful with many monitors (over 30) when the server has no multi-port streaming. 0 turns paging off.",
+    "per_monitor_settings": "Per-monitor settings",
+    "per_monitor_settings_desc": "Open a monitor, then its settings.",
     "search": {
       "placeholder": "Search settings",
       "no_results": "No settings match"

@@ -383,9 +383,11 @@
     "server": "服务器",
     "title": "设置",
     "subtitle": "应用配置",
+    "section_general": "常规",
     "section_live_streaming": "实时流",
-    "section_playback": "播放",
-    "section_advanced": "高级",
+    "section_events_playback": "事件与回放",
+    "section_network": "网络",
+    "section_more": "更多设置",
     "hidden_monitors": {
       "section": "隐藏的监视器",
       "desc": "在所有视图中隐藏监视器。其事件也会被隐藏。",
@@ -595,12 +597,16 @@
     "show_protocol_label_desc": "在视频源上显示流协议",
     "live_fullscreen": "以全屏打开实时视图",
     "live_fullscreen_desc": "每个监视器都最大化打开。单个监视器请在其设置中使用“以全屏打开”",
+    "landscape_fullscreen": "横屏时全屏",
+    "landscape_fullscreen_desc": "仅限手机和平板。适用于实时画面和事件回放。",
     "skip_offline_monitors": "跳过离线监视器",
     "skip_offline_monitors_desc": "离线监视器（采集/功能设置为 None）会在网格、多画面和实时视图滑动中被跳过",
     "webrtc_use_stun": "STUN 服务器",
     "webrtc_use_stun_desc": "仅当通过公网直接访问 go2rtc 时启用。局域网或 VPN 下关闭。",
     "webrtc_protocols": "流媒体协议",
     "webrtc_protocols_desc": "并行尝试的协议 — 首先产生视频的获胜。",
+    "advanced_streaming": "高级串流",
+    "advanced_streaming_desc": "WebRTC/HLS/MSE、STUN 和协议标签",
     "protocol_webrtc_desc": "低延迟点对点流媒体（推荐）",
     "protocol_mse_desc": "媒体源扩展 - 基于浏览器的流媒体",
     "protocol_hls_desc": "HTTP 实时流媒体 - 自适应比特率，延迟较高",
@@ -640,7 +646,6 @@
     "allow_self_signed_certs_desc": "接受自签名 SSL 证书",
     "allow_self_signed_certs_warning": "降低安全性。仅在受信任的网络中使用。",
     "self_signed_certs_desktop_note": "在桌面端，请将您的证书添加到系统信任存储。",
-    "section_appearance": "外观",
     "appearance": {
       "custom": "自定义...",
       "twelve_hour": "12小时制",
@@ -652,7 +657,7 @@
         "desc": "附近事件的默认时间窗口和摄像头。"
       },
       "thumbnail_chain": {
-        "title": "缩略图显示",
+        "title": "事件缩略图",
         "desc": "事件缩略图的尝试顺序。已禁用的行将被跳过。",
         "alarm": "报警帧",
         "snapshot": "快照",
@@ -663,9 +668,8 @@
         "move_down": "下移"
       },
       "hover_preview": {
-        "title": "悬停预览",
+        "title": "预览",
         "desc": "悬停缩略图时显示放大预览。",
-        "title_long_press": "长按预览",
         "desc_long_press": "长按缩略图显示放大预览。",
         "events_list": "事件(列表)",
         "events_grid": "事件(网格)",
@@ -683,6 +687,8 @@
     },
     "monitors_per_page": "每页监视器数量",
     "monitors_per_page_desc": "监视器很多（超过 30 个）且服务器未启用多端口流时有用。填 0 关闭分页。",
+    "per_monitor_settings": "单个监控设置",
+    "per_monitor_settings_desc": "打开监控，再进入其设置。",
     "search": {
       "placeholder": "搜索设置",
       "no_results": "没有匹配的设置"

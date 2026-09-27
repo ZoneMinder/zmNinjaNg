@@ -63,31 +63,11 @@ When('I toggle the theme', async ({ page }) => {
     return window.getComputedStyle(document.body).backgroundColor;
   });
 
-  // Find and click the theme toggle/selector
-  const themeToggle = page.getByTestId('theme-toggle')
-    .or(page.getByRole('button', { name: /theme/i }))
-    .or(page.locator('[data-testid*="theme"]').first());
-  await themeToggle.click();
-  await page.waitForTimeout(500);
-
-  // If it's a dropdown/select, pick an option that differs from the current theme.
-  // Try to find options and click one that is not already selected.
-  const themeOptions = page.getByRole('option').or(page.locator('[data-testid*="theme-option"]'));
-  const optionCount = await themeOptions.count().catch(() => 0);
-  if (optionCount > 0) {
-    // Try each option until we find one that changes the background
-    for (let i = 0; i < optionCount; i++) {
-      const option = themeOptions.nth(i);
-      if (await option.isVisible({ timeout: 500 }).catch(() => false)) {
-        const ariaSelected = await option.getAttribute('aria-selected').catch(() => null);
-        // Skip the currently selected option
-        if (ariaSelected === 'true') continue;
-        await option.click();
-        await page.waitForTimeout(300);
-        break;
-      }
-    }
-  }
+  // The Settings Theme row shares its state with the header toggle
+  // (useTheme). Pick whichever of Light and Dark is not showing now.
+  const isDark = await page.evaluate(() => document.documentElement.classList.contains('dark'));
+  await page.getByTestId('settings-theme-select').click();
+  await page.getByTestId(`settings-theme-option-${isDark ? 'light' : 'dark'}`).click();
 });
 
 Then('the app background color should change', async ({ page }) => {
@@ -317,27 +297,8 @@ When('I clear logs if available', async ({ page }) => {
     .toBe(0);
 });
 
-// Thumbnail fallback chain steps
-When('I expand the Advanced settings section', async ({ page }) => {
-  const trigger = page.getByTestId('settings-section-advanced-toggle');
-  await expect(trigger).toBeVisible({ timeout: testConfig.timeouts.pageLoad });
-  if ((await trigger.getAttribute('aria-expanded')) !== 'true') {
-    await trigger.click();
-  }
-  await expect(page.getByTestId('settings-force-disable-multiport-switch')).toBeVisible();
-});
-
 // Settings search (refs #531): a collapsed section unmounts its rows, so a
 // match inside one proves the search opens it.
-When('I collapse the Advanced settings section', async ({ page }) => {
-  const trigger = page.getByTestId('settings-section-advanced-toggle');
-  await expect(trigger).toBeVisible({ timeout: testConfig.timeouts.pageLoad });
-  if ((await trigger.getAttribute('aria-expanded')) === 'true') {
-    await trigger.click();
-  }
-  await expect(page.getByTestId('settings-force-disable-multiport-switch')).toHaveCount(0);
-});
-
 When('I search settings for {string}', async ({ page }, text: string) => {
   await page.getByTestId('settings-search-button').click();
   await page.getByTestId('settings-search-input').fill(text);
@@ -358,11 +319,6 @@ Then('the {string} settings section should be hidden', async ({ page }, id: stri
 
 Then('the {string} settings section should be visible', async ({ page }, id: string) => {
   await expect(page.getByTestId(`settings-section-${id}`)).toBeVisible();
-});
-
-Then('the Advanced settings section should be collapsed', async ({ page }) => {
-  await expect(page.getByTestId('settings-section-advanced-toggle')).toHaveAttribute('aria-expanded', 'false');
-  await expect(page.getByTestId('settings-force-disable-multiport-switch')).toHaveCount(0);
 });
 
 When('I enable the force-disable multiport toggle', async ({ page }) => {
@@ -407,7 +363,15 @@ Then('the log redaction warning should be gone', async ({ page }) => {
   await expect(page.getByTestId('settings-log-redaction-warning')).toHaveCount(0);
 });
 
-// WebRTC STUN toggle (visible only when go2rtc/auto streaming is on, the default)
+// WebRTC STUN toggle (visible only when go2rtc/auto streaming is on, the
+// default), inside the folded Advanced streaming part of the server sub-card.
+When('I expand the Advanced streaming settings', async ({ page }) => {
+  const trigger = page.getByTestId('settings-advanced-streaming-trigger');
+  await expect(trigger).toBeVisible({ timeout: testConfig.timeouts.pageLoad });
+  if ((await trigger.getAttribute('aria-expanded')) !== 'true') await trigger.click();
+  await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+});
+
 When('I enable the WebRTC STUN toggle', async ({ page }) => {
   const toggle = page.getByTestId('settings-webrtc-use-stun-switch');
   await expect(toggle).toBeVisible({ timeout: testConfig.timeouts.pageLoad });
@@ -509,4 +473,46 @@ When('I restart the app', async ({ page }) => {
 
 Then('the app should open on the {string} page', async ({ page }, route: string) => {
   await expect(page).toHaveURL(new RegExp(`.*${route}`), { timeout: testConfig.timeouts.transition });
+});
+
+// Layout (refs #536): sections by topic, and server rows headed by the server.
+Then('the settings sections should be General, Live Streaming, Events & Playback, Network, Ninjii and More settings', async ({ page }) => {
+  const sections = page.getByTestId('settings-sections').locator(':scope > section[data-testid]');
+  await expect(sections.first()).toBeVisible({ timeout: testConfig.timeouts.pageLoad });
+  const ids = await sections.evaluateAll((els) => els.map((el) => el.getAttribute('data-testid')));
+  expect(ids).toEqual([
+    'settings-section-general',
+    'settings-section-live-streaming',
+    'settings-section-events-playback',
+    'settings-section-network',
+    'settings-section-assistant',
+    'settings-section-more',
+  ]);
+});
+
+Then('each server sub-card should be headed by the current profile name', async ({ page }) => {
+  const headers = page.getByTestId('settings-server-subcard').getByTestId('settings-subcard-name');
+  await expect(headers.first()).toBeVisible({ timeout: testConfig.timeouts.pageLoad });
+  const names = new Set(await headers.allTextContents());
+  expect(names.size).toBe(1);
+  expect([...names][0].trim()).not.toBe('');
+});
+
+When('I turn off fullscreen when turned sideways', async ({ page }) => {
+  const toggle = page.getByTestId('settings-landscape-fullscreen-switch');
+  await expect(toggle).toBeVisible({ timeout: testConfig.timeouts.pageLoad });
+  if (await toggle.isChecked()) await toggle.click();
+  await expect(toggle).not.toBeChecked();
+});
+
+Then('fullscreen when turned sideways should be off', async ({ page }) => {
+  await expect(page.getByTestId('settings-landscape-fullscreen-switch')).not.toBeChecked({
+    timeout: testConfig.timeouts.pageLoad,
+  });
+});
+
+When('I open the {string} link under More settings', async ({ page }, target: string) => {
+  const link = page.getByTestId(`settings-link-${target}`);
+  await link.scrollIntoViewIfNeeded();
+  await link.click();
 });

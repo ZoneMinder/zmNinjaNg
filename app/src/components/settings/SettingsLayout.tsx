@@ -6,7 +6,7 @@
 
 import type React from 'react';
 import { useState } from 'react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, Server } from 'lucide-react';
 import { STORAGE_KEYS } from '../../lib/zmninja-ng-constants';
 import { useSettingsSearching } from './settings-search';
 
@@ -89,6 +89,39 @@ export function RowLabel({ label, desc }: { label: string; desc?: string }) {
     <div className="min-w-0 flex-1">
       <div className="text-sm font-medium">{label}</div>
       {desc && <div className="text-xs text-muted-foreground">{desc}</div>}
+    </div>
+  );
+}
+
+/**
+ * Rows that belong to one server (or, for the aggregate-only knobs, to the
+ * aggregate), headed by its name. The header is a section label to search:
+ * it stays beside any of its rows that match, so a result still says whose
+ * setting it is, and searching the name shows every row it heads.
+ */
+export function SettingsSubCard({
+  name,
+  testId,
+  children,
+}: {
+  name: string;
+  testId: 'settings-server-subcard' | 'settings-aggregate-subcard';
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className="space-y-2 rounded-lg border border-dashed p-2"
+      data-settings-section
+      data-testid={testId}
+    >
+      <div
+        className="flex min-w-0 items-center gap-1.5 px-2 text-xs font-medium text-muted-foreground"
+        title={name}
+      >
+        <Server className="h-3.5 w-3.5 shrink-0" />
+        <span className="truncate" data-settings-section-label data-testid="settings-subcard-name">{name}</span>
+      </div>
+      {children}
     </div>
   );
 }

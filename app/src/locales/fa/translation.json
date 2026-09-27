@@ -383,9 +383,11 @@
     "server": "سرور",
     "title": "تنظیمات",
     "subtitle": "پیکربندی برنامه",
+    "section_general": "عمومی",
     "section_live_streaming": "استریم زنده",
-    "section_playback": "پخش",
-    "section_advanced": "پیشرفته",
+    "section_events_playback": "رویدادها و پخش",
+    "section_network": "شبکه",
+    "section_more": "تنظیمات بیشتر",
     "hidden_monitors": {
       "section": "مانیتورهای مخفی",
       "desc": "مانیتورها را از همه نماها مخفی کنید. رویدادهایشان هم مخفی می‌شود.",
@@ -595,12 +597,16 @@
     "show_protocol_label_desc": "نمایش پروتکل استریم روی فیدهای ویدیو",
     "live_fullscreen": "باز کردن نمای زنده در تمام‌صفحه",
     "live_fullscreen_desc": "هر مانیتور بزرگ‌نمایی‌شده باز می‌شود. برای یک مانیتور، از «باز کردن در تمام‌صفحه» در تنظیمات آن مانیتور استفاده کنید",
+    "landscape_fullscreen": "تمام‌صفحه در حالت افقی",
+    "landscape_fullscreen_desc": "فقط گوشی و تبلت. برای نمای زنده و پخش رویداد.",
     "skip_offline_monitors": "رد کردن مانیتورهای آفلاین",
     "skip_offline_monitors_desc": "مانیتورهای آفلاین (ضبط/عملکرد روی None) در شبکه، مونتاژ و کشیدن انگشت در نمای زنده رد می‌شوند",
     "webrtc_use_stun": "سرورهای STUN",
     "webrtc_use_stun_desc": "فقط وقتی go2rtc مستقیماً از اینترنت در دسترس است فعال کنید. در LAN یا VPN خاموش باشد.",
     "webrtc_protocols": "پروتکل‌های استریم",
     "webrtc_protocols_desc": "پروتکل‌هایی که موازی امتحان می‌شوند — اولینی که ویدیو بدهد برنده است.",
+    "advanced_streaming": "پخش پیشرفته",
+    "advanced_streaming_desc": "WebRTC/HLS/MSE، STUN و برچسب پروتکل",
     "protocol_webrtc_desc": "استریم همتا‌به‌همتا با تأخیر کم (پیشنهادی)",
     "protocol_mse_desc": "Media Source Extensions - استریم مبتنی بر مرورگر",
     "protocol_hls_desc": "HTTP Live Streaming - بیت‌ریت تطبیقی، تأخیر بیشتر",
@@ -640,7 +646,6 @@
     "allow_self_signed_certs_desc": "پذیرش گواهی‌های SSL خودامضا",
     "allow_self_signed_certs_warning": "امنیت را کاهش می‌دهد. فقط در شبکه‌های مورد اعتماد استفاده کنید.",
     "self_signed_certs_desktop_note": "در دسکتاپ، گواهی را به فروشگاه اعتماد سیستم اضافه کنید.",
-    "section_appearance": "ظاهر",
     "appearance": {
       "custom": "سفارشی...",
       "twelve_hour": "۱۲ ساعته",
@@ -652,7 +657,7 @@
         "desc": "بازه و دوربین‌های پیش‌فرض برای رویدادهای نزدیک."
       },
       "thumbnail_chain": {
-        "title": "نمایش بندانگشتی",
+        "title": "تصاویر کوچک رویداد",
         "desc": "ترتیب امتحان برای بندانگشتی‌های رویداد. ردیف‌های غیرفعال رد می‌شوند.",
         "alarm": "فریم آلارم",
         "snapshot": "عکس فوری",
@@ -663,9 +668,8 @@
         "move_down": "پایین بردن"
       },
       "hover_preview": {
-        "title": "پیش‌نمایش با هاور",
+        "title": "پیش‌نمایش‌ها",
         "desc": "نمایش پیش‌نمایش بزرگ هنگام هاور روی بندانگشتی‌ها.",
-        "title_long_press": "پیش‌نمایش با فشار طولانی",
         "desc_long_press": "فشار طولانی روی بندانگشتی برای پیش‌نمایش بزرگ.",
         "events_list": "رویدادها (فهرست)",
         "events_grid": "رویدادها (شبکه)",
@@ -683,6 +687,8 @@
     },
     "monitors_per_page": "مانیتور در هر صفحه",
     "monitors_per_page_desc": "با تعداد زیاد مانیتور (بیش از ۳۰) وقتی سرور استریم چندپورته ندارد مفید است. ۰ صفحه‌بندی را خاموش می‌کند.",
+    "per_monitor_settings": "تنظیمات هر مانیتور",
+    "per_monitor_settings_desc": "یک مانیتور را باز کنید، سپس تنظیمات آن را.",
     "search": {
       "placeholder": "جستجوی تنظیمات",
       "no_results": "هیچ تنظیمی مطابقت ندارد"

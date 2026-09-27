@@ -1,23 +1,27 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import userEvent from '@testing-library/user-event';
 import Settings from '../Settings';
 import { createContext, useContext } from 'react';
 import type { ReactNode } from 'react';
-import { seedProfiles, resetProfileFixture, asProfileId } from '../../tests/profile-fixture';
+import { seedProfiles, resetProfileFixture, asProfileId, makeProfile } from '../../tests/profile-fixture';
 import { resetFakeStoreGates } from '../../tests/fake-store-gates';
 import { useSettingsStore } from '../../stores/settings';
+import { SELECTION_SCOPED_SETTINGS, SERVER_SCOPED_SETTINGS } from '../../stores/settings-scope';
+import { ThemeProvider, useTheme } from '../../components/theme-provider';
 import { collapsedDisclosures, unfilterableText, visibleText } from '../../tests/settings-search-gate';
 
 vi.mock('../../api/store-gates', () => import('../../tests/fake-store-gates'));
-// AdvancedSection's kiosk-PIN check calls hasSecureValue, which
-// tests/fake-secure-storage.ts does not export (fixture gap - reported
-// separately). Patched locally rather than editing the shared fixture.
+// The kiosk-PIN row calls hasSecureValue, which tests/fake-secure-storage.ts
+// does not export (fixture gap - reported separately). Patched locally rather
+// than editing the shared fixture.
 vi.mock('../../lib/security/secureStorage', async () => {
   const fake = await import('../../tests/fake-secure-storage');
   return { ...fake, hasSecureValue: async (key: string) => (await fake.getSecureValue(key)) !== null };
 });
+vi.mock('../../api/monitors', () => ({ getMonitors: vi.fn(async () => ({ monitors: [] })) }));
 
 const changeLanguage = vi.fn();
 
@@ -33,9 +37,13 @@ vi.mock('react-i18next', () => ({
 
 const SelectContext = createContext<{ onValueChange?: (value: string) => void }>({});
 
+// data-select-value exposes the controlled value, which the real Radix value
+// display would show, so a test can read what a select currently holds.
 vi.mock('../../components/ui/select', () => ({
-  Select: ({ children, onValueChange }: { children: ReactNode; onValueChange?: (value: string) => void }) => (
-    <SelectContext.Provider value={{ onValueChange }}>{children}</SelectContext.Provider>
+  Select: ({ children, value, onValueChange }: { children: ReactNode; value?: string; onValueChange?: (value: string) => void }) => (
+    <SelectContext.Provider value={{ onValueChange }}>
+      <div data-select-value={value}>{children}</div>
+    </SelectContext.Provider>
   ),
   SelectTrigger: ({ children, ...props }: { children: ReactNode }) => (
     <button type="button" {...props}>
@@ -44,10 +52,10 @@ vi.mock('../../components/ui/select', () => ({
   ),
   SelectValue: ({ placeholder }: { placeholder: string }) => <span>{placeholder}</span>,
   SelectContent: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-  SelectItem: ({ children, value }: { children: ReactNode; value: string }) => {
+  SelectItem: ({ children, value, ...props }: { children: ReactNode; value: string }) => {
     const ctx = useContext(SelectContext);
     return (
-      <button type="button" onClick={() => ctx.onValueChange?.(value)}>
+      <button type="button" {...props} onClick={() => ctx.onValueChange?.(value)}>
         {children}
       </button>
     );
@@ -58,26 +66,49 @@ vi.mock('../../components/NotificationBadge', () => ({
   NotificationBadge: () => null,
 }));
 
-// HiddenMonitorsSection pulls in React Query (useQueryClient/useQuery), which
-// needs a QueryClientProvider. It is not the subject of these tests, so stub it.
-vi.mock('../../components/settings/HiddenMonitorsSection', () => ({
-  HiddenMonitorsSection: () => null,
-}));
+const PROFILE = makeProfile('profile-1', { name: 'Home', portalUrl: 'https://profile-1.test' });
 
+function ThemeProbe() {
+  const { theme, setTheme } = useTheme();
+  return (
+    <button type="button" data-testid="theme-probe" onClick={() => setTheme('dark')}>
+      {theme}
+    </button>
+  );
+}
 
-// LiveStreamingSection reads the monitor count through React Query to explain
-// its Streaming Mode recommendation (refs #385), so the page needs a client.
-const queryWrapper = ({ children }: { children: React.ReactNode }) => (
-  <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-    {children}
-  </QueryClientProvider>
-);
+// The page reads the monitor count through React Query and links to other
+// routes, so it needs a client and a router; the theme row reads useTheme.
+function renderSettings() {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={client}>
+      <ThemeProvider>
+        <MemoryRouter initialEntries={['/settings']}>
+          <Routes>
+            <Route path="/settings" element={<><Settings /><ThemeProbe /></>} />
+            <Route path="/notifications" element={<p>notifications-page</p>} />
+            <Route path="/live-activity" element={<p>live-activity-page</p>} />
+            <Route path="/logs" element={<p>logs-page</p>} />
+          </Routes>
+        </MemoryRouter>
+      </ThemeProvider>
+    </QueryClientProvider>
+  );
+}
+
+const stored = () => useSettingsStore.getState().getProfileSettings(asProfileId('profile-1'));
+
+async function search(query: string) {
+  fireEvent.click(screen.getByTestId('settings-search-button'));
+  fireEvent.change(screen.getByTestId('settings-search-input'), { target: { value: query } });
+}
 
 describe('Settings Page', () => {
   beforeEach(() => {
-    seedProfiles(['profile-1']);
+    seedProfiles([PROFILE], { settings: { 'profile-1': { viewMode: 'snapshot', dateFormat: 'custom', timeFormat: 'custom' } } });
     changeLanguage.mockClear();
-    // Section open state persists; start every test from the defaults.
+    // Section and fold open state persists; start every test from the defaults.
     localStorage.clear();
   });
 
@@ -88,22 +119,19 @@ describe('Settings Page', () => {
 
   it('updates view mode and event limit settings', async () => {
     const user = userEvent.setup();
-    render(<Settings />, { wrapper: queryWrapper });
+    renderSettings();
 
     await user.click(screen.getByTestId('settings-view-mode-switch'));
-    let stored = useSettingsStore.getState().getProfileSettings(asProfileId('profile-1'));
-    expect(stored.viewMode).toBe('streaming');
-    expect(stored.viewModeChosen).toBe(true);
+    expect(stored().viewMode).toBe('streaming');
+    expect(stored().viewModeChosen).toBe(true);
 
-    const eventLimitInput = screen.getByTestId('settings-event-limit');
-    fireEvent.change(eventLimitInput, { target: { value: '400' } });
-    stored = useSettingsStore.getState().getProfileSettings(asProfileId('profile-1'));
-    expect(stored.defaultEventLimit).toBe(400);
+    fireEvent.change(screen.getByTestId('settings-event-limit'), { target: { value: '400' } });
+    expect(stored().defaultEventLimit).toBe(400);
   });
 
   it('changes language selection', async () => {
     const user = userEvent.setup();
-    render(<Settings />, { wrapper: queryWrapper });
+    renderSettings();
 
     await user.click(screen.getByTestId('settings-language-select'));
     await user.click(screen.getByText('languages.es'));
@@ -111,13 +139,165 @@ describe('Settings Page', () => {
     expect(changeLanguage).toHaveBeenCalledWith('es');
   });
 
+  it('lists the sections in the spec order', () => {
+    renderSettings();
+    const ids = Array.from(
+      screen.getByTestId('settings-sections').querySelectorAll(':scope > section[data-testid]')
+    ).map((el) => el.getAttribute('data-testid'));
+    expect(ids).toEqual([
+      'settings-section-general',
+      'settings-section-live-streaming',
+      'settings-section-events-playback',
+      'settings-section-network',
+      'settings-section-assistant',
+      'settings-section-more',
+    ]);
+  });
+
+  it('has no profile picker with one profile selected, and heads each server sub-card with its name', () => {
+    renderSettings();
+    expect(screen.queryByTestId('page-profile-picker')).toBeNull();
+    const headers = screen
+      .getAllByTestId('settings-server-subcard')
+      .map((el) => el.querySelector('[data-testid="settings-subcard-name"]')?.textContent);
+    expect(headers.length).toBeGreaterThan(0);
+    expect(new Set(headers)).toEqual(new Set(['Home']));
+  });
+
+  // Placement gate (spec "Contract change"): a server-scoped row sits in the
+  // server sub-card and a selection-scoped row never does. Each key names one
+  // control of its row; a key added to a scope list fails here until mapped.
+  it('puts every server-scoped row in the server sub-card and no selection-scoped row there', () => {
+    const selectionRows: Record<(typeof SELECTION_SCOPED_SETTINGS)[number], string | null> = {
+      startScreen: 'settings-start-screen-select',
+      dateFormat: 'settings-date-format',
+      timeFormat: 'settings-time-format',
+      customDateFormat: 'settings-custom-date-format',
+      customTimeFormat: 'settings-custom-time-format',
+      theme: 'settings-theme-select',
+      hoverPreview: 'settings-hover-preview-trigger',
+      hoverPreviewPlaybackRate: 'settings-hover-preview-playback-rate',
+      insomnia: 'settings-insomnia-switch',
+      landscapeFullscreen: 'settings-landscape-fullscreen-switch',
+      tvMode: 'settings-tv-mode',
+      monitorsPerPage: 'settings-monitors-per-page',
+      skipOfflineMonitors: 'settings-skip-offline-monitors-switch',
+      monitorDetailFullscreen: 'settings-live-fullscreen-switch',
+      defaultEventLimit: 'settings-event-limit',
+      eventVideoAutoplay: 'settings-event-autoplay-switch',
+      eventPlaybackFullscreen: 'settings-event-fullscreen-switch',
+      monitorDetailRecentEventsCount: 'settings-monitor-recent-events-count',
+      eventContext: 'event-context-window-30',
+      bandwidthMode: 'settings-bandwidth-mode-switch',
+      // On the Logs page, not here.
+      logLevel: null,
+      componentLogLevels: null,
+      disableLogRedaction: null,
+    };
+    // A settings card sits wholly inside or outside a sub-card, so the
+    // assistant keys rendered further down the same card as the enable switch
+    // (backend-dependent rows) share its placement.
+    const serverRows: Record<(typeof SERVER_SCOPED_SETTINGS)[number], string> = {
+      excludedMonitorIds: 'hidden-monitors-dropdown',
+      viewMode: 'settings-view-mode-switch',
+      snapshotRefreshInterval: 'settings-refresh-interval',
+      streamMaxFps: 'stream-fps-input',
+      streamScale: 'stream-scale-input',
+      streamingMethod: 'settings-go2rtc-switch',
+      webrtcProtocols: 'protocol-webrtc-checkbox',
+      webrtcUseStun: 'settings-webrtc-use-stun-switch',
+      showProtocolLabel: 'settings-protocol-label-switch',
+      thumbnailFallbackChain: 'settings-thumbnail-chain-trigger',
+      allowSelfSignedCerts: 'settings-self-signed-certs-switch',
+      trustedCertFingerprint: 'settings-self-signed-certs-switch',
+      apiTimeoutSeconds: 'settings-api-timeout-input',
+      forceDisableMultiPort: 'settings-force-disable-multiport-switch',
+      assistantEnabled: 'assistant-enabled-toggle',
+      assistantInToolbar: 'assistant-enabled-toggle',
+      assistantBackend: 'assistant-enabled-toggle',
+      assistantModelId: 'assistant-enabled-toggle',
+      assistantOllamaBaseUrl: 'assistant-enabled-toggle',
+      assistantOllamaModel: 'assistant-enabled-toggle',
+      assistantTemperature: 'assistant-enabled-toggle',
+      assistantTimeoutSec: 'assistant-enabled-toggle',
+      assistantHistoryTurns: 'assistant-enabled-toggle',
+    };
+    renderSettings();
+    // Any search opens every fold, so every row is mounted.
+    search('zz');
+
+    const inSubCard = (testId: string) =>
+      screen.getByTestId(testId).closest('[data-testid="settings-server-subcard"]') !== null;
+    for (const [key, testId] of Object.entries(serverRows)) {
+      expect(inSubCard(testId), key).toBe(true);
+    }
+    for (const [key, testId] of Object.entries(selectionRows)) {
+      if (testId) expect(inSubCard(testId), key).toBe(false);
+    }
+  });
+
+  it('theme row and the header theme state are one', () => {
+    renderSettings();
+    const themeValue = () =>
+      screen.getByTestId('settings-theme-select').closest('[data-select-value]')!.getAttribute('data-select-value');
+
+    fireEvent.click(screen.getByTestId('settings-theme-option-light'));
+    expect(screen.getByTestId('theme-probe').textContent).toBe('light');
+    expect(stored().theme).toBe('light');
+
+    fireEvent.click(screen.getByTestId('theme-probe'));
+    expect(themeValue()).toBe('dark');
+  });
+
+  it('keep screen awake row writes the key and bucket the sidebar toggle writes', () => {
+    renderSettings();
+    const toggle = screen.getByTestId('settings-insomnia-switch');
+    expect(toggle).toHaveAttribute('aria-checked', 'false');
+
+    fireEvent.click(toggle);
+    expect(stored().insomnia).toBe(true);
+
+    act(() => useSettingsStore.getState().updateProfileSettings('profile-1', { insomnia: false }));
+    expect(screen.getByTestId('settings-insomnia-switch')).toHaveAttribute('aria-checked', 'false');
+  });
+
+  it('sideways row turns landscapeFullscreen off for the current selection', () => {
+    renderSettings();
+    const toggle = screen.getByTestId('settings-landscape-fullscreen-switch');
+    expect(toggle).toHaveAttribute('aria-checked', 'true');
+    fireEvent.click(toggle);
+    expect(stored().landscapeFullscreen).toBe(false);
+  });
+
+  it.each([
+    ['notifications', 'notifications-page'],
+    ['live-activity', 'live-activity-page'],
+    ['logs', 'logs-page'],
+  ])('More settings links to /%s', async (target, page) => {
+    const user = userEvent.setup();
+    renderSettings();
+    await user.click(screen.getByTestId(`settings-link-${target}`));
+    expect(screen.getByText(page)).toBeInTheDocument();
+  });
+
+  it.each([
+    ['Previews', 'hover_preview.events_grid', 'settings.appearance.hover_preview.events_grid'],
+    ['Advanced streaming', 'webrtc_use_stun_desc', 'settings.webrtc_use_stun_desc'],
+    ['WebRTC protocols', 'protocol_mse_desc', 'settings.protocol_mse_desc'],
+    ['Event thumbnails', 'thumbnail_chain.objdetect', 'settings.appearance.thumbnail_chain.objdetect'],
+    ['Hidden monitors', 'hidden_monitors.desc', 'settings.hidden_monitors.desc'],
+  ])('search finds a row inside the folded %s part', (_part, query, text) => {
+    localStorage.setItem('zmng-settings-section-open-hidden-monitors', 'false');
+    renderSettings();
+    expect(screen.queryByText(text)).toBeNull();
+    search(query);
+    expect(visibleText(screen.getByTestId('settings-sections'))).toContain(text);
+  });
+
   // Search gate (refs #531): the whole page, so new settings are covered too.
   it('search opens every disclosure and can hide every piece of text', async () => {
-    const user = userEvent.setup();
-    render(<Settings />, { wrapper: queryWrapper });
-
-    await user.click(screen.getByTestId('settings-search-button'));
-    await user.type(screen.getByTestId('settings-search-input'), 'zz-no-such-setting');
+    renderSettings();
+    search('zz-no-such-setting');
 
     const sections = screen.getByTestId('settings-sections');
     expect(collapsedDisclosures(sections)).toEqual([]);
@@ -128,16 +308,19 @@ describe('Settings Page', () => {
 
   it('search finds a row in a collapsed section, and clearing restores the page', async () => {
     const user = userEvent.setup();
-    render(<Settings />, { wrapper: queryWrapper });
+    localStorage.setItem('zmng-settings-section-open-network', 'false');
+    renderSettings();
     expect(screen.queryByTestId('settings-force-disable-multiport-switch')).toBeNull();
 
     await user.click(screen.getByTestId('settings-search-button'));
     await user.type(screen.getByTestId('settings-search-input'), 'multiport');
     const sections = screen.getByTestId('settings-sections');
     expect(visibleText(sections)).toContain('settings.force_disable_multiport');
+    // The server sub-card header stays, so the row still says whose it is.
+    expect(visibleText(sections)).toContain('Home');
 
     await user.click(screen.getByTestId('settings-search-clear'));
     expect(screen.queryByTestId('settings-force-disable-multiport-switch')).toBeNull();
-    expect(visibleText(sections)).toContain('settings.section_appearance');
+    expect(visibleText(sections)).toContain('settings.section_general');
   });
 });

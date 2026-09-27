@@ -20,7 +20,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Switch } from '../ui/switch';
 import { Button } from '../ui/button';
-import { CollapsibleSection, SettingsCard, SettingsRow, RowLabel } from './SettingsLayout';
+import { CollapsibleSection, SettingsCard, SettingsRow, RowLabel, SettingsSubCard } from './SettingsLayout';
 import { AssistantOllamaSection } from './AssistantOllamaSection';
 import { AssistantNativeSection } from './AssistantNativeSection';
 import { AssistantAdvancedSection } from './AssistantAdvancedSection';
@@ -282,6 +282,7 @@ export function AssistantSection({
 
   return (
     <CollapsibleSection id="assistant" label={t('settings.assistant.title')}>
+      <SettingsSubCard name={currentProfile?.name ?? ''} testId="settings-server-subcard">
       <SettingsCard>
         <SettingsRow>
           <RowLabel label={t('settings.assistant.enable')} desc={t('settings.assistant.subtitle')} />
@@ -569,6 +570,7 @@ export function AssistantSection({
           </>
         )}
       </SettingsCard>
+      </SettingsSubCard>
     </CollapsibleSection>
   );
 }

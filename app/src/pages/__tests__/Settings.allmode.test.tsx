@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter } from 'react-router-dom';
 import { createContext, useContext } from 'react';
 import type { ReactNode } from 'react';
 import Settings from '../Settings';
@@ -10,7 +11,7 @@ import { useProfileStore } from '../../stores/profile';
 import { getMonitors } from '../../api/monitors';
 import { seedProfiles, resetProfileFixture, fakeApiClient, makeProfile } from '../../tests/profile-fixture';
 import { installApiClient, resetFakeStoreGates } from '../../tests/fake-store-gates';
-import { collapsedDisclosures, unfilterableText } from '../../tests/settings-search-gate';
+import { collapsedDisclosures, unfilterableText, visibleText } from '../../tests/settings-search-gate';
 
 vi.mock('../../api/store-gates', () => import('../../tests/fake-store-gates'));
 vi.mock('../../lib/security/secureStorage', () => import('../../tests/fake-secure-storage'));
@@ -53,14 +54,11 @@ vi.mock('../../components/NotificationBadge', () => ({
 vi.mock('../../components/settings/HiddenMonitorsSection', () => ({
   HiddenMonitorsSection: () => null,
 }));
-// AssistantSection and AdvancedSection pull in WebGPU/model-download/native-LLM
-// probes and other effects unrelated to this test's two-tier-picker subject,
-// which fire post-assert and produce act() noise. Stub them the same way.
+// AssistantSection pulls in WebGPU/model-download/native-LLM probes and other
+// effects unrelated to this test's two-tier-picker subject, which fire
+// post-assert and produce act() noise. Stub it the same way.
 vi.mock('../../components/settings/AssistantSection', () => ({
   AssistantSection: () => null,
-}));
-vi.mock('../../components/settings/AdvancedSection', () => ({
-  AdvancedSection: () => null,
 }));
 
 const profileA = makeProfile('profile-a', { name: 'Home' });
@@ -71,12 +69,16 @@ function setSettings(id: string, overrides: Record<string, unknown>) {
 }
 
 // LiveStreamingSection reads the monitor count through React Query to explain
-// its Streaming Mode recommendation (refs #385), so the page needs a client.
+// its Streaming Mode recommendation (refs #385), so the page needs a client;
+// More settings rows are router links.
 const queryWrapper = ({ children }: { children: React.ReactNode }) => (
   <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-    {children}
+    <MemoryRouter>{children}</MemoryRouter>
   </QueryClientProvider>
 );
+
+const subCardHeaders = (testId: string) =>
+  screen.queryAllByTestId(testId).map((el) => el.querySelector('[data-testid="settings-subcard-name"]')?.textContent);
 
 describe('Settings page - All mode two-tier picker (refs #337)', () => {
   beforeEach(() => {
@@ -86,6 +88,7 @@ describe('Settings page - All mode two-tier picker (refs #337)', () => {
     });
     installApiClient(profileA.id, fakeApiClient({ '/servers.json': { servers: [] } }));
     installApiClient(profileB.id, fakeApiClient({ '/servers.json': { servers: [] } }));
+    localStorage.clear();
   });
 
   afterEach(() => {
@@ -108,7 +111,7 @@ describe('Settings page - All mode two-tier picker (refs #337)', () => {
     await screen.findByText('settings.view_mode_reason_many_monitors:{"monitorCount":20}');
   });
 
-  it('AppearanceSection (view-level) writes to the ALL bucket, not a real profile', async () => {
+  it('a selection-scoped row writes to the ALL bucket, not a real profile', async () => {
     render(<Settings />, { wrapper: queryWrapper });
 
     await screen.findByTestId('settings-tv-mode');
@@ -119,7 +122,7 @@ describe('Settings page - All mode two-tier picker (refs #337)', () => {
 
   // The other side of the same helper: single mode still writes the real
   // profile's own bucket, so the aggregate resolution never leaks into it.
-  it('AppearanceSection writes to the real profile in single mode', async () => {
+  it('a selection-scoped row writes to the real profile in single mode', async () => {
     useProfileStore.setState({ currentProfileId: profileA.id });
 
     render(<Settings />, { wrapper: queryWrapper });
@@ -141,9 +144,67 @@ describe('Settings page - All mode two-tier picker (refs #337)', () => {
     expect(unfilterableText(sections)).toEqual([]);
   });
 
-  it('shows the picker above the server-scoped block, defaulted to the first profile', () => {
+  it('shows one picker above the first section, defaulted to the first profile', () => {
     render(<Settings />, { wrapper: queryWrapper });
-    expect(screen.getByTestId('page-profile-picker')).toBeInTheDocument();
+    const picker = screen.getByTestId('page-profile-picker');
+    const firstSection = screen.getByTestId('settings-section-general');
+    expect(picker.compareDocumentPosition(firstSection) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(firstSection.contains(picker)).toBe(false);
+    expect(new Set(subCardHeaders('settings-server-subcard'))).toEqual(new Set(['Home']));
+  });
+
+  it('heads every server sub-card with the picked profile, which the picker changes', () => {
+    render(<Settings />, { wrapper: queryWrapper });
+    fireEvent.click(screen.getByTestId(`page-profile-picker-option-${profileB.id}`));
+    expect(new Set(subCardHeaders('settings-server-subcard'))).toEqual(new Set(['Work']));
+  });
+
+  it('heads the aggregate-only sub-card with the aggregate name, inside Live Streaming', () => {
+    render(<Settings />, { wrapper: queryWrapper });
+    const sub = screen.getByTestId('settings-aggregate-subcard');
+    expect(screen.getByTestId('settings-section-live-streaming').contains(sub)).toBe(true);
+    expect(subCardHeaders('settings-aggregate-subcard')).toEqual(['profiles.all_servers']);
+    expect(sub.contains(screen.getByTestId('all-mode-streaming-select'))).toBe(true);
+    expect(sub.contains(screen.getByTestId('settings-section-all-servers-performance'))).toBe(true);
+  });
+
+  it('has no aggregate sub-card or picker in single mode', () => {
+    useProfileStore.setState({ currentProfileId: profileA.id });
+    render(<Settings />, { wrapper: queryWrapper });
+    expect(screen.queryByTestId('settings-aggregate-subcard')).toBeNull();
+    expect(screen.queryByTestId('page-profile-picker')).toBeNull();
+  });
+
+  it('sideways row writes landscapeFullscreen to the aggregate and leaves members alone', () => {
+    render(<Settings />, { wrapper: queryWrapper });
+    fireEvent.click(screen.getByTestId('settings-landscape-fullscreen-switch'));
+    const get = useSettingsStore.getState().getProfileSettings;
+    expect(get(ALL_PROFILES_ID).landscapeFullscreen).toBe(false);
+    expect(get(profileA.id).landscapeFullscreen).toBe(true);
+    expect(get(profileB.id).landscapeFullscreen).toBe(true);
+  });
+
+  // Bandwidth mode is selection-scoped: in an aggregate it never rewrites a
+  // member server's stream values, which a single profile's switch resets.
+  it('bandwidth mode writes the aggregate only', () => {
+    setSettings(profileA.id, { streamMaxFps: 30 });
+    render(<Settings />, { wrapper: queryWrapper });
+    fireEvent.click(screen.getByTestId('settings-bandwidth-mode-switch'));
+    const get = useSettingsStore.getState().getProfileSettings;
+    expect(get(ALL_PROFILES_ID).bandwidthMode).toBe('low');
+    expect(get(profileA.id).bandwidthMode).toBe('normal');
+    expect(get(profileA.id).streamMaxFps).toBe(30);
+  });
+
+  it('search finds a row inside the folded Performance part', () => {
+    localStorage.setItem('zmng-settings-section-open-all-servers-performance', 'false');
+    render(<Settings />, { wrapper: queryWrapper });
+    expect(screen.queryByText('settings.all_mode_perf.max_streams_label')).toBeNull();
+    fireEvent.click(screen.getByTestId('settings-search-button'));
+    fireEvent.change(screen.getByTestId('settings-search-input'), { target: { value: 'max_streams_label' } });
+    const text = visibleText(screen.getByTestId('settings-sections'));
+    expect(text).toContain('settings.all_mode_perf.max_streams_label');
+    expect(text).toContain('profiles.all_servers');
   });
 
   // The All-Servers Streaming Mode row: without it the ALL bucket's viewMode

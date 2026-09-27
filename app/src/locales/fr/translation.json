@@ -383,9 +383,11 @@
     "server": "Serveur",
     "title": "Paramètres",
     "subtitle": "Configuration de l'application",
+    "section_general": "Général",
     "section_live_streaming": "Diffusion en direct",
-    "section_playback": "Lecture",
-    "section_advanced": "Avancé",
+    "section_events_playback": "Événements et lecture",
+    "section_network": "Réseau",
+    "section_more": "Autres réglages",
     "hidden_monitors": {
       "section": "Moniteurs masqués",
       "desc": "Masque les moniteurs de toutes les vues. Leurs événements sont aussi masqués.",
@@ -595,12 +597,16 @@
     "show_protocol_label_desc": "Afficher le protocole sur les flux vidéo",
     "live_fullscreen": "Ouvrir la vue en direct en plein écran",
     "live_fullscreen_desc": "Chaque moniteur s'ouvre maximisé. Pour un seul moniteur, utilisez Ouvrir en plein écran dans ses réglages",
+    "landscape_fullscreen": "Plein écran à l'horizontale",
+    "landscape_fullscreen_desc": "Téléphones et tablettes uniquement. S'applique à la vue en direct et à la lecture des événements.",
     "skip_offline_monitors": "Ignorer les moniteurs hors ligne",
     "skip_offline_monitors_desc": "Les moniteurs hors ligne (capture/fonction sur None) sont ignorés dans la grille, la mosaïque et le balayage en direct",
     "webrtc_use_stun": "Serveurs STUN",
     "webrtc_use_stun_desc": "À activer uniquement pour go2rtc accessible directement via Internet. Désactivé en LAN ou VPN.",
     "webrtc_protocols": "Protocoles de Streaming",
     "webrtc_protocols_desc": "Protocoles en parallèle — le premier à produire une vidéo gagne.",
+    "advanced_streaming": "Streaming avancé",
+    "advanced_streaming_desc": "WebRTC/HLS/MSE, STUN et étiquette de protocole",
     "protocol_webrtc_desc": "Streaming peer-to-peer à faible latence (recommandé)",
     "protocol_mse_desc": "Media Source Extensions - streaming basé sur le navigateur",
     "protocol_hls_desc": "HTTP Live Streaming - débit adaptatif, latence plus élevée",
@@ -640,7 +646,6 @@
     "allow_self_signed_certs_desc": "Accepter les certificats SSL auto-signés",
     "allow_self_signed_certs_warning": "Réduit la sécurité. Utilisez uniquement sur des réseaux de confiance.",
     "self_signed_certs_desktop_note": "Sur bureau, ajoutez votre certificat au magasin de confiance du système.",
-    "section_appearance": "Apparence",
     "appearance": {
       "custom": "Personnalisé...",
       "twelve_hour": "12 heures",
@@ -652,7 +657,7 @@
         "desc": "Fenêtre et caméras par défaut pour les événements à proximité."
       },
       "thumbnail_chain": {
-        "title": "Miniatures",
+        "title": "Miniatures d'événements",
         "desc": "Ordre des images à essayer pour les miniatures. Les lignes désactivées sont ignorées.",
         "alarm": "Image alarme",
         "snapshot": "Instantané",
@@ -663,9 +668,8 @@
         "move_down": "Descendre"
       },
       "hover_preview": {
-        "title": "Aperçu au survol",
+        "title": "Aperçus",
         "desc": "Afficher un aperçu agrandi au survol des miniatures.",
-        "title_long_press": "Aperçu par appui long",
         "desc_long_press": "Appui long sur une miniature pour afficher un aperçu agrandi.",
         "events_list": "Événements (liste)",
         "events_grid": "Événements (grille)",
@@ -683,6 +687,8 @@
     },
     "monitors_per_page": "Moniteurs par page",
     "monitors_per_page_desc": "Utile avec beaucoup de moniteurs (plus de 30) quand le serveur n'a pas de diffusion multi-port. 0 désactive la pagination.",
+    "per_monitor_settings": "Réglages par moniteur",
+    "per_monitor_settings_desc": "Ouvrez un moniteur, puis ses réglages.",
     "search": {
       "placeholder": "Rechercher dans les réglages",
       "no_results": "Aucun réglage ne correspond"

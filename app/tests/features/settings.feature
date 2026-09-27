@@ -64,32 +64,54 @@ Feature: Application Settings
     Then the bandwidth mode label should update
 
   @all
+  Scenario: Settings lists its sections by topic
+    When I navigate to the "Settings" page
+    Then the settings sections should be General, Live Streaming, Events & Playback, Network, Ninjii and More settings
+    And each server sub-card should be headed by the current profile name
+
+  @all
+  Scenario: Fullscreen when turned sideways can be turned off and stays off
+    When I navigate to the "Settings" page
+    And I turn off fullscreen when turned sideways
+    And I navigate to the "Dashboard" page
+    And I navigate to the "Settings" page
+    Then fullscreen when turned sideways should be off
+
+  @all
+  Scenario: More settings links open the page that owns the setting
+    When I navigate to the "Settings" page
+    And I open the "logs" link under More settings
+    Then I should be on the "Logs" page
+
+  @all
   Scenario: Force-disable multiport toggle persists across navigation
     When I navigate to the "Settings" page
-    And I expand the Advanced settings section
+    And I expand the "network" settings section
     And I enable the force-disable multiport toggle
     And I navigate to the "Dashboard" page
     And I navigate to the "Settings" page
-    And I expand the Advanced settings section
+    And I expand the "network" settings section
     Then the force-disable multiport toggle should be enabled
 
   @all
   Scenario: Search finds a setting inside a collapsed section
     When I navigate to the "Settings" page
-    And I collapse the Advanced settings section
+    And I collapse the "network" settings section
     And I search settings for "multi-port"
     Then the force-disable multiport toggle should be visible
-    And the "appearance" settings section should be hidden
+    And the "general" settings section should be hidden
     When I clear the settings search
-    Then the Advanced settings section should be collapsed
-    And the "appearance" settings section should be visible
+    Then the "network" settings section should be collapsed
+    And the "general" settings section should be visible
 
   @all
   Scenario: WebRTC STUN toggle persists across navigation
     When I navigate to the "Settings" page
+    And I expand the Advanced streaming settings
     And I enable the WebRTC STUN toggle
     And I navigate to the "Dashboard" page
     And I navigate to the "Settings" page
+    And I expand the Advanced streaming settings
     Then the WebRTC STUN toggle should be enabled
 
   @all
