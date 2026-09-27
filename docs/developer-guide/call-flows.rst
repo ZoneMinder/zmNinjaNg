@@ -3396,9 +3396,11 @@ third should ask for.
 #. **Rows carry their own offset from the anchor, and the anchor is one of them.**
    The merged result is mapped to ``{ event, offsetMs, isAnchor }`` with
    ``eventInstant(item, timezone) - window.anchorMs``, then passed through
-   ``nearestFirst``, which keeps the ``maxResults`` rows with the smallest
-   absolute offset and returns them in time order. The anchor's offset is zero,
-   so it is always kept and appears in its rightful place in the list.
+   ``balancedAroundAnchor``, which keeps up to ``maxResults`` rows and returns
+   them in time order. It keeps the rows at offset zero first, then takes the
+   nearest row before and the nearest after in turn, so both sides get an
+   equal share. When one side runs out, the other fills the rest. The anchor's
+   offset is zero, so it is always kept.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/hooks/useEventsAround.ts>`__
    · → :doc:`07-api-and-data-fetching`
 
@@ -3414,10 +3416,10 @@ third should ask for.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/events/context/EventContextRibbon.tsx>`__
    · → :doc:`05-component-architecture`
 
-#. **Replay plays the nearest rows on one clock.** The Replay button,
+#. **Replay plays the rows around the anchor on one clock.** The Replay button,
    enabled from two rows up, opens ``EventContextSequence`` in a dialog. Its
    code and locale keys still use the working name "sequence". It takes
-   ``nearestFirst(rows, EVENT_CONTEXT.sequenceMaxTiles)`` and hands them to
+   ``balancedAroundAnchor(rows, EVENT_CONTEXT.sequenceMaxTiles)`` and hands them to
    ``buildReplaySchedule``, which gives each tile a start and
    stop time: events keep their real spacing, stretches with no event running
    are cut, and times are divided by ``hoverPreviewPlaybackRate``.

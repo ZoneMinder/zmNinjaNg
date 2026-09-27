@@ -72,13 +72,23 @@ export function buildRowThumbnail(event: Event, opts: RowThumbnailOptions) {
   return { urls, aspectRatio: tw / th };
 }
 
-/** The `max` rows nearest the anchor on either side, in time order (refs
- *  #534). The anchor is at offset zero, so it is always kept. */
-export function nearestFirst<T extends { offsetMs: number }>(rows: T[], max: number): T[] {
-  return [...rows]
-    .sort((a, b) => Math.abs(a.offsetMs) - Math.abs(b.offsetMs))
-    .slice(0, max)
-    .sort((a, b) => a.offsetMs - b.offsetMs);
+/** Up to `max` rows around the anchor, in time order (refs #534). Rows at
+ *  offset zero (the anchor and anything in its second) come first; the rest
+ *  alternate between the nearest remaining row before and the nearest after,
+ *  so both sides get an equal share. When one side runs out, the other fills
+ *  the remaining slots. */
+export function balancedAroundAnchor<T extends { offsetMs: number }>(rows: T[], max: number): T[] {
+  const sorted = [...rows].sort((a, b) => a.offsetMs - b.offsetMs);
+  const before = sorted.filter((r) => r.offsetMs < 0).reverse();
+  const after = sorted.filter((r) => r.offsetMs > 0);
+  const kept = sorted.filter((r) => r.offsetMs === 0).slice(0, max);
+  let takeBefore = true;
+  while (kept.length < max && (before.length || after.length)) {
+    const side = (takeBefore && before.length) || !after.length ? before : after;
+    kept.push(side.shift()!);
+    takeBefore = !takeBefore;
+  }
+  return kept.sort((a, b) => a.offsetMs - b.offsetMs);
 }
 
 export interface ReplaySlot {

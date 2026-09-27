@@ -136,13 +136,13 @@ A camera scope with nothing to offer (the camera has no linked cameras, or belon
 
 A ribbon above the list shows one row per camera with a dot for each of its events in the window, so you can see at a glance which cameras were also busy; tapping a dot jumps to that event in the list below. From there, **Events** opens the same window and cameras on that page.
 
-**Replay** opens the events nearest the one you tapped, up to 12, as tiles in time order, and plays them back. The button stays greyed out until the window holds at least two events. The 12 are picked by how close each event is to yours, on either side, so with a ±60 minute window a burst a minute after your event is shown before anything from an hour earlier. When the window holds more, the toolbar says so, for example "Nearest 12 of 37".
+**Replay** opens up to 12 events around the one you tapped as tiles in time order, and plays them back. The button stays greyed out until the window holds at least two events. The 12 are split evenly between events before yours and events after it, taking the closest on each side. If one side has fewer, the other side fills the rest. When the window holds more, the toolbar says so, for example "Nearest 12 of 37".
 
 The first button above the tiles shows the playback mode. **In order** starts each tile at the moment its event started and returns it to its thumbnail when the event ends, so cameras that caught the same moment play it side by side; stretches where no camera was recording are skipped. **All** starts every tile at once. Tap the button to switch between them; the choice is remembered on this device for the next replay. **Restart** starts playback over. A blinking triangle marks each tile that is playing, the others are dimmed, and a tile that starts playing below the visible area scrolls into view. Playback runs at the hover preview **playback speed** set in {doc}`settings`. The screen stays on while the replay is open, whether or not **Insomnia** is on, and goes back to your usual setting when you close it. Without multi-port streaming on the server, at most 5 tiles play at once in **All** and the rest start as those finish, because a browser can hold only six connections to one server and the app needs one for everything else. Snapshot mode does not change this, since event playback always streams.
 
 Tapping a tile continues the replay from that tile: it starts playing at once and the tiles after it follow in the current mode, while the ones before it are skipped. **Restart** or the mode button starts again from the first tile. Double tapping a tile opens that event. Going back from it returns to the replay with playback paused, and the triangle blinks on the tile you opened.
 
-When a busy window holds more events than the list can show, the list keeps the ones nearest your event on both sides.
+When a busy window holds more events than the list can show, the list keeps an equal number before and after your event, the closest on each side.
 
 The window and camera choice you last picked is remembered per profile and used the next time you open the panel.
 
