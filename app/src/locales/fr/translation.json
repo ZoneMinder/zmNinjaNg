@@ -631,8 +631,6 @@
     "api_timeout": "Délai API",
     "api_timeout_desc": "Secondes d'attente d'une requête serveur avant son annulation pour que l'app réessaie. 0 désactive le délai.",
     "api_timeout_unit": "secondes",
-    "global_log_level": "Niveau global",
-    "global_log_level_desc": "Définit tous les composants. Personnaliser ci-dessous.",
     "component_log_levels": "Journaux composants",
     "component_log_levels_desc": "Niveau de journal par composant",
     "component_log_reset": "Réinitialiser",

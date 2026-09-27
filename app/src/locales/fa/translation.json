@@ -631,8 +631,6 @@
     "api_timeout": "مهلت API",
     "api_timeout_desc": "ثانیه‌هایی که برای درخواست سرور صبر می‌کند قبل از قطع تا برنامه دوباره تلاش کند. ۰ مهلت را غیرفعال می‌کند.",
     "api_timeout_unit": "ثانیه",
-    "global_log_level": "سطح سراسری",
-    "global_log_level_desc": "همه اجزا را تنظیم می‌کند. موارد زیر را جداگانه تغییر دهید.",
     "component_log_levels": "لاگ‌های اجزا",
     "component_log_levels_desc": "تنظیم سطح لاگ برای هر جزء",
     "component_log_reset": "بازنشانی",

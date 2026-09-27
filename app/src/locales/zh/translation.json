@@ -631,8 +631,6 @@
     "api_timeout": "API 超时",
     "api_timeout_desc": "中止服务器请求前等待的秒数，以便应用重试。0 表示禁用超时。",
     "api_timeout_unit": "秒",
-    "global_log_level": "全局级别",
-    "global_log_level_desc": "设置所有组件。在下方自定义。",
     "component_log_levels": "组件日志",
     "component_log_levels_desc": "按组件设置日志级别",
     "component_log_reset": "重置",

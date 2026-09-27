@@ -631,8 +631,6 @@
     "api_timeout": "Timeout API",
     "api_timeout_desc": "Secondi di attesa per una richiesta al server prima di interromperla e consentire un nuovo tentativo. 0 disabilita il timeout.",
     "api_timeout_unit": "secondi",
-    "global_log_level": "Livello globale",
-    "global_log_level_desc": "Imposta tutti i componenti. Puoi sovrascrivere quelli singoli sotto.",
     "component_log_levels": "Log dei componenti",
     "component_log_levels_desc": "Imposta il livello di log per componente",
     "component_log_reset": "Reimposta",

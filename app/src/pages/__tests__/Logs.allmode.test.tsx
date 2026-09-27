@@ -104,7 +104,7 @@ describe('Logs page - All mode profile picker (refs #337)', () => {
     await waitFor(() => expect(vi.mocked(getZMLogs).mock.calls.at(-1)?.[0]).toBe(getSession(profileB.id).client));
   });
 
-  it('saves component log levels and log redaction to the aggregate bucket, leaving the member unchanged (refs #536)', async () => {
+  it('saves the log level, a component override and log redaction to the aggregate bucket, leaving the member unchanged (refs #536)', async () => {
     const user = userEvent.setup();
     const [profileA] = seedProfiles(
       [makeProfile('profile-a', { name: 'Home' }), makeProfile('profile-b', { name: 'Work' })],
@@ -113,14 +113,21 @@ describe('Logs page - All mode profile picker (refs #337)', () => {
 
     render(<Logs />);
 
+    // The top-toolbar level picker: must write the aggregate's own bucket,
+    // never the picked member's (this is the fix under review; it used to
+    // write via `currentProfile?.id`, which in All mode is the picked
+    // member's id).
+    fireEvent.click(screen.getByTestId('log-level-option-ERROR'));
     fireEvent.click(screen.getByTestId('component-log-levels-toggle'));
-    fireEvent.change(screen.getByTestId('global-log-level-select'), { target: { value: '4' } });
+    fireEvent.change(screen.getByTestId('component-log-level-Auth'), { target: { value: '1' } });
     await user.click(screen.getByTestId('settings-log-redaction-switch'));
 
     const { getProfileSettings } = useSettingsStore.getState();
     expect(getProfileSettings(ALL_PROFILES_ID).logLevel).toBe(4);
+    expect(getProfileSettings(ALL_PROFILES_ID).componentLogLevels.Auth).toBe(1);
     expect(getProfileSettings(ALL_PROFILES_ID).disableLogRedaction).toBe(true);
     expect(getProfileSettings(profileA.id).logLevel).not.toBe(4);
+    expect(getProfileSettings(profileA.id).componentLogLevels.Auth).toBeUndefined();
     expect(getProfileSettings(profileA.id).disableLogRedaction).toBe(false);
   });
 });

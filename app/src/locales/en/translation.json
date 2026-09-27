@@ -631,8 +631,6 @@
     "api_timeout": "API timeout",
     "api_timeout_desc": "Seconds to wait for a server request before it's aborted so the app can retry. 0 disables the timeout.",
     "api_timeout_unit": "seconds",
-    "global_log_level": "Global Level",
-    "global_log_level_desc": "Sets all components. Override individual ones below.",
     "component_log_levels": "Component Logs",
     "component_log_levels_desc": "Set log level per component",
     "component_log_reset": "Reset",

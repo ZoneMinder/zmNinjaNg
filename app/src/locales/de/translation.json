@@ -631,8 +631,6 @@
     "api_timeout": "API-Timeout",
     "api_timeout_desc": "Sekunden, die auf eine Serveranfrage gewartet wird, bevor sie abgebrochen wird, damit die App es erneut versuchen kann. 0 deaktiviert das Timeout.",
     "api_timeout_unit": "Sekunden",
-    "global_log_level": "Globale Ebene",
-    "global_log_level_desc": "Setzt alle Komponenten. Einzelne unten überschreiben.",
     "component_log_levels": "Komponentenprotokolle",
     "component_log_levels_desc": "Protokollebene pro Komponente",
     "component_log_reset": "Zurücksetzen",

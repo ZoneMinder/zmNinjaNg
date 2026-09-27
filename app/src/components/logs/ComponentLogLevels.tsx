@@ -1,8 +1,10 @@
 /**
  * Component Log Levels
  *
- * Global log level and per-component overrides, shown on the Logs page next
- * to the level picker. Selection-scoped (refs #536): reads and writes the
+ * Per-component log level overrides, shown on the Logs page next to the
+ * level picker, which is the page's one global-level control (refs #536
+ * fix round 1: this used to duplicate that control with different
+ * override-clearing behavior). Selection-scoped: reads and writes the
  * bucket named by `profileId` - the current selection's bucket, which is an
  * aggregate's own bucket when an aggregate is selected.
  */
@@ -41,7 +43,7 @@ export interface ComponentLogLevelsProps {
   updateSettings: (profileId: ProfileId, updates: Partial<ProfileSettings>) => void;
 }
 
-/** Collapsible section for log level control: global + per-component. */
+/** Collapsible section for per-component log level overrides. */
 export function ComponentLogLevels({ settings, profileId, updateSettings }: ComponentLogLevelsProps) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
@@ -57,18 +59,6 @@ export function ComponentLogLevels({ settings, profileId, updateSettings }: Comp
   const getEffective = useCallback(
     (component: string) => overrides[component] ?? globalLevel,
     [overrides, globalLevel],
-  );
-
-  // Change global level: sets all components to this level (clears overrides)
-  const handleGlobalChange = useCallback(
-    (value: number) => {
-      if (!profileId) return;
-      updateSettings(profileId, {
-        logLevel: value as LogLevel,
-        componentLogLevels: {},
-      });
-    },
-    [profileId, updateSettings],
   );
 
   // Change a single component's level
@@ -115,24 +105,6 @@ export function ComponentLogLevels({ settings, profileId, updateSettings }: Comp
       {expanded && (
         <SettingsCard>
           <div className="px-4 py-3">
-            {/* Global level: changes all components */}
-            <div className="flex items-center justify-between mb-3 pb-3 border-b">
-              <div>
-                <div className="text-sm font-medium">{t('settings.global_log_level')}</div>
-                <p className="text-xs text-muted-foreground">{t('settings.global_log_level_desc')}</p>
-              </div>
-              <select
-                className="text-xs bg-background border rounded px-2 py-1 min-w-[5rem] font-medium"
-                value={globalLevel}
-                onChange={(e) => handleGlobalChange(parseInt(e.target.value, 10))}
-                data-testid="global-log-level-select"
-              >
-                {LOG_LEVEL_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-            </div>
-
             {/* Per-component overrides */}
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs text-muted-foreground">

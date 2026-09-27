@@ -148,7 +148,12 @@ export default function Logs() {
         const level = parseInt(value, 10) as LogLevel;
         logger.setLevel(level);
         if (currentProfileId) {
-            updateProfileSettings(currentProfileId, { logLevel: level });
+            // This is the page's one global-level control (refs #536 fix
+            // round 1): changing it clears per-component overrides, same as
+            // the old Settings global selector it replaces, so a component
+            // pinned to a stale level doesn't silently outlive the level
+            // that pin was relative to.
+            updateProfileSettings(currentProfileId, { logLevel: level, componentLogLevels: {} });
         }
         toast({
             title: t('common.success'),
