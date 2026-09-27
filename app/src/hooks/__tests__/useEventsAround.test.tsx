@@ -112,6 +112,38 @@ describe('useEventsAround', () => {
     expect(urls.some((u) => u.includes('StartDateTime >=:2026-09-17 21:14:03'))).toBe(true);
   });
 
+  it('leaves out monitors excluded from the profile, events and names both', async () => {
+    seedProfiles([P], { settings: { p1: { excludedMonitorIds: ['4'] } } });
+    installApiClient(
+      P,
+      fakeApiClient({
+        '/monitors.json': {
+          monitors: [
+            { Monitor: { Id: '3', Name: 'Door' } },
+            { Monitor: { Id: '4', Name: 'Hidden' } },
+          ],
+        },
+        '/groups.json': { groups: [] },
+        '/events/index': {
+          events: [
+            { Event: { ...anchorEvent } },
+            { Event: { ...anchorEvent, Id: '407', MonitorId: '4', StartDateTime: '2026-09-17 21:15:03' } },
+          ],
+          pagination: { count: 2 },
+        },
+      })
+    );
+
+    const { result } = renderHook(
+      () => useEventsAround(anchor, P, { windowMinutes: 15, scope: 'all', enabled: true }),
+      { wrapper }
+    );
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.rows.map((r) => r.event.Id)).toEqual(['406']);
+    expect(result.current.monitorNames.has('4')).toBe(false);
+  });
+
   it('filters to the linked cameras when the scope asks for them', async () => {
     seedProfiles([P]);
     const client = fakeApiClient({
