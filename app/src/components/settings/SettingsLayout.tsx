@@ -17,9 +17,8 @@ import { useSettingsSearching } from './settings-search';
  *
  * Collapsed content is unmounted rather than hidden, which is what makes
  * collapsing worth doing here: a closed Assistant section stops probing its
- * backend, and a closed Advanced section stops rendering the log-level table.
- * A search shows every section's content, so it can match collapsed ones,
- * without touching the remembered state.
+ * backend. A search shows every section's content, so it can match collapsed
+ * ones, without touching the remembered state.
  */
 export function CollapsibleSection({
   id,

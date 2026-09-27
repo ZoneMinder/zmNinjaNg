@@ -9,7 +9,7 @@
  *
  * Collapsible (refs #494): many-camera windows can fill most of the panel, so
  * a header row lets the user hide the lanes, remembered per device the same
- * way AppearanceSection remembers the hover-preview section
+ * way HoverPreviewEditor remembers the hover-preview section
  * (STORAGE_KEYS, a lazy useState initialiser, try/catch on both ends).
  */
 import { useState } from 'react';

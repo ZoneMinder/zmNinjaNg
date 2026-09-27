@@ -14,9 +14,12 @@ import { useSettingsStore } from '../../stores/settings';
 vi.mock('../../api/store-gates', () => import('../../tests/fake-store-gates'));
 vi.mock('../../lib/security/secureStorage', () => import('../../tests/fake-secure-storage'));
 
+const { logStoreState } = vi.hoisted(() => ({
+  logStoreState: { logs: [] as Array<Record<string, unknown>>, clearLogs: () => {} },
+}));
+
 vi.mock('../../stores/logs', () => ({
-  useLogStore: (selector: (state: { logs: unknown[]; clearLogs: () => void }) => unknown) =>
-    selector({ logs: [], clearLogs: vi.fn() }),
+  useLogStore: (selector: (state: typeof logStoreState) => unknown) => selector(logStoreState),
 }));
 
 vi.mock('../../lib/logger', () => ({
@@ -82,6 +85,7 @@ describe('Logs page - All mode profile picker (refs #337)', () => {
   afterEach(() => {
     resetProfileFixture();
     resetFakeStoreGates();
+    logStoreState.logs = [];
   });
 
   it('shows the picker defaulted to the first profile, and switches the server-log source on pick', async () => {
@@ -129,5 +133,36 @@ describe('Logs page - All mode profile picker (refs #337)', () => {
     expect(getProfileSettings(profileA.id).logLevel).not.toBe(4);
     expect(getProfileSettings(profileA.id).componentLogLevels.Auth).toBeUndefined();
     expect(getProfileSettings(profileA.id).disableLogRedaction).toBe(false);
+  });
+
+  it('formats app-log timestamps with the aggregate\'s date format, not the picked member\'s (refs #536)', async () => {
+    const [profileA] = seedProfiles(
+      [makeProfile('profile-a', { name: 'Home' }), makeProfile('profile-b', { name: 'Work' })],
+      {
+        current: ALL_PROFILES_ID,
+        settings: {
+          'profile-a': { dateFormat: 'custom', customDateFormat: 'yyyy~MMM~dd' },
+        },
+      },
+    );
+    void profileA;
+    logStoreState.logs = [{
+      id: 'log-1',
+      timestamp: 'unused',
+      rawTimestamp: new Date('2026-01-15T10:30:00Z').getTime(),
+      level: 'ERROR',
+      message: 'boom',
+      args: [],
+    }];
+
+    render(<Logs />);
+
+    const timestamp = await waitFor(() => {
+      const entry = screen.getByTestId('log-entry');
+      return entry.querySelector('span')?.textContent ?? '';
+    });
+    // The member's custom pattern uses '~' as a separator; the aggregate's
+    // own bucket stays on the default preset, which never produces one.
+    expect(timestamp).not.toContain('~');
   });
 });

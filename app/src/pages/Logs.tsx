@@ -96,12 +96,14 @@ export default function Logs() {
     const isAllMode = scope?.mode === 'all';
     const [pickedProfileId, setPickedProfileId] = useState<ProfileId | undefined>(undefined);
     const defaultPickedId = isAllMode ? (pickedProfileId ?? scope.profiles[0]?.id) : undefined;
-    const { profile: allModeProfile, settings: allModeSettings } = useProfileById(defaultPickedId);
+    const { profile: allModeProfile } = useProfileById(defaultPickedId);
     // Single mode: the page's own current profile, byte-identical to before.
     // All mode: the picked profile, used only for fetching that server's own
-    // ZM logs and for formatting its timestamps - unrelated to the picker.
+    // ZM logs - unrelated to the picker. Timestamps always format with
+    // `selectionSettings` (the aggregate's own bucket in a group), since
+    // dateFormat/timeFormat are selection-scoped, not the picked member's
+    // (refs #536).
     const currentProfile = isAllMode ? allModeProfile : singleProfile;
-    const settings = isAllMode ? allModeSettings : selectionSettings;
     // Log level, component overrides and redaction are selection-scoped: they
     // read and write the current selection's bucket (the aggregate's own
     // bucket in All mode), never the picked member's (refs #536).
@@ -249,7 +251,7 @@ export default function Logs() {
         return zmLogs.map((zmLog) => ({
             id: zmLog.Id.toString(),
             rawTimestamp: parseFloat(zmLog.TimeKey) * 1000,
-            timestamp: formatAppDateTime(new Date(parseFloat(zmLog.TimeKey) * 1000), settings),
+            timestamp: formatAppDateTime(new Date(parseFloat(zmLog.TimeKey) * 1000), selectionSettings),
             level: getZMLogLevel(zmLog.Level),
             // ZoneMinder's own logs carry the ffmpeg command line, camera
             // credential and all. They are displayed, saved, and shared through
@@ -646,7 +648,7 @@ export default function Logs() {
                                         </div>
                                         <div className="min-w-0 flex-1 space-y-2">
                                             <div className="flex items-center gap-2 text-muted-foreground text-[10px] sm:text-xs">
-                                                <span>{log.rawTimestamp ? formatAppDateTime(new Date(log.rawTimestamp), settings) : log.timestamp}</span>
+                                                <span>{log.rawTimestamp ? formatAppDateTime(new Date(log.rawTimestamp), selectionSettings) : log.timestamp}</span>
                                                 {(() => {
                                                     const component = log.context?.component;
                                                     if (component && typeof component === 'string') {
