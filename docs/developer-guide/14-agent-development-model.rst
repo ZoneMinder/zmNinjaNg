@@ -180,9 +180,9 @@ schema rules funnel values into them by design.
 CI runs the gates again on every pull request. Branch protection on ``main``
 blocks a merge until the required checks pass: unit tests, lint, build, the
 accessibility and React correctness lints, the native version guard (described
-under "Builds, releases, and CI workflows"), and proven red. The agent that
-opens a pull request turns on GitHub auto-merge, and GitHub merges it when
-those checks go green.
+under "Builds, releases, and CI workflows"), and proven red. An agent turns on
+GitHub auto-merge only after the maintainer approves the merge (rule P8).
+GitHub then merges the pull request when those checks go green.
 
 CI also runs a ``pr-acceptance`` job, which fails when the pull request body
 has no ``## Acceptance`` section or the section is empty. Rule P1 says that
@@ -373,8 +373,9 @@ status of ``grep``.
 Pull request and merge
 ~~~~~~~~~~~~~~~~~~~~~~
 
-By the time the pull request opens, the gates have run, and auto-merge waits
-for CI. A change to a native OS flow also waits for the device check described
+By the time the pull request opens, the gates have run. The pull request
+waits for the maintainer to approve the merge, and auto-merge then waits for
+CI. A change to a native OS flow also waits for the device check described
 under "What gates cannot check". Then rule P10 applies. The user guide
 describes the feature, the developer guide describes the new components, and
 :doc:`call-flows`, which traces user actions step by step through the code,
