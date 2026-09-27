@@ -248,6 +248,27 @@ describe('EventContextSequence', () => {
     expect(screen.getByTestId('event-context-sequence-nearest')).toHaveTextContent('events.around.sequence_nearest:12/15+');
   });
 
+  it('keeps the screen awake while open and lets it sleep once closed', async () => {
+    // jsdom has no Wake Lock API; stand in for the platform's.
+    const release = vi.fn(() => Promise.resolve());
+    const request = vi.fn(() => Promise.resolve({ release, addEventListener: vi.fn() }));
+    Object.defineProperty(navigator, 'wakeLock', { value: { request }, configurable: true });
+
+    const { rerender } = renderGrid();
+    await act(async () => {});
+    expect(request).toHaveBeenCalledWith('screen');
+    expect(release).not.toHaveBeenCalled();
+
+    rerender(
+      <MemoryRouter>
+        <EventContextSequence open={false} onOpenChange={() => {}} rows={rows} profileId={P} monitorNames={new Map()} />
+      </MemoryRouter>
+    );
+    await act(async () => {});
+    expect(release).toHaveBeenCalled();
+    delete (navigator as { wakeLock?: unknown }).wakeLock;
+  });
+
   it('starts over from the first tile on replay', () => {
     renderGrid();
     act(() => vi.advanceTimersByTime(30_000));

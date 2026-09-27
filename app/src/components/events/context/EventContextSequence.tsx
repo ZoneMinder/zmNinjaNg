@@ -30,6 +30,7 @@ import { useProfileById } from '../../../hooks/useCurrentProfile';
 import { useFreshAccessToken } from '../../../hooks/useFreshAccessToken';
 import { useReturnHighlightStore } from '../../../stores/returnHighlight';
 import { useReturnFlash } from '../../../hooks/useReturnFlash';
+import { useInsomnia } from '../../../hooks/useInsomnia';
 import type { EventContextHistoryState } from '../../../stores/eventContext';
 import { resolveMinStreamingPort } from '../../../lib/monitor/multiport';
 import { buildReplaySchedule, buildRowThumbnail, buildTogetherSchedule, nearestFirst, offsetLabel } from '../../../lib/event/event-context-view';
@@ -62,6 +63,12 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
   const rate = settings.hoverPreviewPlaybackRate ?? DEFAULT_HOVER_PREVIEW_PLAYBACK_RATE;
 
   const tiles = useMemo(() => nearestFirst(rows, EVENT_CONTEXT.sequenceMaxTiles), [rows]);
+  // The screen stays awake for as long as the replay is open, on top of (never
+  // instead of) the user's Insomnia setting, which is left alone. Tied to the
+  // dialog rather than to "a tile is playing": in order, one tile stops and the
+  // next starts on separate timers, and dropping the lock in between would let
+  // a phone whose idle timeout has already passed dim at once.
+  useInsomnia({ enabled: open });
   const [together, setTogether] = useState(false);
   // Multi-port streaming spreads streams over several ports, each with its own
   // six-connection pool, so only a single-port server needs the cap. Snapshot
