@@ -20,7 +20,7 @@
  */
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ListVideo } from 'lucide-react';
+import { Grid3x3, Play } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useShallow } from 'zustand/react/shallow';
 import { cn } from '../../../lib/utils';
@@ -115,7 +115,17 @@ function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId:
           onClick={openSequence}
           data-testid="event-context-sequence-open"
         >
-          <ListVideo className="h-4 w-4" />
+          {/* One icon: a grid of tiles with a play badge on its corner. The
+              badge's stroke is the button background, so the grid lines stop
+              short of it instead of running through. */}
+          <span className="relative inline-flex h-4 w-4 shrink-0" aria-hidden>
+            <Grid3x3 className="h-4 w-4" />
+            <Play
+              className="absolute -bottom-1 -right-1 h-2.5 w-2.5 fill-current stroke-background"
+              strokeWidth={4}
+              style={{ paintOrder: 'stroke' }}
+            />
+          </span>
           {t('events.around.sequence')}
         </Button>
       </EventContextControls>
