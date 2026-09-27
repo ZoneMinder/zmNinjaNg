@@ -388,6 +388,7 @@
     "section_events_playback": "Eventos y reproducción",
     "section_network": "Red",
     "section_more": "Más ajustes",
+    "server_rows_for": "Para {{name}}",
     "hidden_monitors": {
       "section": "Monitores ocultos",
       "desc": "Oculta monitores de todas las vistas. Sus eventos también se ocultan.",

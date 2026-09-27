@@ -26,7 +26,7 @@ import { EventsPlaybackSection } from '../components/settings/EventsPlaybackSect
 import { NetworkSection } from '../components/settings/NetworkSection';
 import { AssistantSection } from '../components/settings/AssistantSection';
 import { MoreSettingsSection } from '../components/settings/MoreSettingsSection';
-import { SettingsSearchContext, useSettingsFilter } from '../components/settings/settings-search';
+import { SettingsAggregateContext, SettingsSearchContext, useSettingsFilter } from '../components/settings/settings-search';
 import type { ProfileSettings } from '../stores/settings';
 
 export default function Settings() {
@@ -142,6 +142,7 @@ export default function Settings() {
       )}
 
       <SettingsSearchContext.Provider value={query.trim()}>
+      <SettingsAggregateContext.Provider value={isAllMode}>
         <div ref={sectionsRef} className="space-y-6" data-testid="settings-sections">
           {isAllMode && (
             // Kept while searching: it picks whose settings every server
@@ -194,6 +195,7 @@ export default function Settings() {
           />
           <MoreSettingsSection />
         </div>
+      </SettingsAggregateContext.Provider>
       </SettingsSearchContext.Provider>
     </PageContainer>
   );

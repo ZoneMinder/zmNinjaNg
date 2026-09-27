@@ -388,6 +388,7 @@
     "section_events_playback": "事件与回放",
     "section_network": "网络",
     "section_more": "更多设置",
+    "server_rows_for": "适用于 {{name}}",
     "hidden_monitors": {
       "section": "隐藏的监视器",
       "desc": "在所有视图中隐藏监视器。其事件也会被隐藏。",

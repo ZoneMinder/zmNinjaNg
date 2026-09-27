@@ -15,7 +15,7 @@
 import { useTranslation } from 'react-i18next';
 import { Image, Video as VideoIcon, Server } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { SettingsCard, SettingsRow, RowLabel } from './SettingsLayout';
+import { SettingsRow, RowLabel } from './SettingsLayout';
 import type { AllModeViewMode } from '../../stores/settings';
 
 export interface AllServersStreamingSectionProps {
@@ -43,42 +43,40 @@ export function AllServersStreamingSection({
         : 'settings.all_mode_streaming_per_server_desc';
 
   return (
-    <SettingsCard>
-      <SettingsRow>
-        <RowLabel
-          label={label}
-          desc={t(descKey)}
-        />
-        <Select value={value} onValueChange={(next) => onChange(next as AllModeViewMode)}>
-          <SelectTrigger
-            className="w-36 flex-shrink-0"
-            aria-label={label}
-            data-testid="all-mode-streaming-select"
-          >
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="per-server" data-testid="all-mode-streaming-option-per-server">
-              <span className="flex items-center gap-1.5">
-                <Server className="h-3.5 w-3.5" />
-                {t('settings.all_mode_streaming_per_server')}
-              </span>
-            </SelectItem>
-            <SelectItem value="streaming" data-testid="all-mode-streaming-option-streaming">
-              <span className="flex items-center gap-1.5">
-                <VideoIcon className="h-3.5 w-3.5" />
-                {t('settings.streaming')}
-              </span>
-            </SelectItem>
-            <SelectItem value="snapshot" data-testid="all-mode-streaming-option-snapshot">
-              <span className="flex items-center gap-1.5">
-                <Image className="h-3.5 w-3.5" />
-                {t('settings.snapshot')}
-              </span>
-            </SelectItem>
-          </SelectContent>
-        </Select>
-      </SettingsRow>
-    </SettingsCard>
+    <SettingsRow>
+      <RowLabel
+        label={label}
+        desc={t(descKey)}
+      />
+      <Select value={value} onValueChange={(next) => onChange(next as AllModeViewMode)}>
+        <SelectTrigger
+          className="w-36 flex-shrink-0"
+          aria-label={label}
+          data-testid="all-mode-streaming-select"
+        >
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="per-server" data-testid="all-mode-streaming-option-per-server">
+            <span className="flex items-center gap-1.5">
+              <Server className="h-3.5 w-3.5" />
+              {t('settings.all_mode_streaming_per_server')}
+            </span>
+          </SelectItem>
+          <SelectItem value="streaming" data-testid="all-mode-streaming-option-streaming">
+            <span className="flex items-center gap-1.5">
+              <VideoIcon className="h-3.5 w-3.5" />
+              {t('settings.streaming')}
+            </span>
+          </SelectItem>
+          <SelectItem value="snapshot" data-testid="all-mode-streaming-option-snapshot">
+            <span className="flex items-center gap-1.5">
+              <Image className="h-3.5 w-3.5" />
+              {t('settings.snapshot')}
+            </span>
+          </SelectItem>
+        </SelectContent>
+      </Select>
+    </SettingsRow>
   );
 }

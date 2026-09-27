@@ -1063,15 +1063,19 @@ setting scopes described in :doc:`03-state-management-zustand`. Rows at the
 top of a section are selection-scoped and save through the page's
 ``update``, which writes the aggregate's bucket when an aggregate is
 selected and the current profile's otherwise. Server-scoped rows sit in a
-``SettingsSubCard`` headed by the profile's name and save to that one
-profile, through ``updateServerScoped`` or ``updateSettings(serverProfile.id,
+``SettingsSubCard`` and save to that one profile, through ``updateServerScoped`` or ``updateSettings(serverProfile.id,
 ...)``. With an aggregate selected, a ``ProfilePicker`` above the first
 section (marked ``data-settings-search-keep``) chooses that profile,
 defaulting to the first one in scope. With one profile selected it is the
 current profile. The
 aggregate-only rows (``AllServersStreamingSection`` and
-``AllServersPerformanceSection``) sit in a second sub-card in
-``LiveStreamingSection``, headed by the aggregate's name. The Settings page
+``AllServersPerformanceSection``, a disclosure row) sit in a second sub-card
+in ``LiveStreamingSection``. With one profile selected a sub-card is a plain
+wrapper, so its rows read as part of the section. While aggregating,
+``SettingsAggregateContext`` (``settings-search.ts``, provided by the page) makes it draw a quiet
+"For <name>" divider above its rows, naming the picked profile or the
+aggregate. Only the six sections use ``CollapsibleSection`` headers; anything
+folding inside a section is a disclosure row. The Settings page
 test checks that every server-scoped row renders inside a server sub-card
 and no selection-scoped row does.
 

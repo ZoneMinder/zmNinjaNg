@@ -388,6 +388,7 @@
     "section_events_playback": "Ereignisse & Wiedergabe",
     "section_network": "Netzwerk",
     "section_more": "Weitere Einstellungen",
+    "server_rows_for": "Für {{name}}",
     "hidden_monitors": {
       "section": "Versteckte Monitore",
       "desc": "Monitore aus allen Ansichten ausblenden. Ihre Ereignisse werden ebenfalls ausgeblendet.",

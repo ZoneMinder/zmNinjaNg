@@ -388,6 +388,7 @@
     "section_events_playback": "Events & Playback",
     "section_network": "Network",
     "section_more": "More settings",
+    "server_rows_for": "For {{name}}",
     "hidden_monitors": {
       "section": "Hidden Monitors",
       "desc": "Hide monitors from all views. Their events are also hidden.",

@@ -388,6 +388,7 @@
     "section_events_playback": "Événements et lecture",
     "section_network": "Réseau",
     "section_more": "Autres réglages",
+    "server_rows_for": "Pour {{name}}",
     "hidden_monitors": {
       "section": "Moniteurs masqués",
       "desc": "Masque les moniteurs de toutes les vues. Leurs événements sont aussi masqués.",

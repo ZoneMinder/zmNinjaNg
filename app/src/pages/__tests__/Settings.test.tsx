@@ -9,6 +9,7 @@ import type { ReactNode } from 'react';
 import { seedProfiles, resetProfileFixture, asProfileId, makeProfile } from '../../tests/profile-fixture';
 import { resetFakeStoreGates } from '../../tests/fake-store-gates';
 import { useSettingsStore } from '../../stores/settings';
+import { getMonitors } from '../../api/monitors';
 import { SELECTION_SCOPED_SETTINGS, SERVER_SCOPED_SETTINGS } from '../../stores/settings-scope';
 import { ThemeProvider, useTheme } from '../../components/theme-provider';
 import { collapsedDisclosures, unfilterableText, visibleText } from '../../tests/settings-search-gate';
@@ -108,6 +109,7 @@ describe('Settings Page', () => {
   beforeEach(() => {
     seedProfiles([PROFILE], { settings: { 'profile-1': { viewMode: 'snapshot', dateFormat: 'custom', timeFormat: 'custom' } } });
     changeLanguage.mockClear();
+    vi.mocked(getMonitors).mockResolvedValue({ monitors: [] } as never);
     // Section and fold open state persists; start every test from the defaults.
     localStorage.clear();
   });
@@ -154,14 +156,31 @@ describe('Settings Page', () => {
     ]);
   });
 
-  it('has no profile picker with one profile selected, and heads each server sub-card with its name', () => {
+  // With one profile the server's name says nothing the page does not, so the
+  // server rows run on as plain rows with no divider or name.
+  it('has no profile picker and names no server with one profile selected', () => {
     renderSettings();
     expect(screen.queryByTestId('page-profile-picker')).toBeNull();
-    const headers = screen
-      .getAllByTestId('settings-server-subcard')
-      .map((el) => el.querySelector('[data-testid="settings-subcard-name"]')?.textContent);
-    expect(headers.length).toBeGreaterThan(0);
-    expect(new Set(headers)).toEqual(new Set(['Home']));
+    expect(screen.getAllByTestId('settings-server-subcard').length).toBeGreaterThan(0);
+    expect(screen.queryAllByTestId('settings-subcard-name')).toEqual([]);
+    expect(visibleText(screen.getByTestId('settings-sections'))).not.toContain('Home');
+  });
+
+  // Only the six topics have caps headers; Hidden monitors is a row of its card.
+  it('shows Hidden monitors as a card row whose button opens the monitor list', async () => {
+    vi.mocked(getMonitors).mockResolvedValue({
+      monitors: [{ Monitor: { Id: '7', Name: 'Porch' } }],
+    } as never);
+    const user = userEvent.setup();
+    renderSettings();
+    expect(screen.queryByTestId('settings-section-hidden-monitors-toggle')).toBeNull();
+    const row = screen.getByText('settings.hidden_monitors.section').closest('[data-settings-card] > *');
+    expect(row?.contains(screen.getByTestId('hidden-monitors-dropdown'))).toBe(true);
+
+    const button = screen.getByTestId('hidden-monitors-dropdown');
+    await vi.waitFor(() => expect(button).not.toBeDisabled());
+    await user.click(button);
+    expect((await screen.findByTestId('hidden-monitors-list')).textContent).toContain('Porch');
   });
 
   // Placement gate (spec "Contract change"): a server-scoped row sits in the
@@ -285,9 +304,7 @@ describe('Settings Page', () => {
     ['Advanced streaming', 'webrtc_use_stun_desc', 'settings.webrtc_use_stun_desc'],
     ['WebRTC protocols', 'protocol_mse_desc', 'settings.protocol_mse_desc'],
     ['Event thumbnails', 'thumbnail_chain.objdetect', 'settings.appearance.thumbnail_chain.objdetect'],
-    ['Hidden monitors', 'hidden_monitors.desc', 'settings.hidden_monitors.desc'],
   ])('search finds a row inside the folded %s part', (_part, query, text) => {
-    localStorage.setItem('zmng-settings-section-open-hidden-monitors', 'false');
     renderSettings();
     expect(screen.queryByText(text)).toBeNull();
     search(query);
@@ -316,8 +333,6 @@ describe('Settings Page', () => {
     await user.type(screen.getByTestId('settings-search-input'), 'multiport');
     const sections = screen.getByTestId('settings-sections');
     expect(visibleText(sections)).toContain('settings.force_disable_multiport');
-    // The server sub-card header stays, so the row still says whose it is.
-    expect(visibleText(sections)).toContain('Home');
 
     await user.click(screen.getByTestId('settings-search-clear'));
     expect(screen.queryByTestId('settings-force-disable-multiport-switch')).toBeNull();

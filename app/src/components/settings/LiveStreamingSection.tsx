@@ -5,7 +5,7 @@
  * through the page's `update`. Then the server sub-card: how this server
  * sends live video (Streaming Mode with its recommendation, refresh, FPS,
  * scale, and the Advanced streaming fold). While aggregating, a last sub-card
- * headed by the aggregate's name holds the aggregate-only knobs, saved to the
+ * under the aggregate's name holds the aggregate-only knobs, saved to the
  * aggregate's own bucket.
  */
 
@@ -282,12 +282,14 @@ export function LiveStreamingSection({
 
         {aggregateName !== null && (
           <SettingsSubCard name={aggregateName} testId="settings-aggregate-subcard">
-            <AllServersStreamingSection
-              value={settings.allModeViewMode}
-              onChange={(value) => update('allModeViewMode', value)}
-              name={aggregateName}
-            />
-            <AllServersPerformanceSection settings={settings} update={update} name={aggregateName} />
+            <SettingsCard>
+              <AllServersStreamingSection
+                value={settings.allModeViewMode}
+                onChange={(value) => update('allModeViewMode', value)}
+                name={aggregateName}
+              />
+              <AllServersPerformanceSection settings={settings} update={update} name={aggregateName} />
+            </SettingsCard>
           </SettingsSubCard>
         )}
       </div>

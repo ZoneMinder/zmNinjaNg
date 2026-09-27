@@ -150,22 +150,50 @@ describe('Settings page - All mode two-tier picker (refs #337)', () => {
     const firstSection = screen.getByTestId('settings-section-general');
     expect(picker.compareDocumentPosition(firstSection) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(firstSection.contains(picker)).toBe(false);
-    expect(new Set(subCardHeaders('settings-server-subcard'))).toEqual(new Set(['Home']));
+    expect(new Set(subCardHeaders('settings-server-subcard'))).toEqual(new Set(['settings.server_rows_for:{"name":"Home"}']));
   });
 
   it('heads every server sub-card with the picked profile, which the picker changes', () => {
     render(<Settings />, { wrapper: queryWrapper });
     fireEvent.click(screen.getByTestId(`page-profile-picker-option-${profileB.id}`));
-    expect(new Set(subCardHeaders('settings-server-subcard'))).toEqual(new Set(['Work']));
+    expect(new Set(subCardHeaders('settings-server-subcard'))).toEqual(new Set(['settings.server_rows_for:{"name":"Work"}']));
   });
 
   it('heads the aggregate-only sub-card with the aggregate name, inside Live Streaming', () => {
     render(<Settings />, { wrapper: queryWrapper });
     const sub = screen.getByTestId('settings-aggregate-subcard');
     expect(screen.getByTestId('settings-section-live-streaming').contains(sub)).toBe(true);
-    expect(subCardHeaders('settings-aggregate-subcard')).toEqual(['profiles.all_servers']);
+    expect(subCardHeaders('settings-aggregate-subcard')).toEqual(['settings.server_rows_for:{"name":"profiles.all_servers"}']);
     expect(sub.contains(screen.getByTestId('all-mode-streaming-select'))).toBe(true);
-    expect(sub.contains(screen.getByTestId('settings-section-all-servers-performance'))).toBe(true);
+    expect(sub.contains(screen.getByTestId('settings-all-servers-performance-trigger'))).toBe(true);
+  });
+
+  // Performance is a disclosure row like Previews, not a caps section header.
+  it('folds Performance behind a disclosure row that says whether it is open', () => {
+    render(<Settings />, { wrapper: queryWrapper });
+    expect(screen.queryByTestId('settings-section-all-servers-performance-toggle')).toBeNull();
+    const trigger = screen.getByTestId('settings-all-servers-performance-trigger');
+    expect(trigger.closest('[data-settings-card] > *')).not.toBeNull();
+    expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    fireEvent.click(trigger);
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByTestId('all-mode-max-streams-input')).toBeNull();
+    fireEvent.click(trigger);
+    expect(screen.getByTestId('all-mode-max-streams-input')).toHaveValue(DEFAULT_SETTINGS.allModeMaxStreams);
+  });
+
+  // A search result keeps the "For <server>" divider above it, so it still
+  // says whose setting it is; dividers over no matching row hide.
+  it('keeps the divider above a matching server row while searching', () => {
+    render(<Settings />, { wrapper: queryWrapper });
+    fireEvent.click(screen.getByTestId('settings-search-button'));
+    fireEvent.change(screen.getByTestId('settings-search-input'), { target: { value: 'force_disable_multiport' } });
+    const text = visibleText(screen.getByTestId('settings-sections'));
+    expect(text).toContain('settings.force_disable_multiport');
+    expect(text.filter((s) => s === 'settings.server_rows_for:{"name":"Home"}')).toHaveLength(1);
+    expect(visibleText(screen.getByTestId('settings-section-network'))).toContain(
+      'settings.server_rows_for:{"name":"Home"}'
+    );
   });
 
   it('has no aggregate sub-card or picker in single mode', () => {
@@ -204,7 +232,7 @@ describe('Settings page - All mode two-tier picker (refs #337)', () => {
     fireEvent.change(screen.getByTestId('settings-search-input'), { target: { value: 'max_streams_label' } });
     const text = visibleText(screen.getByTestId('settings-sections'));
     expect(text).toContain('settings.all_mode_perf.max_streams_label');
-    expect(text).toContain('profiles.all_servers');
+    expect(text).toContain('settings.server_rows_for:{"name":"profiles.all_servers"}');
   });
 
   // The All-Servers Streaming Mode row: without it the ALL bucket's viewMode

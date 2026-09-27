@@ -2,19 +2,19 @@
 
 The Settings page has six sections: General, Live Streaming, Events & Playback, Network, Ninjii (Beta) - AI chatbot, and More settings. Each section heading collapses. Click or tap a heading to fold that section away, and the app remembers which sections you left closed. All sections start open.
 
-To find a setting, tap the search icon at the top right of the page and type part of its name, its description, or its current value. Only the matching settings stay on screen, including ones in sections you have collapsed and in folded rows such as Previews or Advanced streaming. Typing a section's name shows that whole section, and typing a server's name shows every setting in that server's box. Tap the X or press Esc to clear the search. The sections you collapsed are still collapsed afterwards.
+To find a setting, tap the search icon at the top right of the page and type part of its name, its description, or its current value. Only the matching settings stay on screen, including ones in sections you have collapsed and in folded rows such as Previews or Advanced streaming. Typing a section's name shows that whole section, and with a group selected, typing a server's name shows every setting for that server. Tap the X or press Esc to clear the search. The sections you collapsed are still collapsed afterwards.
 
 ## Your settings and server settings
 
-Most sections have two parts. The rows at the top are about how you use the app, such as the theme or whether video opens in fullscreen. Below them, a box headed with a server's name holds that server's settings, such as how it sends video. The Ninjii section is one server box.
+Most sections have two parts. The rows at the top are about how you use the app, such as the theme or whether video opens in fullscreen. The rows after them are one server's settings, such as how it sends video. The whole Ninjii section is server settings.
 
-With one profile (one saved server) selected, both parts save to that profile. The box shows the profile's name, and there is no picker.
+With one profile (one saved server) selected, both parts save to that profile and read as one list, with no server name and no picker.
 
 With a Virtual Profile Group selected, such as the built-in All Servers:
 
-- A **Profile** picker sits at the top of the page, above General. It chooses which server every server box on the page shows and edits. It starts on the first server in the group. The picker stays visible while you search.
-- The rows outside the server boxes save to the group itself. A group keeps its own copy of these settings, starting from the defaults, so a change you make here applies while that group is selected. Only the server boxes change a member server's settings.
-- Live Streaming has one more box, headed with the group's name, for settings that only exist in a group. See [In a Virtual Profile Group](#settings-group-streaming-mode) and [Group performance](#group-performance).
+- A **Profile** picker sits at the top of the page, above General. A thin line marked **For** and the server's name shows where each section's server rows start. The picker chooses which server those rows show and edit. It starts on the first server in the group. The picker stays visible while you search.
+- The rows above the server rows save to the group itself. A group keeps its own copy of these settings, starting from the defaults, so a change you make here applies while that group is selected. Only the server rows change a member server's settings.
+- Live Streaming ends with a few more rows, marked **For** and the group's name, for settings that only exist in a group. See [In a Virtual Profile Group](#settings-group-streaming-mode) and [Group performance](#group-performance).
 
 A few settings apply to the whole app on this device, whichever profile or group is selected: **Language**, **Kiosk PIN**, and **Show developer notices**.
 
@@ -34,7 +34,7 @@ A few settings apply to the whole app on this device, whichever profile or group
 | **Kiosk PIN** | Set, change, or clear the PIN that locks kiosk mode. See [Kiosk PIN](#kiosk-pin). |
 | **Show developer notices** | Shows maintainer announcements in the app. |
 
-The server box under General holds **Hidden Monitors**. See [Hidden Monitors](#hidden-monitors).
+The server rows under General hold **Hidden Monitors**. See [Hidden Monitors](#hidden-monitors).
 
 ### Previews
 
@@ -73,9 +73,9 @@ Manage the PIN used to lock and unlock kiosk mode. See {doc}`kiosk` for full det
 
 ### Hidden Monitors
 
-Hide monitors you do not want to see. A hidden monitor is removed from the Monitors list, Montage, Dashboard, the Events list, and the Timeline, and its events are hidden too. The list belongs to the server named on the box, so hiding a monitor on one server does not affect another.
+Hide monitors you do not want to see. A hidden monitor is removed from the Monitors list, Montage, Dashboard, the Events list, and the Timeline, and its events are hidden too. The list belongs to one server, so hiding a monitor on one server does not affect another.
 
-The **Hidden Monitors** list shows every monitor on the server, including ones you have already hidden, each with a checkbox. Tick a monitor to hide it; clear the tick to restore it. The count at the top shows how many monitors are currently hidden. Its heading collapses like a section heading.
+The button on the **Hidden Monitors** row opens a list of every monitor on the server, including ones you have already hidden, each with a checkbox. Tick a monitor to hide it; clear the tick to restore it. The button shows how many monitors are currently hidden.
 
 Hiding a monitor does not change anything on the ZoneMinder server. It only controls what this app shows.
 
@@ -87,7 +87,7 @@ Hiding a monitor does not change anything on the ZoneMinder server. It only cont
 | **Skip offline monitors** | Monitors whose capture or function is set to None are left out of the grid, the montage, and live-view swiping. |
 | **Open live view in fullscreen** | Every monitor's detail page opens maximized. For one monitor only, use **Open in fullscreen** in that monitor's Settings dialog instead. |
 
-The server box under Live Streaming holds how that server sends live video:
+The server rows under Live Streaming set how that server sends live video:
 
 | Setting | Description |
 |---------|-------------|
@@ -134,7 +134,7 @@ The row shows which mode is recommended for the server and a line explaining why
 
 #### In a Virtual Profile Group
 
-With a group selected, the Streaming Mode toggle in the server box belongs to the server chosen in the Profile picker. The group's own box, below the server box and headed with the group's name, has a separate Streaming Mode row with three options: **Per server** (the default, each server's tiles follow that server's own toggle), **Streaming**, and **Snapshot**. The last two impose one choice on every tile in the group for as long as the group is selected. Neither changes any server's own setting, and neither carries over to another group.
+With a group selected, the Streaming Mode toggle in the server rows belongs to the server chosen in the Profile picker. The group's own rows, after the server rows and marked with the group's name, include a separate Streaming Mode row with three options: **Per server** (the default, each server's tiles follow that server's own toggle), **Streaming**, and **Snapshot**. The last two impose one choice on every tile in the group for as long as the group is selected. Neither changes any server's own setting, and neither carries over to another group.
 
 (connection-limits-by-platform)=
 
@@ -175,7 +175,7 @@ The server's **Enable WebRTC/HLS/MSE** setting is the default for its monitors. 
 
 ### Group performance
 
-With a Virtual Profile Group selected, the group's box under Live Streaming also holds a section named after the group, for example *All Servers performance*. Every row in it governs the combined view rather than one server, and its values belong to that group. Each row shows its default, and a reset button appears once you change it.
+With a Virtual Profile Group selected, the group's rows under Live Streaming also include a folded row named after the group, for example *All Servers performance*. Every setting in it governs the combined view rather than one server, and its values belong to that group. Each row shows its default, and a reset button appears once you change it.
 
 Combining several servers multiplies work that one server does once: every tile is a separate live connection, and every watched camera is a separate request on every poll. The values that suit you depend on how many servers you combine and what your network and servers will take.
 
@@ -190,7 +190,7 @@ Combining several servers multiplies work that one server does once: every tile 
 | **Pause off-screen tiles** | Off | Stops a montage tile once it has been scrolled a screen's worth past the edge of the grid, and starts it again as it comes back. The limit above still decides which cameras are on the page, so scrolling never brings an overflow camera in. |
 | **Idle timeout** | 0 (never) | Drops montage tiles to periodic snapshots after this many minutes with no touch, click or keypress. Any interaction puts them back on live streams, as does returning to the app. This runs whether or not *Insomnia* is on, which is the case it exists for. |
 
-None of these change any server's own settings. With one profile selected the group box does not appear, since a single server has nothing to combine.
+None of these change any server's own settings. With one profile selected the group rows do not appear, since a single server has nothing to combine.
 
 ## Events & Playback
 
@@ -202,7 +202,7 @@ None of these change any server's own settings. With one profile selected the gr
 | **Recent events on monitor** | How many recent events a monitor's live view lists under the video (1 to 50, default 20; presets 10/20/50). |
 | **Nearby events** | The default time window and cameras for nearby events. See [Nearby](events.md#nearby). |
 
-The server box under Events & Playback holds **Event thumbnails**.
+The server rows under Events & Playback hold **Event thumbnails**.
 
 ### Event thumbnails
 
@@ -220,7 +220,7 @@ The setting applies to every thumbnail surface in the app: events list, event mo
 |---------|-------------|
 | **Bandwidth Mode** | *Normal* or *Low*. Controls how often the app fetches data. See [Bandwidth Mode](#bandwidth-mode). |
 
-The server box under Network holds how the app reaches that server:
+The server rows under Network set how the app reaches that server:
 
 | Setting | Description |
 |---------|-------------|
@@ -255,7 +255,7 @@ Switch to **Low** when on mobile data or a slow connection. You can switch back 
 
 ## Ninjii (Beta) - AI chatbot
 
-Enable and configure Ninjii, the chat assistant that answers questions about your cameras and events. It is read-only: it can look things up and take you to a screen, and cannot arm a monitor, change the run state, or delete an event. The model runs either on your device or on an Ollama server you run yourself. The whole section is a server box, so each server has its own Ninjii settings. See {doc}`assistant` for the full guide, including the backend choice, the advanced dials, and what stays on your device.
+Enable and configure Ninjii, the chat assistant that answers questions about your cameras and events. It is read-only: it can look things up and take you to a screen, and cannot arm a monitor, change the run state, or delete an event. The model runs either on your device or on an Ollama server you run yourself. The whole section is server settings, so each server has its own Ninjii settings. See {doc}`assistant` for the full guide, including the backend choice, the advanced dials, and what stays on your device.
 
 ## More settings
 

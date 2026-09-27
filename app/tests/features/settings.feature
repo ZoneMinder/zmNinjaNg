@@ -67,7 +67,7 @@ Feature: Application Settings
   Scenario: Settings lists its sections by topic
     When I navigate to the "Settings" page
     Then the settings sections should be General, Live Streaming, Events & Playback, Network, Ninjii and More settings
-    And each server sub-card should be headed by the current profile name
+    And the server rows should name no server with one profile selected
 
   @all
   Scenario: Fullscreen when turned sideways can be turned off and stays off

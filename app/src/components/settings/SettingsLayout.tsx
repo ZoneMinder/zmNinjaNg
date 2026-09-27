@@ -5,10 +5,11 @@
  */
 
 import type React from 'react';
-import { useState } from 'react';
-import { ChevronDown, ChevronRight, Server } from 'lucide-react';
+import { useContext, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { STORAGE_KEYS } from '../../lib/zmninja-ng-constants';
-import { useSettingsSearching } from './settings-search';
+import { SettingsAggregateContext, useSettingsSearching } from './settings-search';
 
 /**
  * A whole settings section behind its own header. The open state is remembered
@@ -94,9 +95,10 @@ export function RowLabel({ label, desc }: { label: string; desc?: string }) {
 
 /**
  * Rows that belong to one server (or, for the aggregate-only knobs, to the
- * aggregate), headed by its name. The header is a section label to search:
- * it stays beside any of its rows that match, so a result still says whose
- * setting it is, and searching the name shows every row it heads.
+ * aggregate). With one profile selected they are plain rows of the section.
+ * While aggregating, a quiet "For <name>" divider marks where they start; it
+ * is a section label to search, so it stays above any of its rows that match,
+ * and searching the name shows every row under it.
  */
 export function SettingsSubCard({
   name,
@@ -107,18 +109,23 @@ export function SettingsSubCard({
   testId: 'settings-server-subcard' | 'settings-aggregate-subcard';
   children: React.ReactNode;
 }) {
+  const { t } = useTranslation();
+  const aggregating = useContext(SettingsAggregateContext);
+  if (!aggregating) {
+    return <div className="space-y-3" data-testid={testId}>{children}</div>;
+  }
+  const label = t('settings.server_rows_for', { name });
   return (
-    <div
-      className="space-y-2 rounded-lg border border-dashed p-2"
-      data-settings-section
-      data-testid={testId}
-    >
-      <div
-        className="flex min-w-0 items-center gap-1.5 px-2 text-xs font-medium text-muted-foreground"
-        title={name}
-      >
-        <Server className="h-3.5 w-3.5 shrink-0" />
-        <span className="truncate" data-settings-section-label data-testid="settings-subcard-name">{name}</span>
+    <div className="space-y-3" data-settings-section data-testid={testId}>
+      <div className="flex min-w-0 items-center gap-2 px-1" title={label}>
+        <span
+          className="min-w-0 truncate text-xs text-muted-foreground"
+          data-settings-section-label
+          data-testid="settings-subcard-name"
+        >
+          {label}
+        </span>
+        <div className="h-px min-w-4 flex-1 bg-border" aria-hidden="true" />
       </div>
       {children}
     </div>

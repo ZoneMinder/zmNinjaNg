@@ -388,6 +388,7 @@
     "section_events_playback": "Eventi e riproduzione",
     "section_network": "Rete",
     "section_more": "Altre impostazioni",
+    "server_rows_for": "Per {{name}}",
     "hidden_monitors": {
       "section": "Monitor nascosti",
       "desc": "Nascondi i monitor da tutte le viste. Anche i relativi eventi verranno nascosti.",

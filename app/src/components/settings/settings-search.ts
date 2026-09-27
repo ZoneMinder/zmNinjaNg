@@ -18,6 +18,10 @@ const SECTION_LABEL = '[data-settings-section-label]';
 /** The active search text; '' when not searching. */
 export const SettingsSearchContext = createContext('');
 
+/** True while an aggregate is selected: server rows then say whose they are
+ *  (SettingsSubCard), which is also what a search can match them by. */
+export const SettingsAggregateContext = createContext(false);
+
 /** True while a search is active. Anything collapsible in Settings opens for
  *  it, since collapsed content is unmounted and could not be matched. */
 export function useSettingsSearching(): boolean {

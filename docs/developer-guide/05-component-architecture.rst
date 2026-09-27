@@ -1220,8 +1220,8 @@ that load is a row here: the montage stream cap, the Live Activity watch cap
 and poll floor, the notification grouping window, and four connection
 settings (stream tuning, pausing hidden streams, viewport gating, and idle
 minutes). ``LiveStreamingSection`` renders it only while
-an aggregate is selected, in the sub-card headed by the aggregate's name next
-to ``AllServersStreamingSection``, because these bound the aggregate rather
+an aggregate is selected, as a disclosure row under the aggregate's "For
+<name>" divider, in one card with ``AllServersStreamingSection``, because these bound the aggregate rather
 than the profile picked at the top of the page.
 
 Each row's value lives in the current aggregate's settings bucket and its

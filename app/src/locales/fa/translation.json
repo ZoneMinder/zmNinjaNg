@@ -388,6 +388,7 @@
     "section_events_playback": "رویدادها و پخش",
     "section_network": "شبکه",
     "section_more": "تنظیمات بیشتر",
+    "server_rows_for": "برای {{name}}",
     "hidden_monitors": {
       "section": "مانیتورهای مخفی",
       "desc": "مانیتورها را از همه نماها مخفی کنید. رویدادهایشان هم مخفی می‌شود.",

@@ -490,12 +490,9 @@ Then('the settings sections should be General, Live Streaming, Events & Playback
   ]);
 });
 
-Then('each server sub-card should be headed by the current profile name', async ({ page }) => {
-  const headers = page.getByTestId('settings-server-subcard').getByTestId('settings-subcard-name');
-  await expect(headers.first()).toBeVisible({ timeout: testConfig.timeouts.pageLoad });
-  const names = new Set(await headers.allTextContents());
-  expect(names.size).toBe(1);
-  expect([...names][0].trim()).not.toBe('');
+Then('the server rows should name no server with one profile selected', async ({ page }) => {
+  await expect(page.getByTestId('settings-server-subcard').first()).toBeVisible({ timeout: testConfig.timeouts.pageLoad });
+  await expect(page.getByTestId('settings-subcard-name')).toHaveCount(0);
 });
 
 When('I turn off fullscreen when turned sideways', async ({ page }) => {

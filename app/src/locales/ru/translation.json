@@ -406,6 +406,7 @@
     "section_events_playback": "События и воспроизведение",
     "section_network": "Сеть",
     "section_more": "Другие настройки",
+    "server_rows_for": "Для {{name}}",
     "hidden_monitors": {
       "section": "Скрытые мониторы",
       "desc": "Скрыть мониторы из всех видов. Их события также скрываются.",
