@@ -1273,14 +1273,19 @@ toggle and the Settings page's aggregate Streaming Mode row governing nothing.
 
    import { useViewPrefs } from '../hooks/useViewPrefs';
 
-   // Owning profile in single mode; the aggregate's bucket while aggregating.
+   // viewMode: owning profile, unless the aggregate's allModeViewMode imposes one.
+   // showAnalysisFrames: owning profile in single mode, the aggregate's bucket otherwise.
    const { viewMode, showAnalysisFrames } = useViewPrefs(profileId);
 
-``viewMode`` and
-``showAnalysisFrames`` describe the view, so the bucket the user is looking at
-owns them. Timeouts, multi-port and bandwidth describe the server, so they
-stay with the owning profile: ``useMonitorStream`` reads both, from
-``useProfileById`` and from here. Resolution keys off the app's mode, not the
+This follows the scope rule in :doc:`03-state-management-zustand`.
+``viewMode`` is server-scoped, so it comes from the owning profile. With an
+aggregate selected, a ``Streaming`` or ``Snapshot`` value of the aggregate's
+``allModeViewMode`` replaces it for every tile. ``showAnalysisFrames``
+describes the view, so while aggregating it comes from the aggregate's bucket.
+Timeouts and multi-port describe the server and stay with the owning profile,
+read through ``useProfileById``. ``bandwidthMode`` is selection-scoped:
+``useBandwidthSettings`` reads it through ``useCurrentProfile()``, so while
+aggregating the aggregate's own value applies to every tile. Resolution keys off the app's mode, not the
 route, so the ``/all/monitors/:profileId/:id`` deep route follows the
 aggregate's bucket like every other all-mode surface.
 

@@ -1063,11 +1063,12 @@ setting scopes described in :doc:`03-state-management-zustand`. Rows at the
 top of a section are selection-scoped and save through the page's
 ``update``, which writes the aggregate's bucket when an aggregate is
 selected and the current profile's otherwise. Server-scoped rows sit in a
-``SettingsSubCard`` headed by the profile's name and save through
-``updateServerScoped`` to one profile. With an aggregate selected, a
-``ProfilePicker`` above the first section (marked
-``data-settings-search-keep``) chooses that profile, defaulting to the first
-one in scope; with one profile selected it is the current profile. The
+``SettingsSubCard`` headed by the profile's name and save to that one
+profile, through ``updateServerScoped`` or ``updateSettings(serverProfile.id,
+...)``. With an aggregate selected, a ``ProfilePicker`` above the first
+section (marked ``data-settings-search-keep``) chooses that profile,
+defaulting to the first one in scope. With one profile selected it is the
+current profile. The
 aggregate-only rows (``AllServersStreamingSection`` and
 ``AllServersPerformanceSection``) sit in a second sub-card in
 ``LiveStreamingSection``, headed by the aggregate's name. The Settings page

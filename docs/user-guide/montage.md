@@ -23,8 +23,8 @@ each tile is a live connection and combining servers multiplies them. The
 slots are shared out evenly between the servers in view, so every server is
 represented rather than the first one filling the grid on its own. Past that
 limit the remaining cameras collapse into an overflow notice above the grid
-rather than opening more connections. Raise or lower the limit under
-**Aggregate performance** in {doc}`settings`.
+rather than opening more connections. Raise or lower the limit in
+the group's performance section (for example **All Servers performance**) under Live Streaming in [Settings](settings.md#group-performance).
 
 Every toolbar control works the same way while aggregating, including edit
 mode, column presets and saved layouts. The arrangement is kept separately
@@ -119,8 +119,8 @@ the page you were on.
 
 ### While aggregating
 
-Combining servers multiplies all of the above, so **Aggregate performance**
-in {doc}`settings` carries four switches that only apply to the combined
+Combining servers multiplies all of the above, so
+the group's performance section (for example **All Servers performance**) under Live Streaming in [Settings](settings.md#group-performance) carries four switches that only apply to the combined
 montage. None of them change any server's own settings, and none apply when
 you are on a single server.
 

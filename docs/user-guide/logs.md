@@ -43,7 +43,7 @@ The component multi-select in the toolbar only narrows which entries are *displa
 
 Lowering the level (e.g. to DEBUG for a specific component) writes more to disk; raising it writes less.
 
-The level, the component levels, and the redaction switch belong to what is selected in the app, the same way the rows outside the server boxes on {doc}`settings` do. With one profile selected they save to that profile. With a Virtual Profile Group selected they save to the group and leave each server's own values alone. In a group the page also shows a **Profile** picker. That picker only chooses which server's ZoneMinder logs the **ZM** tab shows; it has no effect on those settings.
+The level, the component levels, and the redaction switch belong to what is selected in the app, the same way the rows outside the server boxes on {doc}`settings` do. With one profile selected they save to that profile. With a Virtual Profile Group selected they save to the group and leave each server's own values alone. In a group the page also shows a **Profile** picker. That picker chooses which server's ZoneMinder logs the **ZM** tab shows, and timestamps on the page use that server's date and time format. It has no effect on the level, component, or redaction settings.
 
 ## What gets redacted
 

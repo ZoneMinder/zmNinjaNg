@@ -463,7 +463,9 @@ lists every key the Settings page edits in one of two arrays:
 
 With one profile selected both paths resolve to the same bucket. With an
 aggregate selected they differ: a montage tile owned by profile B reads B's
-stream settings but the aggregate's ``hoverPreview``. ``app/src/tests/agents-contracts.test.ts`` reads
+stream settings but the aggregate's ``hoverPreview``.
+`tests/agents-contracts.test.ts <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/tests/agents-contracts.test.ts>`__
+reads
 ``SERVER_SCOPED_SETTINGS`` and fails when a file other than the Settings page
 and ``components/settings/`` reads one of those keys off
 ``useCurrentProfile()``.

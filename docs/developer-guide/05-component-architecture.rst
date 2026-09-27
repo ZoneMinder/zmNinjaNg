@@ -186,8 +186,10 @@ maximize/exit button set a session override through ``setFullscreen``. The
 landscape term makes a rotated phone fill the screen while a desktop window,
 landscape all day, does not. Both pages pass ``landscapeFullscreen`` from the
 current selection's settings as ``landscape`` ("Fullscreen when turned
-sideways" in ``GeneralSection``, default true); with it off, rotation adds
-nothing and the other two terms work as before.
+sideways" in ``GeneralSection``, default true). With it off, rotation no
+longer turns fullscreen on, and the setting and the session override still
+apply. A rotation still clears the session override whatever ``landscape``
+is, so a maximize done in portrait ends when the device turns.
 ``(pointer: coarse)`` is the touch test.
 
 The orientation comes from ``screen.orientation`` where it exists, with the

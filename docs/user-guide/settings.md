@@ -1,19 +1,19 @@
 # Settings
 
-The Settings page has six sections: General, Live Streaming, Events & Playback, Network, Ninjii, and More settings. Each section heading collapses. Click or tap a heading to fold that section away, and the app remembers which sections you left closed. All sections start open.
+The Settings page has six sections: General, Live Streaming, Events & Playback, Network, Ninjii (Beta) - AI chatbot, and More settings. Each section heading collapses. Click or tap a heading to fold that section away, and the app remembers which sections you left closed. All sections start open.
 
 To find a setting, tap the search icon at the top right of the page and type part of its name, its description, or its current value. Only the matching settings stay on screen, including ones in sections you have collapsed and in folded rows such as Previews or Advanced streaming. Typing a section's name shows that whole section, and typing a server's name shows every setting in that server's box. Tap the X or press Esc to clear the search. The sections you collapsed are still collapsed afterwards.
 
 ## Your settings and server settings
 
-Most sections have two parts. The rows at the top are about how you use the app: the theme, what opens first, whether video starts in fullscreen. Below them, a box headed with a server's name holds that server's settings: how it sends video, which of its monitors are hidden, how the app connects to it. The Ninjii section is one server box.
+Most sections have two parts. The rows at the top are about how you use the app, such as the theme or whether video opens in fullscreen. Below them, a box headed with a server's name holds that server's settings, such as how it sends video. The Ninjii section is one server box.
 
 With one profile (one saved server) selected, both parts save to that profile. The box shows the profile's name, and there is no picker.
 
 With a Virtual Profile Group selected, such as the built-in All Servers:
 
 - A **Profile** picker sits at the top of the page, above General. It chooses which server every server box on the page shows and edits. It starts on the first server in the group. The picker stays visible while you search.
-- The rows outside the server boxes save to the group itself. A group keeps its own copy of these settings, starting from the defaults, so a change you make here applies while that group is selected and leaves each server's own settings as they were. Only the server boxes change a member server's settings.
+- The rows outside the server boxes save to the group itself. A group keeps its own copy of these settings, starting from the defaults, so a change you make here applies while that group is selected. Only the server boxes change a member server's settings.
 - Live Streaming has one more box, headed with the group's name, for settings that only exist in a group. See [In a Virtual Profile Group](#settings-group-streaming-mode) and [Group performance](#group-performance).
 
 A few settings apply to the whole app on this device, whichever profile or group is selected: **Language**, **Kiosk PIN**, and **Show developer notices**.
@@ -53,9 +53,9 @@ The **Playback speed** control (0.5x, 1x, 1.5x, 2x, 4x) sets how fast an event p
 
 ### Fullscreen when turned sideways
 
-When this is on, turning a phone or tablet sideways makes the player fill the screen on a monitor's live view and on event playback. Turning it upright again brings the page back. When it is off, turning the device does nothing to the layout.
+When this is on, turning a phone or tablet sideways makes the player fill the screen on a monitor's live view and on event playback. Turning it upright again brings the page back. When it is off, turning the device does not make the player fullscreen. A rotation still cancels a maximize or exit you did with the page's own button, so the page goes back to what your fullscreen settings say.
 
-This switch only covers rotation. **Open live view in fullscreen**, **Open events in fullscreen**, a monitor's own **Open in fullscreen** setting, and the maximize button on the page all keep working either way. On a desktop computer the setting has no effect.
+This switch only covers rotation. **Open live view in fullscreen**, **Open events in fullscreen**, a monitor's own **Open in fullscreen** setting, and the maximize button on the page work whether this switch is on or off. On a desktop computer the setting has no effect.
 
 ### TV mode
 
@@ -157,9 +157,9 @@ On **iOS, Android, and the web app**, a ZoneMinder server keeps only about 6 liv
 
 | View | Affected? | Behavior |
 |------|-----------|----------|
-| Monitors list (grid/list of tiles) | Yes | Each tile honors its server's setting. WebRTC tiles always stream; MJPEG tiles follow Streaming Mode. |
+| Monitors list (grid/list of tiles) | Yes | Each tile honors its server's setting, or the group's Streaming Mode when a group imposes one (see [In a Virtual Profile Group](#settings-group-streaming-mode)). WebRTC tiles always stream; MJPEG tiles follow Streaming Mode. |
 | Montage page | Yes | Same as Monitors list, per-tile behavior. |
-| Dashboard monitor widgets | Yes | Each widget honors its server's setting. |
+| Dashboard monitor widgets | Yes | Each widget honors its server's setting, or the group's Streaming Mode when a group imposes one. |
 | **Monitor Detail page** (single monitor view) | **No, always streams** | This page ignores Streaming Mode and always uses continuous video. The stream is closed (`CMD_QUIT` sent to ZoneMinder) when you leave the page. |
 | Hover-preview popovers (over a monitor card) | No, always streams | Hardcoded to streaming for the brief time the popover is open. |
 | Event playback (Event Detail, Timeline previews) | Not applicable | These play recorded video, not live feeds. |
@@ -175,9 +175,9 @@ The server's **Enable WebRTC/HLS/MSE** setting is the default for its monitors. 
 
 ### Group performance
 
-With a Virtual Profile Group selected, the group's box under Live Streaming also holds a section named after the group, for example *All Servers performance*. Every row in it governs the combined view rather than one server, and its values belong to that group. Each row shows the value it ships with, and grows a reset button once you change it.
+With a Virtual Profile Group selected, the group's box under Live Streaming also holds a section named after the group, for example *All Servers performance*. Every row in it governs the combined view rather than one server, and its values belong to that group. Each row shows its default, and a reset button appears once you change it.
 
-Combining several servers multiplies work that one server does once: every tile is a separate live connection, and every watched camera is a separate request on every poll. The values that suit you depend on how many servers you combine and what your network and servers will take, which is why they are settings rather than fixed.
+Combining several servers multiplies work that one server does once: every tile is a separate live connection, and every watched camera is a separate request on every poll. The values that suit you depend on how many servers you combine and what your network and servers will take.
 
 | Setting | Default | What it does |
 |---|---|---|
@@ -190,7 +190,7 @@ Combining several servers multiplies work that one server does once: every tile 
 | **Pause off-screen tiles** | Off | Stops a montage tile once it has been scrolled a screen's worth past the edge of the grid, and starts it again as it comes back. The limit above still decides which cameras are on the page, so scrolling never brings an overflow camera in. |
 | **Idle timeout** | 0 (never) | Drops montage tiles to periodic snapshots after this many minutes with no touch, click or keypress. Any interaction puts them back on live streams, as does returning to the app. This runs whether or not *Insomnia* is on, which is the case it exists for. |
 
-None of these change any server's own settings. With one profile selected the group box does not appear, since a single server has nothing to fan out across.
+None of these change any server's own settings. With one profile selected the group box does not appear, since a single server has nothing to combine.
 
 ## Events & Playback
 
@@ -230,7 +230,7 @@ The server box under Network holds how the app reaches that server:
 
 ### Bandwidth Mode
 
-Bandwidth Mode controls how often the app fetches data. Low mode helps on mobile data or a slow connection.
+Bandwidth Mode controls how often the app fetches data.
 
 | Mode | Description |
 |------|-------------|
@@ -250,10 +250,10 @@ Dashboard widgets have no refresh setting of their own. They refresh on the Band
 With one profile selected, switching the mode also resets that profile's Stream FPS, Stream Scale, and Refresh Interval (under Live Streaming) to the mode's defaults. With a Virtual Profile Group selected, the mode belongs to the group and switching it leaves every server's stream values alone.
 
 :::{tip}
-Switch to **Low bandwidth mode** when on mobile data or a slow connection. You can switch back to Normal when on WiFi.
+Switch to **Low** when on mobile data or a slow connection. You can switch back to Normal when on WiFi.
 :::
 
-## Ninjii
+## Ninjii (Beta) - AI chatbot
 
 Enable and configure Ninjii, the chat assistant that answers questions about your cameras and events. It is read-only: it can look things up and take you to a screen, and cannot arm a monitor, change the run state, or delete an event. The model runs either on your device or on an Ollama server you run yourself. The whole section is a server box, so each server has its own Ninjii settings. See {doc}`assistant` for the full guide, including the backend choice, the advanced dials, and what stays on your device.
 
