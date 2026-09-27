@@ -161,7 +161,21 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="h-[100dvh] max-h-[100dvh] max-w-none gap-1 rounded-none p-1.5 sm:h-auto sm:max-h-[calc(100dvh-2rem)] sm:max-w-3xl sm:rounded-lg sm:p-2"
+        // Phones: fill the screen inside the system bars. Android and iOS draw
+        // the app under them, so a box from the top edge put the toolbar and
+        // the close button under the status bar. Insetting the box itself
+        // (rather than padding it) moves the dialog's own close button too.
+        // From sm up it is the stock centred dialog again.
+        className={cn(
+          'bottom-[var(--sai-bottom,0px)] left-[var(--sai-left,0px)] right-[var(--sai-right,0px)] top-[var(--sai-top,0px)]',
+          'max-h-none w-auto max-w-none translate-x-0 translate-y-0 gap-1 rounded-none p-1.5',
+          'data-[state=open]:slide-in-from-left-0 data-[state=open]:slide-in-from-top-0',
+          'sm:bottom-auto sm:left-[50%] sm:right-auto sm:top-[50%] sm:max-h-[calc(100dvh-2rem)] sm:w-full sm:max-w-3xl',
+          'sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-lg sm:p-2',
+          'sm:data-[state=open]:slide-in-from-left-1/2 sm:data-[state=open]:slide-in-from-top-[48%]',
+          // Above the sticky toolbar, which would otherwise paint over it.
+          '[&>[data-testid=dialog-close-button]]:z-20'
+        )}
         data-testid="event-context-sequence"
       >
         {/* Only the toolbar and the tiles take space; the title and
@@ -169,7 +183,8 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
         <DialogTitle className="sr-only">{t('events.around.sequence_title')}</DialogTitle>
         <DialogDescription className="sr-only">{t('events.around.sequence_desc', { count: tiles.length })}</DialogDescription>
         {/* pr-8 clears the dialog's own close button in the top corner. */}
-        <div className="flex items-center gap-1 border-b border-border/50 pb-1 pr-8">
+        {/* Sticky, so the controls stay in reach while the tiles scroll. */}
+        <div className="sticky top-0 z-10 flex items-center gap-1 border-b border-border/50 bg-background pb-1 pr-8">
           <Button
             variant="outline"
             size="sm"
