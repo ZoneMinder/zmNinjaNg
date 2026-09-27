@@ -3405,29 +3405,30 @@ third should ask for.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/events/context/EventContextRibbon.tsx>`__
    · → :doc:`05-component-architecture`
 
-#. **Sequence play replays the nearest rows on one clock.** The Sequence
-   button, enabled from two rows up, opens ``EventContextSequence`` in a
-   dialog. It takes ``nearestFirst(rows, EVENT_CONTEXT.sequenceMaxTiles)`` and
-   hands them to ``buildReplaySchedule``, which gives each tile a start and
+#. **Replay plays the nearest rows on one clock.** The Replay button,
+   enabled from two rows up, opens ``EventContextSequence`` in a dialog. Its
+   code and locale keys still use the working name "sequence". It takes
+   ``nearestFirst(rows, EVENT_CONTEXT.sequenceMaxTiles)`` and hands them to
+   ``buildReplaySchedule``, which gives each tile a start and
    stop time: events keep their real spacing, stretches with no event running
    are cut, and times are divided by ``hoverPreviewPlaybackRate``.
    ``EventZmsHoverPlayer`` reads the same setting for its stream's ``rate``, so
    the clock and the streams stay in step. One effect sets a
    timeout per start and stop, and a tile inside its slot renders
    ``EventZmsHoverPlayer`` instead of its thumbnail. That player owns a connkey
-   and sends CMD_QUIT when it unmounts, so the end of a slot, **Replay**,
+   and sends CMD_QUIT when it unmounts, so the end of a slot, **Restart**,
    closing the dialog, and opening a tile each tear down that tile's stream.
    One tap on a tile swaps the schedule for that tile alone
    (``buildTogetherSchedule`` over one row); a second tap within
    ``EVENT_CONTEXT.doubleTapMs``, timed from the click events' own
    ``timeStamp`` rather than ``dblclick``, opens its event.
-   Opening Sequence play pushes a history entry carrying
+   Opening the dialog pushes a history entry carrying
    ``eventContextSequence`` over the panel's own, and the panel mounts the
    dialog only while that entry is current. A tile first replaces the entry
    with ``{ returnedFrom: eventId }`` and then navigates to its event, so back
    remounts the dialog with playback held and ``useReturnFlash`` blinking that
    tile, the same hook the Events list uses for a returned-to row.
-   The Play all / Play sequence button swaps in ``buildTogetherSchedule``, which starts every
+   The In order / All button swaps in ``buildTogetherSchedule``, which starts every
    tile at zero up to ``EVENT_CONTEXT.togetherMaxStreams`` streams and queues
    the rest into the first slot to free up. The cap applies only without
    multi-port streaming: each playing tile holds one of the browser's six
