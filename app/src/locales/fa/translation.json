@@ -1331,6 +1331,8 @@
     "storage_type": "نوع",
     "storage_server": "سرور",
     "storage_free": "آزاد",
+    "storage_events": "رویدادها",
+    "storage_events_drifted": "مقدار گزارش‌شده منحرف شده است. شاید لازم باشد zmaudit را اجرا کنید.",
     "storage_total": "کل",
     "no_storage": "اطلاعات ذخیره‌سازی نیست",
     "run_state_permission_denied": "تغییر وضعیت اجرا نیاز به مجوز ویرایش سیستم دارد.",

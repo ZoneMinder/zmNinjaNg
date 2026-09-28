@@ -1363,6 +1363,8 @@
     "storage_type": "Тип",
     "storage_server": "Сервер",
     "storage_free": "Свободно",
+    "storage_events": "События",
+    "storage_events_drifted": "Сообщаемое значение сбилось. Возможно, нужно запустить zmaudit.",
     "storage_total": "Всего",
     "no_storage": "Нет информации о хранилище",
     "run_state_permission_denied": "Для изменения состояния запуска нужны права «Система: Редактирование».",

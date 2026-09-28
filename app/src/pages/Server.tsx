@@ -512,6 +512,18 @@ export default function Server() {
                     <div className="text-xs text-muted-foreground truncate" title={storage.Path ?? undefined}>
                       {storage.Path}
                     </div>
+                    {/* DiskSpace is ZoneMinder's running total of event sizes, not
+                        a live sum, so it can drift below zero; zmaudit resyncs it
+                        (refs #539). */}
+                    {storage.DiskSpace != null && (storage.DiskSpace < 0 ? (
+                      <div className="text-xs text-orange-600 dark:text-orange-400 mt-1" data-testid={`storage-events-drifted-${storage.Id}`}>
+                        {t('server.storage_events_drifted')}
+                      </div>
+                    ) : (
+                      <div className="text-xs mt-1" data-testid={`storage-events-${storage.Id}`}>
+                        {t('server.storage_events')}: {(storage.DiskSpace / (1024 * 1024 * 1024)).toFixed(1)} GB
+                      </div>
+                    ))}
                     {totalGB && freeGB && (
                       <div className="mt-2">
                         <div className="flex justify-between text-xs mb-1">

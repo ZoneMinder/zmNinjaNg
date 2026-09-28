@@ -1331,6 +1331,8 @@
     "storage_type": "Tipo",
     "storage_server": "Server",
     "storage_free": "Libero",
+    "storage_events": "Eventi",
+    "storage_events_drifted": "Il valore riportato è andato alla deriva. Potrebbe essere necessario eseguire zmaudit.",
     "storage_total": "Totale",
     "no_storage": "Nessuna informazione di archiviazione",
     "run_state_permission_denied": "Cambiare lo stato richiede il permesso Sistema: Modifica.",

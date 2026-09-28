@@ -1331,6 +1331,8 @@
     "storage_type": "Type",
     "storage_server": "Server",
     "storage_free": "Free",
+    "storage_events": "Events",
+    "storage_events_drifted": "Reported value has drifted. You may need to run zmaudit.",
     "storage_total": "Total",
     "no_storage": "No storage info",
     "run_state_permission_denied": "Changing the run state needs System: Edit permission.",

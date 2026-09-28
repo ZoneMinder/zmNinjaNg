@@ -1331,6 +1331,8 @@
     "storage_type": "Type",
     "storage_server": "Serveur",
     "storage_free": "Libre",
+    "storage_events": "Événements",
+    "storage_events_drifted": "La valeur signalée a dérivé. Vous devrez peut-être exécuter zmaudit.",
     "storage_total": "Total",
     "no_storage": "Aucun stockage",
     "run_state_permission_denied": "Changer l'état d'exécution exige la permission System: Edit.",

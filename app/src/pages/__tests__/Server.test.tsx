@@ -91,6 +91,34 @@ describe('Server page - storage areas (refs #539)', () => {
     expect(await screen.findByTestId('storage-free-1')).toHaveTextContent('197.0 GB server.storage_free');
     expect(screen.getByTestId('storage-total-1')).toHaveTextContent('208.5 GB server.storage_total');
   });
+
+  function storageWithDiskSpace(diskSpace: number | null) {
+    return {
+      Id: 1, Path: '/var/cache/zoneminder/events', Name: 'Default', Type: 'local', Url: null,
+      DiskSpace: diskSpace, Scheme: 'Medium', ServerId: 0, DoDelete: true, Enabled: true,
+      DiskTotalSpace: 105089261568, DiskUsedSpace: 72923566080,
+    };
+  }
+
+  it('shows the space events take from DiskSpace', async () => {
+    const [profileA] = seedProfiles(['profile-a']);
+    installApiClient(profileA.id, fakeApiClient({ ...serverRoutes(), '/storage.json': { storage: [{ Storage: storageWithDiskSpace(1101004402) }] } }));
+
+    renderServer();
+
+    expect(await screen.findByTestId('storage-events-1')).toHaveTextContent('1.0 GB');
+    expect(screen.queryByTestId('storage-events-drifted-1')).toBeNull();
+  });
+
+  it('says the value drifted instead of showing a negative DiskSpace', async () => {
+    const [profileA] = seedProfiles(['profile-a']);
+    installApiClient(profileA.id, fakeApiClient({ ...serverRoutes(), '/storage.json': { storage: [{ Storage: storageWithDiskSpace(-129197848613) }] } }));
+
+    renderServer();
+
+    expect(await screen.findByTestId('storage-events-drifted-1')).toHaveTextContent('server.storage_events_drifted');
+    expect(screen.queryByTestId('storage-events-1')).toBeNull();
+  });
 });
 
 describe('Server page - profile picker (refs #337)', () => {

@@ -1331,6 +1331,8 @@
     "storage_type": "类型",
     "storage_server": "服务器",
     "storage_free": "可用",
+    "storage_events": "事件",
+    "storage_events_drifted": "报告的数值已偏离。可能需要运行 zmaudit。",
     "storage_total": "总共",
     "no_storage": "无存储信息",
     "run_state_permission_denied": "更改运行状态需要 System: Edit 权限。",

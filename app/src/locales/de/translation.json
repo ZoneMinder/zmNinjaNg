@@ -1331,6 +1331,8 @@
     "storage_type": "Typ",
     "storage_server": "Server",
     "storage_free": "Frei",
+    "storage_events": "Ereignisse",
+    "storage_events_drifted": "Gemeldeter Wert ist abgewichen. Führen Sie ggf. zmaudit aus.",
     "storage_total": "Gesamt",
     "no_storage": "Kein Speicherinfo",
     "run_state_permission_denied": "Zum Ändern des Laufzustands wird System: Edit benötigt.",
