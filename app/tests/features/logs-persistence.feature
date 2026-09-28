@@ -12,12 +12,3 @@ Feature: Persistent log file (web)
     Then a Clear confirmation dialog should appear
     When I confirm Clear
     Then the Logs page should show no entries
-
-  @all
-  Scenario: Disabling log redaction warns that credentials will be logged
-    Given I am logged into zmNinjaNg
-    When I navigate to the "Logs" page
-    And I enable the log redaction toggle
-    Then I should see the log redaction warning
-    When I disable the log redaction toggle
-    Then the log redaction warning should be gone

@@ -638,6 +638,8 @@
     "api_timeout": "API-Timeout",
     "api_timeout_desc": "Sekunden, die auf eine Serveranfrage gewartet wird, bevor sie abgebrochen wird, damit die App es erneut versuchen kann. 0 deaktiviert das Timeout.",
     "api_timeout_unit": "Sekunden",
+    "global_log_level": "Log-Ebene",
+    "global_log_level_desc": "Setzt alle Komponenten. Einzelne unten überschreiben.",
     "component_log_levels": "Komponentenprotokolle",
     "component_log_levels_desc": "Protokollebene pro Komponente",
     "component_log_reset": "Zurücksetzen",
@@ -688,8 +690,6 @@
     },
     "monitors_per_page": "Monitore pro Seite",
     "monitors_per_page_desc": "Nützlich bei vielen Monitoren (über 30), wenn der Server kein Multi-Port-Streaming hat. 0 schaltet das Blättern ab.",
-    "per_monitor_settings": "Einstellungen pro Monitor",
-    "per_monitor_settings_desc": "Monitor öffnen, dann dessen Einstellungen.",
     "search": {
       "placeholder": "Einstellungen durchsuchen",
       "no_results": "Keine passenden Einstellungen"

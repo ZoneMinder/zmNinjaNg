@@ -4,7 +4,8 @@
  *
  * Every row above the sub-card is selection-scoped and saves through the
  * page's `update`. Theme goes through useTheme, the same state as the header
- * theme toggle; Kiosk PIN and developer notices keep their own storage.
+ * theme toggle; Kiosk PIN and developer notices keep their own storage. The
+ * log rows set the same keys as the Logs page's level dropdown.
  */
 
 import { useTranslation } from 'react-i18next';
@@ -21,15 +22,25 @@ import { DateTimeFormatRows } from './DateTimeFormatRows';
 import { HoverPreviewEditor } from './HoverPreviewEditor';
 import { KioskPinRow } from './KioskPinRow';
 import { HiddenMonitorsSection } from './HiddenMonitorsSection';
+import { ComponentLogLevels } from './ComponentLogLevels';
 import { useTheme } from '../theme-provider';
 import { useLanguageOptions } from '../../hooks/useLanguageOptions';
 import { useDeveloperNoticeStore } from '../../stores/developerNotices';
 import { START_SCREENS, START_SCREEN_LAST_USED } from '../../lib/navigation';
+import { LogLevel } from '../../lib/logger';
 import type { Profile } from '../../api/types';
 import type { ProfileSettings, ThemePreference } from '../../stores/settings';
 
 // Same choices, in the same order, as the header theme toggle (mode-toggle.tsx).
 const THEMES: ThemePreference[] = ['light', 'cream', 'dark', 'slate', 'amber', 'system'];
+
+// Same choices and labels as the Logs page's level dropdown.
+const LOG_LEVELS = [
+  { level: LogLevel.DEBUG, name: 'DEBUG', labelKey: 'logs.level_debug' },
+  { level: LogLevel.INFO, name: 'INFO', labelKey: 'logs.level_info' },
+  { level: LogLevel.WARN, name: 'WARN', labelKey: 'logs.level_warn' },
+  { level: LogLevel.ERROR, name: 'ERROR', labelKey: 'logs.level_error' },
+] as const;
 
 export interface GeneralSectionProps {
   settings: ProfileSettings;
@@ -169,6 +180,56 @@ export function GeneralSection({
               checked={showDeveloperNotices}
               onCheckedChange={setShowDeveloperNotices}
               data-testid="settings-show-developer-notices"
+            />
+          </SettingsRow>
+
+          {/* A new level clears component overrides, as the Logs page dropdown does,
+              so no component stays pinned relative to the old level. */}
+          <SettingsRow>
+            <RowLabel label={t('settings.global_log_level')} desc={t('settings.global_log_level_desc')} />
+            <Select
+              value={settings.logLevel.toString()}
+              onValueChange={(value) => {
+                update('logLevel', parseInt(value, 10) as LogLevel);
+                update('componentLogLevels', {});
+              }}
+            >
+              <SelectTrigger className="w-36" data-testid="settings-log-level-select">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {LOG_LEVELS.map(({ level, name, labelKey }) => (
+                  <SelectItem
+                    key={name}
+                    value={level.toString()}
+                    data-testid={`settings-log-level-option-${name}`}
+                  >
+                    {t(labelKey)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </SettingsRow>
+
+          <ComponentLogLevels settings={settings} update={update} />
+
+          <SettingsRow>
+            <div className="min-w-0 flex-1">
+              <RowLabel label={t('settings.disable_log_redaction')} desc={t('settings.disable_log_redaction_desc')} />
+              {settings.disableLogRedaction && (
+                <p
+                  className="text-xs text-orange-600 dark:text-orange-400 mt-1 font-medium"
+                  data-testid="settings-log-redaction-warning"
+                >
+                  {t('settings.disable_log_redaction_warning')}
+                </p>
+              )}
+            </div>
+            <Switch
+              id="log-redaction"
+              checked={settings.disableLogRedaction}
+              onCheckedChange={(checked) => update('disableLogRedaction', checked)}
+              data-testid="settings-log-redaction-switch"
             />
           </SettingsRow>
 

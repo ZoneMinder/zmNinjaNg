@@ -1057,8 +1057,8 @@ profiles.
 **Settings** (``src/pages/Settings.tsx``) renders six sections, each a
 component under ``src/components/settings/``: ``GeneralSection``,
 ``LiveStreamingSection``, ``EventsPlaybackSection``, ``NetworkSection``,
-``AssistantSection``, and ``MoreSettingsSection`` (links to the
-Notifications, Live Activity, and Logs pages). The page follows the two
+``AssistantSection``, and ``MoreSettingsSection`` (one link, to the
+Notifications page). The page follows the two
 setting scopes described in :doc:`03-state-management-zustand`. Rows at the
 top of a section are selection-scoped and save through the page's
 ``update``, which writes the aggregate's bucket when an aggregate is

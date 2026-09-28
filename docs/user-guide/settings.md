@@ -33,6 +33,9 @@ A few settings apply to the whole app on this device, whichever profile or group
 | **TV mode** | Larger touch targets and D-pad/remote navigation for TV and set-top devices. See [TV mode](#tv-mode). |
 | **Kiosk PIN** | Set, change, or clear the PIN that locks kiosk mode. See [Kiosk PIN](#kiosk-pin). |
 | **Show developer notices** | Shows maintainer announcements in the app. |
+| **Log level** | DEBUG, INFO, WARN, or ERROR. The lowest level of entry the app records. Changing it also clears every component level below it. This is the same setting as the level picker on the Logs page. See {doc}`logs`. |
+| **Component Logs** | Folded by default. Its summary shows the log level and how many components are set differently. Open it to give one component its own level (DEBUG, INFO, WARN, ERROR, or NONE). **Reset** puts every component back on the log level. |
+| **Disable Log Redaction** | Shows passwords and tokens in logs instead of scrubbing them. An orange warning shows while it is on. Turn it off when you are done. See [What gets redacted](logs.md#what-gets-redacted). |
 
 The server rows under General hold **Hidden Monitors**. See [Hidden Monitors](#hidden-monitors).
 
@@ -259,13 +262,7 @@ Enable and configure Ninjii, the chat assistant that answers questions about you
 
 ## More settings
 
-Some pages keep their own settings. This section links to them:
-
-- **Notifications**: how zmNinjaNg handles event notifications. See {doc}`notifications`.
-- **Live Activity**: see {doc}`live-activity`.
-- **Logs**: the log level, **Component Logs** (per-component levels), and **Disable Log Redaction** are on the Logs page. See {doc}`logs`, which also covers persistent log files, file locations, and the Share / Open / Clear buttons.
-
-Settings for one monitor are in that monitor's own Settings dialog: open the monitor, then its settings. See {doc}`monitors`.
+This section has one link, to the **Notifications** page, which keeps its own settings for how zmNinjaNg handles event notifications. See {doc}`notifications`.
 
 ## Multi-Server
 

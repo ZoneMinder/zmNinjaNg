@@ -638,6 +638,8 @@
     "api_timeout": "مهلت API",
     "api_timeout_desc": "ثانیه‌هایی که برای درخواست سرور صبر می‌کند قبل از قطع تا برنامه دوباره تلاش کند. ۰ مهلت را غیرفعال می‌کند.",
     "api_timeout_unit": "ثانیه",
+    "global_log_level": "سطح لاگ",
+    "global_log_level_desc": "همه اجزا را تنظیم می‌کند. موارد زیر را جداگانه تغییر دهید.",
     "component_log_levels": "لاگ‌های اجزا",
     "component_log_levels_desc": "تنظیم سطح لاگ برای هر جزء",
     "component_log_reset": "بازنشانی",
@@ -688,8 +690,6 @@
     },
     "monitors_per_page": "مانیتور در هر صفحه",
     "monitors_per_page_desc": "با تعداد زیاد مانیتور (بیش از ۳۰) وقتی سرور استریم چندپورته ندارد مفید است. ۰ صفحه‌بندی را خاموش می‌کند.",
-    "per_monitor_settings": "تنظیمات هر مانیتور",
-    "per_monitor_settings_desc": "یک مانیتور را باز کنید، سپس تنظیمات آن را.",
     "search": {
       "placeholder": "جستجوی تنظیمات",
       "no_results": "هیچ تنظیمی مطابقت ندارد"

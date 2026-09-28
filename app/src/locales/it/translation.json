@@ -638,6 +638,8 @@
     "api_timeout": "Timeout API",
     "api_timeout_desc": "Secondi di attesa per una richiesta al server prima di interromperla e consentire un nuovo tentativo. 0 disabilita il timeout.",
     "api_timeout_unit": "secondi",
+    "global_log_level": "Livello di log",
+    "global_log_level_desc": "Imposta tutti i componenti. Puoi sovrascrivere quelli singoli sotto.",
     "component_log_levels": "Log dei componenti",
     "component_log_levels_desc": "Imposta il livello di log per componente",
     "component_log_reset": "Reimposta",
@@ -688,8 +690,6 @@
     },
     "monitors_per_page": "Monitor per pagina",
     "monitors_per_page_desc": "Utile con molti monitor (oltre 30) quando il server non ha lo streaming multi-porta. 0 disattiva le pagine.",
-    "per_monitor_settings": "Impostazioni per monitor",
-    "per_monitor_settings_desc": "Apri un monitor, poi le sue impostazioni.",
     "search": {
       "placeholder": "Cerca impostazioni",
       "no_results": "Nessuna impostazione corrisponde"

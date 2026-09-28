@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import userEvent from '@testing-library/user-event';
@@ -89,8 +89,6 @@ function renderSettings() {
           <Routes>
             <Route path="/settings" element={<><Settings /><ThemeProbe /></>} />
             <Route path="/notifications" element={<p>notifications-page</p>} />
-            <Route path="/live-activity" element={<p>live-activity-page</p>} />
-            <Route path="/logs" element={<p>logs-page</p>} />
           </Routes>
         </MemoryRouter>
       </ThemeProvider>
@@ -309,15 +307,41 @@ describe('Settings Page', () => {
     expect(stored().landscapeFullscreen).toBe(false);
   });
 
-  it.each([
-    ['notifications', 'notifications-page'],
-    ['live-activity', 'live-activity-page'],
-    ['logs', 'logs-page'],
-  ])('More settings links to /%s', async (target, page) => {
+  it('More settings links only to Notifications', async () => {
     const user = userEvent.setup();
     renderSettings();
-    await user.click(screen.getByTestId(`settings-link-${target}`));
-    expect(screen.getByText(page)).toBeInTheDocument();
+    const links = Array.from(screen.getByTestId('settings-section-more').querySelectorAll('a'));
+    expect(links.map((a) => a.getAttribute('href'))).toEqual(['/notifications']);
+    await user.click(screen.getByTestId('settings-link-notifications'));
+    expect(screen.getByText('notifications-page')).toBeVisible();
+  });
+
+  it('General log rows save to the current selection, and Log level clears component overrides', async () => {
+    const user = userEvent.setup();
+    renderSettings();
+    const general = within(screen.getByTestId('settings-section-general'));
+
+    fireEvent.click(general.getByTestId('component-log-levels-toggle'));
+    fireEvent.change(general.getByTestId('component-log-level-Auth'), { target: { value: '1' } });
+    expect(stored().componentLogLevels.Auth).toBe(1);
+
+    await user.click(general.getByTestId('settings-log-level-option-ERROR'));
+    expect(stored().logLevel).toBe(3);
+    expect(stored().componentLogLevels).toEqual({});
+
+    await user.click(general.getByTestId('settings-log-redaction-switch'));
+    expect(stored().disableLogRedaction).toBe(true);
+    expect(general.getByTestId('settings-log-redaction-warning').textContent).toBe(
+      'settings.disable_log_redaction_warning'
+    );
+  });
+
+  it('search finds a component inside the folded Component log levels row', () => {
+    renderSettings();
+    expect(screen.queryByText('SecureStorage')).toBeNull();
+    search('SecureStorage');
+    expect(visibleText(screen.getByTestId('settings-sections'))).toContain('SecureStorage');
+    expect(screen.getByTestId('component-log-levels-toggle')).toHaveAttribute('aria-expanded', 'true');
   });
 
   it.each([

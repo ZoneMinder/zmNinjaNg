@@ -5,12 +5,10 @@ import { useProfileScope } from '../hooks/useProfileScope';
 import { useProfileStore } from '../stores/profile';
 import { useSettingsStore } from '../stores/settings';
 import { ProfilePicker } from '../components/profile-picker';
-import { ComponentLogLevels } from '../components/logs/ComponentLogLevels';
 import type { ProfileId } from '../api/types';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
-import { Switch } from '../components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { ScrollText, Trash2, Download, Share2, ChevronDown, ChevronUp, Server, Smartphone } from 'lucide-react';
 import { PageContainer } from '../components/common/PageContainer';
@@ -104,10 +102,10 @@ export default function Logs() {
     // dateFormat/timeFormat are selection-scoped, not the picked member's
     // (refs #536).
     const currentProfile = isAllMode ? allModeProfile : singleProfile;
-    // Log level, component overrides and redaction are selection-scoped: they
-    // read and write the current selection's bucket (the aggregate's own
-    // bucket in All mode), never the picked member's (refs #536).
-    const { logLevel, componentLogLevels, disableLogRedaction } = selectionSettings;
+    // Log level and component overrides are selection-scoped: they read and
+    // write the current selection's bucket (the aggregate's own bucket in All
+    // mode), never the picked member's (refs #536).
+    const { logLevel, componentLogLevels } = selectionSettings;
     const updateProfileSettings = useSettingsStore((state) => state.updateProfileSettings);
     const [selectedComponentsZmng, setSelectedComponentsZmng] = useState<string[]>([]);
     const [selectedComponentsServer, setSelectedComponentsServer] = useState<string[]>([]);
@@ -150,23 +148,16 @@ export default function Logs() {
         const level = parseInt(value, 10) as LogLevel;
         logger.setLevel(level);
         if (currentProfileId) {
-            // This is the page's one global-level control (refs #536 fix
-            // round 1): changing it clears per-component overrides, same as
-            // the old Settings global selector it replaces, so a component
-            // pinned to a stale level doesn't silently outlive the level
-            // that pin was relative to.
+            // Changing the level clears per-component overrides, as the Log
+            // level row in Settings > General does, so a component pinned to
+            // a stale level doesn't silently outlive the level that pin was
+            // relative to (refs #536).
             updateProfileSettings(currentProfileId, { logLevel: level, componentLogLevels: {} });
         }
         toast({
             title: t('common.success'),
             description: t('logs.level_updated'),
         });
-    };
-
-    const handleRedactionChange = (checked: boolean) => {
-        if (currentProfileId) {
-            updateProfileSettings(currentProfileId, { disableLogRedaction: checked });
-        }
     };
 
     // Map log level strings to numeric values for filtering
@@ -573,35 +564,6 @@ export default function Logs() {
                             </AlertDialogContent>
                         </AlertDialog>
                     )}
-                </div>
-            </div>
-            <div className="flex flex-wrap items-start justify-between gap-4 shrink-0" data-testid="logs-log-settings">
-                <ComponentLogLevels
-                    settings={selectionSettings}
-                    profileId={currentProfileId}
-                    updateSettings={updateProfileSettings}
-                />
-                <div className="min-w-0 flex items-start gap-2">
-                    <div className="min-w-0">
-                        <div className="text-sm font-medium">{t('settings.disable_log_redaction')}</div>
-                        <div className="text-xs text-muted-foreground">
-                            {t('settings.disable_log_redaction_desc')}
-                        </div>
-                        {disableLogRedaction && (
-                            <p
-                                className="text-xs text-orange-600 dark:text-orange-400 mt-1 font-medium"
-                                data-testid="settings-log-redaction-warning"
-                            >
-                                {t('settings.disable_log_redaction_warning')}
-                            </p>
-                        )}
-                    </div>
-                    <Switch
-                        id="log-redaction"
-                        checked={disableLogRedaction}
-                        onCheckedChange={handleRedactionChange}
-                        data-testid="settings-log-redaction-switch"
-                    />
                 </div>
             </div>
             {logFile.capabilities.available && (

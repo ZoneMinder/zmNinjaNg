@@ -154,7 +154,7 @@ While **Disable log redaction** is off (the default), the app hides those passwo
 
 Both fields remain editable. Changing the camera's hostname while the password is masked keeps the stored password: the app puts the real value back when it saves, as long as you leave the dots alone. Type over the dots and what you typed becomes the new password.
 
-To read a stored password, turn on **Disable log redaction** on the Logs page, then turn it off again when you are done. Note that ZoneMinder's API returns these credentials to any account that can view the monitor, so hiding them in the app is not a substitute for restricting who has an account on your server.
+To read a stored password, turn on **Disable Log Redaction** in Settings > General, then turn it off again when you are done. Note that ZoneMinder's API returns these credentials to any account that can view the monitor, so hiding them in the app is not a substitute for restricting who has an account on your server.
 
 The dialog only offers these fields to an account with the System: Edit permission. Anything less opens a read-only panel instead, with the app's own per-monitor settings and a few read-only facts, and no camera address or credentials at all. See [What your account can do](server.md#what-your-account-can-do).
 

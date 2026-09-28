@@ -638,6 +638,8 @@
     "api_timeout": "Tiempo de espera API",
     "api_timeout_desc": "Segundos a esperar una solicitud al servidor antes de cancelarla para que la app reintente. 0 desactiva el tiempo de espera.",
     "api_timeout_unit": "segundos",
+    "global_log_level": "Nivel de registro",
+    "global_log_level_desc": "Configura todos los componentes. Personaliza abajo.",
     "component_log_levels": "Registros de componentes",
     "component_log_levels_desc": "Nivel de registro por componente",
     "component_log_reset": "Restablecer",
@@ -688,8 +690,6 @@
     },
     "monitors_per_page": "Monitores por página",
     "monitors_per_page_desc": "Útil con muchos monitores (más de 30) cuando el servidor no tiene streaming multipuerto. 0 desactiva las páginas.",
-    "per_monitor_settings": "Ajustes por monitor",
-    "per_monitor_settings_desc": "Abre un monitor y luego sus ajustes.",
     "search": {
       "placeholder": "Buscar ajustes",
       "no_results": "Ningún ajuste coincide"

@@ -120,6 +120,23 @@ describe('Settings page - All mode two-tier picker (refs #337)', () => {
     expect(useSettingsStore.getState().getProfileSettings(ALL_PROFILES_ID).tvMode).toBe(true);
   });
 
+  it('log rows write to the aggregate bucket and leave the member alone', async () => {
+    render(<Settings />, { wrapper: queryWrapper });
+
+    fireEvent.click(await screen.findByTestId('settings-log-level-option-ERROR'));
+    fireEvent.click(screen.getByTestId('component-log-levels-toggle'));
+    fireEvent.change(screen.getByTestId('component-log-level-Auth'), { target: { value: '1' } });
+    fireEvent.click(screen.getByTestId('settings-log-redaction-switch'));
+
+    const { getProfileSettings } = useSettingsStore.getState();
+    expect(getProfileSettings(ALL_PROFILES_ID).logLevel).toBe(3);
+    expect(getProfileSettings(ALL_PROFILES_ID).componentLogLevels.Auth).toBe(1);
+    expect(getProfileSettings(ALL_PROFILES_ID).disableLogRedaction).toBe(true);
+    expect(getProfileSettings(profileA.id).logLevel).toBe(DEFAULT_SETTINGS.logLevel);
+    expect(getProfileSettings(profileA.id).componentLogLevels).toEqual({});
+    expect(getProfileSettings(profileA.id).disableLogRedaction).toBe(false);
+  });
+
   // The other side of the same helper: single mode still writes the real
   // profile's own bucket, so the aggregate resolution never leaks into it.
   it('a selection-scoped row writes to the real profile in single mode', async () => {

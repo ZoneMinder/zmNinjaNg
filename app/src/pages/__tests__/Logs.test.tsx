@@ -194,26 +194,16 @@ describe('Logs Page', () => {
     expect(entry.textContent).toContain('cam.lan');
   });
 
-  it('saves the log level, a component override and log redaction to the current profile, and the level control clears overrides (refs #536)', async () => {
-    const user = userEvent.setup();
+  it('keeps the toolbar level control, which clears overrides, and has no log settings strip (refs #536)', () => {
+    useSettingsStore.getState().updateProfileSettings(asProfileId('profile-1'), { componentLogLevels: { Auth: 1 } });
     render(<Logs />);
 
-    // The level picker is the page's one global-level control: set an
-    // override first, then prove changing the level wipes it.
-    fireEvent.click(screen.getByTestId('component-log-levels-toggle'));
-    fireEvent.change(screen.getByTestId('component-log-level-Auth'), { target: { value: '1' } });
-    expect(useSettingsStore.getState().getProfileSettings(asProfileId('profile-1')).componentLogLevels.Auth).toBe(1);
+    expect(screen.queryByTestId('logs-log-settings')).toBeNull();
+    expect(screen.queryByTestId('settings-log-redaction-switch')).toBeNull();
 
     fireEvent.click(screen.getByTestId('log-level-option-ERROR'));
-    let stored = useSettingsStore.getState().getProfileSettings(asProfileId('profile-1'));
+    const stored = useSettingsStore.getState().getProfileSettings(asProfileId('profile-1'));
     expect(stored.logLevel).toBe(4);
     expect(stored.componentLogLevels).toEqual({});
-
-    fireEvent.change(screen.getByTestId('component-log-level-Auth'), { target: { value: '1' } });
-    await user.click(screen.getByTestId('settings-log-redaction-switch'));
-
-    stored = useSettingsStore.getState().getProfileSettings(asProfileId('profile-1'));
-    expect(stored.componentLogLevels.Auth).toBe(1);
-    expect(stored.disableLogRedaction).toBe(true);
   });
 });

@@ -638,6 +638,8 @@
     "api_timeout": "Délai API",
     "api_timeout_desc": "Secondes d'attente d'une requête serveur avant son annulation pour que l'app réessaie. 0 désactive le délai.",
     "api_timeout_unit": "secondes",
+    "global_log_level": "Niveau de journal",
+    "global_log_level_desc": "Définit tous les composants. Personnaliser ci-dessous.",
     "component_log_levels": "Journaux composants",
     "component_log_levels_desc": "Niveau de journal par composant",
     "component_log_reset": "Réinitialiser",
@@ -688,8 +690,6 @@
     },
     "monitors_per_page": "Moniteurs par page",
     "monitors_per_page_desc": "Utile avec beaucoup de moniteurs (plus de 30) quand le serveur n'a pas de diffusion multi-port. 0 désactive la pagination.",
-    "per_monitor_settings": "Réglages par moniteur",
-    "per_monitor_settings_desc": "Ouvrez un moniteur, puis ses réglages.",
     "search": {
       "placeholder": "Rechercher dans les réglages",
       "no_results": "Aucun réglage ne correspond"

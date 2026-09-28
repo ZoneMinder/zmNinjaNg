@@ -638,6 +638,8 @@
     "api_timeout": "API timeout",
     "api_timeout_desc": "Seconds to wait for a server request before it's aborted so the app can retry. 0 disables the timeout.",
     "api_timeout_unit": "seconds",
+    "global_log_level": "Log level",
+    "global_log_level_desc": "Sets all components. Override individual ones below.",
     "component_log_levels": "Component Logs",
     "component_log_levels_desc": "Set log level per component",
     "component_log_reset": "Reset",
@@ -688,8 +690,6 @@
     },
     "monitors_per_page": "Monitors per page",
     "monitors_per_page_desc": "Useful with many monitors (over 30) when the server has no multi-port streaming. 0 turns paging off.",
-    "per_monitor_settings": "Per-monitor settings",
-    "per_monitor_settings_desc": "Open a monitor, then its settings.",
     "search": {
       "placeholder": "Search settings",
       "no_results": "No settings match"

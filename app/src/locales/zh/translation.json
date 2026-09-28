@@ -638,6 +638,8 @@
     "api_timeout": "API 超时",
     "api_timeout_desc": "中止服务器请求前等待的秒数，以便应用重试。0 表示禁用超时。",
     "api_timeout_unit": "秒",
+    "global_log_level": "日志级别",
+    "global_log_level_desc": "设置所有组件。在下方自定义。",
     "component_log_levels": "组件日志",
     "component_log_levels_desc": "按组件设置日志级别",
     "component_log_reset": "重置",
@@ -688,8 +690,6 @@
     },
     "monitors_per_page": "每页监视器数量",
     "monitors_per_page_desc": "监视器很多（超过 30 个）且服务器未启用多端口流时有用。填 0 关闭分页。",
-    "per_monitor_settings": "单个监控设置",
-    "per_monitor_settings_desc": "打开监控，再进入其设置。",
     "search": {
       "placeholder": "搜索设置",
       "no_results": "没有匹配的设置"

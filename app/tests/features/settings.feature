@@ -80,8 +80,16 @@ Feature: Application Settings
   @all
   Scenario: More settings links open the page that owns the setting
     When I navigate to the "Settings" page
-    And I open the "logs" link under More settings
-    Then I should be on the "Logs" page
+    And I open the "notifications" link under More settings
+    Then I should be on the "Notifications" page
+
+  @all
+  Scenario: Disabling log redaction warns that credentials will be logged
+    When I navigate to the "Settings" page
+    And I enable the log redaction toggle
+    Then I should see the log redaction warning
+    When I disable the log redaction toggle
+    Then the log redaction warning should be gone
 
   @all
   Scenario: Force-disable multiport toggle persists across navigation
