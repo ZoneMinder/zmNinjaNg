@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { balancedAroundAnchor, buildReplaySchedule, buildTogetherSchedule } from '../event-context-view';
+import { balancedAroundAnchor, buildReplayRuns, currentRunIndex, togetherPlaying } from '../event-context-view';
 import type { EventAroundRow } from '../../../hooks/useEventsAround';
 import type { Event } from '../../../api/types';
 
@@ -54,50 +54,47 @@ describe('balancedAroundAnchor', () => {
   });
 });
 
-describe('buildReplaySchedule', () => {
-  it('plays overlapping events together and skips the idle gap between bursts', () => {
-    // 0-10s and 5-15s overlap; the next burst starts 40 minutes later and
-    // should begin as soon as the first burst ends at 15s.
+describe('buildReplayRuns', () => {
+  it('groups overlapping events into one run and starts a new run after an idle gap', () => {
+    // 0-10s and 5-15s overlap; the next burst starts 40 minutes later.
     const rows = [row('a', 0, 10), row('b', 5_000, 10), row('c', 40 * MIN, 20)];
-    expect(buildReplaySchedule(rows, 100)).toEqual([
-      { eventId: 'a', playAtMs: 0, stopAtMs: 10_000 },
-      { eventId: 'b', playAtMs: 5_000, stopAtMs: 15_000 },
-      { eventId: 'c', playAtMs: 15_000, stopAtMs: 35_000 },
+    expect(buildReplayRuns(rows, 100)).toEqual([
+      [{ eventId: 'a', startMs: 0 }, { eventId: 'b', startMs: 5_000 }],
+      [{ eventId: 'c', startMs: 0 }],
     ]);
   });
 
-  it('runs the clock at the playback rate', () => {
+  it('spaces the starts inside a run at the playback rate', () => {
     const rows = [row('a', -MIN, 10), row('b', -MIN + 4_000, 10)];
-    expect(buildReplaySchedule(rows, 200)).toEqual([
-      { eventId: 'a', playAtMs: 0, stopAtMs: 5_000 },
-      { eventId: 'b', playAtMs: 2_000, stopAtMs: 7_000 },
-    ]);
+    expect(buildReplayRuns(rows, 200)).toEqual([[{ eventId: 'a', startMs: 0 }, { eventId: 'b', startMs: 2_000 }]]);
   });
 
-  it('leaves an event with no length playing until the replay is closed', () => {
-    expect(buildReplaySchedule([row('live', 0, 0)], 100)).toEqual([{ eventId: 'live', playAtMs: 0, stopAtMs: null }]);
+  it('gives a sub-second event its own run instead of letting its length cut the next one short', () => {
+    // The reported bug: 364970 is 0.83s long, 18s before the anchor.
+    const rows = [row('short', -18_000, 0.83), row('anchor', 0, 31.71), row('after', 36_000, 30)];
+    expect(buildReplayRuns(rows, 200).map((run) => run.map((c) => c.eventId))).toEqual([['short'], ['anchor'], ['after']]);
   });
 });
 
-describe('buildTogetherSchedule', () => {
-  it('starts every tile at once when the stream budget allows', () => {
-    const rows = [row('a', -MIN, 10), row('b', 0, 20), row('c', 30 * MIN, 0)];
-    expect(buildTogetherSchedule(rows, 200, Infinity)).toEqual([
-      { eventId: 'a', playAtMs: 0, stopAtMs: 5_000 },
-      { eventId: 'b', playAtMs: 0, stopAtMs: 10_000 },
-      { eventId: 'c', playAtMs: 0, stopAtMs: null },
-    ]);
+describe('currentRunIndex', () => {
+  const runs = [[{ eventId: 'a', startMs: 0 }, { eventId: 'b', startMs: 1_000 }], [{ eventId: 'c', startMs: 0 }]];
+
+  it('stays on a run until every tile in it is done', () => {
+    expect(currentRunIndex(runs, new Set())).toBe(0);
+    expect(currentRunIndex(runs, new Set(['a']))).toBe(0);
+    expect(currentRunIndex(runs, new Set(['a', 'b']))).toBe(1);
   });
 
-  it('starts a waiting tile in the first stream slot to free up', () => {
-    // Two slots: a and b start at once, c takes a's slot when a ends at 10s,
-    // d takes b's when b ends at 20s.
-    const rows = [row('a', 0, 10), row('b', 1_000, 20), row('c', 2_000, 30), row('d', 3_000, 5)];
-    expect(buildTogetherSchedule(rows, 100, 2)).toEqual([
-      { eventId: 'a', playAtMs: 0, stopAtMs: 10_000 },
-      { eventId: 'b', playAtMs: 0, stopAtMs: 20_000 },
-      { eventId: 'c', playAtMs: 10_000, stopAtMs: 40_000 },
-      { eventId: 'd', playAtMs: 20_000, stopAtMs: 25_000 },
-    ]);
+  it('is -1 once the whole replay is done', () => {
+    expect(currentRunIndex(runs, new Set(['a', 'b', 'c']))).toBe(-1);
+  });
+});
+
+describe('togetherPlaying', () => {
+  it('fills the stream budget in tile order and hands a done tile slot to the next one', () => {
+    const ids = ['a', 'b', 'c', 'd'];
+    expect(togetherPlaying(ids, new Set(), 2)).toEqual(['a', 'b']);
+    expect(togetherPlaying(ids, new Set(['b']), 2)).toEqual(['a', 'c']);
+    expect(togetherPlaying(ids, new Set(['a', 'b', 'c']), 2)).toEqual(['d']);
   });
 });

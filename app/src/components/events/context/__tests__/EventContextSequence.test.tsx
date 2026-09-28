@@ -1,8 +1,9 @@
 /**
- * Sequence play replays its tiles on one shared clock (refs #534): each tile
- * streams only inside its own slot, then falls back to its thumbnail, which
- * unmounts the player and quits its ZMS stream. Real stores; the clock is
- * faked.
+ * Sequence play replays its tiles in runs (refs #534): a tile streams until
+ * its ZMS status probe says it is done, then falls back to its thumbnail,
+ * which unmounts the player and quits its ZMS stream. Real stores and the
+ * real probe; `httpGet` answers each connkey's status query as the test sets
+ * it, and the clock is faked.
  */
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
@@ -13,6 +14,17 @@ vi.mock('../../../../lib/security/secureStorage', () => import('../../../../test
 vi.mock('../../../../lib/zm/zms-quit', () => ({
   sendDelayedCmdQuit: vi.fn(),
   cancelPendingQuit: vi.fn(() => false),
+}));
+// Status answers by connkey. A connkey with no entry is a running stream at
+// its start; 'gone' is one whose zms never answers (a sub-second event).
+const zmsStatus = new Map<string, number | 'gone'>();
+vi.mock('../../../../lib/http', async (importActual) => ({
+  ...(await importActual<object>()),
+  httpGet: vi.fn(async (url: string) => {
+    const state = zmsStatus.get(new URL(url).searchParams.get('connkey') ?? '') ?? 0;
+    if (state === 'gone') throw new Error('Socket does not exist');
+    return { data: { status: { progress: state, duration: 100 } } };
+  }),
 }));
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -40,8 +52,7 @@ const row = (id: string, offsetMs: number, lengthSeconds: number) => ({
   isAnchor: offsetMs === 0,
 });
 
-// At the default 2x rate: a plays 0-5s; the 50s gap before the anchor is cut,
-// so b plays 5-24s; the 20 minute gap is cut too, so c plays 24-26.5s.
+// Three runs: none of these overlap, so each plays alone.
 const rows = [row('a', -60_000, 10), row('b', 0, 38), row('c', 20 * 60_000, 5)];
 
 function renderGrid(open = true) {
@@ -52,6 +63,23 @@ function renderGrid(open = true) {
   );
 }
 
+/** The connkey of the stream a playing tile holds. */
+const connkeyOf = (id: string) => {
+  const src = screen.getByTestId(`event-context-sequence-tile-${id}`).querySelector('img')?.getAttribute('src') ?? '';
+  return new URL(src).searchParams.get('connkey') ?? '';
+};
+
+/** Long enough for two status polls at any bandwidth setting. */
+const POLLS = 10_000;
+
+/** Lets the probe of each tile named see its stream at `progress` (of 100). */
+async function report(ids: string[], progress: number | 'gone') {
+  for (const id of ids) zmsStatus.set(connkeyOf(id), progress);
+  await act(() => vi.advanceTimersByTimeAsync(POLLS));
+}
+
+const finish = (...ids: string[]) => report(ids, 100);
+
 const playingIds = () =>
   screen
     .queryAllByTestId(/^event-context-sequence-tile-/)
@@ -61,6 +89,7 @@ const playingIds = () =>
 beforeEach(() => {
   vi.useFakeTimers();
   vi.mocked(sendDelayedCmdQuit).mockClear();
+  zmsStatus.clear();
   seedProfiles([P]);
 });
 
@@ -73,37 +102,66 @@ afterEach(() => {
 });
 
 describe('EventContextSequence', () => {
-  it('plays each tile inside its own slot, one after another across a cut gap', () => {
+  it('plays each run until its stream reports done, however long that takes', async () => {
     renderGrid();
     act(() => vi.advanceTimersByTime(0));
     expect(playingIds()).toEqual(['a']);
 
-    act(() => vi.advanceTimersByTime(5_000));
+    // a is 10s long, but its stream has not reached the end yet: keep playing.
+    await act(() => vi.advanceTimersByTimeAsync(60_000));
+    expect(playingIds()).toEqual(['a']);
+    expect(quitIds()).toEqual([]);
+
+    await finish('a');
+    act(() => vi.advanceTimersByTime(0));
     expect(playingIds()).toEqual(['b']);
     expect(quitIds()).toEqual(['a']);
 
-    act(() => vi.advanceTimersByTime(19_000));
+    await finish('b');
+    act(() => vi.advanceTimersByTime(0));
     expect(playingIds()).toEqual(['c']);
 
-    act(() => vi.advanceTimersByTime(2_500));
+    await finish('c');
     expect(playingIds()).toEqual([]);
     expect(quitIds()).toEqual(['a', 'b', 'c']);
   });
 
-  it('runs the clock and the streams at the hover preview speed', () => {
-    seedProfiles([P], { settings: { p1: { hoverPreviewPlaybackRate: 100 } } });
+  it('moves on from a stream that never answers its status query', async () => {
     renderGrid();
-    // At 1x, a plays 0-10s; at the default 2x it would have ended at 5s.
-    act(() => vi.advanceTimersByTime(6_000));
-    expect(playingIds()).toEqual(['a']);
-    const img = screen.getByTestId('event-context-sequence-tile-a').querySelector('img');
-    expect(img?.getAttribute('src')).toMatch(/[?&]rate=100(&|$)/);
-
-    act(() => vi.advanceTimersByTime(4_000));
+    act(() => vi.advanceTimersByTime(0));
+    await report(['a'], 'gone');
+    act(() => vi.advanceTimersByTime(0));
     expect(playingIds()).toEqual(['b']);
   });
 
-  it('plays every tile at once after the together toggle is pressed', () => {
+  it('draws the progress line of each tile from its probe', async () => {
+    renderGrid();
+    act(() => vi.advanceTimersByTime(0));
+    const line = screen.getByTestId('event-context-sequence-progress-a');
+    expect(line).toHaveAttribute('aria-valuenow', '0');
+    await report(['a'], 40);
+    expect(line).toHaveAttribute('aria-valuenow', '40');
+    await finish('a');
+    expect(line).toHaveAttribute('aria-valuenow', '100');
+    expect(screen.getByTestId('event-context-sequence-progress-c')).toHaveAttribute('aria-valuenow', '0');
+  });
+
+  it('starts overlapping tiles at their real spacing, at the hover preview speed', () => {
+    seedProfiles([P], { settings: { p1: { hoverPreviewPlaybackRate: 100 } } });
+    render(
+      <MemoryRouter>
+        <EventContextSequence open onOpenChange={() => {}} rows={[row('x', 0, 10), row('y', 4_000, 10)]} profileId={P} monitorNames={new Map()} />
+      </MemoryRouter>
+    );
+    act(() => vi.advanceTimersByTime(3_000));
+    expect(playingIds()).toEqual(['x']);
+    const img = screen.getByTestId('event-context-sequence-tile-x').querySelector('img');
+    expect(img?.getAttribute('src')).toMatch(/[?&]rate=100(&|$)/);
+    act(() => vi.advanceTimersByTime(1_000));
+    expect(playingIds()).toEqual(['x', 'y']);
+  });
+
+  it('plays every tile at once after the together toggle is pressed', async () => {
     renderGrid();
     act(() => vi.advanceTimersByTime(0));
     expect(playingIds()).toEqual(['a']);
@@ -116,12 +174,12 @@ describe('EventContextSequence', () => {
     act(() => vi.advanceTimersByTime(0));
     expect(playingIds()).toEqual(['a', 'b', 'c']);
 
-    // Each still stops at its own end: c (5s, so 2.5s at 2x) first.
-    act(() => vi.advanceTimersByTime(2_500));
+    // Each stops when its own stream is done.
+    await finish('c');
     expect(playingIds()).toEqual(['a', 'b']);
   });
 
-  it('holds together mode to the stream budget of a server without multiport', () => {
+  it('holds together mode to the stream budget of a server without multiport, freeing a slot when a stream is done', async () => {
     const many = Array.from({ length: 7 }, (_, i) => row(`e${i}`, i * 1_000, 10));
     render(
       <MemoryRouter>
@@ -130,7 +188,9 @@ describe('EventContextSequence', () => {
     );
     fireEvent.click(screen.getByTestId('event-context-sequence-together'));
     act(() => vi.advanceTimersByTime(0));
-    expect(playingIds()).toHaveLength(5);
+    expect(playingIds()).toEqual(['e0', 'e1', 'e2', 'e3', 'e4']);
+    await finish('e1');
+    expect(playingIds()).toEqual(['e0', 'e2', 'e3', 'e4', 'e5']);
   });
 
   it('lifts the stream budget when the server has multiport', () => {
@@ -146,7 +206,7 @@ describe('EventContextSequence', () => {
     expect(playingIds()).toHaveLength(7);
   });
 
-  it('scrolls each tile into view as it starts playing', () => {
+  it('scrolls each tile into view as it starts playing', async () => {
     // jsdom has no scrollIntoView; record which element asked for it.
     const scrolled: string[] = [];
     Element.prototype.scrollIntoView = function (this: Element) {
@@ -154,7 +214,8 @@ describe('EventContextSequence', () => {
     };
     renderGrid();
     act(() => vi.advanceTimersByTime(0));
-    act(() => vi.advanceTimersByTime(5_000));
+    await finish('a');
+    act(() => vi.advanceTimersByTime(0));
     expect(scrolled).toEqual(['event-context-sequence-tile-a', 'event-context-sequence-tile-b']);
     delete (Element.prototype as Partial<Element>).scrollIntoView;
   });
@@ -179,7 +240,7 @@ describe('EventContextSequence', () => {
     expect(playingIds()).toEqual(['a']);
   });
 
-  it('continues the replay from the tapped tile, skipping the ones before it', () => {
+  it('continues the replay from the tapped tile, skipping the ones before it', async () => {
     renderGrid();
     act(() => vi.advanceTimersByTime(0));
     expect(playingIds()).toEqual(['a']);
@@ -189,10 +250,10 @@ describe('EventContextSequence', () => {
     expect(playingIds()).toEqual(['b']);
     expect(quitIds()).toEqual(['a']);
 
-    // b runs 38s at 2x (19s); the 20 minute gap is cut, so c follows at once.
-    act(() => vi.advanceTimersByTime(19_000));
+    await finish('b');
+    act(() => vi.advanceTimersByTime(0));
     expect(playingIds()).toEqual(['c']);
-    act(() => vi.advanceTimersByTime(2_500));
+    await finish('c');
     expect(playingIds()).toEqual([]);
     // a is never replayed from here.
     act(() => vi.advanceTimersByTime(30_000));
@@ -296,19 +357,31 @@ describe('EventContextSequence', () => {
     expect(playingIds()).toEqual(['a', 'b', 'c']);
   });
 
-  it('starts over from the first tile on replay', () => {
+  it('starts over from the first tile on replay, on a fresh stream', async () => {
     renderGrid();
-    act(() => vi.advanceTimersByTime(30_000));
-    expect(playingIds()).toEqual([]);
+    act(() => vi.advanceTimersByTime(0));
+    const first = connkeyOf('a');
+    fireEvent.click(screen.getByTestId('event-context-sequence-replay'));
+    act(() => vi.advanceTimersByTime(0));
+    expect(playingIds()).toEqual(['a']);
+    expect(connkeyOf('a')).not.toBe(first);
 
+    await finish('a');
+    act(() => vi.advanceTimersByTime(0));
+    await finish('b');
+    act(() => vi.advanceTimersByTime(0));
+    await finish('c');
+    expect(playingIds()).toEqual([]);
     fireEvent.click(screen.getByTestId('event-context-sequence-replay'));
     act(() => vi.advanceTimersByTime(0));
     expect(playingIds()).toEqual(['a']);
   });
 
-  it('stops every stream when the dialog closes', () => {
+  it('stops every stream when the dialog closes', async () => {
     const { rerender } = renderGrid();
-    act(() => vi.advanceTimersByTime(6_000));
+    act(() => vi.advanceTimersByTime(0));
+    await finish('a');
+    act(() => vi.advanceTimersByTime(0));
     expect(playingIds()).toEqual(['b']);
 
     rerender(
@@ -318,7 +391,6 @@ describe('EventContextSequence', () => {
     );
     act(() => vi.advanceTimersByTime(30_000));
     expect(screen.queryByTestId('event-context-sequence')).toBeNull();
-    // One 6s step batches a's start and stop, so only b ever mounted.
-    expect(quitIds()).toEqual(['b']);
+    expect(quitIds()).toEqual(['a', 'b']);
   });
 });

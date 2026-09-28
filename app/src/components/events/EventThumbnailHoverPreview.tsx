@@ -16,6 +16,7 @@ import { log, LogLevel } from '../../lib/logger';
 import { ZMS_COMMANDS } from '../../lib/zm/zm-constants';
 import { sendDelayedCmdQuit, cancelPendingQuit } from '../../lib/zm/zms-quit';
 import { DEFAULT_HOVER_PREVIEW_PLAYBACK_RATE } from '../../stores/settings';
+import { useZmsEventProgress, type ZmsProbe } from '../../hooks/useZmsEventProgress';
 import { asProfileId, type Event } from '../../api/types';
 
 export interface EventZmsHoverDescriptor {
@@ -66,8 +67,15 @@ export function EventThumbnailHoverPreview({
 /**
  * Inner player, only mounted while the preview is open.
  * Mount: new connkey + event ZMS stream. Unmount: CMD_QUIT.
+ * With `onProbe`, it also polls the stream's status (Sequence play, refs #534).
  */
-export function EventZmsHoverPlayer({ descriptor }: { descriptor: EventZmsHoverDescriptor }) {
+export function EventZmsHoverPlayer({
+  descriptor,
+  onProbe,
+}: {
+  descriptor: EventZmsHoverDescriptor;
+  onProbe?: (probe: ZmsProbe) => void;
+}) {
   const ownerProfileId = descriptor.profileId ? asProfileId(descriptor.profileId) : undefined;
   const { profile: ownerProfile, settings } = useProfileById(ownerProfileId);
   // Previews are selection-scoped: they follow the current selection, not
@@ -99,6 +107,11 @@ export function EventZmsHoverPlayer({ descriptor }: { descriptor: EventZmsHoverD
         replay: 'single',
       })
     : '';
+
+  useZmsEventProgress(
+    streamUrl ? getZmsControlUrl(portalUrl, ZMS_COMMANDS.cmdQuery, connkey, tokenOpts) : '',
+    onProbe
+  );
 
   // Log when hover playback starts. Tear down the zms process on unmount,
   // but delay it so StrictMode's dev-mode remount can cancel the CMD_QUIT

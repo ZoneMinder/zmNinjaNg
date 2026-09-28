@@ -3416,20 +3416,29 @@ third should ask for.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/events/context/EventContextRibbon.tsx>`__
    · → :doc:`05-component-architecture`
 
-#. **Replay plays the rows around the anchor on one clock.** The Replay button,
-   enabled from two rows up, opens ``EventContextSequence`` in a dialog. Its
-   code and locale keys still use the working name "sequence". It takes
-   ``balancedAroundAnchor(rows, EVENT_CONTEXT.sequenceMaxTiles)`` and hands them to
-   ``buildReplaySchedule``, which gives each tile a start and
-   stop time: events keep their real spacing, stretches with no event running
-   are cut, and times are divided by ``hoverPreviewPlaybackRate``.
-   ``EventZmsHoverPlayer`` reads the same setting for its stream's ``rate``, so
-   the clock and the streams stay in step. One effect sets a
-   timeout per start and stop, and a tile inside its slot renders
-   ``EventZmsHoverPlayer`` instead of its thumbnail. That player owns a connkey
-   and sends CMD_QUIT when it unmounts, so the end of a slot, **Restart**,
-   closing the dialog, and opening a tile each tear down that tile's stream.
-   One tap on a tile rebuilds the schedule, in the current mode, over the
+#. **Replay plays the rows around the anchor, one run at a time.** The Replay
+   button, enabled from two rows up, opens ``EventContextSequence`` in a
+   dialog. Its code and locale keys still use the working name "sequence". It
+   takes ``balancedAroundAnchor(rows, EVENT_CONTEXT.sequenceMaxTiles)`` and
+   hands them to ``buildReplayRuns``, which groups events that overlap in time
+   into runs and gives each tile a start offset inside its run, divided by
+   ``hoverPreviewPlaybackRate``. ``EventZmsHoverPlayer`` reads the same setting
+   for its stream's ``rate``. One effect sets a timeout per start in the
+   current run (``currentRunIndex``), and a started tile renders
+   ``EventZmsHoverPlayer`` instead of its thumbnail. Nothing stops a tile on a
+   timer: the player's ``onProbe`` runs ``useZmsEventProgress``, which polls
+   CMD_QUERY every ``zmsStatusInterval`` and folds each answer through
+   ``nextZmsProbe``. A tile is done when progress reaches
+   ``ZMS_EVENT_END_FRACTION``, when progress goes backwards (``replay=single``
+   loops rather than exiting), or after ``ZMS_STREAM_DEAD_POLLS`` answers with
+   no playback state (a sub-second event never opens its control socket). The
+   next run starts once every tile in the current one is done. The same
+   probes feed each tile's progress line. The player owns a connkey and sends
+   CMD_QUIT when it unmounts, so a done tile, **Restart**, closing the dialog,
+   and opening a tile each tear down that tile's stream; it is keyed by the
+   replay's run counter, so **Restart** gets a fresh stream even for a tile
+   that was already playing.
+   One tap on a tile restarts the replay, in the current mode, over the
    tiles from that one on, so the replay continues from it; a second tap within
    ``EVENT_CONTEXT.doubleTapMs``, timed from the click events' own
    ``timeStamp`` rather than ``dblclick``, opens its event.
@@ -3439,9 +3448,9 @@ third should ask for.
    with ``{ returnedFrom: eventId }`` and then navigates to its event, so back
    remounts the dialog with playback held and ``useReturnFlash`` blinking that
    tile, the same hook the Events list uses for a returned-to row.
-   The In order / All button swaps in ``buildTogetherSchedule``, which starts every
-   tile at zero up to ``EVENT_CONTEXT.togetherMaxStreams`` streams and queues
-   the rest into the first slot to free up. The cap applies only without
+   The In order / All button swaps in ``togetherPlaying``, which plays the
+   first ``EVENT_CONTEXT.togetherMaxStreams`` tiles not yet done, so a tile
+   whose probe reports done hands its slot to the next. The cap applies only without
    multi-port streaming: each playing tile holds one of the browser's six
    connections per host, and event playback streams even in Snapshot mode.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/events/context/EventContextSequence.tsx>`__

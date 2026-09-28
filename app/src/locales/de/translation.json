@@ -294,6 +294,7 @@
       "sequence_nearest_one": "Das {{count}} nächste von {{total}}",
       "sequence_nearest_other": "Die {{count}} nächsten von {{total}}",
       "sequence_tile_hint": "Tippen zum Abspielen, doppelt tippen zum Öffnen",
+      "sequence_progress": "Wiedergabefortschritt",
       "close": "Schließen",
       "window": "Fenster",
       "scope": "Monitore",

@@ -102,6 +102,13 @@ matching reality, fixing it is a protocol change like any rule edit.
   exited early" means no `zms` process stood behind that connkey. All three
   quit paths route through `quitAndReport` and log it at WARN; never log the
   control URL, which carries the access token. #507.
+- An event stream with `replay=single` loops back to frame one at the end
+  instead of exiting, and the last CMD_QUERY before the loop can read under
+  0.99 of `duration` (31.23/31.71 at 2x with a 2s poll). Detect the end by
+  progress going backwards too. A sub-second event (0.83s, 44 frames) never
+  opens its control socket: every CMD_QUERY gets the "Socket ... does not
+  exist" body while the stream keeps sending bytes (392MB in 40s). Only a run
+  of stateless answers ends it. `useZmsEventProgress`, #534.
 - `zms` answers 503 once its streaming daemon is saturated, and a profile
   switch is when that happens: the outgoing profile's quits are awaited but
   their replies time out at 3s (`cmdQuitTimeoutSeconds`), so the incoming

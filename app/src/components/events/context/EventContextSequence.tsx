@@ -2,12 +2,15 @@
  * Sequence play: nearby events as tiles that replay in sync (refs #534).
  *
  * The tiles are up to `sequenceMaxTiles` events split evenly before and after the anchor, in time order.
- * When the dialog opens, a shared clock (buildReplaySchedule) starts each
- * tile's stream at its own moment and stops it when the event ends, so
- * cameras that recorded the same moment play it together. A tile that is not
- * playing shows its thumbnail. Each playing tile is an EventZmsHoverPlayer,
- * which owns its connkey and sends CMD_QUIT when it unmounts: at the end of
- * its slot, on replay, on close, or when a tile opens its event.
+ * In order, the tiles play in runs of overlapping events (buildReplayRuns):
+ * inside a run each starts at its real offset, so cameras that recorded the
+ * same moment play it together, and the next run starts once every tile in
+ * this one is done. Done comes from probing the tile's ZMS stream
+ * (useZmsEventProgress), never from a timer, since a stream does not keep to
+ * the event's nominal length; the same probe draws each tile's progress line.
+ * A tile that is not playing shows its thumbnail. Each playing tile is an
+ * EventZmsHoverPlayer, which owns its connkey and sends CMD_QUIT when it
+ * unmounts: once done, on replay, on close, or when a tile opens its event.
  *
  * Back from an event opened here reopens this dialog (the panel keeps it as
  * a history entry). It then holds playback and blinks the tile the user came
@@ -31,9 +34,11 @@ import { useFreshAccessToken } from '../../../hooks/useFreshAccessToken';
 import { useReturnHighlightStore } from '../../../stores/returnHighlight';
 import { useReturnFlash } from '../../../hooks/useReturnFlash';
 import { useInsomnia } from '../../../hooks/useInsomnia';
+import { useBandwidthSettings } from '../../../hooks/useBandwidthSettings';
+import type { ZmsProbe } from '../../../hooks/useZmsEventProgress';
 import type { EventContextHistoryState } from '../../../stores/eventContext';
 import { resolveMinStreamingPort } from '../../../lib/monitor/multiport';
-import { buildReplaySchedule, buildRowThumbnail, buildTogetherSchedule, balancedAroundAnchor, offsetLabel } from '../../../lib/event/event-context-view';
+import { buildReplayRuns, buildRowThumbnail, currentRunIndex, togetherPlaying, balancedAroundAnchor, offsetLabel } from '../../../lib/event/event-context-view';
 import { EVENT_CONTEXT, STORAGE_KEYS } from '../../../lib/zmninja-ng-constants';
 import { DEFAULT_HOVER_PREVIEW_PLAYBACK_RATE } from '../../../stores/settings';
 import { cn } from '../../../lib/utils';
@@ -91,6 +96,7 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
   // a phone whose idle timeout has already passed dim at once.
   useInsomnia({ enabled: open });
   const [together, setTogether] = useState(readStoredTogether);
+  const { zmsStatusInterval } = useBandwidthSettings();
   // Multi-port streaming spreads streams over several ports, each with its own
   // six-connection pool, so only a single-port server needs the cap. Snapshot
   // mode does not change this: event playback always streams.
@@ -98,44 +104,50 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
   // A tapped tile becomes the start of the replay: it plays at once and the
   // tiles after it follow in the current mode; the ones before it are skipped.
   const [startFrom, setStartFrom] = useState<string | null>(null);
-  const [playing, setPlaying] = useState<ReadonlySet<string>>(new Set());
   const [run, setRun] = useState(0);
   const [held, setHeld] = useState(Boolean(returnedFrom));
-  const restart = () => {
-    setStartFrom(null);
+  // What the probes have reported this run, and which in-order tiles have
+  // reached their start offset inside the current run.
+  const [done, setDone] = useState<ReadonlySet<string>>(new Set());
+  const [progress, setProgress] = useState<ReadonlyMap<string, number>>(new Map());
+  const [due, setDue] = useState<ReadonlySet<string>>(new Set());
+  const startRun = (from: string | null) => {
+    setStartFrom(from);
     setHeld(false);
+    setDone(new Set());
+    setProgress(new Map());
+    setDue(new Set());
     setRun((n) => n + 1);
   };
+  const restart = () => startRun(null);
 
-  const active = useMemo(() => {
+  const queue = useMemo(() => {
     if (held) return [];
-    const from = Math.max(0, tiles.findIndex(({ event }) => event.Id === startFrom));
-    const queue = tiles.slice(from);
-    return together ? buildTogetherSchedule(queue, rate, maxStreams) : buildReplaySchedule(queue, rate);
-  }, [held, tiles, startFrom, together, rate, maxStreams]);
+    return tiles.slice(Math.max(0, tiles.findIndex(({ event }) => event.Id === startFrom)));
+  }, [held, tiles, startFrom]);
+  const runs = useMemo(() => buildReplayRuns(queue, rate), [queue, rate]);
+  const runIndex = together ? -1 : currentRunIndex(runs, done);
+  const currentRun = runs[runIndex];
 
+  // In order: each tile of the current run becomes due at its offset.
   useEffect(() => {
-    if (!open) return;
-    const toggle = (id: string, on: boolean) =>
-      setPlaying((prev) => {
-        const next = new Set(prev);
-        if (on) next.add(id);
-        else next.delete(id);
-        return next;
-      });
-    // A tile queued behind streams that never end (events with no length
-    // yet) has an infinite start and never plays.
-    const timers = active
-      .filter((slot) => Number.isFinite(slot.playAtMs))
-      .flatMap(({ eventId, playAtMs, stopAtMs }) => [
-        setTimeout(() => toggle(eventId, true), playAtMs),
-        ...(stopAtMs === null ? [] : [setTimeout(() => toggle(eventId, false), stopAtMs)]),
-      ]);
-    return () => {
-      timers.forEach(clearTimeout);
-      setPlaying(new Set());
-    };
-  }, [open, active, run]);
+    if (!open || !currentRun) return;
+    const timers = currentRun.map(({ eventId, startMs }) =>
+      setTimeout(() => setDue((prev) => new Set(prev).add(eventId)), startMs)
+    );
+    return () => timers.forEach(clearTimeout);
+  }, [open, currentRun, run]);
+
+  const playing = useMemo<ReadonlySet<string>>(() => {
+    if (!open) return new Set();
+    if (together) return new Set(togetherPlaying(queue.map(({ event }) => event.Id), done, maxStreams));
+    return new Set(currentRun?.filter(({ eventId }) => due.has(eventId) && !done.has(eventId)).map((c) => c.eventId));
+  }, [open, together, queue, done, maxStreams, currentRun, due]);
+
+  const onProbe = (eventId: string, probe: ZmsProbe) => {
+    setProgress((prev) => new Map(prev).set(eventId, probe.fraction));
+    if (probe.done) setDone((prev) => new Set(prev).add(eventId));
+  };
 
   // A tile that starts playing below the fold scrolls into view. Only newly
   // started tiles count, so a tile that ends never pulls the view back.
@@ -168,9 +180,7 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
       openEvent(eventId);
       return;
     }
-    setStartFrom(eventId);
-    setHeld(false);
-    setRun((n) => n + 1);
+    startRun(eventId);
   };
 
   const openEvent = (eventId: string) => {
@@ -260,6 +270,10 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
                 aspectRatio={aspectRatio}
                 monitorName={monitorNames.get(event.MonitorId) ?? event.MonitorId}
                 isPlaying={playing.has(event.Id)}
+                run={run}
+                progress={done.has(event.Id) ? 1 : progress.get(event.Id) ?? 0}
+                progressStepMs={zmsStatusInterval}
+                onProbe={(probe) => onProbe(event.Id, probe)}
                 profileId={profileId}
                 onTap={(at) => tapTile(event.Id, at)}
               />
@@ -279,12 +293,19 @@ interface SequenceTileProps {
   aspectRatio: number;
   monitorName: string;
   isPlaying: boolean;
+  /** Keys the player, so a restart gets a fresh stream even for a tile already playing. */
+  run: number;
+  /** 0 to 1, from the tile's stream probe. */
+  progress: number;
+  /** Time between probes; the line eases across it instead of jumping. */
+  progressStepMs: number;
+  onProbe: (probe: ZmsProbe) => void;
   profileId: ProfileId | undefined;
   /** Called with the click's own timestamp, in ms. */
   onTap: (at: number) => void;
 }
 
-function SequenceTile({ event, offsetMs, isAnchor, urls, aspectRatio, monitorName, isPlaying, profileId, onTap }: SequenceTileProps) {
+function SequenceTile({ event, offsetMs, isAnchor, urls, aspectRatio, monitorName, isPlaying, run, progress, progressStepMs, onProbe, profileId, onTap }: SequenceTileProps) {
   const { t } = useTranslation();
   const flash = useReturnFlash(event.Id);
   return (
@@ -305,7 +326,11 @@ function SequenceTile({ event, offsetMs, isAnchor, urls, aspectRatio, monitorNam
         {(isPlaying || flash) && <ReturnFlashArrow className="top-1" />}
         <div className={cn('h-full w-full transition-opacity', !isPlaying && 'opacity-60')}>
           {isPlaying ? (
-            <EventZmsHoverPlayer descriptor={{ eventId: event.Id, monitorId: event.MonitorId, name: event.Name, profileId }} />
+            <EventZmsHoverPlayer
+              key={run}
+              descriptor={{ eventId: event.Id, monitorId: event.MonitorId, name: event.Name, profileId }}
+              onProbe={onProbe}
+            />
           ) : (
             <EventThumbnail urls={urls} cacheKey={event.Id} alt={event.Name} className="h-full w-full" objectFit="cover" />
           )}
@@ -319,6 +344,20 @@ function SequenceTile({ event, offsetMs, isAnchor, urls, aspectRatio, monitorNam
         >
           {isAnchor ? t('events.around.this_event') : offsetLabel(offsetMs)}
         </span>
+        <div
+          role="progressbar"
+          aria-label={t('events.around.sequence_progress')}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(progress * 100)}
+          className="absolute inset-x-0 bottom-0 h-0.5 bg-white/20"
+          data-testid={`event-context-sequence-progress-${event.Id}`}
+        >
+          <div
+            className="h-full bg-primary transition-[width] ease-linear"
+            style={{ width: `${progress * 100}%`, transitionDuration: `${progressStepMs}ms` }}
+          />
+        </div>
       </div>
       <div className="truncate px-1 py-0.5 text-[11px] leading-tight">{monitorName}</div>
     </button>

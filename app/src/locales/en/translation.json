@@ -294,6 +294,7 @@
       "sequence_nearest_one": "Nearest {{count}} of {{total}}",
       "sequence_nearest_other": "Nearest {{count}} of {{total}}",
       "sequence_tile_hint": "Tap to play, double tap to open",
+      "sequence_progress": "Playback progress",
       "close": "Close",
       "window": "Window",
       "scope": "Cameras",
