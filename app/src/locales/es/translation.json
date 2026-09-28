@@ -672,8 +672,7 @@
       },
       "hover_preview": {
         "title": "Vistas previas",
-        "desc": "Muestra una vista ampliada al pasar sobre miniaturas.",
-        "desc_long_press": "Mantén pulsada una miniatura para ver la vista ampliada.",
+        "desc": "Muestra una vista ampliada al pasar el cursor o mantener pulsada una miniatura.",
         "events_list": "Eventos (lista)",
         "events_grid": "Eventos (rejilla)",
         "monitors_list": "Monitores (lista)",

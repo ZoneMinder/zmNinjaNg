@@ -13,7 +13,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { RowLabel } from './SettingsLayout';
 import { useSettingsSearching } from './settings-search';
 import { cn } from '../../lib/utils';
-import { Platform } from '../../lib/platform';
 import { STORAGE_KEYS } from '../../lib/zmninja-ng-constants';
 import type { HoverPreviewSettings, HoverPreviewPlaybackRate } from '../../stores/settings';
 import { HOVER_PREVIEW_PLAYBACK_RATES } from '../../stores/settings';
@@ -35,9 +34,6 @@ interface HoverPreviewEditorProps {
 
 export function HoverPreviewEditor({ value, onChange, playbackRate, onPlaybackRateChange }: HoverPreviewEditorProps) {
   const { t } = useTranslation();
-  const descKey = Platform.isNative
-    ? 'settings.appearance.hover_preview.desc_long_press'
-    : 'settings.appearance.hover_preview.desc';
   const [open, setOpen] = useState(() => {
     try {
       return localStorage.getItem(STORAGE_KEYS.hoverPreviewOpen) === 'true';
@@ -76,7 +72,7 @@ export function HoverPreviewEditor({ value, onChange, playbackRate, onPlaybackRa
       >
         <RowLabel
           label={t('settings.appearance.hover_preview.title')}
-          desc={t(descKey)}
+          desc={t('settings.appearance.hover_preview.desc')}
         />
         <ChevronDown
           className={cn(

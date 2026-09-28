@@ -672,8 +672,7 @@
       },
       "hover_preview": {
         "title": "预览",
-        "desc": "悬停缩略图时显示放大预览。",
-        "desc_long_press": "长按缩略图显示放大预览。",
+        "desc": "悬停或长按缩略图时显示放大预览。",
         "events_list": "事件(列表)",
         "events_grid": "事件(网格)",
         "monitors_list": "监视器(列表)",

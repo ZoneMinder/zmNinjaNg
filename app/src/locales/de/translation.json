@@ -672,8 +672,7 @@
       },
       "hover_preview": {
         "title": "Vorschauen",
-        "desc": "Vergrößerte Vorschau beim Überfahren von Miniaturen.",
-        "desc_long_press": "Lange auf eine Miniatur drücken für eine vergrößerte Vorschau.",
+        "desc": "Vergrößerte Vorschau beim Überfahren oder langen Drücken einer Miniatur.",
         "events_list": "Ereignisse (Liste)",
         "events_grid": "Ereignisse (Raster)",
         "monitors_list": "Monitore (Liste)",

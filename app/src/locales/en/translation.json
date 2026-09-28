@@ -672,8 +672,7 @@
       },
       "hover_preview": {
         "title": "Previews",
-        "desc": "Show an enlarged preview when hovering thumbnails.",
-        "desc_long_press": "Long press a thumbnail to show an enlarged preview.",
+        "desc": "Show an enlarged preview when you hover over or long-press a thumbnail.",
         "events_list": "Events (list)",
         "events_grid": "Events (grid)",
         "monitors_list": "Monitors (list)",

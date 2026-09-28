@@ -672,8 +672,7 @@
       },
       "hover_preview": {
         "title": "Anteprime",
-        "desc": "Mostra un'anteprima ingrandita passando sulle miniature.",
-        "desc_long_press": "Tieni premuta una miniatura per mostrare un'anteprima ingrandita.",
+        "desc": "Mostra un'anteprima ingrandita al passaggio del mouse o con una pressione prolungata sulla miniatura.",
         "events_list": "Eventi (elenco)",
         "events_grid": "Eventi (griglia)",
         "monitors_list": "Monitor (elenco)",

@@ -672,8 +672,7 @@
       },
       "hover_preview": {
         "title": "Aperçus",
-        "desc": "Afficher un aperçu agrandi au survol des miniatures.",
-        "desc_long_press": "Appui long sur une miniature pour afficher un aperçu agrandi.",
+        "desc": "Affiche un aperçu agrandi au survol ou à l'appui long sur une miniature.",
         "events_list": "Événements (liste)",
         "events_grid": "Événements (grille)",
         "monitors_list": "Moniteurs (liste)",
