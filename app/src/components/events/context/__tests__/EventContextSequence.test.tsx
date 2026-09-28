@@ -146,6 +146,18 @@ describe('EventContextSequence', () => {
     expect(screen.getByTestId('event-context-sequence-progress-c')).toHaveAttribute('aria-valuenow', '0');
   });
 
+  it('fills the line over the time the stream has left, and snaps it full once done', async () => {
+    renderGrid();
+    act(() => vi.advanceTimersByTime(0));
+    const fill = () => screen.getByTestId('event-context-sequence-progress-a').firstElementChild as HTMLElement;
+    // 98 of 100 at 1x: 2s left, which is less than one poll.
+    await report(['a'], 98);
+    expect(fill().style.width).toBe('100%');
+    expect(fill().style.transitionDuration).toBe('2000ms');
+    await finish('a');
+    expect(fill().style.transitionDuration).toBe('0ms');
+  });
+
   it('starts overlapping tiles at their real spacing, at the hover preview speed', () => {
     seedProfiles([P], { settings: { p1: { hoverPreviewPlaybackRate: 100 } } });
     render(

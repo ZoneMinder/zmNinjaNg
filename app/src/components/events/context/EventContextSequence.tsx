@@ -299,7 +299,8 @@ interface SequenceTileProps {
   run: number;
   /** The tile's last stream probe; none before it plays. */
   probe: ZmsProbe | undefined;
-  /** Time between probes; the line eases toward `probe.ahead` across it. */
+  /** Time between probes. The line eases toward `probe.ahead` across it, or
+   *  across the time left when the stream ends sooner, and snaps full once done. */
   progressStepMs: number;
   onProbe: (probe: ZmsProbe) => void;
   profileId: ProfileId | undefined;
@@ -357,7 +358,10 @@ function SequenceTile({ event, offsetMs, isAnchor, urls, aspectRatio, monitorNam
         >
           <div
             className="h-full bg-sky-400 transition-[width] ease-linear"
-            style={{ width: `${(probe?.ahead ?? 0) * 100}%`, transitionDuration: `${progressStepMs}ms` }}
+            style={{
+              width: `${(probe?.ahead ?? 0) * 100}%`,
+              transitionDuration: `${probe?.done ? 0 : Math.min(progressStepMs, probe?.remainingMs ?? progressStepMs)}ms`,
+            }}
           />
         </div>
       </div>
