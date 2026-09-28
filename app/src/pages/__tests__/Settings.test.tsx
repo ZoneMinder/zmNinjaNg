@@ -173,15 +173,16 @@ describe('Settings Page', () => {
     expect(card('hidden-monitors-dropdown')).toBe(card('settings-show-developer-notices'));
     expect(card('stream-fps-input')).toBe(card('settings-live-fullscreen-switch'));
     expect(card('settings-thumbnail-chain-trigger')).toBe(card('settings-event-limit'));
-    expect(card('settings-force-disable-multiport-switch')).toBe(card('settings-bandwidth-mode-switch'));
+    expect(card('settings-force-disable-multiport-switch')).toBe(card('settings-live-fullscreen-switch'));
+    expect(card('settings-api-timeout-input')).toBe(card('settings-bandwidth-mode-switch'));
   });
 
   it('search filters a server row on its own with one profile selected', () => {
     renderSettings();
-    search('force_disable_multiport');
+    search('api_timeout');
     const text = visibleText(screen.getByTestId('settings-section-network'));
-    expect(text).toContain('settings.force_disable_multiport');
-    expect(text).not.toContain('settings.api_timeout');
+    expect(text).toContain('settings.api_timeout');
+    expect(text).not.toContain('settings.allow_self_signed_certs');
     expect(text).not.toContain('settings.bandwidth_mode');
   });
 
@@ -370,7 +371,7 @@ describe('Settings Page', () => {
 
   it('search finds a row in a collapsed section, and clearing restores the page', async () => {
     const user = userEvent.setup();
-    localStorage.setItem('zmng-settings-section-open-network', 'false');
+    localStorage.setItem('zmng-settings-section-open-live-streaming', 'false');
     renderSettings();
     expect(screen.queryByTestId('settings-force-disable-multiport-switch')).toBeNull();
 

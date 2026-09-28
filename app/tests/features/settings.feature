@@ -94,22 +94,24 @@ Feature: Application Settings
   @all
   Scenario: Force-disable multiport toggle persists across navigation
     When I navigate to the "Settings" page
-    And I expand the "network" settings section
+    And I expand the "live-streaming" settings section
+    And I expand the Advanced streaming settings
     And I enable the force-disable multiport toggle
     And I navigate to the "Dashboard" page
     And I navigate to the "Settings" page
-    And I expand the "network" settings section
+    And I expand the "live-streaming" settings section
+    And I expand the Advanced streaming settings
     Then the force-disable multiport toggle should be enabled
 
   @all
   Scenario: Search finds a setting inside a collapsed section
     When I navigate to the "Settings" page
-    And I collapse the "network" settings section
+    And I collapse the "live-streaming" settings section
     And I search settings for "multi-port"
     Then the force-disable multiport toggle should be visible
     And the "general" settings section should be hidden
     When I clear the settings search
-    Then the "network" settings section should be collapsed
+    Then the "live-streaming" settings section should be collapsed
     And the "general" settings section should be visible
 
   @all

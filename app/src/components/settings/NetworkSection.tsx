@@ -3,8 +3,8 @@
  *
  * Bandwidth mode is selection-scoped and saves through the page's `update`.
  * The server sub-card holds how the app reaches this server: self-signed
- * certificates (with the trust-on-first-use prompt on native), the request
- * timeout, and the multi-port override.
+ * certificates (with the trust-on-first-use prompt on native) and the request
+ * timeout.
  */
 
 import { useState } from 'react';
@@ -259,22 +259,6 @@ export function NetworkSection({
                 </div>
               </div>
 
-              {/* Force-disable multi-port streaming */}
-              <SettingsRow>
-                <RowLabel
-                  label={t('settings.force_disable_multiport')}
-                  desc={t('settings.force_disable_multiport_desc')}
-                />
-                <Switch
-                  id="force-disable-multiport"
-                  checked={serverSettings.forceDisableMultiPort}
-                  onCheckedChange={(checked) =>
-                    serverProfile &&
-                    updateSettings(serverProfile.id, { forceDisableMultiPort: checked })
-                  }
-                  data-testid="settings-force-disable-multiport-switch"
-                />
-              </SettingsRow>
             </SettingsSubCard>
           </SettingsCard>
         </div>

@@ -208,7 +208,7 @@ describe('Settings page - All mode two-tier picker (refs #337)', () => {
     const text = visibleText(screen.getByTestId('settings-sections'));
     expect(text).toContain('settings.force_disable_multiport');
     expect(text.filter((s) => s === 'settings.server_rows_for:{"name":"Home"}')).toHaveLength(1);
-    expect(visibleText(screen.getByTestId('settings-section-network'))).toContain(
+    expect(visibleText(screen.getByTestId('settings-section-live-streaming'))).toContain(
       'settings.server_rows_for:{"name":"Home"}'
     );
   });
@@ -216,7 +216,7 @@ describe('Settings page - All mode two-tier picker (refs #337)', () => {
   it('puts server rows in their own card under the divider while aggregating', () => {
     render(<Settings />, { wrapper: queryWrapper });
     const card = (testId: string) => screen.getByTestId(testId).closest('[data-settings-card]');
-    const serverCard = card('settings-force-disable-multiport-switch');
+    const serverCard = card('settings-api-timeout-input');
     expect(serverCard).not.toBe(card('settings-bandwidth-mode-switch'));
     const sub = serverCard?.closest('[data-testid="settings-server-subcard"]');
     expect(sub?.querySelector('[data-testid="settings-subcard-name"]')?.textContent).toBe(

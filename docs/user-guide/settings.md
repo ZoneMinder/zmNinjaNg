@@ -98,11 +98,12 @@ The server rows under Live Streaming set how that server sends live video:
 | **Refresh Interval** | Shown only in Snapshot mode. How often to refresh the still image (1 to 30 seconds, default 3; presets 1/3/5). |
 | **Stream FPS** | Maximum frame rate for live MJPEG streams (1 to 30 fps, default 10; presets 5/10/15/30). Lower values reduce bandwidth and CPU. |
 | **Stream Scale** | Server-side scaling applied to MJPEG frames before they are sent (10 to 100%, default 50; presets 25/50/75/100). Lower values reduce bandwidth. |
-| **Advanced streaming** | Folded by default. Holds the four rows below. |
+| **Advanced streaming** | Folded by default. Holds the five rows below. |
 | **Enable WebRTC/HLS/MSE** | When on, the app tries WebRTC, MSE, and HLS through go2rtc for each monitor and falls back to MJPEG. When off, all monitors on this server use MJPEG. |
 | **Streaming Protocols** | WebRTC, MSE, and HLS, tried in parallel when go2rtc is configured. The first protocol to produce video wins. |
 | **STUN Servers** | Enable only when you reach go2rtc directly over the internet. Leave it off on a LAN or VPN. |
 | **Protocol Label** | Shows or hides the streaming protocol indicator (MJPEG/MSE/WebRTC) on this server's video feeds. |
+| **Force disable multi-port streaming** | Off by default: when the server reports `ZM_MIN_STREAMING_PORT`, the app routes each monitor to its own port (`base port + monitor ID`). Turn this on to ignore that config and use the portal's default port for all streams. Use it when the per-monitor ports are not reachable (firewall, reverse proxy, or partial server config). |
 
 With one profile selected, switching **Bandwidth Mode** (under Network) resets Stream FPS, Stream Scale, and Refresh Interval to that mode's defaults.
 
@@ -129,7 +130,7 @@ A new profile picks its Streaming Mode from the server it just connected to:
 
 Snapshot mode needs a decoded image waiting on the server. For a monitor whose *Decoding* is *On demand*, ZoneMinder stops decoding about ten seconds after the last viewer, so the app asks such monitors for their stills in a way that counts as watching and keeps them decoding. That request is heavier on the server, and on a large montage of *On demand* cameras it makes tiles fill slowly. Monitors set to *Always*, *KeyFrames* or *KeyFrames + On demand* always have a recent picture decoded, so they get the light request; with the two keyframe settings the still advances one keyframe at a time. That request only exists in ZoneMinder 1.37.61 and later. On older servers a monitor set to *On demand* decoding freezes its snapshot tile on one frame: set it to *Decoding: Always*, or use Streaming mode for it.
 
-The count is the monitors the app shows for that server: deleted and hidden monitors are left out, disabled ones still count because they still get a tile. If the app cannot list the monitors on first connect, the mode stays at Snapshot until a later connect can decide. A profile with *Force disable multi-port streaming* on (Network) is treated as if the server had none.
+The count is the monitors the app shows for that server: deleted and hidden monitors are left out, disabled ones still count because they still get a tile. If the app cannot list the monitors on first connect, the mode stays at Snapshot until a later connect can decide. A profile with *Force disable multi-port streaming* on (Live Streaming, under Advanced streaming) is treated as if the server had none.
 
 The row shows which mode is recommended for the server and a line explaining why. The recommendation is only the starting value: changing the toggle overrides it for that profile, and no later connection changes it back.
 
@@ -229,7 +230,6 @@ The server rows under Network set how the app reaches that server:
 |---------|-------------|
 | **Allow Self-Signed Certificates** | Shown only when the Portal URL uses HTTPS. Enable when your ZoneMinder server uses a self-signed certificate. On native platforms (iOS/Android/desktop) the app pins the certificate fingerprint on first connection; toggling this off and back on lets you re-pin. |
 | **API timeout** | Seconds to wait for a server API request before it is aborted, so a stalled request errors and retries instead of leaving a screen stuck loading. Default 15. Set `0` to disable the timeout (wait forever). Does not apply to downloads. |
-| **Force disable multi-port streaming** | Off by default: when the server reports `ZM_MIN_STREAMING_PORT`, the app routes each monitor to its own port (`base port + monitor ID`). Turn this on to ignore that config and use the portal's default port for all streams. Use it when the per-monitor ports are not reachable (firewall, reverse proxy, or partial server config). |
 
 ### Bandwidth Mode
 

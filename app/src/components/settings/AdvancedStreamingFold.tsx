@@ -1,6 +1,6 @@
 /**
- * Advanced streaming: go2rtc (WebRTC/HLS/MSE), its protocols, STUN, and the
- * protocol label. One card row in the server sub-card that folds; it and the
+ * Advanced streaming: go2rtc (WebRTC/HLS/MSE), its protocols, STUN, the
+ * protocol label, and the multi-port override. One card row in the server sub-card that folds; it and the
  * nested protocol list open while searching so their rows can match.
  */
 
@@ -134,6 +134,16 @@ export function AdvancedStreamingFold({
             checked={settings.showProtocolLabel ?? true}
             onCheckedChange={(checked) => update('showProtocolLabel', checked)}
             data-testid="settings-protocol-label-switch"
+          />
+        </SettingsRow>
+
+        <SettingsRow>
+          <RowLabel label={t('settings.force_disable_multiport')} desc={t('settings.force_disable_multiport_desc')} />
+          <Switch
+            id="force-disable-multiport"
+            checked={settings.forceDisableMultiPort}
+            onCheckedChange={(checked) => update('forceDisableMultiPort', checked)}
+            data-testid="settings-force-disable-multiport-switch"
           />
         </SettingsRow>
       </CollapsibleContent>
