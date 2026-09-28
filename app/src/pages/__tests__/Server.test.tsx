@@ -70,6 +70,29 @@ function renderServer() {
   );
 }
 
+describe('Server page - storage areas (refs #539)', () => {
+  afterEach(() => {
+    resetProfileFixture();
+    resetFakeStoreGates();
+  });
+
+  it('shows free space as total minus DiskUsedSpace, not DiskUsedSpace itself', async () => {
+    const [profileA] = seedProfiles(['profile-a']);
+    // A 208.5 GB partition whose DiskUsedSpace includes ext4's reserved blocks.
+    const storage = {
+      Id: 1, Path: '/video4/zoneminder/events', Name: 'Default', Type: 'local', Url: null,
+      DiskSpace: 840478311, Scheme: 'Medium', ServerId: 0, DoDelete: true, Enabled: true,
+      DiskTotalSpace: 223854247936, DiskUsedSpace: 12300128256,
+    };
+    installApiClient(profileA.id, fakeApiClient({ ...serverRoutes(), '/storage.json': { storage: [{ Storage: storage }] } }));
+
+    renderServer();
+
+    expect(await screen.findByTestId('storage-free-1')).toHaveTextContent('197.0 GB server.storage_free');
+    expect(screen.getByTestId('storage-total-1')).toHaveTextContent('208.5 GB server.storage_total');
+  });
+});
+
 describe('Server page - profile picker (refs #337)', () => {
   afterEach(() => {
     resetProfileFixture();

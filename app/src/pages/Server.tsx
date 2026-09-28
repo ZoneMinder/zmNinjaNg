@@ -482,8 +482,11 @@ export default function Server() {
                 const totalGB = storage.DiskTotalSpace
                   ? (storage.DiskTotalSpace / (1024 * 1024 * 1024)).toFixed(1)
                   : null;
-                const usedGB = storage.DiskUsedSpace
-                  ? (storage.DiskUsedSpace / (1024 * 1024 * 1024)).toFixed(1)
+                // Free, not used: ZoneMinder's DiskUsedSpace is total minus
+                // available, so it counts the filesystem's root-reserved blocks
+                // (5% on ext4) as used. Free matches df's Avail (refs #539).
+                const freeGB = storage.DiskTotalSpace && storage.DiskUsedSpace
+                  ? ((storage.DiskTotalSpace - storage.DiskUsedSpace) / (1024 * 1024 * 1024)).toFixed(1)
                   : null;
                 const usagePercent =
                   storage.DiskTotalSpace && storage.DiskUsedSpace
@@ -509,13 +512,13 @@ export default function Server() {
                     <div className="text-xs text-muted-foreground truncate" title={storage.Path ?? undefined}>
                       {storage.Path}
                     </div>
-                    {totalGB && usedGB && (
+                    {totalGB && freeGB && (
                       <div className="mt-2">
                         <div className="flex justify-between text-xs mb-1">
-                          <span>
-                            {usedGB} GB {t('server.storage_used')}
+                          <span data-testid={`storage-free-${storage.Id}`}>
+                            {freeGB} GB {t('server.storage_free')}
                           </span>
-                          <span>
+                          <span data-testid={`storage-total-${storage.Id}`}>
                             {totalGB} GB {t('server.storage_total')}
                           </span>
                         </div>

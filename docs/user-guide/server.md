@@ -14,7 +14,7 @@ The server's CPU load average. Sustained high load can cause dropped frames or s
 
 ## Disk usage
 
-Disk usage for the server's event storage, shown in GB and as a percentage.
+Space used, in GB, on the disk that holds ZoneMinder's events directory (the `ZM_DIR_EVENTS` setting). If your storage areas are on other disks, this card measures a different disk from them. Use the storage areas below for those.
 
 ## Status
 
@@ -32,7 +32,7 @@ In a single-server setup this card shows the server's details. In a multi-server
 Each enabled storage area is listed with:
 
 - Its name and filesystem path
-- Used and total space in GB, with a usage bar
+- Free and total space in GB, with a usage bar. Free space matches the Avail column of `df`. The bar counts space the filesystem reserves for root (5% on ext4 by default) as used, so a disk that holds few events can still show a few percent full.
 - The server it belongs to (in multi-server setups)
 
 ## Account permissions
