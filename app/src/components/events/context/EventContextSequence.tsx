@@ -63,6 +63,8 @@ function storeTogether(together: boolean) {
   }
 }
 
+const DONE_PROBE: ZmsProbe = { fraction: 1, ahead: 1, remainingMs: 0, misses: 0, done: true };
+
 export interface EventContextSequenceProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -109,13 +111,13 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
   // What the probes have reported this run, and which in-order tiles have
   // reached their start offset inside the current run.
   const [done, setDone] = useState<ReadonlySet<string>>(new Set());
-  const [progress, setProgress] = useState<ReadonlyMap<string, number>>(new Map());
+  const [probes, setProbes] = useState<ReadonlyMap<string, ZmsProbe>>(new Map());
   const [due, setDue] = useState<ReadonlySet<string>>(new Set());
   const startRun = (from: string | null) => {
     setStartFrom(from);
     setHeld(false);
     setDone(new Set());
-    setProgress(new Map());
+    setProbes(new Map());
     setDue(new Set());
     setRun((n) => n + 1);
   };
@@ -145,7 +147,7 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
   }, [open, together, queue, done, maxStreams, currentRun, due]);
 
   const onProbe = (eventId: string, probe: ZmsProbe) => {
-    setProgress((prev) => new Map(prev).set(eventId, probe.fraction));
+    setProbes((prev) => new Map(prev).set(eventId, probe));
     if (probe.done) setDone((prev) => new Set(prev).add(eventId));
   };
 
@@ -271,7 +273,7 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
                 monitorName={monitorNames.get(event.MonitorId) ?? event.MonitorId}
                 isPlaying={playing.has(event.Id)}
                 run={run}
-                progress={done.has(event.Id) ? 1 : progress.get(event.Id) ?? 0}
+                probe={done.has(event.Id) ? DONE_PROBE : probes.get(event.Id)}
                 progressStepMs={zmsStatusInterval}
                 onProbe={(probe) => onProbe(event.Id, probe)}
                 profileId={profileId}
@@ -295,9 +297,9 @@ interface SequenceTileProps {
   isPlaying: boolean;
   /** Keys the player, so a restart gets a fresh stream even for a tile already playing. */
   run: number;
-  /** 0 to 1, from the tile's stream probe. */
-  progress: number;
-  /** Time between probes; the line eases across it instead of jumping. */
+  /** The tile's last stream probe; none before it plays. */
+  probe: ZmsProbe | undefined;
+  /** Time between probes; the line eases toward `probe.ahead` across it. */
   progressStepMs: number;
   onProbe: (probe: ZmsProbe) => void;
   profileId: ProfileId | undefined;
@@ -305,7 +307,7 @@ interface SequenceTileProps {
   onTap: (at: number) => void;
 }
 
-function SequenceTile({ event, offsetMs, isAnchor, urls, aspectRatio, monitorName, isPlaying, run, progress, progressStepMs, onProbe, profileId, onTap }: SequenceTileProps) {
+function SequenceTile({ event, offsetMs, isAnchor, urls, aspectRatio, monitorName, isPlaying, run, probe, progressStepMs, onProbe, profileId, onTap }: SequenceTileProps) {
   const { t } = useTranslation();
   const flash = useReturnFlash(event.Id);
   return (
@@ -349,13 +351,13 @@ function SequenceTile({ event, offsetMs, isAnchor, urls, aspectRatio, monitorNam
           aria-label={t('events.around.sequence_progress')}
           aria-valuemin={0}
           aria-valuemax={100}
-          aria-valuenow={Math.round(progress * 100)}
+          aria-valuenow={Math.round((probe?.fraction ?? 0) * 100)}
           className="absolute inset-x-0 bottom-0 h-0.5 bg-white/20"
           data-testid={`event-context-sequence-progress-${event.Id}`}
         >
           <div
-            className="h-full bg-primary transition-[width] ease-linear"
-            style={{ width: `${progress * 100}%`, transitionDuration: `${progressStepMs}ms` }}
+            className="h-full bg-sky-400 transition-[width] ease-linear"
+            style={{ width: `${(probe?.ahead ?? 0) * 100}%`, transitionDuration: `${progressStepMs}ms` }}
           />
         </div>
       </div>

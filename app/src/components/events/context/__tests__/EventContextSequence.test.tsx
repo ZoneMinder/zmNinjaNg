@@ -157,6 +157,8 @@ describe('EventContextSequence', () => {
     expect(playingIds()).toEqual(['x']);
     const img = screen.getByTestId('event-context-sequence-tile-x').querySelector('img');
     expect(img?.getAttribute('src')).toMatch(/[?&]rate=100(&|$)/);
+    // Played once and held on the last frame, never looped.
+    expect(img?.getAttribute('src')).toMatch(/[?&]replay=none(&|$)/);
     act(() => vi.advanceTimersByTime(1_000));
     expect(playingIds()).toEqual(['x', 'y']);
   });

@@ -3426,14 +3426,17 @@ third should ask for.
    for its stream's ``rate``. One effect sets a timeout per start in the
    current run (``currentRunIndex``), and a started tile renders
    ``EventZmsHoverPlayer`` instead of its thumbnail. Nothing stops a tile on a
-   timer: the player's ``onProbe`` runs ``useZmsEventProgress``, which polls
-   CMD_QUERY every ``zmsStatusInterval`` and folds each answer through
-   ``nextZmsProbe``. A tile is done when progress reaches
-   ``ZMS_EVENT_END_FRACTION``, when progress goes backwards (``replay=single``
-   loops rather than exiting), or after ``ZMS_STREAM_DEAD_POLLS`` answers with
-   no playback state (a sub-second event never opens its control socket). The
-   next run starts once every tile in the current one is done. The same
-   probes feed each tile's progress line. The player owns a connkey and sends
+   timer. Given ``onProbe``, the player streams with ``replay=none`` (play
+   once, hold the last frame; hovers keep ``single``, which loops) and runs
+   ``useZmsEventProgress``, which polls CMD_QUERY every ``zmsStatusInterval``
+   and folds each answer through ``nextZmsProbe``. A tile is done when
+   progress reaches ``ZMS_EVENT_END_FRACTION``, when progress goes backwards,
+   or after ``ZMS_STREAM_DEAD_POLLS`` answers with no playback state. When
+   the reported ``rate`` puts the end before the next poll, one extra check
+   runs ``ZMS_END_CHECK_MARGIN_MS`` after it. The next run starts once every
+   tile in the current one is done. Each tile's progress line eases over one
+   poll interval toward the probe's ``ahead``, where the stream should be at
+   the next poll. The player owns a connkey and sends
    CMD_QUIT when it unmounts, so a done tile, **Restart**, closing the dialog,
    and opening a tile each tear down that tile's stream; it is keyed by the
    replay's run counter, so **Restart** gets a fresh stream even for a tile

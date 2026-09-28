@@ -67,7 +67,8 @@ export function EventThumbnailHoverPreview({
 /**
  * Inner player, only mounted while the preview is open.
  * Mount: new connkey + event ZMS stream. Unmount: CMD_QUIT.
- * With `onProbe`, it also polls the stream's status (Sequence play, refs #534).
+ * With `onProbe`, it plays the event once instead of looping, holds the last
+ * frame, and polls the stream's status (Sequence play, refs #534).
  */
 export function EventZmsHoverPlayer({
   descriptor,
@@ -104,7 +105,7 @@ export function EventZmsHoverPlayer({
         connkey,
         rate,
         maxfps: 30,
-        replay: 'single',
+        replay: onProbe ? 'none' : 'single',
       })
     : '';
 

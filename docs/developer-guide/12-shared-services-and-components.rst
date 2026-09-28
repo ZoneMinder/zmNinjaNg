@@ -1758,7 +1758,8 @@ per-profile ``hoverPreviewPlaybackRate``, and renders it in an ``<img>``. On
 unmount it sends ``ZMS_COMMANDS.cmdQuit`` through ``sendDelayedCmdQuit``, and
 on mount it calls ``cancelPendingQuit`` so a StrictMode remount reuses the same
 connkey rather than killing it.
-Given an ``onProbe`` callback, it also polls the stream's CMD_QUERY status
+Given an ``onProbe`` callback, it plays the event once with ``replay=none``
+instead of looping, and polls the stream's CMD_QUERY status
 through ``hooks/useZmsEventProgress.ts`` and reports how far it has played;
 Sequence play uses that to decide when a tile is done. Without the callback
 it sends no status queries.

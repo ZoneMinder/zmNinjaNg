@@ -462,6 +462,9 @@ export const ZMS_STREAM_DEAD_POLLS = 2;
 /** Share of an event stream's reported duration past which it counts as played to the end. */
 export const ZMS_EVENT_END_FRACTION = 0.99;
 
+/** Slack after a stream's predicted end before the extra status check, so the check lands after zms has paused. */
+export const ZMS_END_CHECK_MARGIN_MS = 250;
+
 /**
  * How many times the event player restarts a stream zms dropped. A server that
  * fails on the same frame every time would otherwise restart forever; once the
