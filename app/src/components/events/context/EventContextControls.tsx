@@ -38,7 +38,8 @@ function ScopeSegment({
   const { t } = useTranslation();
   const props = useDeniedControl({
     denied: !enabled,
-    message: t(`events.around.scope_unavailable_${scope}`),
+    // All is never unavailable, so it has no explanation to look up.
+    message: enabled ? '' : t(`events.around.scope_unavailable_${scope}`),
     onClick: onSelect,
   });
 
