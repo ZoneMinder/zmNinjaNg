@@ -301,8 +301,6 @@
       "sequence_desc_many": "{{count}} ближайших событий, воспроизведённых в том порядке, как они произошли.",
       "sequence_desc_other": "{{count}} ближайших события, воспроизведённые в том порядке, как они произошли.",
       "sequence_replay": "Заново",
-      "sequence_play_all": "Все",
-      "sequence_play_sequence": "По порядку",
       "sequence_nearest_one": "Ближайшее {{count}} из {{total}}",
       "sequence_nearest_few": "Ближайшие {{count}} из {{total}}",
       "sequence_nearest_many": "Ближайшие {{count}} из {{total}}",

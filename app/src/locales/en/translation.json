@@ -289,8 +289,6 @@
       "sequence_desc_one": "The {{count}} event nearest this one, played as it happened.",
       "sequence_desc_other": "The {{count}} events nearest this one, played as they happened.",
       "sequence_replay": "Restart",
-      "sequence_play_all": "All",
-      "sequence_play_sequence": "In order",
       "sequence_nearest_one": "Nearest {{count}} of {{total}}",
       "sequence_nearest_other": "Nearest {{count}} of {{total}}",
       "sequence_tile_hint": "Tap to play, double tap to open",

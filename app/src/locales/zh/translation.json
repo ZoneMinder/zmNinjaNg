@@ -289,8 +289,6 @@
       "sequence_desc_one": "离此事件最近的 {{count}} 个事件，按发生顺序播放。",
       "sequence_desc_other": "离此事件最近的 {{count}} 个事件，按发生顺序播放。",
       "sequence_replay": "重新开始",
-      "sequence_play_all": "全部",
-      "sequence_play_sequence": "按顺序",
       "sequence_nearest_one": "最近的 {{count}} 个，共 {{total}} 个",
       "sequence_nearest_other": "最近的 {{count}} 个，共 {{total}} 个",
       "sequence_tile_hint": "点按播放，双击打开",

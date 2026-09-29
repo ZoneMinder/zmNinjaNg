@@ -104,13 +104,6 @@ Then('sequence play shows the nearby events in time order, playing', async ({ pa
   sequenceTileEventId = tileIds[0];
 });
 
-When('I switch sequence play to play all together', async ({ page }) => {
-  if (!sequenceListIds) return;
-  const toggle = page.getByTestId('event-context-sequence-together');
-  await toggle.click();
-  await expect(toggle).toHaveAttribute('data-mode', 'together');
-});
-
 When('I pick the {int} by {int} sequence play grid', async ({ page }, n: number) => {
   if (!sequenceListIds) return;
   const sequence = page.getByTestId('event-context-sequence');
@@ -138,14 +131,6 @@ Then('sequence play shows up to {int} tiles', async ({ page }, max: number) => {
   if (!sequenceListIds) return;
   const tiles = page.getByTestId('event-context-sequence').locator('[data-testid^="event-context-sequence-tile-"]');
   await expect.poll(() => tiles.count(), { timeout: testConfig.timeouts.transition }).toBe(Math.min(max, sequenceListIds.length));
-});
-
-// Together mode starts every tile, up to five on a server without multiport,
-// so any two tiles play at once; sequence mode only overlaps real overlaps.
-Then('more than one sequence play tile plays at once', async ({ page }) => {
-  if (!sequenceListIds) return;
-  const playing = page.getByTestId('event-context-sequence').locator('[data-playing="true"]');
-  await expect.poll(() => playing.count(), { timeout: testConfig.timeouts.transition }).toBeGreaterThan(1);
 });
 
 // One tap plays a tile on its own, so the other tiles stop (refs #534).

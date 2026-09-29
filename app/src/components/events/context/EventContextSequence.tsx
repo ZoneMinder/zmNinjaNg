@@ -16,16 +16,16 @@
  *
  * Back from an event opened here reopens this dialog (the panel keeps it as
  * a history entry). It then holds playback and blinks the tile the user came
- * from, the way the Events list marks a returned-to row, until Replay or the
- * mode button starts playback again.
+ * from, the way the Events list marks a returned-to row, until Restart
+ * starts playback again.
  *
- * One tap on a tile restarts the replay from that tile, in the current
- * mode; a second tap right after opens its event.
+ * One tap on a tile restarts the replay from that tile; a second tap right
+ * after opens its event.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Grid2x2, LayoutGrid, ListVideo, RotateCcw } from 'lucide-react';
+import { Grid2x2, LayoutGrid, RotateCcw } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '../../ui/dialog';
 import { Button } from '../../ui/button';
 import { EventThumbnail } from '../EventThumbnail';
@@ -42,22 +42,12 @@ import { useBandwidthSettings } from '../../../hooks/useBandwidthSettings';
 import type { ZmsProbe } from '../../../hooks/useZmsEventProgress';
 import type { EventContextHistoryState } from '../../../stores/eventContext';
 import { resolveMinStreamingPort } from '../../../lib/monitor/multiport';
-import { buildReplayRuns, buildRowThumbnail, currentRunIndex, togetherPlaying, balancedAroundAnchor, offsetLabel } from '../../../lib/event/event-context-view';
+import { buildReplayRuns, buildRowThumbnail, currentRunIndex, balancedAroundAnchor, offsetLabel } from '../../../lib/event/event-context-view';
 import { EVENT_CONTEXT, STORAGE_KEYS } from '../../../lib/zmninja-ng-constants';
 import { DEFAULT_HOVER_PREVIEW_PLAYBACK_RATE } from '../../../stores/settings';
 import { cn } from '../../../lib/utils';
 import type { EventAroundRow } from '../../../hooks/useEventsAround';
 import type { Event, ProfileId } from '../../../api/types';
-
-/** The mode last picked on this device: a per-device convenience, so a
- *  blocked or missing store just starts in order (Settings contract). */
-function readStoredTogether(): boolean {
-  try {
-    return localStorage.getItem(STORAGE_KEYS.eventContextReplayMode) === 'all';
-  } catch {
-    return false;
-  }
-}
 
 /** The grid size last picked on this device, if it is one still offered. */
 function readStoredGrid(): number {
@@ -74,14 +64,6 @@ function storeGrid(n: number) {
     localStorage.setItem(STORAGE_KEYS.eventContextReplayGrid, String(n));
   } catch {
     /* next open starts at the default */
-  }
-}
-
-function storeTogether(together: boolean) {
-  try {
-    localStorage.setItem(STORAGE_KEYS.eventContextReplayMode, together ? 'all' : 'in-order');
-  } catch {
-    /* next open starts in order */
   }
 }
 
@@ -122,14 +104,9 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
   // next starts on separate timers, and dropping the lock in between would let
   // a phone whose idle timeout has already passed dim at once.
   useInsomnia({ enabled: open });
-  const [together, setTogether] = useState(readStoredTogether);
   const { zmsStatusInterval } = useBandwidthSettings();
-  // Multi-port streaming spreads streams over several ports, each with its own
-  // six-connection pool, so only a single-port server needs the cap. Snapshot
-  // mode does not change this: event playback always streams.
-  const maxStreams = minStreamingPort ? Infinity : EVENT_CONTEXT.togetherMaxStreams;
   // A tapped tile becomes the start of the replay: it plays at once and the
-  // tiles after it follow in the current mode; the ones before it are skipped.
+  // tiles after it follow; the ones before it are skipped.
   const [startFrom, setStartFrom] = useState<string | null>(null);
   const [run, setRun] = useState(0);
   const [held, setHeld] = useState(Boolean(returnedFrom));
@@ -153,10 +130,9 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
     return tiles.slice(Math.max(0, tiles.findIndex(({ event }) => event.Id === startFrom)));
   }, [held, tiles, startFrom]);
   const runs = useMemo(() => buildReplayRuns(queue, rate), [queue, rate]);
-  const runIndex = together ? -1 : currentRunIndex(runs, done);
-  const currentRun = runs[runIndex];
+  const currentRun = runs[currentRunIndex(runs, done)];
 
-  // In order: each tile of the current run becomes due at its offset.
+  // Each tile of the current run becomes due at its offset.
   useEffect(() => {
     if (!open || !currentRun) return;
     const timers = currentRun.map(({ eventId, startMs }) =>
@@ -167,9 +143,8 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
 
   const playing = useMemo<ReadonlySet<string>>(() => {
     if (!open) return new Set();
-    if (together) return new Set(togetherPlaying(queue.map(({ event }) => event.Id), done, maxStreams));
     return new Set(currentRun?.filter(({ eventId }) => due.has(eventId) && !done.has(eventId)).map((c) => c.eventId));
-  }, [open, together, queue, done, maxStreams, currentRun, due]);
+  }, [open, currentRun, due, done]);
 
   const onProbe = (eventId: string, probe: ZmsProbe) => {
     setProbes((prev) => new Map(prev).set(eventId, probe));
@@ -253,21 +228,6 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
         {/* pr-8 clears the dialog's own close button in the top corner. */}
         {/* Sticky, so the controls stay in reach while the tiles scroll. */}
         <div className="sticky top-0 z-10 flex items-center gap-1 border-b border-border/50 bg-background pb-1 pr-8">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-7 px-2 text-xs"
-            onClick={() => {
-              storeTogether(!together);
-              setTogether(!together);
-              restart();
-            }}
-            data-mode={together ? 'together' : 'sequence'}
-            data-testid="event-context-sequence-together"
-          >
-            {together ? <LayoutGrid className="h-3.5 w-3.5" /> : <ListVideo className="h-3.5 w-3.5" />}
-            {t(together ? 'events.around.sequence_play_all' : 'events.around.sequence_play_sequence')}
-          </Button>
           <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={restart} data-testid="event-context-sequence-replay">
             <RotateCcw className="h-3.5 w-3.5" />
             {t('events.around.sequence_replay')}

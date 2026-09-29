@@ -3445,7 +3445,7 @@ third should ask for.
    and opening a tile each tear down that tile's stream; it is keyed by the
    replay's run counter, so **Restart** gets a fresh stream even for a tile
    that was already playing.
-   One tap on a tile restarts the replay, in the current mode, over the
+   One tap on a tile restarts the replay over the
    tiles from that one on, so the replay continues from it; a second tap within
    ``EVENT_CONTEXT.doubleTapMs``, timed from the click events' own
    ``timeStamp`` rather than ``dblclick``, opens its event.
@@ -3455,11 +3455,6 @@ third should ask for.
    with ``{ returnedFrom: eventId }`` and then navigates to its event, so back
    remounts the dialog with playback held and ``useReturnFlash`` blinking that
    tile, the same hook the Events list uses for a returned-to row.
-   The In order / All button swaps in ``togetherPlaying``, which plays the
-   first ``EVENT_CONTEXT.togetherMaxStreams`` tiles not yet done, so a tile
-   whose probe reports done hands its slot to the next. The cap applies only without
-   multi-port streaming: each playing tile holds one of the browser's six
-   connections per host, and event playback streams even in Snapshot mode.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/events/context/EventContextSequence.tsx>`__
    · → :doc:`05-component-architecture`
 

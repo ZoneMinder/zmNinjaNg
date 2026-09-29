@@ -289,8 +289,6 @@
       "sequence_desc_one": "L'evento più vicino a questo ({{count}}), riprodotto come è avvenuto.",
       "sequence_desc_other": "I {{count}} eventi più vicini a questo, riprodotti come sono avvenuti.",
       "sequence_replay": "Ricomincia",
-      "sequence_play_all": "Tutti",
-      "sequence_play_sequence": "In ordine",
       "sequence_nearest_one": "Il {{count}} più vicino su {{total}}",
       "sequence_nearest_other": "I {{count}} più vicini su {{total}}",
       "sequence_tile_hint": "Tocca per riprodurre, tocca due volte per aprire",

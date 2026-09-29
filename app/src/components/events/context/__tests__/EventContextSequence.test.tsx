@@ -36,7 +36,7 @@ vi.mock('react-i18next', () => ({
 }));
 
 import { EventContextSequence } from '../EventContextSequence';
-import { seedProfiles, resetProfileFixture, asProfileId, makeProfile } from '../../../../tests/profile-fixture';
+import { seedProfiles, resetProfileFixture, asProfileId } from '../../../../tests/profile-fixture';
 import { resetFakeStoreGates } from '../../../../tests/fake-store-gates';
 import { sendDelayedCmdQuit } from '../../../../lib/zm/zms-quit';
 import { useReturnHighlightStore } from '../../../../stores/returnHighlight';
@@ -176,51 +176,6 @@ describe('EventContextSequence', () => {
     expect(playingIds()).toEqual(['x', 'y']);
   });
 
-  it('plays every tile at once after the together toggle is pressed', async () => {
-    renderGrid();
-    act(() => vi.advanceTimersByTime(0));
-    expect(playingIds()).toEqual(['a']);
-
-    // The button names the mode it is in.
-    const toggle = screen.getByTestId('event-context-sequence-together');
-    expect(toggle).toHaveTextContent('events.around.sequence_play_sequence');
-    fireEvent.click(toggle);
-    expect(toggle).toHaveTextContent('events.around.sequence_play_all');
-    act(() => vi.advanceTimersByTime(0));
-    expect(playingIds()).toEqual(['a', 'b', 'c']);
-
-    // Each stops when its own stream is done.
-    await finish('c');
-    expect(playingIds()).toEqual(['a', 'b']);
-  });
-
-  it('holds together mode to the stream budget of a server without multiport, freeing a slot when a stream is done', async () => {
-    const many = Array.from({ length: 7 }, (_, i) => row(`e${i}`, i * 1_000, 10));
-    render(
-      <MemoryRouter>
-        <EventContextSequence open onOpenChange={() => {}} rows={many} profileId={P} monitorNames={new Map()} />
-      </MemoryRouter>
-    );
-    fireEvent.click(screen.getByTestId('event-context-sequence-together'));
-    act(() => vi.advanceTimersByTime(0));
-    expect(playingIds()).toEqual(['e0', 'e1', 'e2', 'e3', 'e4']);
-    await finish('e1');
-    expect(playingIds()).toEqual(['e0', 'e2', 'e3', 'e4', 'e5']);
-  });
-
-  it('lifts the stream budget when the server has multiport', () => {
-    seedProfiles([makeProfile('p1', { minStreamingPort: 30000 })]);
-    const many = Array.from({ length: 7 }, (_, i) => row(`e${i}`, i * 1_000, 10));
-    render(
-      <MemoryRouter>
-        <EventContextSequence open onOpenChange={() => {}} rows={many} profileId={P} monitorNames={new Map()} />
-      </MemoryRouter>
-    );
-    fireEvent.click(screen.getByTestId('event-context-sequence-together'));
-    act(() => vi.advanceTimersByTime(0));
-    expect(playingIds()).toHaveLength(7);
-  });
-
   it('scrolls each tile into view as it starts playing', async () => {
     // jsdom has no scrollIntoView; record which element asked for it.
     const scrolled: string[] = [];
@@ -273,17 +228,6 @@ describe('EventContextSequence', () => {
     // a is never replayed from here.
     act(() => vi.advanceTimersByTime(30_000));
     expect(playingIds()).toEqual([]);
-  });
-
-  it('in All, starts the tapped tile and every later one together', () => {
-    renderGrid();
-    fireEvent.click(screen.getByTestId('event-context-sequence-together'));
-    act(() => vi.advanceTimersByTime(0));
-    expect(playingIds()).toEqual(['a', 'b', 'c']);
-
-    fireEvent.click(screen.getByTestId('event-context-sequence-tile-b'));
-    act(() => vi.advanceTimersByTime(0));
-    expect(playingIds()).toEqual(['b', 'c']);
   });
 
   it('opens the event on a double tap', () => {
@@ -425,18 +369,6 @@ describe('EventContextSequence', () => {
     await act(async () => {});
     expect(release).toHaveBeenCalled();
     delete (navigator as { wakeLock?: unknown }).wakeLock;
-  });
-
-  it('remembers the mode the next time the replay opens', () => {
-    const { unmount } = renderGrid();
-    fireEvent.click(screen.getByTestId('event-context-sequence-together'));
-    expect(screen.getByTestId('event-context-sequence-together')).toHaveAttribute('data-mode', 'together');
-    unmount();
-
-    renderGrid();
-    expect(screen.getByTestId('event-context-sequence-together')).toHaveAttribute('data-mode', 'together');
-    act(() => vi.advanceTimersByTime(0));
-    expect(playingIds()).toEqual(['a', 'b', 'c']);
   });
 
   it('starts over from the first tile on replay, on a fresh stream', async () => {

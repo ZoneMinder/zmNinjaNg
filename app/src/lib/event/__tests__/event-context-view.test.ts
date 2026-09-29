@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { balancedAroundAnchor, buildReplayRuns, currentRunIndex, togetherPlaying } from '../event-context-view';
+import { balancedAroundAnchor, buildReplayRuns, currentRunIndex } from '../event-context-view';
 import type { EventAroundRow } from '../../../hooks/useEventsAround';
 import type { Event } from '../../../api/types';
 
@@ -90,11 +90,3 @@ describe('currentRunIndex', () => {
   });
 });
 
-describe('togetherPlaying', () => {
-  it('fills the stream budget in tile order and hands a done tile slot to the next one', () => {
-    const ids = ['a', 'b', 'c', 'd'];
-    expect(togetherPlaying(ids, new Set(), 2)).toEqual(['a', 'b']);
-    expect(togetherPlaying(ids, new Set(['b']), 2)).toEqual(['a', 'c']);
-    expect(togetherPlaying(ids, new Set(['a', 'b', 'c']), 2)).toEqual(['d']);
-  });
-});

@@ -273,10 +273,6 @@ export const EVENT_CONTEXT = {
    *  N x N block of 16:9 tiles can be while it fits on screen. */
   sequenceChromeRem: 3,
   sequenceRowLabelRem: 1.25,
-  /** Streams Sequence play's together mode runs at once without multi-port
-   *  streaming: one under the browser's six connections per host, leaving
-   *  one for thumbnails and API calls (refs #534). */
-  togetherMaxStreams: 5,
   /** Two taps on one Sequence play tile this close together open its event;
    *  one tap plays it (refs #534). Timed by hand, not `dblclick`, which touch
    *  WebViews do not fire reliably. */
@@ -558,7 +554,6 @@ export const STORAGE_KEYS = {
   thumbnailChainOpen: 'zmng-thumbnail-chain-open',
   eventContextRibbonOpen: 'zmng-event-context-ribbon-open',
   /** Nearby replay mode, 'in-order' or 'all' (refs #534). */
-  eventContextReplayMode: 'zmng-event-context-replay-mode',
   eventContextReplayGrid: 'zmng-event-context-replay-grid',
   // Prefix, completed with a settings section id (see CollapsibleSection).
   settingsSectionOpenPrefix: 'zmng-settings-section-open-',

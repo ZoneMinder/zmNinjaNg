@@ -126,17 +126,6 @@ export function currentRunIndex(runs: ReplayCue[][], done: ReadonlySet<string>):
   return runs.findIndex((run) => run.some(({ eventId }) => !done.has(eventId)));
 }
 
-/**
- * Together mode (refs #534): the first `maxConcurrent` tiles not yet done, in
- * tile order, so a tile that finishes hands its stream slot to the next one
- * waiting. The cap exists because a browser opens six connections per host
- * and each playing tile holds one; on a single port the seventh stream, and
- * every thumbnail and API call behind it, would sit queued.
- */
-export function togetherPlaying(eventIds: string[], done: ReadonlySet<string>, maxConcurrent: number): string[] {
-  return eventIds.filter((id) => !done.has(id)).slice(0, maxConcurrent);
-}
-
 export interface RibbonDot {
   eventId: string;
   offsetMs: number;
