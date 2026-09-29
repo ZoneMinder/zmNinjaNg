@@ -34,12 +34,12 @@ Feature: Events around an event
     Then sequence play is back, marking the tile I opened
 
   @all
-  Scenario: Sequence play grid size picks how many nearby events show
+  Scenario: Sequence play grid size sets the columns
     When I open the around-this-event panel on the first event
     And I choose the 60 minute window
     And I open sequence play if there are two events
     And I pick the 2 by 2 sequence play grid
-    Then sequence play shows at most 4 tiles in 2 columns
+    Then sequence play lays its tiles out in 2 columns
 
   @all
   Scenario: Filtered keeps to the Events page filters

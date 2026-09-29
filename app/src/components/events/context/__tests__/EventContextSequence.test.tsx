@@ -322,7 +322,7 @@ describe('EventContextSequence', () => {
     expect(playingIds()).toEqual(['b']);
   });
 
-  it('shows the nearest events on a grid the user picks, 3x3 by default, and remembers it', async () => {
+  it('lays the same nearest events out in the columns the user picks, 3 by default, and remembers it', async () => {
     // Radix opens its menu on real timers; nothing here waits on the replay clock.
     vi.useRealTimers();
     const user = userEvent.setup();
@@ -332,25 +332,28 @@ describe('EventContextSequence', () => {
         <EventContextSequence open onOpenChange={() => {}} rows={many} profileId={P} monitorNames={new Map()} />
       </MemoryRouter>
     );
-    const tileCount = () => screen.queryAllByTestId(/^event-context-sequence-tile-/).length;
+    const tileIds = () => screen.queryAllByTestId(/^event-context-sequence-tile-/).map((el) => el.dataset.testid);
+    const columns = () => screen.getByTestId('event-context-sequence-tile-e10').parentElement?.style.gridTemplateColumns;
     const { unmount } = render(view());
-    expect(tileCount()).toBe(9);
+    const nearest = tileIds();
+    expect(nearest).toHaveLength(12);
+    expect(columns()).toBe('repeat(3, minmax(0, 1fr))');
 
     await user.click(screen.getByTestId('event-context-sequence-grid'));
     await user.click(screen.getByTestId('event-context-sequence-grid-2'));
-    expect(tileCount()).toBe(4);
-    // The anchor stays in, with its nearest neighbours either side.
-    expect(screen.getByTestId('event-context-sequence-tile-e10')).toHaveAttribute('aria-current', 'true');
+    expect(tileIds()).toEqual(nearest);
+    expect(columns()).toBe('repeat(2, minmax(0, 1fr))');
     unmount();
 
     render(view());
-    expect(tileCount()).toBe(4);
+    expect(columns()).toBe('repeat(2, minmax(0, 1fr))');
     await user.click(screen.getByTestId('event-context-sequence-grid'));
     await user.click(screen.getByTestId('event-context-sequence-grid-4'));
-    expect(tileCount()).toBe(16);
+    expect(tileIds()).toEqual(nearest);
+    expect(columns()).toBe('repeat(4, minmax(0, 1fr))');
   });
 
-  it('keeps the playing stream going when the grid size changes, continuing from it', async () => {
+  it('keeps the playing stream going when the grid size changes', async () => {
     vi.useRealTimers();
     const user = userEvent.setup();
     // Twenty back-to-back 10s events, none overlapping, anchor at e10.
@@ -360,15 +363,15 @@ describe('EventContextSequence', () => {
         <EventContextSequence open onOpenChange={() => {}} rows={many} profileId={P} monitorNames={new Map()} />
       </MemoryRouter>
     );
-    // 3x3 holds e6..e14; tap e10 so it is the one playing.
+    // Tap e10, mid-grid, so it is the one playing.
     fireEvent.click(screen.getByTestId('event-context-sequence-tile-e10'));
     await act(() => new Promise((resolve) => setTimeout(resolve, 10)));
     expect(playingIds()).toEqual(['e10']);
     const stream = connkeyOf('e10');
 
     await user.click(screen.getByTestId('event-context-sequence-grid'));
-    await user.click(screen.getByTestId('event-context-sequence-grid-4'));
-    // Same stream, not a restart, and the earlier tiles 4x4 added do not jump in.
+    await user.click(screen.getByTestId('event-context-sequence-grid-2'));
+    // Same stream, not a restart.
     expect(playingIds()).toEqual(['e10']);
     expect(connkeyOf('e10')).toBe(stream);
     expect(quitIds()).toEqual([]);
@@ -381,14 +384,14 @@ describe('EventContextSequence', () => {
         <EventContextSequence open onOpenChange={() => {}} rows={many} profileId={P} monitorNames={new Map()} />
       </MemoryRouter>
     );
-    expect(screen.getByTestId('event-context-sequence-nearest')).toHaveTextContent('events.around.sequence_nearest:9/15');
+    expect(screen.getByTestId('event-context-sequence-nearest')).toHaveTextContent('events.around.sequence_nearest:12/15');
 
     rerender(
       <MemoryRouter>
         <EventContextSequence open onOpenChange={() => {}} rows={many} profileId={P} monitorNames={new Map()} truncated />
       </MemoryRouter>
     );
-    expect(screen.getByTestId('event-context-sequence-nearest')).toHaveTextContent('events.around.sequence_nearest:9/15+');
+    expect(screen.getByTestId('event-context-sequence-nearest')).toHaveTextContent('events.around.sequence_nearest:12/15+');
   });
 
   it('keeps the screen awake while open and lets it sleep once closed', async () => {

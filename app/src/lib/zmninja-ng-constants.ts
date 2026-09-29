@@ -260,13 +260,15 @@ export const EVENT_CONTEXT = {
   defaultWindowMinutes: 10,
   /** Rows one window may return before the list says it truncated. */
   maxResults: 200,
-  /** Replay grid sizes offered (N means N x N tiles, the events nearest the
-   *  anchor), and the default (refs #534). */
+  /** Tiles in Sequence play; the events nearest the anchor win (refs #534). */
+  sequenceMaxTiles: 12,
+  /** Replay grid sizes offered, and the default. N x N means N columns, with
+   *  N rows fitting the screen at once; the rest of the tiles scroll. */
   sequenceGridSizes: [2, 3, 4] as const,
   sequenceDefaultGrid: 3,
   /** Replay dialog height, in rem, taken by its toolbar and padding, and by
-   *  each tile row's monitor name. From `sm` up the dialog is as wide as its
-   *  N x N grid of 16:9 tiles can be while every row fits on screen. */
+   *  each tile row's monitor name. From `sm` up the dialog is as wide as an
+   *  N x N block of 16:9 tiles can be while it fits on screen. */
   sequenceChromeRem: 3,
   sequenceRowLabelRem: 1.25,
   /** Streams Sequence play's together mode runs at once without multi-port

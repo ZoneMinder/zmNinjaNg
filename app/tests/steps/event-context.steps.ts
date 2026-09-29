@@ -118,12 +118,12 @@ When('I pick the {int} by {int} sequence play grid', async ({ page }, n: number)
   await page.getByTestId(`event-context-sequence-grid-${n}`).click();
 });
 
-// The grid shows the N x N events nearest the anchor, N to a row.
-Then('sequence play shows at most {int} tiles in {int} columns', async ({ page }, max: number, cols: number) => {
+// N x N sets N tiles to a row; how many tiles show does not change.
+Then('sequence play lays its tiles out in {int} columns', async ({ page }, cols: number) => {
   if (!sequenceListIds) return;
   const sequence = page.getByTestId('event-context-sequence');
   const tiles = sequence.locator('[data-testid^="event-context-sequence-tile-"]');
-  await expect.poll(() => tiles.count(), { timeout: testConfig.timeouts.transition }).toBe(Math.min(max, sequenceListIds.length));
+  await expect.poll(() => tiles.count(), { timeout: testConfig.timeouts.transition }).toBe(Math.min(12, sequenceListIds.length));
   const tops = await tiles.evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top)));
   expect(tops.filter((top) => top === tops[0])).toHaveLength(Math.min(cols, tops.length));
 });
