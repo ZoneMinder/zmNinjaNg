@@ -660,7 +660,7 @@
         "title": "Eventos cercanos",
         "desc": "Ventana y cámaras predeterminadas para eventos cercanos.",
         "replay_tiles": "Mosaicos de reproducción",
-        "replay_tiles_desc": "Cuántos eventos cercanos muestra Reproducir. Cada mosaico en reproducción ocupa una conexión al servidor; sin streaming multipuerto, más mosaicos pueden detener la reproducción."
+        "replay_tiles_desc": "Cuántos eventos cercanos muestra Reproducir."
       },
       "thumbnail_chain": {
         "title": "Miniaturas de eventos",

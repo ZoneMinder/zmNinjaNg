@@ -660,7 +660,7 @@
         "title": "Eventi vicini",
         "desc": "Finestra e telecamere predefinite per gli eventi vicini.",
         "replay_tiles": "Riquadri di riproduzione",
-        "replay_tiles_desc": "Quanti eventi vicini mostra Riproduci. Ogni riquadro in riproduzione occupa una connessione al server; senza streaming multiporta, più riquadri possono bloccare la riproduzione."
+        "replay_tiles_desc": "Quanti eventi vicini mostra Riproduci."
       },
       "thumbnail_chain": {
         "title": "Miniature degli eventi",

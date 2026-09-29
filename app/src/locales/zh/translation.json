@@ -660,7 +660,7 @@
         "title": "附近事件",
         "desc": "附近事件的默认时间窗口和摄像头。",
         "replay_tiles": "回放图块数",
-        "replay_tiles_desc": "回放显示的附近事件数量。每个播放中的图块占用一个服务器连接；未启用多端口流时，图块越多越可能卡住播放。"
+        "replay_tiles_desc": "回放显示的附近事件数量。"
       },
       "thumbnail_chain": {
         "title": "事件缩略图",
