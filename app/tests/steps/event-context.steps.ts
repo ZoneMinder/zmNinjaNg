@@ -128,6 +128,18 @@ Then('sequence play lays its tiles out in {int} columns', async ({ page }, cols:
   expect(tops.filter((top) => top === tops[0])).toHaveLength(Math.min(cols, tops.length));
 });
 
+When('I pick {int} replay tiles in settings', async ({ page }, n: number) => {
+  const choice = page.getByTestId(`settings-replay-tiles-${n}`);
+  await choice.click();
+  await expect(choice).toHaveAttribute('aria-pressed', 'true');
+});
+
+Then('sequence play shows up to {int} tiles', async ({ page }, max: number) => {
+  if (!sequenceListIds) return;
+  const tiles = page.getByTestId('event-context-sequence').locator('[data-testid^="event-context-sequence-tile-"]');
+  await expect.poll(() => tiles.count(), { timeout: testConfig.timeouts.transition }).toBe(Math.min(max, sequenceListIds.length));
+});
+
 // Together mode starts every tile, up to five on a server without multiport,
 // so any two tiles play at once; sequence mode only overlaps real overlaps.
 Then('more than one sequence play tile plays at once', async ({ page }) => {

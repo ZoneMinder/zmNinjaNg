@@ -42,6 +42,17 @@ Feature: Events around an event
     Then sequence play lays its tiles out in 2 columns
 
   @all
+  Scenario: The Replay tiles setting sets how many nearby events show
+    When I navigate to the "Settings" page
+    And I search settings for "Replay tiles"
+    And I pick 24 replay tiles in settings
+    And I navigate to the "Events" page
+    And I open the around-this-event panel on the first event
+    And I choose the 60 minute window
+    And I open sequence play if there are two events
+    Then sequence play shows up to 24 tiles
+
+  @all
   Scenario: Filtered keeps to the Events page filters
     When I filter the Events page to the first event's monitor
     And I open the around-this-event panel on the first event

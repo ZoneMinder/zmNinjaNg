@@ -660,7 +660,9 @@
       "tv_mode_desc": "D-pad navigation and larger UI",
       "event_context": {
         "title": "Nearby events",
-        "desc": "Default window and cameras for nearby events."
+        "desc": "Default window and cameras for nearby events.",
+        "replay_tiles": "Replay tiles",
+        "replay_tiles_desc": "How many nearby events Replay shows. Each playing tile holds a server connection, so more tiles can stall playback without multi-port streaming."
       },
       "thumbnail_chain": {
         "title": "Event thumbnails",

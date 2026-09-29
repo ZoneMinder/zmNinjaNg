@@ -660,7 +660,9 @@
       "tv_mode_desc": "Navigazione con D-pad e interfaccia più grande",
       "event_context": {
         "title": "Eventi vicini",
-        "desc": "Finestra e telecamere predefinite per gli eventi vicini."
+        "desc": "Finestra e telecamere predefinite per gli eventi vicini.",
+        "replay_tiles": "Riquadri di riproduzione",
+        "replay_tiles_desc": "Quanti eventi vicini mostra Riproduci. Ogni riquadro in riproduzione occupa una connessione al server; senza streaming multiporta, più riquadri possono bloccare la riproduzione."
       },
       "thumbnail_chain": {
         "title": "Miniature degli eventi",

@@ -36,6 +36,7 @@ export const SELECTION_SCOPED_SETTINGS = [
   'eventPlaybackFullscreen',
   'monitorDetailRecentEventsCount',
   'eventContext',
+  'eventContextReplayTiles',
   'bandwidthMode',
   'logLevel',
   'componentLogLevels',

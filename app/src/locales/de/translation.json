@@ -660,7 +660,9 @@
       "tv_mode_desc": "D-Pad-Navigation und Anzeige",
       "event_context": {
         "title": "Ereignisse in der Nähe",
-        "desc": "Standardfenster und Kameras für Ereignisse in der Nähe."
+        "desc": "Standardfenster und Kameras für Ereignisse in der Nähe.",
+        "replay_tiles": "Wiedergabe-Kacheln",
+        "replay_tiles_desc": "Wie viele Ereignisse die Wiedergabe zeigt. Jede laufende Kachel belegt eine Serververbindung; ohne Multi-Port-Streaming können mehr Kacheln die Wiedergabe stocken lassen."
       },
       "thumbnail_chain": {
         "title": "Ereignis-Miniaturen",

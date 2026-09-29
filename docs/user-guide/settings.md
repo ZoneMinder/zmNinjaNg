@@ -205,6 +205,7 @@ None of these change any server's own settings. With one profile selected the gr
 | **Open events in fullscreen** | Play event video fullscreen as soon as the Event Detail page opens. Going fullscreen on the player itself lasts only for that event. |
 | **Recent events on monitor** | How many recent events a monitor's live view lists under the video (1 to 50, default 20; presets 10/20/50). |
 | **Nearby events** | The default time window and cameras for nearby events. See [Nearby](events.md#nearby). |
+| **Replay tiles** | How many nearby events Replay shows: 12, 24 or 36. Each playing tile holds a connection to the server, so on a server without multi-port streaming a larger count can stall playback. |
 
 The server rows under Events & Playback hold **Event thumbnails**.
 

@@ -260,8 +260,10 @@ export const EVENT_CONTEXT = {
   defaultWindowMinutes: 10,
   /** Rows one window may return before the list says it truncated. */
   maxResults: 200,
-  /** Tiles in Sequence play; the events nearest the anchor win (refs #534). */
-  sequenceMaxTiles: 12,
+  /** Tile counts the Replay setting offers; the events nearest the anchor win
+   *  (refs #534). Each fills whole rows at every grid size (2, 3 and 4 wide). */
+  replayTileChoices: [12, 24, 36] as const,
+  defaultReplayTiles: 12,
   /** Replay grid sizes offered, and the default. N x N means N columns, with
    *  N rows fitting the screen at once; the rest of the tiles scroll. */
   sequenceGridSizes: [2, 3, 4] as const,

@@ -1,8 +1,8 @@
 /**
  * Sequence play: nearby events as tiles that replay in sync (refs #534).
  *
- * The tiles are up to `sequenceMaxTiles` events split evenly before and after
- * the anchor, in time order. The grid menu picks N x N (remembered per
+ * The tiles are up to `eventContextReplayTiles` (a setting) events split
+ * evenly before and after the anchor, in time order. The grid menu picks N x N (remembered per
  * device): N columns, sized so N rows fit the screen; the rest scroll.
  * In order, the tiles play in runs of overlapping events (buildReplayRuns):
  * inside a run each starts at its real offset, so cameras that recorded the
@@ -114,7 +114,8 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
 
   const isMobile = useIsMobile();
   const [grid, setGrid] = useState(readStoredGrid);
-  const tiles = useMemo(() => balancedAroundAnchor(rows, EVENT_CONTEXT.sequenceMaxTiles), [rows]);
+  const tileCount = selectionSettings.eventContextReplayTiles;
+  const tiles = useMemo(() => balancedAroundAnchor(rows, tileCount), [rows, tileCount]);
   // The screen stays awake for as long as the replay is open, on top of (never
   // instead of) the user's Insomnia setting, which is left alone. Tied to the
   // dialog rather than to "a tile is playing": in order, one tile stops and the

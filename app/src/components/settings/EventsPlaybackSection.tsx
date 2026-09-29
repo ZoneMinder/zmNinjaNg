@@ -17,7 +17,7 @@ import { ThumbnailFallbackChainEditor } from './ThumbnailFallbackChainEditor';
 import { EventContextControls } from '../events/context/EventContextControls';
 import type { Profile } from '../../api/types';
 import type { ProfileSettings } from '../../stores/settings';
-import { MONITOR_DETAIL_RECENT_EVENTS } from '../../lib/zmninja-ng-constants';
+import { EVENT_CONTEXT, MONITOR_DETAIL_RECENT_EVENTS } from '../../lib/zmninja-ng-constants';
 import { clampRecentEventsCount } from '../../lib/monitor/monitor-recent-events';
 
 type Update = <K extends keyof ProfileSettings>(key: K, value: ProfileSettings[K]) => void;
@@ -169,6 +169,25 @@ export function EventsPlaybackSection({
               available={{ linked: true, group: true, filtered: true }}
             />
           </div>
+
+          <SettingsRow>
+            <RowLabel label={t('settings.appearance.event_context.replay_tiles')} desc={t('settings.appearance.event_context.replay_tiles_desc')} />
+            <div className="flex gap-1.5">
+              {EVENT_CONTEXT.replayTileChoices.map((n) => (
+                <Button
+                  key={n}
+                  variant={settings.eventContextReplayTiles === n ? 'default' : 'outline'}
+                  aria-pressed={settings.eventContextReplayTiles === n}
+                  size="sm"
+                  className="h-7 text-xs px-2"
+                  onClick={() => update('eventContextReplayTiles', n)}
+                  data-testid={`settings-replay-tiles-${n}`}
+                >
+                  {n}
+                </Button>
+              ))}
+            </div>
+          </SettingsRow>
 
           <SettingsSubCard name={serverProfile?.name ?? ''} testId="settings-server-subcard">
             <ThumbnailFallbackChainEditor

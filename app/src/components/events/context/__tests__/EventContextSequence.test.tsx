@@ -377,6 +377,18 @@ describe('EventContextSequence', () => {
     expect(quitIds()).toEqual([]);
   });
 
+  it('shows as many nearby events as the replay tile setting asks for', () => {
+    seedProfiles([P], { settings: { p1: { eventContextReplayTiles: 24 } } });
+    const many = Array.from({ length: 30 }, (_, i) => row(`e${i}`, (i - 15) * 1_000, 10));
+    render(
+      <MemoryRouter>
+        <EventContextSequence open onOpenChange={() => {}} rows={many} profileId={P} monitorNames={new Map()} />
+      </MemoryRouter>
+    );
+    expect(screen.queryAllByTestId(/^event-context-sequence-tile-/)).toHaveLength(24);
+    expect(screen.getByTestId('event-context-sequence-nearest')).toHaveTextContent('events.around.sequence_nearest:24/30');
+  });
+
   it('says how many of the nearby events it shows when it cannot show them all', () => {
     const many = Array.from({ length: 15 }, (_, i) => row(`e${i}`, i * 1_000, 10));
     const { rerender } = render(

@@ -8,6 +8,7 @@ import {
   API_REQUEST,
   ASSISTANT,
   DEFAULT_EVENT_PLAYBACK_RATE,
+  EVENT_CONTEXT,
   LIVE_ACTIVITY,
   MONITOR_PAGING,
   MONTAGE_GRID,
@@ -353,6 +354,8 @@ export interface ProfileSettings {
    *  cameras the window covers. Written by the panel's own controls, so the
    *  last answer becomes the next default (refs #494). */
   eventContext: EventContextSettings;
+  /** How many nearby events Replay shows, one of `EVENT_CONTEXT.replayTileChoices` (refs #534). */
+  eventContextReplayTiles: number;
   // Desktop sidebar width in pixels (60–320, persisted across sessions)
   sidebarWidth: number;
   // TV mode: enables D-pad navigation and larger UI
@@ -574,6 +577,7 @@ export const DEFAULT_SETTINGS: ProfileSettings = {
   eventPlaybackMuted: true,
   eventPlaybackFullscreen: false,
   eventContext: DEFAULT_EVENT_CONTEXT,
+  eventContextReplayTiles: EVENT_CONTEXT.defaultReplayTiles,
   sidebarWidth: 256,
   tvMode: false,
   showProtocolLabel: true,
@@ -648,6 +652,9 @@ export function mergeProfileSettings(raw: Partial<ProfileSettings> | undefined):
     merged.monitorsPerPage = DEFAULT_SETTINGS.monitorsPerPage;
   } else if (merged.monitorsPerPage > MONITOR_PAGING.maxPageSize) {
     merged.monitorsPerPage = MONITOR_PAGING.maxPageSize;
+  }
+  if (!(EVENT_CONTEXT.replayTileChoices as readonly unknown[]).includes(merged.eventContextReplayTiles)) {
+    merged.eventContextReplayTiles = DEFAULT_SETTINGS.eventContextReplayTiles;
   }
   coerceAllModePerformance(merged, DEFAULT_SETTINGS);
   coerceEventContext(merged, DEFAULT_SETTINGS);

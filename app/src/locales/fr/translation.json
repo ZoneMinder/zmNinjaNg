@@ -660,7 +660,9 @@
       "tv_mode_desc": "Navigation D-pad et affichage",
       "event_context": {
         "title": "Événements à proximité",
-        "desc": "Fenêtre et caméras par défaut pour les événements à proximité."
+        "desc": "Fenêtre et caméras par défaut pour les événements à proximité.",
+        "replay_tiles": "Vignettes de lecture",
+        "replay_tiles_desc": "Nombre d’événements proches affichés par Rejouer. Chaque vignette en lecture occupe une connexion au serveur ; sans streaming multiport, davantage de vignettes peuvent bloquer la lecture."
       },
       "thumbnail_chain": {
         "title": "Miniatures d'événements",

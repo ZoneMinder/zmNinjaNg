@@ -227,6 +227,7 @@ describe('Settings Page', () => {
       eventPlaybackFullscreen: 'settings-event-fullscreen-switch',
       monitorDetailRecentEventsCount: 'settings-monitor-recent-events-count',
       eventContext: 'event-context-window-30',
+      eventContextReplayTiles: 'settings-replay-tiles-12',
       bandwidthMode: 'settings-bandwidth-mode-switch',
       // On the Logs page, not here.
       logLevel: null,

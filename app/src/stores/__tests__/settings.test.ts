@@ -576,6 +576,28 @@ describe('all-mode performance settings (refs #337)', () => {
   });
 });
 
+describe('eventContextReplayTiles', () => {
+  const settingsFor = (raw: Record<string, unknown>) => {
+    const store = useSettingsStore.getState();
+    store.updateProfileSettings(ALL_PROFILES_ID, raw as Partial<ProfileSettings>);
+    return store.getProfileSettings(ALL_PROFILES_ID);
+  };
+
+  it('defaults to 12, what Replay showed before the setting existed', () => {
+    expect(useSettingsStore.getState().getProfileSettings(ALL_PROFILES_ID).eventContextReplayTiles).toBe(12);
+  });
+
+  it('keeps a count the setting offers', () => {
+    expect(settingsFor({ eventContextReplayTiles: 36 }).eventContextReplayTiles).toBe(36);
+  });
+
+  // Every offered count fills whole rows at 2, 3 and 4 columns; anything else would not.
+  it('coerces a count the setting does not offer back to 12', () => {
+    expect(settingsFor({ eventContextReplayTiles: 20 }).eventContextReplayTiles).toBe(12);
+    expect(settingsFor({ eventContextReplayTiles: 'lots' }).eventContextReplayTiles).toBe(12);
+  });
+});
+
 describe('startScreen', () => {
   const settingsFor = (raw: Partial<ProfileSettings>) => {
     const store = useSettingsStore.getState();

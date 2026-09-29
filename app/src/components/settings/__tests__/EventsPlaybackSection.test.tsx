@@ -64,3 +64,13 @@ describe('EventsPlaybackSection nearby-event defaults', () => {
     expect(update).toHaveBeenCalledWith('eventContext', { windowMinutes: 10, scope: 'linked' });
   });
 });
+
+describe('EventsPlaybackSection replay tile count', () => {
+  it('presses the current count and writes the one picked', () => {
+    const update = renderSection({ eventContextReplayTiles: 24 });
+    expect(screen.getByTestId('settings-replay-tiles-24')).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByTestId('settings-replay-tiles-12')).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(screen.getByTestId('settings-replay-tiles-36'));
+    expect(update).toHaveBeenCalledWith('eventContextReplayTiles', 36);
+  });
+});
