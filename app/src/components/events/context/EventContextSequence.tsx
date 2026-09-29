@@ -285,7 +285,11 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
             onApplyGridLayout={(n) => {
               storeGrid(n);
               setGrid(n);
-              restart();
+              // Only the tile count changes: playing streams carry on, and
+              // the replay continues from the first one, so tiles the new
+              // size adds before it are skipped.
+              const current = tiles.find(({ event }) => playing.has(event.Id));
+              if (current) setStartFrom(current.event.Id);
             }}
           />
           {tiles.length < rows.length && (

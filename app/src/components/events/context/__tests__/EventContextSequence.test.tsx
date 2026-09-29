@@ -350,6 +350,30 @@ describe('EventContextSequence', () => {
     expect(tileCount()).toBe(16);
   });
 
+  it('keeps the playing stream going when the grid size changes, continuing from it', async () => {
+    vi.useRealTimers();
+    const user = userEvent.setup();
+    // Twenty back-to-back 10s events, none overlapping, anchor at e10.
+    const many = Array.from({ length: 20 }, (_, i) => row(`e${i}`, (i - 10) * 20_000, 10));
+    render(
+      <MemoryRouter>
+        <EventContextSequence open onOpenChange={() => {}} rows={many} profileId={P} monitorNames={new Map()} />
+      </MemoryRouter>
+    );
+    // 3x3 holds e6..e14; tap e10 so it is the one playing.
+    fireEvent.click(screen.getByTestId('event-context-sequence-tile-e10'));
+    await act(() => new Promise((resolve) => setTimeout(resolve, 10)));
+    expect(playingIds()).toEqual(['e10']);
+    const stream = connkeyOf('e10');
+
+    await user.click(screen.getByTestId('event-context-sequence-grid'));
+    await user.click(screen.getByTestId('event-context-sequence-grid-4'));
+    // Same stream, not a restart, and the earlier tiles 4x4 added do not jump in.
+    expect(playingIds()).toEqual(['e10']);
+    expect(connkeyOf('e10')).toBe(stream);
+    expect(quitIds()).toEqual([]);
+  });
+
   it('says how many of the nearby events it shows when it cannot show them all', () => {
     const many = Array.from({ length: 15 }, (_, i) => row(`e${i}`, i * 1_000, 10));
     const { rerender } = render(
