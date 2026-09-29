@@ -308,6 +308,8 @@
       "sequence_nearest_many": "Ближайшие {{count}} из {{total}}",
       "sequence_nearest_other": "Ближайшие {{count}} из {{total}}",
       "sequence_tile_hint": "Нажмите, чтобы воспроизвести, дважды — чтобы открыть",
+      "sequence_grid": "Размер сетки",
+      "sequence_grid_size": "{{n}} × {{n}}",
       "sequence_progress": "Ход воспроизведения",
       "close": "Закрыть",
       "window": "Окно",

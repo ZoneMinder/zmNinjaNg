@@ -7,6 +7,7 @@
  */
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 
 vi.mock('../../../../api/store-gates', () => import('../../../../tests/fake-store-gates'));
@@ -321,6 +322,34 @@ describe('EventContextSequence', () => {
     expect(playingIds()).toEqual(['b']);
   });
 
+  it('shows the nearest events on a grid the user picks, 3x3 by default, and remembers it', async () => {
+    // Radix opens its menu on real timers; nothing here waits on the replay clock.
+    vi.useRealTimers();
+    const user = userEvent.setup();
+    const many = Array.from({ length: 20 }, (_, i) => row(`e${i}`, (i - 10) * 1_000, 10));
+    const view = () => (
+      <MemoryRouter>
+        <EventContextSequence open onOpenChange={() => {}} rows={many} profileId={P} monitorNames={new Map()} />
+      </MemoryRouter>
+    );
+    const tileCount = () => screen.queryAllByTestId(/^event-context-sequence-tile-/).length;
+    const { unmount } = render(view());
+    expect(tileCount()).toBe(9);
+
+    await user.click(screen.getByTestId('event-context-sequence-grid'));
+    await user.click(screen.getByTestId('event-context-sequence-grid-2'));
+    expect(tileCount()).toBe(4);
+    // The anchor stays in, with its nearest neighbours either side.
+    expect(screen.getByTestId('event-context-sequence-tile-e10')).toHaveAttribute('aria-current', 'true');
+    unmount();
+
+    render(view());
+    expect(tileCount()).toBe(4);
+    await user.click(screen.getByTestId('event-context-sequence-grid'));
+    await user.click(screen.getByTestId('event-context-sequence-grid-4'));
+    expect(tileCount()).toBe(16);
+  });
+
   it('says how many of the nearby events it shows when it cannot show them all', () => {
     const many = Array.from({ length: 15 }, (_, i) => row(`e${i}`, i * 1_000, 10));
     const { rerender } = render(
@@ -328,14 +357,14 @@ describe('EventContextSequence', () => {
         <EventContextSequence open onOpenChange={() => {}} rows={many} profileId={P} monitorNames={new Map()} />
       </MemoryRouter>
     );
-    expect(screen.getByTestId('event-context-sequence-nearest')).toHaveTextContent('events.around.sequence_nearest:12/15');
+    expect(screen.getByTestId('event-context-sequence-nearest')).toHaveTextContent('events.around.sequence_nearest:9/15');
 
     rerender(
       <MemoryRouter>
         <EventContextSequence open onOpenChange={() => {}} rows={many} profileId={P} monitorNames={new Map()} truncated />
       </MemoryRouter>
     );
-    expect(screen.getByTestId('event-context-sequence-nearest')).toHaveTextContent('events.around.sequence_nearest:12/15+');
+    expect(screen.getByTestId('event-context-sequence-nearest')).toHaveTextContent('events.around.sequence_nearest:9/15+');
   });
 
   it('keeps the screen awake while open and lets it sleep once closed', async () => {

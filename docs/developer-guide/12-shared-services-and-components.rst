@@ -1576,13 +1576,16 @@ Changing how many columns a grid shows. On a phone it renders a bottom
 ``Sheet`` with large preset buttons; on a desktop, a ``DropdownMenu``. Both
 come from this one component, so the montage and event-montage controls cannot
 diverge. ``GridLayoutControls`` (montage) and ``EventMontageGridControls``
-(event montage, events, monitors) wrap it.
+(event montage, events, monitors) wrap it, and the Replay dialog
+(``EventContextSequence``) uses it directly for its grid size.
 
 It takes ``isMobile`` and ``gridCols`` for the rendering mode, ``title`` for
 the tooltip and sheet title, ``triggerIcon`` / ``triggerLabel`` /
 ``triggerTestId`` for the trigger, ``presets`` as ``{ cols, icon, label,
 testId? }``, ``customIcon`` / ``customLabel`` for the custom-columns entry,
 and the ``onApplyGridLayout(cols)`` and ``onCustomSelect()`` callbacks.
+Without ``triggerLabel`` the trigger is icon-only and takes ``title`` as its
+``aria-label``; without all three custom props there is no custom entry.
 ``showGridColsAttr`` renders ``data-grid-cols`` on the trigger for e2e tests.
 ``renderSheetExtras(closeSheet)`` and ``renderMenuExtras()`` append optional
 content after the custom entry; the montage wrapper uses them for saved

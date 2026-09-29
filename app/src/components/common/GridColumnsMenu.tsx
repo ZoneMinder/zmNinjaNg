@@ -43,15 +43,17 @@ export interface GridColumnsMenuProps {
   /** Trigger tooltip and sheet title. */
   title: string;
   triggerIcon: LucideIcon;
-  triggerLabel: string;
+  /** Text beside the icon from `sm` up; omit for an icon-only trigger. */
+  triggerLabel?: string;
   triggerTestId?: string;
   /** Render data-grid-cols on the trigger (used by e2e tests). */
   showGridColsAttr?: boolean;
   presets: GridPresetItem[];
-  customIcon: LucideIcon;
-  customLabel: string;
+  /** The custom entry is offered only when all three are given. */
+  customIcon?: LucideIcon;
+  customLabel?: string;
   onApplyGridLayout: (cols: number) => void;
-  onCustomSelect: () => void;
+  onCustomSelect?: () => void;
   /** Extra content at the end of the mobile sheet (e.g. saved layouts). */
   renderSheetExtras?: (closeSheet: () => void) => ReactNode;
   /** Extra items at the end of the desktop dropdown (e.g. saved layouts). */
@@ -75,6 +77,15 @@ export function GridColumnsMenu({
   renderMenuExtras,
 }: GridColumnsMenuProps) {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const custom = CustomIcon && customLabel && onCustomSelect ? { Icon: CustomIcon, label: customLabel, onSelect: onCustomSelect } : null;
+  const triggerContent = triggerLabel ? (
+    <>
+      <TriggerIcon className="h-4 w-4 sm:mr-2" />
+      <span className="hidden sm:inline">{triggerLabel}</span>
+    </>
+  ) : (
+    <TriggerIcon className="h-4 w-4" />
+  );
 
   if (isMobile) {
     return (
@@ -83,13 +94,13 @@ export function GridColumnsMenu({
           variant="ghost"
           size="sm"
           title={title}
+          aria-label={triggerLabel ? undefined : title}
           className="h-8 sm:h-9"
           data-testid={triggerTestId}
           data-grid-cols={showGridColsAttr ? gridCols : undefined}
           onClick={() => setIsSheetOpen(true)}
         >
-          <TriggerIcon className="h-4 w-4 sm:mr-2" />
-          <span className="hidden sm:inline">{triggerLabel}</span>
+          {triggerContent}
         </Button>
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
           <SheetContent side="bottom">
@@ -113,17 +124,19 @@ export function GridColumnsMenu({
                   {label}
                 </Button>
               ))}
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setIsSheetOpen(false);
-                  onCustomSelect();
-                }}
-                className="justify-start"
-              >
-                <CustomIcon className="h-4 w-4 mr-2" />
-                {customLabel}
-              </Button>
+              {custom && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsSheetOpen(false);
+                    custom.onSelect();
+                  }}
+                  className="justify-start"
+                >
+                  <custom.Icon className="h-4 w-4 mr-2" />
+                  {custom.label}
+                </Button>
+              )}
               {renderSheetExtras?.(() => setIsSheetOpen(false))}
             </div>
           </SheetContent>
@@ -139,12 +152,12 @@ export function GridColumnsMenu({
           variant="ghost"
           size="sm"
           title={title}
+          aria-label={triggerLabel ? undefined : title}
           className="h-8 sm:h-9"
           data-testid={triggerTestId}
           data-grid-cols={showGridColsAttr ? gridCols : undefined}
         >
-          <TriggerIcon className="h-4 w-4 sm:mr-2" />
-          <span className="hidden sm:inline">{triggerLabel}</span>
+          {triggerContent}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
@@ -158,11 +171,15 @@ export function GridColumnsMenu({
             {label}
           </DropdownMenuItem>
         ))}
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={onCustomSelect}>
-          <CustomIcon className="h-4 w-4 mr-2" />
-          {customLabel}
-        </DropdownMenuItem>
+        {custom && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={custom.onSelect}>
+              <custom.Icon className="h-4 w-4 mr-2" />
+              {custom.label}
+            </DropdownMenuItem>
+          </>
+        )}
         {renderMenuExtras?.()}
       </DropdownMenuContent>
     </DropdownMenu>

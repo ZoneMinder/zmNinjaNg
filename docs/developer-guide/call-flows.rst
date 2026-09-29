@@ -3419,7 +3419,9 @@ third should ask for.
 #. **Replay plays the rows around the anchor, one run at a time.** The Replay
    button, enabled from two rows up, opens ``EventContextSequence`` in a
    dialog. Its code and locale keys still use the working name "sequence". It
-   takes ``balancedAroundAnchor(rows, EVENT_CONTEXT.sequenceMaxTiles)`` and
+   takes ``balancedAroundAnchor(rows, grid * grid)``, where ``grid`` is the
+   N of the N x N size picked in its ``GridColumnsMenu`` (stored per device
+   under ``STORAGE_KEYS.eventContextReplayGrid``), and
    hands them to ``buildReplayRuns``, which groups events that overlap in time
    into runs and gives each tile a start offset inside its run, divided by
    ``hoverPreviewPlaybackRate``. ``EventZmsHoverPlayer`` reads the same setting

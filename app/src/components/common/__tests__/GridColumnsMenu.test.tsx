@@ -39,6 +39,16 @@ describe('GridColumnsMenu (desktop)', () => {
     baseProps.onCustomSelect.mockClear();
   });
 
+  it('offers only the presets on an icon-only trigger when no custom entry or label is given', async () => {
+    const { customIcon: _icon, customLabel: _label, onCustomSelect: _select, triggerLabel: _trigger, ...bare } = baseProps;
+    render(<GridColumnsMenu {...bare} isMobile={false} triggerTestId="bare-trigger" />);
+    const trigger = screen.getByTestId('bare-trigger');
+    expect(trigger).toHaveTextContent('');
+    expect(trigger).toHaveAttribute('aria-label', 'Layout');
+    await userEvent.click(trigger);
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual(['1 columns', '2 columns', '3 columns']);
+  });
+
   it('renders the trigger with testid and grid-cols attribute when enabled', () => {
     render(
       <GridColumnsMenu

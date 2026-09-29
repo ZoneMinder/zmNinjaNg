@@ -294,6 +294,8 @@
       "sequence_nearest_one": "Le {{count}} plus proche sur {{total}}",
       "sequence_nearest_other": "Les {{count}} plus proches sur {{total}}",
       "sequence_tile_hint": "Touchez pour lire, touchez deux fois pour ouvrir",
+      "sequence_grid": "Taille de la grille",
+      "sequence_grid_size": "{{n}} × {{n}}",
       "sequence_progress": "Progression de la lecture",
       "close": "Fermer",
       "window": "Fenêtre",

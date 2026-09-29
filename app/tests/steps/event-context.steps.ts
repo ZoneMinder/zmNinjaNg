@@ -111,6 +111,23 @@ When('I switch sequence play to play all together', async ({ page }) => {
   await expect(toggle).toHaveAttribute('data-mode', 'together');
 });
 
+When('I pick the {int} by {int} sequence play grid', async ({ page }, n: number) => {
+  if (!sequenceListIds) return;
+  const sequence = page.getByTestId('event-context-sequence');
+  await sequence.getByTestId('event-context-sequence-grid').click();
+  await page.getByTestId(`event-context-sequence-grid-${n}`).click();
+});
+
+// The grid shows the N x N events nearest the anchor, N to a row.
+Then('sequence play shows at most {int} tiles in {int} columns', async ({ page }, max: number, cols: number) => {
+  if (!sequenceListIds) return;
+  const sequence = page.getByTestId('event-context-sequence');
+  const tiles = sequence.locator('[data-testid^="event-context-sequence-tile-"]');
+  await expect.poll(() => tiles.count(), { timeout: testConfig.timeouts.transition }).toBe(Math.min(max, sequenceListIds.length));
+  const tops = await tiles.evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top)));
+  expect(tops.filter((top) => top === tops[0])).toHaveLength(Math.min(cols, tops.length));
+});
+
 // Together mode starts every tile, up to five on a server without multiport,
 // so any two tiles play at once; sequence mode only overlaps real overlaps.
 Then('more than one sequence play tile plays at once', async ({ page }) => {

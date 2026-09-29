@@ -1,7 +1,8 @@
 /**
  * Sequence play: nearby events as tiles that replay in sync (refs #534).
  *
- * The tiles are up to `sequenceMaxTiles` events split evenly before and after the anchor, in time order.
+ * The tiles are the N x N events nearest the anchor (the grid menu picks N,
+ * remembered per device), split evenly before and after it, in time order.
  * In order, the tiles play in runs of overlapping events (buildReplayRuns):
  * inside a run each starts at its real offset, so cameras that recorded the
  * same moment play it together, and the next run starts once every tile in
@@ -23,10 +24,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { LayoutGrid, ListVideo, RotateCcw } from 'lucide-react';
+import { Grid2x2, LayoutGrid, ListVideo, RotateCcw } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '../../ui/dialog';
 import { Button } from '../../ui/button';
 import { EventThumbnail } from '../EventThumbnail';
+import { GridColumnsMenu } from '../../common/GridColumnsMenu';
+import { useIsMobile } from '../../../hooks/useIsMobile';
 import { ReturnFlashArrow } from '../ReturnFlashArrow';
 import { EventZmsHoverPlayer } from '../EventThumbnailHoverPreview';
 import { useCurrentProfile, useProfileById } from '../../../hooks/useCurrentProfile';
@@ -52,6 +55,24 @@ function readStoredTogether(): boolean {
     return localStorage.getItem(STORAGE_KEYS.eventContextReplayMode) === 'all';
   } catch {
     return false;
+  }
+}
+
+/** The grid size last picked on this device, if it is one still offered. */
+function readStoredGrid(): number {
+  try {
+    const n = Number(localStorage.getItem(STORAGE_KEYS.eventContextReplayGrid));
+    return (EVENT_CONTEXT.sequenceGridSizes as readonly number[]).includes(n) ? n : EVENT_CONTEXT.sequenceDefaultGrid;
+  } catch {
+    return EVENT_CONTEXT.sequenceDefaultGrid;
+  }
+}
+
+function storeGrid(n: number) {
+  try {
+    localStorage.setItem(STORAGE_KEYS.eventContextReplayGrid, String(n));
+  } catch {
+    /* next open starts at the default */
   }
 }
 
@@ -90,7 +111,9 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
   const minStreamingPort = resolveMinStreamingPort(profile?.minStreamingPort, settings.forceDisableMultiPort);
   const rate = selectionSettings.hoverPreviewPlaybackRate ?? DEFAULT_HOVER_PREVIEW_PLAYBACK_RATE;
 
-  const tiles = useMemo(() => balancedAroundAnchor(rows, EVENT_CONTEXT.sequenceMaxTiles), [rows]);
+  const isMobile = useIsMobile();
+  const [grid, setGrid] = useState(readStoredGrid);
+  const tiles = useMemo(() => balancedAroundAnchor(rows, grid * grid), [rows, grid]);
   // The screen stays awake for as long as the replay is open, on top of (never
   // instead of) the user's Insomnia setting, which is left alone. Tied to the
   // dialog rather than to "a tile is playing": in order, one tile stops and the
@@ -210,13 +233,16 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
           'bottom-[var(--sai-bottom,0px)] left-[var(--sai-left,0px)] right-[var(--sai-right,0px)] top-[var(--sai-top,0px)]',
           'max-h-none w-auto max-w-none translate-x-0 translate-y-0 gap-1 rounded-none p-1.5',
           'data-[state=open]:slide-in-from-left-0 data-[state=open]:slide-in-from-top-0',
-          'sm:bottom-auto sm:left-[50%] sm:right-auto sm:top-[50%] sm:max-h-[calc(100dvh-2rem)] sm:w-full sm:max-w-3xl',
+          'sm:bottom-auto sm:left-[50%] sm:right-auto sm:top-[50%] sm:max-h-[calc(100dvh-2rem)] sm:w-full sm:max-w-[min(95vw,var(--replay-max-w))]',
           'sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-lg sm:p-2',
           'sm:data-[state=open]:slide-in-from-left-1/2 sm:data-[state=open]:slide-in-from-top-[48%]',
           // Above the sticky toolbar, which would otherwise paint over it.
           '[&>[data-testid=dialog-close-button]]:z-20'
         )}
         data-testid="event-context-sequence"
+        style={{
+          ['--replay-max-w' as string]: `calc((100dvh - 2rem - ${EVENT_CONTEXT.sequenceChromeRem}rem - ${grid} * ${EVENT_CONTEXT.sequenceRowLabelRem}rem) * 16 / 9)`,
+        }}
       >
         {/* Only the toolbar and the tiles take space; the title and
             description are for screen readers. */}
@@ -244,6 +270,24 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
             <RotateCcw className="h-3.5 w-3.5" />
             {t('events.around.sequence_replay')}
           </Button>
+          <GridColumnsMenu
+            isMobile={isMobile}
+            gridCols={grid}
+            title={t('events.around.sequence_grid')}
+            triggerIcon={Grid2x2}
+            triggerTestId="event-context-sequence-grid"
+            presets={EVENT_CONTEXT.sequenceGridSizes.map((n) => ({
+              cols: n,
+              icon: LayoutGrid,
+              label: t('events.around.sequence_grid_size', { n }),
+              testId: `event-context-sequence-grid-${n}`,
+            }))}
+            onApplyGridLayout={(n) => {
+              storeGrid(n);
+              setGrid(n);
+              restart();
+            }}
+          />
           {tiles.length < rows.length && (
             <span className="ml-auto min-w-0 truncate text-[11px] text-muted-foreground" data-testid="event-context-sequence-nearest">
               {t('events.around.sequence_nearest', {
@@ -253,7 +297,7 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
             </span>
           )}
         </div>
-        <div ref={gridRef} className="grid grid-cols-2 gap-1 sm:grid-cols-3">
+        <div ref={gridRef} className="grid gap-1" style={{ gridTemplateColumns: `repeat(${grid}, minmax(0, 1fr))` }}>
           {tiles.map(({ event, offsetMs, isAnchor }) => {
             const { urls, aspectRatio } = buildRowThumbnail(event, {
               portalUrl: profile?.portalUrl || '',

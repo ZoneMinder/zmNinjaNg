@@ -260,8 +260,15 @@ export const EVENT_CONTEXT = {
   defaultWindowMinutes: 10,
   /** Rows one window may return before the list says it truncated. */
   maxResults: 200,
-  /** Tiles in Sequence play; the events nearest the anchor win (refs #534). */
-  sequenceMaxTiles: 12,
+  /** Replay grid sizes offered (N means N x N tiles, the events nearest the
+   *  anchor), and the default (refs #534). */
+  sequenceGridSizes: [2, 3, 4] as const,
+  sequenceDefaultGrid: 3,
+  /** Replay dialog height, in rem, taken by its toolbar and padding, and by
+   *  each tile row's monitor name. From `sm` up the dialog is as wide as its
+   *  N x N grid of 16:9 tiles can be while every row fits on screen. */
+  sequenceChromeRem: 3,
+  sequenceRowLabelRem: 1.25,
   /** Streams Sequence play's together mode runs at once without multi-port
    *  streaming: one under the browser's six connections per host, leaving
    *  one for thumbnails and API calls (refs #534). */
@@ -548,6 +555,7 @@ export const STORAGE_KEYS = {
   eventContextRibbonOpen: 'zmng-event-context-ribbon-open',
   /** Nearby replay mode, 'in-order' or 'all' (refs #534). */
   eventContextReplayMode: 'zmng-event-context-replay-mode',
+  eventContextReplayGrid: 'zmng-event-context-replay-grid',
   // Prefix, completed with a settings section id (see CollapsibleSection).
   settingsSectionOpenPrefix: 'zmng-settings-section-open-',
 

@@ -294,6 +294,8 @@
       "sequence_nearest_one": "最近的 {{count}} 个，共 {{total}} 个",
       "sequence_nearest_other": "最近的 {{count}} 个，共 {{total}} 个",
       "sequence_tile_hint": "点按播放，双击打开",
+      "sequence_grid": "网格大小",
+      "sequence_grid_size": "{{n}} × {{n}}",
       "sequence_progress": "播放进度",
       "close": "关闭",
       "window": "窗口",
