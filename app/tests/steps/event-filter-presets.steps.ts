@@ -39,3 +39,17 @@ Then('the favorites only filter should be on', async ({ page }) => {
 Then('the favorites only filter should be off', async ({ page }) => {
   await expect(page.getByTestId('events-favorites-toggle')).toHaveAttribute('aria-checked', 'false');
 });
+
+Then('the events start date field should be empty', async ({ page }) => {
+  await expect(page.getByTestId('events-start-date')).toHaveValue('');
+});
+
+// The field reports seconds (step="1"), so the minute the step typed may come
+// back with ":00" on the end.
+Then('the events start date field should show {string}', async ({ page }, value: string) => {
+  await expect(page.getByTestId('events-start-date')).toHaveValue(new RegExp(`^${value}(:00)?$`));
+});
+
+Then('the loaded event filter preset should be named {string}', async ({ page }, name: string) => {
+  await expect(page.getByTestId('events-filter-preset-active')).toHaveText(name);
+});

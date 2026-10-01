@@ -6,7 +6,7 @@
  */
 
 import { Archive, Star, Tag, X, Loader2, ScanSearch, Link2 } from 'lucide-react';
-import { useRef, type ReactNode } from 'react';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { MonitorData, Tag as TagType } from '../../api/types';
 import { ALL_TAGS_FILTER_ID } from '../../hooks/useEventFilters';
@@ -19,6 +19,7 @@ import { Switch } from '../ui/switch';
 import { QuickDateRangeButtons } from '../ui/quick-date-range-buttons';
 import { MonitorFilterPopoverContent } from '../filters/MonitorFilterPopover';
 import { TagChip } from './TagChip';
+import { EventFilterPresetActions } from './EventFilterPresetActions';
 import { cn } from '../../lib/utils';
 
 interface EventsFilterPopoverProps {
@@ -37,7 +38,8 @@ interface EventsFilterPopoverProps {
   onStartDateChange: (value: string) => void;
   endDateInput: string;
   onEndDateChange: (value: string) => void;
-  onQuickRangeSelect: (range: { start: Date; end: Date }) => void;
+  /** `hours` is the chip's range, 0 for "Today". */
+  onQuickRangeSelect: (range: { start: Date; end: Date; hours: number }) => void;
   /** The dates are passed explicitly: applying reads them out of the fields,
    *  and the page's own applyFilters still closes over its pre-commit state
    *  (refs #193). */
@@ -57,7 +59,13 @@ interface EventsFilterPopoverProps {
   linkedFilter: LinkedEventFilter;
   onLinkedFilterChange: (value: LinkedEventFilter) => void;
   /** Preset save/load/delete, shown beside the panel heading (refs #544). */
-  presetActions?: ReactNode;
+  presets?: {
+    names: string[];
+    activeName: string;
+    onSave: (name: string) => void;
+    onLoad: (name: string) => void;
+    onDelete: () => void;
+  };
 }
 
 const LINKED_FILTER_OPTIONS: Array<{ value: LinkedEventFilter; labelKey: string }> = [
@@ -91,7 +99,7 @@ export function EventsFilterPopover({
   onOnlyDetectedObjectsChange,
   linkedFilter,
   onLinkedFilterChange,
-  presetActions,
+  presets,
 }: EventsFilterPopoverProps) {
   const { t } = useTranslation();
 
@@ -127,6 +135,26 @@ export function EventsFilterPopover({
     if (dateChanged(end, endDateInput)) onEndDateChange(end);
     onApplyFilters({ startDateTime: start || undefined, endDateTime: end || undefined });
   };
+
+  // The fields are uncontrolled and keyed by the page's value, so a typed date
+  // the page never saw survives Clear unless it is emptied here.
+  const clearAll = () => {
+    if (startRef.current) startRef.current.value = '';
+    if (endRef.current) endRef.current.value = '';
+    onClearFilters();
+  };
+
+  // A preset saves what the panel shows, so a date typed but not yet applied
+  // reaches the page before the save reads the stored filter.
+  const headerActions = presets && (
+    <EventFilterPresetActions
+      {...presets}
+      onSave={(name) => {
+        applyDates();
+        presets.onSave(name);
+      }}
+    />
+  );
 
   const isAllTagsSelected = selectedTagIds.includes(ALL_TAGS_FILTER_ID);
 
@@ -166,7 +194,7 @@ export function EventsFilterPopover({
           {t('common.filter')}
         </Button>
         <Button
-          onClick={onClearFilters}
+          onClick={clearAll}
           size="sm"
           variant="outline"
           className="flex-1"
@@ -207,7 +235,7 @@ export function EventsFilterPopover({
                   selectedMonitorIds={groupSelectedBareIds}
                   onSelectionChange={handleGroupChange}
                   idPrefix={`events-${group.profileId}`}
-                  headerActions={index === 0 ? presetActions : undefined}
+                  headerActions={index === 0 ? headerActions : undefined}
                 />
               </div>
             );
@@ -219,7 +247,7 @@ export function EventsFilterPopover({
           selectedMonitorIds={selectedMonitorIds}
           onSelectionChange={onMonitorSelectionChange}
           idPrefix="events"
-          headerActions={presetActions}
+          headerActions={headerActions}
         />
       )}
       <div className="grid gap-2 mt-3">

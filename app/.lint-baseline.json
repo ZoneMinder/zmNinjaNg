@@ -4,7 +4,7 @@
   "@typescript-eslint/no-this-alias": 1,
   "max-lines": 27,
   "no-restricted-syntax": 4,
-  "react-hooks/exhaustive-deps": 31,
+  "react-hooks/exhaustive-deps": 30,
   "react-hooks/globals": 2,
   "react-hooks/preserve-manual-memoization": 8,
   "react-hooks/refs": 21,

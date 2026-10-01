@@ -1380,11 +1380,20 @@ Saves, loads and deletes named copies of the Events filter (refs #544).
 - ``remove()`` deletes the loaded preset. ``clearActive()`` forgets which one
   is loaded; the Events page calls it from the filter panel's Clear button.
 
-``EventFilterPresetActions`` (``components/events/``) renders the save, load
-and delete buttons. ``EventsFilterPopover`` passes it to
-``MonitorFilterPopoverContent`` through ``headerActions``, which places it to
-the right of the "Filters" heading. The delete button renders only while a
-preset is loaded, and deletes after an ``AlertDialog`` confirmation.
+``EventFilterPresetActions`` (``components/events/``) renders the loaded
+preset's name and the save, load and delete buttons. ``EventsFilterPopover``
+takes the hook's values as its ``presets`` prop, renders the actions, and
+passes them to ``MonitorFilterPopoverContent`` through ``headerActions``,
+which places them to the right of the "Filters" heading. The popover wraps
+``onSave`` so it first commits the date fields (``applyDates``): those fields
+are uncontrolled and reach the store only on Apply or Enter, and ``save``
+reads the store. The delete button renders only while a preset is loaded,
+and deletes after an ``AlertDialog`` confirmation.
+
+The store has to match the screen for a save to be accurate. The Events page
+sets ``activeQuickRange`` from either set of quick-range chips and clears it
+when a typed date is applied, and a deep link stores the whole filter it
+produces, including the fields the URL does not carry, which it resets.
 
 **Used by:** the Events page.
 

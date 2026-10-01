@@ -46,7 +46,6 @@ import { EventsAllModeBar } from '../components/events/EventsAllModeBar';
 import { EventMontageGridControls } from '../components/events/EventMontageGridControls';
 import { NinjiiToolbarButton } from '../components/assistant/NinjiiToolbarButton';
 import { EventsFilterPopover } from '../components/events/EventsFilterPopover';
-import { EventFilterPresetActions } from '../components/events/EventFilterPresetActions';
 import { usePublishEventsPageQuery } from '../hooks/usePublishEventsPageQuery';
 import { QuickDateRangeButtons } from '../components/ui/quick-date-range-buttons';
 import { useTranslation } from 'react-i18next';
@@ -650,27 +649,32 @@ export default function Events() {
                   archivedOnly={archivedOnly}
                   onArchivedOnlyChange={setArchivedOnly}
                   startDateInput={startDateInput}
-                  onStartDateChange={setStartDateInput}
+                  onStartDateChange={(value) => {
+                    setStartDateInput(value);
+                    setActiveQuickRange(null);
+                  }}
                   endDateInput={endDateInput}
-                  onEndDateChange={setEndDateInput}
-                  onQuickRangeSelect={({ start, end }) => {
+                  onEndDateChange={(value) => {
+                    setEndDateInput(value);
+                    setActiveQuickRange(null);
+                  }}
+                  onQuickRangeSelect={({ start, end, hours }) => {
                     setStartDateInput(formatLocalDateTimeSeconds(start));
                     setEndDateInput(formatLocalDateTimeSeconds(end));
+                    setActiveQuickRange(hours);
                   }}
                   onApplyFilters={applyFilters}
                   onClearFilters={() => {
                     clearFilters();
                     filterPresets.clearActive();
                   }}
-                  presetActions={
-                    <EventFilterPresetActions
-                      names={filterPresets.names}
-                      activeName={filterPresets.activeName}
-                      onSave={filterPresets.save}
-                      onLoad={filterPresets.load}
-                      onDelete={filterPresets.remove}
-                    />
-                  }
+                  presets={{
+                    names: filterPresets.names,
+                    activeName: filterPresets.activeName,
+                    onSave: filterPresets.save,
+                    onLoad: filterPresets.load,
+                    onDelete: filterPresets.remove,
+                  }}
                   tagsSupported={tagsSupported}
                   availableTags={availableTags}
                   selectedTagIds={selectedTagIds}

@@ -52,11 +52,11 @@ Filter events using the controls at the top:
 
 The buttons next to the **Filters** heading in the filter panel save the current filter under a name and bring it back later. A saved filter keeps every choice in the panel: monitors, tags, dates, favorites, archived, detected objects and linked events. The group selector sits outside the panel and is not saved.
 
-- **Save** asks for a name. Saving under a name already in use replaces that filter. After you load a filter, the name box starts with its name, so changing a filter and saving it again updates it.
-- **Load** lists your saved filters. Picking one replaces the whole current filter. A filter saved with a quick range such as "past 4 hours" covers the past 4 hours from the moment you load it. A filter saved with typed dates keeps those dates.
+- **Save** asks for a name. It saves what the panel shows, including dates you typed but did not apply yet. Saving under a name already in use replaces that filter. After you load a filter, the name box starts with its name, so changing a filter and saving it again updates it.
+- **Load** lists your saved filters. Picking one replaces the whole current filter, and its name appears in small text beside the buttons. A filter saved with a quick range such as "past 4 hours" covers the past 4 hours from the moment you load it. A filter saved with typed dates keeps those dates. Typing a date after picking a quick range turns the quick range off, so the typed dates are what gets saved.
 - **Delete** appears only while a saved filter is loaded, and removes that filter after you confirm. The filter in the panel stays as it is.
 
-**Clear** empties the filter, and the delete button goes away until you load a saved filter again. Saved filters belong to the profile, or to the profile group when one is selected.
+**Clear** empties the filter, including dates you typed but did not apply, and the name and delete button go away until you load a saved filter again. Saved filters belong to the profile, or to the profile group when one is selected.
 
 The eye button in the toolbar shows or hides the labels drawn over event
 thumbnails, such as how long ago an event happened. It is on by default. Turn

@@ -112,6 +112,22 @@ describe('useEventFilters first-render hydration (refs #197)', () => {
     expect(result.current.startDateInput).not.toBe('');
     expect(result.current.activeQuickRange).toBeNull();
   });
+
+  // The stored filter is what a preset saves, so it has to match the screen:
+  // a deep link resets the fields the URL does not carry, and the store must
+  // follow (refs #544).
+  it('stores the whole filter a deep link shows, including the fields the URL does not carry', () => {
+    mockSearchParams.set('monitorId', '1');
+    setupMocks({ onlyDetectedObjects: true, linkedFilter: 'hide', activeQuickRange: 4, tagIds: ['9'] });
+
+    const { result } = renderCapturingFilters();
+
+    expect(result.current.onlyDetectedObjects).toBe(false);
+    expect(useSettingsStore.getState().getProfileSettings('profile-1').eventsPageFilters).toEqual({
+      ...DEFAULT_SETTINGS.eventsPageFilters,
+      monitorIds: ['1'],
+    });
+  });
 });
 
 describe('useEventFilters', () => {

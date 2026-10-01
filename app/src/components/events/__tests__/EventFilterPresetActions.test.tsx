@@ -19,9 +19,15 @@ function setup(activeName: string, names: string[] = ['Driveway', 'Porch']) {
 }
 
 describe('EventFilterPresetActions', () => {
-  it('offers no delete while no preset is loaded', () => {
+  it('names the loaded preset', () => {
+    setup('Porch');
+    expect(screen.getByTestId('events-filter-preset-active')).toHaveTextContent('Porch');
+  });
+
+  it('offers no delete and no name while no preset is loaded', () => {
     setup('');
     expect(screen.queryByTestId('events-filter-preset-delete')).toBeNull();
+    expect(screen.queryByTestId('events-filter-preset-active')).toBeNull();
     expect(screen.getByTestId('events-filter-preset-save')).toBeEnabled();
   });
 

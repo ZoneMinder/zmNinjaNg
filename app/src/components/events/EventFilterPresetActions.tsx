@@ -62,7 +62,16 @@ export function EventFilterPresetActions({ names, activeName, onSave, onLoad, on
   };
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-1 min-w-0">
+      {activeName && (
+        <span
+          className="text-xs text-muted-foreground truncate max-w-[8rem]"
+          title={activeName}
+          data-testid="events-filter-preset-active"
+        >
+          {activeName}
+        </span>
+      )}
       <Button
         variant="ghost"
         size="icon"

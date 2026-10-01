@@ -331,15 +331,11 @@ export function useEventFilters(): UseEventFiltersReturn {
     if (isFirstRender.current) {
       isFirstRender.current = false;
 
-      if (hasUrlFilters(searchParams)) {
-        const { monitorId: m, tagIds: t, startDateTime: s, endDateTime: e, favorites: f, archived: a } = readUrlFilters(searchParams);
-        // Use wrapped setters so URL filters persist to settings store
-        setSelectedMonitorIds(m ? m.split(',') : []);
-        setSelectedTagIds(t ? t.split(',') : []);
-        setStartDateInput(s ? formatInputDate(s) : '');
-        setEndDateInput(e ? formatInputDate(e) : '');
-        setFavoritesOnly(f === 'true');
-        setArchivedOnly(a === 'true');
+      // Store the whole filter the URL produced, not only the fields it
+      // carries: the fields it resets must not keep their old stored values,
+      // or the store (which a preset saves) disagrees with the screen (refs #544).
+      if (hasUrlFilters(searchParams) && profileIdRef.current) {
+        useSettingsStore.getState().updateProfileSettings(profileIdRef.current, { eventsPageFilters: initial });
       }
       return;
     }
@@ -352,7 +348,7 @@ export function useEventFilters(): UseEventFiltersReturn {
     if (endDT !== null) _setEndDate(formatInputDate(endDT));
     if (favorites !== null) _setFavoritesOnly(favorites === 'true');
     if (archived !== null) _setArchivedOnly(archived === 'true');
-  }, [searchParams]);
+  }, [searchParams, initial]);
 
   // Derive EventFilters from local state (not URL).
   const filters: EventFilters = useMemo(

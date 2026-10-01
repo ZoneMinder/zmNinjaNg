@@ -102,6 +102,19 @@ Feature: Event Browsing and Management
     Then the event filter preset delete button should be gone
 
   @all
+  Scenario: An event filter preset keeps a typed date range (refs #544)
+    When I open the events filter panel
+    And I set the events date range
+    And I save the event filter as preset "e2e dates"
+    And I clear event filters
+    Then the events start date field should be empty
+    When I load the event filter preset "e2e dates"
+    Then the events start date field should show "2024-01-01T00:00"
+    And the loaded event filter preset should be named "e2e dates"
+    When I delete the loaded event filter preset
+    Then the event filter preset delete button should be gone
+
+  @all
   Scenario: Filter events by monitor
     When I open the events filter panel
     And I select a monitor filter if available

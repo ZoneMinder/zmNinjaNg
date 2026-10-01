@@ -19,14 +19,16 @@ vi.mock('../../ui/quick-date-range-buttons', () => ({ QuickDateRangeButtons: () 
 
 vi.mock('../../filters/MonitorFilterPopover', () => ({
   MonitorFilterPopoverContent: (
-    { monitors, selectedMonitorIds, onSelectionChange, idPrefix }: {
+    { monitors, selectedMonitorIds, onSelectionChange, idPrefix, headerActions }: {
       monitors: MonitorData[];
       selectedMonitorIds: string[];
       onSelectionChange: (ids: string[]) => void;
       idPrefix?: string;
+      headerActions?: React.ReactNode;
     }
   ) => (
     <div data-testid={`monitor-filter-${idPrefix}`}>
+      {headerActions}
       <span data-testid={`selected-${idPrefix}`}>{selectedMonitorIds.join(',')}</span>
       {monitors.map((m) => (
         <button
@@ -210,6 +212,52 @@ describe('EventsFilterPopover date editing (refs #495)', () => {
     rerender(<EventsFilterPopover {...baseProps()} startDateInput="2026-08-03T06:04:07" />);
 
     expect((screen.getByTestId('events-start-date') as HTMLInputElement).value).toContain('2026-08-03');
+  });
+});
+
+// A preset saves what the panel shows, so a date typed but not yet applied
+// must reach the page before the save reads it (refs #544).
+describe('EventsFilterPopover preset actions (refs #544)', () => {
+  it('saving a preset first reports a typed date and applies it', async () => {
+    const calls: string[] = [];
+    const onStartDateChange = vi.fn(() => calls.push('date'));
+    const onApplyFilters = vi.fn();
+    const onSave = vi.fn(() => calls.push('save'));
+    render(
+      <EventsFilterPopover
+        {...baseProps()}
+        onStartDateChange={onStartDateChange}
+        onApplyFilters={onApplyFilters}
+        presets={{ names: [], activeName: '', onSave, onLoad: vi.fn(), onDelete: vi.fn() }}
+      />
+    );
+
+    const user = userEvent.setup();
+    await user.type(screen.getByTestId('events-start-date'), '2024-01-01T00:00');
+    expect(onStartDateChange).not.toHaveBeenCalled();
+    await user.click(screen.getByTestId('events-filter-preset-save'));
+    await user.type(screen.getByTestId('events-filter-preset-name'), 'Dates');
+    await user.click(screen.getByTestId('events-filter-preset-save-confirm'));
+
+    expect(onStartDateChange).toHaveBeenCalledWith(expect.stringContaining('2024-01-01T00:00'));
+    expect(onApplyFilters).toHaveBeenCalledWith(expect.objectContaining({
+      startDateTime: expect.stringContaining('2024-01-01T00:00'),
+    }));
+    expect(onSave).toHaveBeenCalledWith('Dates');
+    expect(calls).toEqual(['date', 'save']);
+  });
+
+  it('Clear empties a date typed but never applied', async () => {
+    const onClearFilters = vi.fn();
+    render(<EventsFilterPopover {...baseProps()} onClearFilters={onClearFilters} />);
+
+    const user = userEvent.setup();
+    const start = screen.getByTestId('events-start-date') as HTMLInputElement;
+    await user.type(start, '2024-01-01T00:00');
+    await user.click(screen.getByTestId('events-clear-filters'));
+
+    expect(onClearFilters).toHaveBeenCalledTimes(1);
+    expect(start.value).toBe('');
   });
 });
 
