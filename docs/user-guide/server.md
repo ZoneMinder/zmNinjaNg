@@ -10,14 +10,14 @@ The Server page shows the health and configuration of your ZoneMinder server, or
 
 ## Server stats
 
-The cards under the version information show the same figures as the stats bar at the top of ZoneMinder's web console, calculated the same way, for the server that answers the app's API.
+The cards under the version information show the same figures as the stats bar at the top of ZoneMinder's web console, calculated the same way. The console describes the server it runs on. The app uses the server in the Servers list whose hostname matches the profile's API URL, or the single server when the install has only one.
 
 - **Load average**: the server's CPU load average. Sustained high load can cause dropped frames or slow event recording.
 - **CPU load**: the share of CPU time in use.
 - **Storage**: one line per enabled storage area, with the percentage of its disk in use, used and total space, and the space its events take. The line turns orange above 95% and red above 98%.
 - **Swap**: the percentage of swap in use, with used and total space. It turns orange above 90% and red above 95%. The card is hidden when the server has no swap.
 
-ZoneMinder's `zmstats` process records the load, CPU and swap figures about once a minute. When no recent record exists, or in a multi-server cluster where records from several servers make it unclear which server answered, the page shows the live load average and hides CPU load and swap. The console's memory and database connection figures are not available through the API, so the page leaves them out.
+ZoneMinder's `zmstats` process records the load, CPU and swap figures about once a minute. When that server has no recent record, or no server's hostname matches the profile, the page shows the live load average of the server answering the API and hides CPU load and swap. An account without System view permission sees no load average, as in the console. The console's memory and database connection figures are not available through the API, so the page leaves them out.
 
 ## Status
 
@@ -25,10 +25,13 @@ Shows whether the ZoneMinder capture daemon is running or stopped, along with th
 
 ## Servers / Details
 
-In a single-server setup this card shows the server's details. In a multi-server cluster it lists every server with per-server metrics:
+In a single-server setup this card shows the server's details. In a multi-server cluster it lists every server with the same per-server figures as Options then Servers in ZoneMinder's console:
 
-- **CPU load**
-- **Total memory** and **Free memory**
+- **CPU load**: the load average, in red above 5.
+- **Free/total memory**: free memory, then total. Red when less than a tenth is free.
+- **Free/total swap**: free swap, then total. Red when less than a tenth is free.
+
+ZoneMinder updates these figures only while the server's `zmstats` runs, so a server marked NotRunning may show old values.
 
 ## Storage areas
 

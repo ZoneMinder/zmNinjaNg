@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { zmHumanFilesize, zmUsageLevel } from '../server-stats';
+import { zmHumanFilesize, zmLowFree, zmThisServerId, zmUsageLevel } from '../server-stats';
 
 describe('zmHumanFilesize', () => {
   it('matches the sizes the ZoneMinder console shows', () => {
@@ -22,5 +22,31 @@ describe('zmUsageLevel', () => {
     expect(zmUsageLevel(96, 95, 98)).toBe('warning');
     expect(zmUsageLevel(98, 95, 98)).toBe('warning');
     expect(zmUsageLevel(99, 95, 98)).toBe('danger');
+  });
+});
+
+describe('zmThisServerId', () => {
+  const servers = [
+    { Id: '2', Name: 'pseudo', Hostname: 'pseudo.example.com' },
+    { Id: '13', Name: 'unicron', Hostname: 'Unicron.example.com' },
+  ];
+
+  it('picks the server whose hostname the profile talks to', () => {
+    expect(zmThisServerId(servers, 'https://unicron.example.com:8443/zm/api')).toBe('13');
+  });
+
+  it('falls back to 0, where single-server zmstats writes, when no hostname matches', () => {
+    expect(zmThisServerId(servers, 'https://zm.example.com/zm/api')).toBe('0');
+    expect(zmThisServerId([], 'https://zm.example.com/zm/api')).toBe('0');
+    expect(zmThisServerId(servers, 'not a url')).toBe('0');
+  });
+});
+
+describe('zmLowFree', () => {
+  it('flags under a tenth free, or no total at all, as the Servers table does', () => {
+    expect(zmLowFree(0, 8589930496)).toBe(true);
+    expect(zmLowFree(858993049, 8589930496)).toBe(true);
+    expect(zmLowFree(858993050, 8589930496)).toBe(false);
+    expect(zmLowFree(0, 0)).toBe(true);
   });
 });

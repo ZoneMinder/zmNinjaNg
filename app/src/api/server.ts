@@ -229,14 +229,17 @@ export async function getLoad(client: ApiClient, apiBaseUrl?: string): Promise<S
  * caller passes a server-local 'YYYY-MM-DD HH:mm:ss' lower bound and this takes
  * the last row. Needs ZoneMinder 1.37.61 or newer for the filter.
  *
- * The console reads the row of the server it runs on, which the API cannot
- * name. When rows from more than one server are in the window, the newest row
- * may be another server's, so this returns undefined rather than guess.
+ * The console reads the row of the server it runs on; the caller names that
+ * server (see `zmThisServerId`), and rows of other servers are ignored.
  *
- * @returns The newest row, or undefined when none is newer than `since` or
- *   the rows come from several servers
+ * @returns The newest row of `serverId`, or undefined when it has none newer
+ *   than `since`
  */
-export async function getLatestServerStat(client: ApiClient, since: string): Promise<ServerStat | undefined> {
+export async function getLatestServerStat(
+  client: ApiClient,
+  since: string,
+  serverId: string,
+): Promise<ServerStat | undefined> {
   const endpoint = `/server_stats/index/${encodeURIComponent(`TimeStamp >=:${since}`)}.json`;
   const response = await client.get(endpoint);
 
@@ -245,9 +248,12 @@ export async function getLatestServerStat(client: ApiClient, since: string): Pro
     method: 'GET',
   });
 
-  const rows = validated.serverstats.map((r) => r.ServerStat);
-  if (new Set(rows.map((r) => r.ServerId)).size > 1) return undefined;
-  return rows.at(-1);
+  // Server::ReadStats: the newest row of one server. Rows without a ServerId
+  // predate multi-server stats and belong to the single-server id 0.
+  return validated.serverstats
+    .map((r) => r.ServerStat)
+    .filter((r) => (r.ServerId ?? '0') === serverId)
+    .at(-1);
 }
 
 /**

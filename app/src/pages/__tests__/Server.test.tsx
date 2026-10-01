@@ -173,21 +173,66 @@ describe('Server page - stats as the ZoneMinder console shows them', () => {
     expect(screen.queryByText('server.disk_usage')).toBeNull();
   });
 
-  it('shows the stats on a multi-server install too', async () => {
+  // The console's navbar describes $thisServer, the server the web UI runs on;
+  // the app's stand-in is the server whose hostname the profile talks to.
+  const multiServers = {
+    servers: [
+      { Server: { Id: '2', Name: 'pseudo', Hostname: 'pseudo.example.com' } },
+      { Server: { Id: '13', Name: 'unicron', Hostname: 'profile-a.test' } },
+    ],
+  };
+
+  it('on a multi-server install, shows the stats of the server the profile talks to', async () => {
     const [profileA] = seedProfiles(['profile-a']);
     installApiClient(profileA.id, fakeApiClient({
       ...serverRoutes(),
-      '/servers.json': { servers: [{ Server: { Id: '2', Name: 'pseudo' } }, { Server: { Id: '13', Name: 'unicron' } }] },
-      '/server_stats/': { serverstats: [{ ServerStat: { ...portalStat, ServerId: 13 } }] },
+      '/servers.json': multiServers,
+      '/server_stats/': { serverstats: [
+        { ServerStat: { ...portalStat, ServerId: 13 } },
+        { ServerStat: { ...portalStat, ServerId: 2, CpuLoad: '0.4', CpuUsagePercent: '1.5', TimeStamp: '2026-09-30 19:31:20' } },
+      ] },
       '/storage.json': { storage: [{ Storage: portalStorage }] },
     }));
 
     renderServer();
 
-    await waitFor(() => expect(screen.getByTestId('server-card-13')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByTestId('stat-cpu')).toHaveTextContent('9.8%'));
     expect(screen.getByTestId('stat-load')).toHaveTextContent('2.30');
-    expect(screen.getByTestId('stat-cpu')).toHaveTextContent('9.8%');
     expect(screen.getByTestId('stat-storage-1')).toHaveTextContent('Default: 71%');
+  });
+
+  it('on a multi-server install, hides CPU and swap when no server matches the profile host', async () => {
+    const [profileA] = seedProfiles(['profile-a']);
+    installApiClient(profileA.id, fakeApiClient({
+      ...serverRoutes(),
+      '/servers.json': { servers: [multiServers.servers[0]] },
+      '/server_stats/': { serverstats: [{ ServerStat: { ...portalStat, ServerId: 2 } }] },
+      '/host/getLoad.json': { load: [1.5, 1.2, 1.0] },
+    }));
+
+    renderServer();
+
+    await waitFor(() => expect(screen.getByTestId('stat-load')).toHaveTextContent('1.50'));
+    expect(screen.queryByTestId('stat-cpu')).toBeNull();
+    expect(screen.queryByTestId('stat-swap')).toBeNull();
+  });
+
+  it('hides the load card when the server refuses getLoad for lack of System permission', async () => {
+    const [profileA] = seedProfiles(['profile-a']);
+    installApiClient(profileA.id, fakeApiClient({
+      ...serverRoutes(),
+      '/host/getLoad.json': () => {
+        throw Object.assign(new Error('refused'), {
+          status: 401,
+          data: { data: { name: 'Insufficient Privileges' } },
+        });
+      },
+    }));
+
+    renderServer();
+
+    await waitFor(() => expect(screen.queryByTestId('stat-load')).toBeNull());
+    expect(screen.getByText('server.version_info')).toBeInTheDocument();
   });
 
   it('falls back to getLoad and hides CPU and swap when no recent stats exist', async () => {
@@ -202,6 +247,50 @@ describe('Server page - stats as the ZoneMinder console shows them', () => {
     await waitFor(() => expect(screen.getByTestId('stat-load')).toHaveTextContent('1.50'));
     expect(screen.queryByTestId('stat-cpu')).toBeNull();
     expect(screen.queryByTestId('stat-swap')).toBeNull();
+  });
+});
+
+describe('Server page - server rows as ZoneMinder Options > Servers shows them', () => {
+  afterEach(() => {
+    resetProfileFixture();
+    resetFakeStoreGates();
+  });
+
+  // Values from a multi-server install: unicron uses all of its swap, grahampc
+  // has plenty of memory left.
+  const servers = {
+    servers: [
+      { Server: {
+        Id: '13', Name: 'unicron', Status: 'Running', CpuLoad: '11.9', CpuUsagePercent: '20.0',
+        TotalMem: 535960010752, FreeMem: 36829298688, TotalSwap: 8589930496, FreeSwap: 0,
+      } },
+      { Server: {
+        Id: '7', Name: 'grahampc', Status: 'NotRunning', CpuLoad: '0.2',
+        TotalMem: 8321499136, FreeMem: 4160749568, TotalSwap: 6313476096, FreeSwap: 6313476096,
+      } },
+    ],
+  };
+
+  it('shows load as a load average and memory and swap as free / total, red where the table is', async () => {
+    const [profileA] = seedProfiles(['profile-a']);
+    installApiClient(profileA.id, fakeApiClient({ ...serverRoutes(), '/servers.json': servers }));
+
+    renderServer();
+
+    expect(await screen.findByTestId('server-load-13')).toHaveTextContent('11.90');
+    expect(screen.getByTestId('server-load-13')).toHaveClass('text-destructive');
+    expect(screen.getByTestId('server-load-7')).toHaveTextContent('0.20');
+    expect(screen.getByTestId('server-load-7')).not.toHaveClass('text-destructive');
+
+    expect(screen.getByTestId('server-swap-13')).toHaveTextContent('0.00 B / 8.00 GB');
+    expect(screen.getByTestId('server-swap-13')).toHaveClass('text-destructive');
+    expect(screen.getByTestId('server-swap-7')).toHaveTextContent('5.88 GB / 5.88 GB');
+    expect(screen.getByTestId('server-swap-7')).not.toHaveClass('text-destructive');
+
+    expect(screen.getByTestId('server-memory-13')).toHaveTextContent('34.30 GB / 499.15 GB');
+    expect(screen.getByTestId('server-memory-13')).toHaveClass('text-destructive');
+    expect(screen.getByTestId('server-memory-7')).not.toHaveClass('text-destructive');
+    expect(screen.getAllByText('server.free_total_swap')).toHaveLength(2);
   });
 });
 

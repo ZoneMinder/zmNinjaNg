@@ -55,13 +55,13 @@ describe('Server API', () => {
     mockGet.mockResolvedValue({
       data: {
         serverstats: [
-          { ServerStat: { TimeStamp: '2026-09-30 19:30:10', CpuLoad: 2.0, CpuUsagePercent: 9.1 } },
-          { ServerStat: { TimeStamp: '2026-09-30 19:31:10', CpuLoad: 2.3, CpuUsagePercent: 9.8 } },
+          { ServerStat: { TimeStamp: '2026-09-30 19:30:10', ServerId: '0', CpuLoad: 2.0, CpuUsagePercent: 9.1 } },
+          { ServerStat: { TimeStamp: '2026-09-30 19:31:10', ServerId: '0', CpuLoad: 2.3, CpuUsagePercent: 9.8 } },
         ],
       },
     });
 
-    const stat = await getLatestServerStat(mockClient, '2026-09-30 19:21:10');
+    const stat = await getLatestServerStat(mockClient, '2026-09-30 19:21:10', '0');
 
     expect(mockGet).toHaveBeenCalledWith(
       '/server_stats/index/TimeStamp%20%3E%3D%3A2026-09-30%2019%3A21%3A10.json',
@@ -70,7 +70,7 @@ describe('Server API', () => {
     expect(stat?.CpuUsagePercent).toBe(9.8);
   });
 
-  it('returns undefined rather than guess when the rows come from several servers', async () => {
+  it('returns the newest row of the asked server, as Server::ReadStats does', async () => {
     mockGet.mockResolvedValue({
       data: {
         serverstats: [
@@ -80,13 +80,14 @@ describe('Server API', () => {
       },
     });
 
-    expect(await getLatestServerStat(mockClient, '2026-09-30 19:21:10')).toBeUndefined();
+    expect((await getLatestServerStat(mockClient, '2026-09-30 19:21:10', '13'))?.CpuLoad).toBe(4.7);
+    expect(await getLatestServerStat(mockClient, '2026-09-30 19:21:10', '0')).toBeUndefined();
   });
 
   it('returns undefined when no server stats are recent enough', async () => {
     mockGet.mockResolvedValue({ data: { serverstats: [] } });
 
-    expect(await getLatestServerStat(mockClient, '2026-09-30 19:21:10')).toBeUndefined();
+    expect(await getLatestServerStat(mockClient, '2026-09-30 19:21:10', '0')).toBeUndefined();
   });
 
   it('parses disk usage from complex response', async () => {

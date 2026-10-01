@@ -223,3 +223,11 @@ export const ZM_STORAGE_USAGE_WARN_PERCENT = 95;
 export const ZM_STORAGE_USAGE_DANGER_PERCENT = 98;
 export const ZM_SWAP_USAGE_WARN_PERCENT = 90;
 export const ZM_SWAP_USAGE_DANGER_PERCENT = 95;
+
+/**
+ * Where Options > Servers (`web/skins/classic/views/_options_servers.php`)
+ * colours a server's row cells red: a load average above 5, and memory or
+ * swap with under a tenth free.
+ */
+export const ZM_SERVER_LOAD_DANGER = 5;
+export const ZM_SERVER_LOW_FREE_FRACTION = 0.1;

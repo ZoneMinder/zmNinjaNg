@@ -43,8 +43,9 @@ import {
   ZM_STORAGE_USAGE_WARN_PERCENT,
   ZM_SWAP_USAGE_DANGER_PERCENT,
   ZM_SWAP_USAGE_WARN_PERCENT,
+  ZM_SERVER_LOAD_DANGER,
 } from '../lib/zm/zm-constants';
-import { zmHumanFilesize, zmUsageLevel } from '../lib/zm/server-stats';
+import { zmHumanFilesize, zmLowFree, zmThisServerId, zmUsageLevel } from '../lib/zm/server-stats';
 import { getServerTimeZone } from '../api/time';
 import { getStates, changeState } from '../api/states';
 import { usePermissions } from '../hooks/usePermissions';
@@ -100,26 +101,31 @@ export default function Server() {
     refetchInterval: bandwidth.daemonCheckInterval,
   });
 
-  // The newest Server_Stats row: where ZoneMinder's console reads Load, Cpu
-  // and Swap, so these match what the web portal shows.
+  // The newest Server_Stats row of the server the console's navbar would
+  // describe: where it reads Load, Cpu and Swap, so these match the portal.
+  const thisServerId = currentProfile && !serversLoading
+    ? zmThisServerId(servers ?? [], currentProfile.apiUrl)
+    : undefined;
   const { data: serverStat, isLoading: statLoading } = useQuery({
-    queryKey: queryKeys.serverStats(currentProfile?.id),
+    queryKey: queryKeys.serverStats(currentProfile?.id, thisServerId),
     queryFn: () => getLatestServerStat(
       getSession(currentProfile!.id).client,
       formatForServerInTz(
         new Date(Date.now() - SERVER_STATS_WINDOW_MINUTES * 60_000),
         resolveProfileTimezone(currentProfile!.timezone),
       ),
+      thisServerId!,
     ),
-    enabled: !!currentProfile && isAuthenticated,
+    enabled: !!currentProfile && isAuthenticated && thisServerId !== undefined,
   });
 
   // Live load average, only when the server has no recent stats row (zmstats
   // not running, or a ZoneMinder older than the stats filter).
-  const { data: loadData, isLoading: loadLoading } = useQuery({
+  const { data: loadData, isLoading: loadLoading, error: loadError } = useQuery({
     queryKey: queryKeys.serverLoad(currentProfile?.id),
     queryFn: () => getLoad(getSession(currentProfile!.id).client),
-    enabled: !!currentProfile && isAuthenticated && !statLoading && serverStat?.CpuLoad === undefined,
+    enabled: !!currentProfile && isAuthenticated && thisServerId !== undefined && !statLoading
+      && serverStat?.CpuLoad === undefined,
   });
 
   // Fetch states
@@ -198,15 +204,11 @@ export default function Server() {
     className: 'flex items-center gap-2',
   });
 
-  const formatMemory = (bytes: number | undefined) => {
-    if (!bytes) return t('common.unknown');
-    const gb = bytes / (1024 * 1024 * 1024);
-    return `${gb.toFixed(2)} GB`;
-  };
-
   const isMultiServer = servers && servers.length > 1;
   const liveLoad = Array.isArray(loadData?.load) ? loadData.load[0] : loadData?.load;
   const load = serverStat?.CpuLoad ?? liveLoad;
+  // getLoad needs System view, as the navbar's Load does; a refusal hides it.
+  const loadRefused = isPermissionDenied(loadError);
   const swapTotal = serverStat?.TotalSwap;
   const swapUsed = swapTotal && serverStat?.FreeSwap !== undefined ? swapTotal - serverStat.FreeSwap : undefined;
   // The console truncates the swap percentage and rounds the storage one.
@@ -281,23 +283,25 @@ export default function Server() {
           ZoneMinder's console navbar, for the server answering the API. */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Load Average */}
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-primary" />
-                <CardTitle className="text-base">{t('server.load_average')}</CardTitle>
+        {!loadRefused && (
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-primary" />
+                  <CardTitle className="text-base">{t('server.load_average')}</CardTitle>
+                </div>
+                {(statLoading || loadLoading) && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
               </div>
-              {(statLoading || loadLoading) && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold" data-testid="stat-load">
-              {load !== undefined ? load.toFixed(2) : '--'}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">{t('server.load_desc')}</p>
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold" data-testid="stat-load">
+                {load !== undefined ? load.toFixed(2) : '--'}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">{t('server.load_desc')}</p>
+            </CardContent>
+          </Card>
+        )}
 
         {/* CPU */}
         {serverStat?.CpuUsagePercent !== undefined && (
@@ -454,62 +458,48 @@ export default function Server() {
                     </div>
 
                     {/* Metrics grid */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                      {/* CPU */}
-                      {srv.CpuUsagePercent !== undefined && (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {/* Load average, red above 5 as in Options > Servers */}
+                      {srv.CpuLoad !== undefined && (
                         <div className="space-y-1">
                           <div className="flex items-center gap-1 text-xs text-muted-foreground">
                             <Cpu className="h-3 w-3" />
                             <span>{t('server.cpu_load')}</span>
                           </div>
-                          <div className="text-sm font-semibold">
-                            {srv.CpuUsagePercent.toFixed(1)}%
-                          </div>
-                        </div>
-                      )}
-                      {srv.CpuUsagePercent === undefined && srv.CpuLoad !== undefined && (
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Cpu className="h-3 w-3" />
-                            <span>{t('server.cpu_load')}</span>
-                          </div>
-                          <div className="text-sm font-semibold">
-                            {(srv.CpuLoad * 100).toFixed(1)}%
+                          <div
+                            className={`text-sm font-semibold ${srv.CpuLoad > ZM_SERVER_LOAD_DANGER ? 'text-destructive' : ''}`}
+                            data-testid={`server-load-${srv.Id}`}
+                          >
+                            {srv.CpuLoad.toFixed(2)}
                           </div>
                         </div>
                       )}
 
-                      {/* Total Memory */}
-                      {srv.TotalMem !== undefined && (
+                      {/* Free / total memory */}
+                      {srv.TotalMem !== undefined && srv.FreeMem !== undefined && (
                         <div className="space-y-1">
                           <div className="flex items-center gap-1 text-xs text-muted-foreground">
                             <MemoryStick className="h-3 w-3" />
-                            <span>{t('server.total_memory')}</span>
+                            <span>{t('server.free_total_memory')}</span>
                           </div>
-                          <div className="text-sm font-semibold">
-                            {formatMemory(srv.TotalMem)}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Free Memory */}
-                      {srv.FreeMem !== undefined && (
-                        <div className="space-y-1">
-                          <div className="text-xs text-muted-foreground">
-                            {t('server.free_memory')}
-                          </div>
-                          <div className="text-sm font-semibold">
-                            {formatMemory(srv.FreeMem)}
+                          <div
+                            className={`text-sm font-semibold ${zmLowFree(srv.FreeMem, srv.TotalMem) ? 'text-destructive' : ''}`}
+                            data-testid={`server-memory-${srv.Id}`}
+                          >
+                            {zmHumanFilesize(srv.FreeMem)} / {zmHumanFilesize(srv.TotalMem)}
                           </div>
                         </div>
                       )}
 
-                      {/* Swap */}
+                      {/* Free / total swap */}
                       {srv.TotalSwap !== undefined && srv.FreeSwap !== undefined && (
                         <div className="space-y-1">
-                          <div className="text-xs text-muted-foreground">{t('server.swap')}</div>
-                          <div className="text-sm font-semibold">
-                            {formatMemory(srv.FreeSwap)} / {formatMemory(srv.TotalSwap)}
+                          <div className="text-xs text-muted-foreground">{t('server.free_total_swap')}</div>
+                          <div
+                            className={`text-sm font-semibold ${zmLowFree(srv.FreeSwap, srv.TotalSwap) ? 'text-destructive' : ''}`}
+                            data-testid={`server-swap-${srv.Id}`}
+                          >
+                            {zmHumanFilesize(srv.FreeSwap)} / {zmHumanFilesize(srv.TotalSwap)}
                           </div>
                         </div>
                       )}
