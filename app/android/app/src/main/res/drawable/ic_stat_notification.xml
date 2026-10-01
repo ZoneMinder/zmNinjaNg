@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Status-bar icon for push notifications: a simplified zmNinjaNg ninja head.
+     The name is fixed by zmeventnotification, which sends
+     android.notification.icon = "ic_stat_notification". Android draws only the
+     alpha channel, so every shape is opaque white on transparent. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Head with the mask's eye slit cut out -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M2,13a9,9 0,1 0,18 0a9,9 0,1 0,-18 0Z M7,9.5H15A2.5,2.5 0,0 1,15 14.5H7A2.5,2.5 0,0 1,7 9.5Z" />
+    <!-- Eyes -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M6.4,12a1.6,1.6 0,1 0,3.2 0a1.6,1.6 0,1 0,-3.2 0Z M12.4,12a1.6,1.6 0,1 0,3.2 0a1.6,1.6 0,1 0,-3.2 0Z" />
+    <!-- Headband tails -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M18.3,8.2C19.8,5.8 21.4,4.3 23.6,3.4C23.2,6.1 21.6,8.4 19.4,9.9Z M19.2,9.9C21.3,9.6 22.8,10.4 23.8,12.1C21.8,12.6 20.2,12 18.9,11.1Z" />
+</vector>
