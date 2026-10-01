@@ -55,6 +55,14 @@ export const MAX_QUERY_RETRIES = 1;
  */
 export const DEFAULT_QUERY_STALE_TIME_MS = 15000;
 
+/**
+ * How far back the Server page asks for `Server_Stats` rows. zmstats writes one
+ * row a minute, and the API cannot limit to the newest row, so the page asks for
+ * this window and takes the last row. The margin covers clock drift between the
+ * device and the server.
+ */
+export const SERVER_STATS_WINDOW_MINUTES = 10;
+
 export const ZM_INTEGRATION = {
   // HTTP timeouts for ZM API calls
   httpTimeout: 10000, // 10 seconds - standard API calls

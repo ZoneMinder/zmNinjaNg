@@ -76,6 +76,22 @@ const DiskPercentSchema = z.object({
   percent: z.coerce.number().optional(),
 });
 
+// One Server_Stats row, written by zmstats about once a minute.
+const ServerStatSchema = z.object(
+  withFieldCatch({
+    TimeStamp: z.string(),
+    ServerId: z.coerce.string().optional(),
+    CpuLoad: z.coerce.number().optional(),
+    CpuUsagePercent: z.coerce.number().optional(),
+    TotalSwap: z.coerce.number().optional(),
+    FreeSwap: z.coerce.number().optional(),
+  }, ['TimeStamp']),
+);
+
+const ServerStatsResponseSchema = z.object({
+  serverstats: tolerantArray(z.object({ ServerStat: ServerStatSchema }), 'server stat'),
+});
+
 const DaemonCheckSchema = z.object({
   result: z.coerce.number(),
 });
@@ -107,6 +123,7 @@ const StoragesResponseSchema = z.object({
 export type Server = z.infer<typeof ServerSchema>;
 export type ServersResponse = z.infer<typeof ServersResponseSchema>;
 export type Storage = z.infer<typeof StorageSchema>;
+export type ServerStat = z.infer<typeof ServerStatSchema>;
 
 export interface ServerLoad {
   load: number | number[];
@@ -202,6 +219,35 @@ export async function getLoad(client: ApiClient, apiBaseUrl?: string): Promise<S
   const loadValue = Array.isArray(validated.load) ? validated.load[0] : validated.load;
 
   return { load: loadValue };
+}
+
+/**
+ * Get the newest Server_Stats row, which is where ZoneMinder's console reads
+ * its Load and Cpu figures.
+ *
+ * The endpoint returns every stored row oldest first and has no limit, so the
+ * caller passes a server-local 'YYYY-MM-DD HH:mm:ss' lower bound and this takes
+ * the last row. Needs ZoneMinder 1.37.61 or newer for the filter.
+ *
+ * The console reads the row of the server it runs on, which the API cannot
+ * name. When rows from more than one server are in the window, the newest row
+ * may be another server's, so this returns undefined rather than guess.
+ *
+ * @returns The newest row, or undefined when none is newer than `since` or
+ *   the rows come from several servers
+ */
+export async function getLatestServerStat(client: ApiClient, since: string): Promise<ServerStat | undefined> {
+  const endpoint = `/server_stats/index/${encodeURIComponent(`TimeStamp >=:${since}`)}.json`;
+  const response = await client.get(endpoint);
+
+  const validated = validateApiResponse(ServerStatsResponseSchema, response.data, {
+    endpoint,
+    method: 'GET',
+  });
+
+  const rows = validated.serverstats.map((r) => r.ServerStat);
+  if (new Set(rows.map((r) => r.ServerId)).size > 1) return undefined;
+  return rows.at(-1);
 }
 
 /**

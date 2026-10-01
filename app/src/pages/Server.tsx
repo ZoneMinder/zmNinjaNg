@@ -31,10 +31,20 @@ import {
   RotateCw,
   Database,
   MemoryStick,
+  TrendingUp,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getServers, getLoad, getDiskPercent, getDaemonCheck, getStorages } from '../api/server';
+import { getServers, getLoad, getLatestServerStat, getDaemonCheck, getStorages } from '../api/server';
+import { formatForServerInTz, resolveProfileTimezone } from '../lib/time';
+import { SERVER_STATS_WINDOW_MINUTES } from '../lib/zmninja-ng-constants';
+import {
+  ZM_STORAGE_USAGE_DANGER_PERCENT,
+  ZM_STORAGE_USAGE_WARN_PERCENT,
+  ZM_SWAP_USAGE_DANGER_PERCENT,
+  ZM_SWAP_USAGE_WARN_PERCENT,
+} from '../lib/zm/zm-constants';
+import { zmHumanFilesize, zmUsageLevel } from '../lib/zm/server-stats';
 import { getServerTimeZone } from '../api/time';
 import { getStates, changeState } from '../api/states';
 import { usePermissions } from '../hooks/usePermissions';
@@ -90,18 +100,26 @@ export default function Server() {
     refetchInterval: bandwidth.daemonCheckInterval,
   });
 
-  // Fetch load average
-  const { data: loadData, isLoading: loadLoading } = useQuery({
-    queryKey: queryKeys.serverLoad(currentProfile?.id),
-    queryFn: () => getLoad(getSession(currentProfile!.id).client),
+  // The newest Server_Stats row: where ZoneMinder's console reads Load, Cpu
+  // and Swap, so these match what the web portal shows.
+  const { data: serverStat, isLoading: statLoading } = useQuery({
+    queryKey: queryKeys.serverStats(currentProfile?.id),
+    queryFn: () => getLatestServerStat(
+      getSession(currentProfile!.id).client,
+      formatForServerInTz(
+        new Date(Date.now() - SERVER_STATS_WINDOW_MINUTES * 60_000),
+        resolveProfileTimezone(currentProfile!.timezone),
+      ),
+    ),
     enabled: !!currentProfile && isAuthenticated,
   });
 
-  // Fetch disk usage
-  const { data: diskData, isLoading: diskLoading } = useQuery({
-    queryKey: queryKeys.diskUsage(currentProfile?.id),
-    queryFn: () => getDiskPercent(getSession(currentProfile!.id).client),
-    enabled: !!currentProfile && isAuthenticated,
+  // Live load average, only when the server has no recent stats row (zmstats
+  // not running, or a ZoneMinder older than the stats filter).
+  const { data: loadData, isLoading: loadLoading } = useQuery({
+    queryKey: queryKeys.serverLoad(currentProfile?.id),
+    queryFn: () => getLoad(getSession(currentProfile!.id).client),
+    enabled: !!currentProfile && isAuthenticated && !statLoading && serverStat?.CpuLoad === undefined,
   });
 
   // Fetch states
@@ -187,7 +205,16 @@ export default function Server() {
   };
 
   const isMultiServer = servers && servers.length > 1;
-  const diskUsageGB = diskData?.usage;
+  const liveLoad = Array.isArray(loadData?.load) ? loadData.load[0] : loadData?.load;
+  const load = serverStat?.CpuLoad ?? liveLoad;
+  const swapTotal = serverStat?.TotalSwap;
+  const swapUsed = swapTotal && serverStat?.FreeSwap !== undefined ? swapTotal - serverStat.FreeSwap : undefined;
+  // The console truncates the swap percentage and rounds the storage one.
+  const swapPercent = swapTotal && swapUsed !== undefined ? Math.trunc((100 * swapUsed) / swapTotal) : undefined;
+  const swapLevel = swapPercent !== undefined
+    ? zmUsageLevel(swapPercent, ZM_SWAP_USAGE_WARN_PERCENT, ZM_SWAP_USAGE_DANGER_PERCENT)
+    : undefined;
+  const levelClass = { danger: 'text-destructive', warning: 'text-orange-600 dark:text-orange-400' };
 
   return (
     <PageContainer spacing="none" className="space-y-4 sm:space-y-6">
@@ -250,53 +277,110 @@ export default function Server() {
         </CardContent>
       </Card>
 
-      {/* Server Metrics: single-server mode */}
-      {!isMultiServer && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Load Average */}
+      {/* Server Metrics: the same figures, rules and warning colours as
+          ZoneMinder's console navbar, for the server answering the API. */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Load Average */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-primary" />
+                <CardTitle className="text-base">{t('server.load_average')}</CardTitle>
+              </div>
+              {(statLoading || loadLoading) && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold" data-testid="stat-load">
+              {load !== undefined ? load.toFixed(2) : '--'}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">{t('server.load_desc')}</p>
+          </CardContent>
+        </Card>
+
+        {/* CPU */}
+        {serverStat?.CpuUsagePercent !== undefined && (
           <Card>
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Cpu className="h-4 w-4 text-primary" />
-                  <CardTitle className="text-base">{t('server.load_average')}</CardTitle>
-                </div>
-                {loadLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+              <div className="flex items-center gap-2">
+                <Cpu className="h-4 w-4 text-primary" />
+                <CardTitle className="text-base">{t('server.cpu_load')}</CardTitle>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {loadData?.load !== undefined
-                  ? (Array.isArray(loadData.load)
-                      ? loadData.load[0]
-                      : loadData.load
-                    ).toFixed(2)
-                  : '--'}
+              <div className="text-2xl font-bold" data-testid="stat-cpu">
+                {serverStat.CpuUsagePercent.toFixed(1)}%
               </div>
-              <p className="text-xs text-muted-foreground mt-1">{t('server.load_desc')}</p>
             </CardContent>
           </Card>
+        )}
 
-          {/* Disk Usage */}
+        {/* Storage: one line per enabled area */}
+        {storages && storages.some((s) => s.Enabled) && (
           <Card>
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <HardDrive className="h-4 w-4 text-primary" />
-                  <CardTitle className="text-base">{t('server.disk_usage')}</CardTitle>
-                </div>
-                {diskLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+              <div className="flex items-center gap-2">
+                <HardDrive className="h-4 w-4 text-primary" />
+                <CardTitle className="text-base">{t('server.storage_title')}</CardTitle>
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {diskUsageGB !== undefined ? `${diskUsageGB.toFixed(1)} GB` : '--'}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">{t('server.disk_desc')}</p>
+            <CardContent className="space-y-2">
+              {storages.filter((s) => s.Enabled).map((storage) => {
+                const total = storage.DiskTotalSpace;
+                const used = storage.DiskUsedSpace;
+                const percent = total && used != null ? Math.round((used / total) * 100) : undefined;
+                const level = percent !== undefined
+                  ? zmUsageLevel(percent, ZM_STORAGE_USAGE_WARN_PERCENT, ZM_STORAGE_USAGE_DANGER_PERCENT)
+                  : undefined;
+                return (
+                  <div key={storage.Id} className="min-w-0">
+                    <div
+                      className={`text-sm font-semibold truncate ${level ? levelClass[level] : ''}`}
+                      title={storage.Name}
+                      data-testid={`stat-storage-${storage.Id}`}
+                    >
+                      {storage.Name}: {percent !== undefined ? `${percent}%` : '--'}
+                    </div>
+                    {total && used != null && (
+                      <div className="text-xs text-muted-foreground" data-testid={`stat-storage-detail-${storage.Id}`}>
+                        {t('server.used_of_total', { used: zmHumanFilesize(used), total: zmHumanFilesize(total) })}
+                      </div>
+                    )}
+                    {storage.DiskSpace != null && storage.DiskSpace >= 0 && storage.DiskSpace !== used && (
+                      <div className="text-xs text-muted-foreground" data-testid={`stat-storage-events-${storage.Id}`}>
+                        {t('server.used_by_events', { size: zmHumanFilesize(storage.DiskSpace) })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </CardContent>
           </Card>
+        )}
 
-          {/* Server Status */}
+        {/* Swap: hidden when the server has none, as in the console */}
+        {swapPercent !== undefined && swapTotal && swapUsed !== undefined && (
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2">
+                  <MemoryStick className="h-4 w-4 text-primary" />
+                  <CardTitle className="text-base">{t('server.swap')}</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className={`text-2xl font-bold ${swapLevel ? levelClass[swapLevel] : ''}`} data-testid="stat-swap">
+                  {swapPercent}%
+                </div>
+                <p className="text-xs text-muted-foreground mt-1" data-testid="stat-swap-detail">
+                  {t('server.used_of_total', { used: zmHumanFilesize(swapUsed), total: zmHumanFilesize(swapTotal) })}
+                </p>
+              </CardContent>
+            </Card>
+        )}
+
+        {/* Server Status: multi-server installs list each server below */}
+        {!isMultiServer && (
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -322,8 +406,8 @@ export default function Server() {
               </div>
             </CardContent>
           </Card>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Server Details: all servers */}
       {servers && servers.length > 0 && (
@@ -423,7 +507,7 @@ export default function Server() {
                       {/* Swap */}
                       {srv.TotalSwap !== undefined && srv.FreeSwap !== undefined && (
                         <div className="space-y-1">
-                          <div className="text-xs text-muted-foreground">Swap</div>
+                          <div className="text-xs text-muted-foreground">{t('server.swap')}</div>
                           <div className="text-sm font-semibold">
                             {formatMemory(srv.FreeSwap)} / {formatMemory(srv.TotalSwap)}
                           </div>

@@ -45,6 +45,7 @@ GET     ``/servers.json``                                           List ZoneMin
 GET     ``/host/daemonCheck.json``                                  Check if ZoneMinder daemon is running                                     ``server.ts``
 GET     ``/host/getLoad.json``                                      Server CPU load                                                           ``server.ts``
 GET     ``/host/getDiskPercent.json``                               Disk usage percentage                                                     ``server.ts``
+GET     ``/server_stats/index/TimeStamp >=:<ts>.json``              Server_Stats rows newer than a server-local timestamp (Server page)       ``server.ts``
 GET     ``/host/getTimeZone.json``                                  Server timezone                                                           ``time.ts``
 GET     ``/configs.json``                                           All ZoneMinder config entries                                             ``server.ts``
 GET     ``/configs/viewByName/<key>.json``                          Single config value (ZM_PATH_ZMS, ZM_GO2RTC_PATH, ZM_MIN_STREAMING_PORT)  ``auth.ts``, ``server.ts``

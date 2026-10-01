@@ -18,7 +18,9 @@ vi.mock('../../hooks/usePermissions', () => ({
 }));
 
 vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (k: string) => k }),
+  useTranslation: () => ({
+    t: (k: string, o?: Record<string, unknown>) => (o ? `${k} ${Object.values(o).join(' ')}` : k),
+  }),
 }));
 vi.mock('../../hooks/use-toast', () => ({
   useToast: () => ({ toast: vi.fn() }),
@@ -54,7 +56,7 @@ function serverRoutes() {
     '/servers.json': [],
     '/host/daemonCheck.json': true,
     '/host/getLoad.json': {},
-    '/host/getDiskPercent.json': {},
+    '/server_stats/': { serverstats: [] },
     '/states.json': [],
     '/host/getTimeZone.json': 'UTC',
     '/storage.json': [],
@@ -118,6 +120,79 @@ describe('Server page - storage areas (refs #539)', () => {
 
     expect(await screen.findByTestId('storage-events-drifted-1')).toHaveTextContent('server.storage_events_drifted');
     expect(screen.queryByTestId('storage-events-1')).toBeNull();
+  });
+});
+
+// Values read off a ZoneMinder 1.39.18 server and its console, whose navbar showed
+// "Load: 2.30", "Cpu: 9.8%", "Default: 71%" titled "69.35GB of 97.87GB" and
+// "Swap: 0%" titled "0.00B of 8.00GB".
+const portalStat = {
+  Id: 355709, ServerId: 0, TimeStamp: '2026-09-30 19:31:10', CpuLoad: '2.3',
+  CpuUserPercent: '9.2', CpuNicePercent: '0.0', CpuSystemPercent: '0.6', CpuIdlePercent: '90.2',
+  CpuUsagePercent: '9.8', TotalMem: 33572806656, FreeMem: 28005707776,
+  TotalSwap: 8589930496, FreeSwap: 8589930496,
+};
+const portalStorage = {
+  Id: 1, Path: '/var/cache/zoneminder/events', Name: 'Default', Type: 'local', Url: null,
+  DiskSpace: 589748154, Scheme: 'Medium', ServerId: 0, DoDelete: true, Enabled: true,
+  DiskTotalSpace: 105089261568, DiskUsedSpace: 74462892032,
+};
+
+describe('Server page - stats as the ZoneMinder console shows them', () => {
+  afterEach(() => {
+    resetProfileFixture();
+    resetFakeStoreGates();
+  });
+
+  it('shows load, CPU, storage and swap with the console numbers', async () => {
+    const [profileA] = seedProfiles(['profile-a']);
+    installApiClient(profileA.id, fakeApiClient({
+      ...serverRoutes(),
+      '/server_stats/': { serverstats: [{ ServerStat: portalStat }] },
+      '/storage.json': { storage: [{ Storage: portalStorage }] },
+    }));
+
+    renderServer();
+
+    await waitFor(() => expect(screen.getByTestId('stat-load')).toHaveTextContent('2.30'));
+    expect(screen.getByTestId('stat-cpu')).toHaveTextContent('9.8%');
+    expect(await screen.findByTestId('stat-storage-1')).toHaveTextContent('Default: 71%');
+    expect(screen.getByTestId('stat-storage-detail-1')).toHaveTextContent('69.35 GB 97.87 GB');
+    expect(screen.getByTestId('stat-storage-events-1')).toHaveTextContent('562.43 MB');
+    expect(screen.getByTestId('stat-swap')).toHaveTextContent('0%');
+    expect(screen.getByTestId('stat-swap-detail')).toHaveTextContent('0.00 B 8.00 GB');
+    expect(screen.queryByText('server.disk_usage')).toBeNull();
+  });
+
+  it('shows the stats on a multi-server install too', async () => {
+    const [profileA] = seedProfiles(['profile-a']);
+    installApiClient(profileA.id, fakeApiClient({
+      ...serverRoutes(),
+      '/servers.json': { servers: [{ Server: { Id: '2', Name: 'pseudo' } }, { Server: { Id: '13', Name: 'unicron' } }] },
+      '/server_stats/': { serverstats: [{ ServerStat: { ...portalStat, ServerId: 13 } }] },
+      '/storage.json': { storage: [{ Storage: portalStorage }] },
+    }));
+
+    renderServer();
+
+    await waitFor(() => expect(screen.getByTestId('server-card-13')).toBeInTheDocument());
+    expect(screen.getByTestId('stat-load')).toHaveTextContent('2.30');
+    expect(screen.getByTestId('stat-cpu')).toHaveTextContent('9.8%');
+    expect(screen.getByTestId('stat-storage-1')).toHaveTextContent('Default: 71%');
+  });
+
+  it('falls back to getLoad and hides CPU and swap when no recent stats exist', async () => {
+    const [profileA] = seedProfiles(['profile-a']);
+    installApiClient(profileA.id, fakeApiClient({
+      ...serverRoutes(),
+      '/host/getLoad.json': { load: [1.5, 1.2, 1.0] },
+    }));
+
+    renderServer();
+
+    await waitFor(() => expect(screen.getByTestId('stat-load')).toHaveTextContent('1.50'));
+    expect(screen.queryByTestId('stat-cpu')).toBeNull();
+    expect(screen.queryByTestId('stat-swap')).toBeNull();
   });
 });
 
