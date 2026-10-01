@@ -7,6 +7,7 @@
 
 import { Button } from './button';
 import { useTranslation } from 'react-i18next';
+import { quickRangeDates } from '../../lib/time';
 
 export interface DateRange {
   start: Date;
@@ -90,16 +91,7 @@ export function QuickDateRangeButtons({
   ];
 
   const handleRangeClick = (hours: number) => {
-    const end = new Date();
-    let start: Date;
-    if (hours === 0) {
-      // "Today": midnight local time to now
-      start = new Date(end);
-      start.setHours(0, 0, 0, 0);
-    } else {
-      start = new Date(end.getTime() - hours * 60 * 60 * 1000);
-    }
-    onRangeSelect({ start, end, hours });
+    onRangeSelect({ ...quickRangeDates(hours), hours });
   };
 
   return (

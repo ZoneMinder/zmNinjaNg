@@ -54,6 +54,7 @@ const setStartDateInput = vi.fn();
 const setEndDateInput = vi.fn();
 const clearFilters = vi.fn();
 const clearDateRange = vi.fn();
+const setActiveQuickRange = vi.fn();
 
 // Mutable per-test overrides for the fields the clear-date-range render condition
 // depends on (startDateInput / endDateInput / activeQuickRange). A monitor card's
@@ -86,7 +87,7 @@ vi.mock('../../hooks/useEventFilters', () => ({
     setStartDateInput,
     setEndDateInput,
     setFavoritesOnly: vi.fn(),
-    setActiveQuickRange: vi.fn(),
+    setActiveQuickRange,
     applyFilters,
     clearFilters,
     clearDateRange,
@@ -254,6 +255,31 @@ describe('Events Page', () => {
 
     expect(setStartDateInput).toHaveBeenCalledWith('2026-08-03T06:04:07');
     expect(setEndDateInput).toHaveBeenCalledWith('2026-08-03T10:04:09');
+  });
+
+  // A preset keeps a quick range relative to now only if the page records
+  // which range was picked, from the chips in the panel as well as the row
+  // above the list (refs #544).
+  it('records the quick range picked from either set of chips', () => {
+    render(<Events />);
+
+    for (const chip of screen.getAllByTestId('quick-range')) {
+      setActiveQuickRange.mockClear();
+      fireEvent.click(chip);
+      expect(setActiveQuickRange).toHaveBeenCalledWith(4);
+    }
+  });
+
+  // A typed date is no longer the quick range, and a preset saved then would
+  // otherwise reload the quick range instead of the typed dates (refs #544).
+  it('drops the quick range when a date is typed and applied', async () => {
+    render(<Events />);
+    setActiveQuickRange.mockClear();
+
+    const user = userEvent.setup();
+    await user.type(screen.getByTestId('events-start-date'), '2024-01-01T00:00{Enter}');
+
+    expect(setActiveQuickRange).toHaveBeenCalledWith(null);
   });
 
   it('shows empty state when no events exist', () => {

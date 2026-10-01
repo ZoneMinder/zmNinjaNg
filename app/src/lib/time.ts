@@ -102,3 +102,17 @@ export function formatLocalDateTime(date: Date): string {
 export function formatLocalDateTimeSeconds(date: Date): string {
     return `${formatLocalDateTime(date)}:${String(date.getSeconds()).padStart(2, '0')}`;
 }
+
+/**
+ * The window a quick-range chip stands for, ending now: midnight local time
+ * for `hours` 0 ("Today"), otherwise the last `hours` hours.
+ */
+export function quickRangeDates(hours: number, end: Date = new Date()): { start: Date; end: Date } {
+    const start = new Date(end);
+    if (hours === 0) {
+        start.setHours(0, 0, 0, 0);
+    } else {
+        start.setTime(end.getTime() - hours * 60 * 60 * 1000);
+    }
+    return { start, end };
+}
