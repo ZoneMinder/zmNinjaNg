@@ -12,6 +12,7 @@
 import { Checkbox } from '../ui/checkbox';
 import { Badge } from '../ui/badge';
 import { X } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { MonitorData } from '../../api/types';
 
@@ -24,6 +25,8 @@ export interface MonitorFilterPopoverContentProps {
   onSelectionChange: (ids: string[]) => void;
   /** Unique ID prefix for checkbox inputs (to avoid conflicts) */
   idPrefix?: string;
+  /** Controls shown to the right of the heading */
+  headerActions?: ReactNode;
 }
 
 /**
@@ -35,6 +38,7 @@ export function MonitorFilterPopoverContent({
   selectedMonitorIds,
   onSelectionChange,
   idPrefix = 'monitor-filter',
+  headerActions,
 }: MonitorFilterPopoverContentProps) {
   const { t } = useTranslation();
 
@@ -57,9 +61,12 @@ export function MonitorFilterPopoverContent({
   return (
     <div className="grid gap-4">
       <div className="space-y-2">
-        <h4 className="text-sm sm:text-base font-medium leading-none">
-          {t('events.filters')}
-        </h4>
+        <div className="flex items-center justify-between gap-2">
+          <h4 className="text-sm sm:text-base font-medium leading-none">
+            {t('events.filters')}
+          </h4>
+          {headerActions}
+        </div>
         <p className="text-xs sm:text-sm text-muted-foreground">
           {t('events.select_monitor')}
         </p>

@@ -1356,8 +1356,37 @@ with no Apply button in the persistence path.
   the pre-update state, so without the override it writes the previous range
   to the URL, and the URL-readback effect reflects that stale range back into
   state.
+- ``loadFilters(saved)`` replaces every field with a saved
+  ``eventsPageFilters`` snapshot through the wrapped setters, so the snapshot
+  persists, and rewrites the URL filter params in the same pass. A saved quick
+  range is recomputed from the current time with ``quickRangeDates()``
+  (``lib/time.ts``), the same helper the quick-range chips use.
 
 **Used by:** the Events page, ``EventsFilterPopover``.
+
+useEventFilterPresets (``hooks/useEventFilterPresets.ts``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Saves, loads and deletes named copies of the Events filter (refs #544).
+
+- ``eventFilterPresets`` holds ``{ name, filters }`` entries, where
+  ``filters`` is a copy of ``eventsPageFilters``. ``activeEventFilterPreset``
+  holds the name of the preset last loaded or saved, or ``''``. Both keys live
+  in the current selection's settings bucket, next to ``eventsPageFilters``.
+- ``save(name)`` copies the persisted ``eventsPageFilters``, replacing a preset
+  of the same name in place, and marks it loaded.
+- ``load(name)`` hands the preset's snapshot to ``useEventFilters``'s
+  ``loadFilters``, which the caller passes in.
+- ``remove()`` deletes the loaded preset. ``clearActive()`` forgets which one
+  is loaded; the Events page calls it from the filter panel's Clear button.
+
+``EventFilterPresetActions`` (``components/events/``) renders the save, load
+and delete buttons. ``EventsFilterPopover`` passes it to
+``MonitorFilterPopoverContent`` through ``headerActions``, which places it to
+the right of the "Filters" heading. The delete button renders only while a
+preset is loaded, and deletes after an ``AlertDialog`` confirmation.
+
+**Used by:** the Events page.
 
 useScrollRestoration (``hooks/useScrollRestoration.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

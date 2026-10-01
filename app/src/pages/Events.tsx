@@ -22,6 +22,7 @@ import { useProfileStore } from '../stores/profile';
 import { useAuthSlice } from '../stores/auth';
 import { useFreshAccessToken } from '../hooks/useFreshAccessToken';
 import { useSettingsStore, ALL_GROUPS_KEY, DEFAULT_EVENT_MONTAGE_GROUP_LAYOUT } from '../stores/settings';
+import { useEventFilterPresets } from '../hooks/useEventFilterPresets';
 import { useEventFilters, ALL_TAGS_FILTER_ID } from '../hooks/useEventFilters';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { useEventPagination } from '../hooks/useEventPagination';
@@ -45,6 +46,7 @@ import { EventsAllModeBar } from '../components/events/EventsAllModeBar';
 import { EventMontageGridControls } from '../components/events/EventMontageGridControls';
 import { NinjiiToolbarButton } from '../components/assistant/NinjiiToolbarButton';
 import { EventsFilterPopover } from '../components/events/EventsFilterPopover';
+import { EventFilterPresetActions } from '../components/events/EventFilterPresetActions';
 import { usePublishEventsPageQuery } from '../hooks/usePublishEventsPageQuery';
 import { QuickDateRangeButtons } from '../components/ui/quick-date-range-buttons';
 import { useTranslation } from 'react-i18next';
@@ -115,9 +117,11 @@ export default function Events() {
     setActiveQuickRange,
     applyFilters,
     clearFilters,
+    loadFilters,
     clearDateRange,
     activeFilterCount,
   } = useEventFilters();
+  const filterPresets = useEventFilterPresets(loadFilters);
 
   // Available tags across the scope. In All mode the offered entries are one
   // per distinct tag NAME, with the name standing in for the id, because tag
@@ -654,7 +658,19 @@ export default function Events() {
                     setEndDateInput(formatLocalDateTimeSeconds(end));
                   }}
                   onApplyFilters={applyFilters}
-                  onClearFilters={clearFilters}
+                  onClearFilters={() => {
+                    clearFilters();
+                    filterPresets.clearActive();
+                  }}
+                  presetActions={
+                    <EventFilterPresetActions
+                      names={filterPresets.names}
+                      activeName={filterPresets.activeName}
+                      onSave={filterPresets.save}
+                      onLoad={filterPresets.load}
+                      onDelete={filterPresets.remove}
+                    />
+                  }
                   tagsSupported={tagsSupported}
                   availableTags={availableTags}
                   selectedTagIds={selectedTagIds}

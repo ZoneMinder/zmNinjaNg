@@ -6,7 +6,7 @@
  */
 
 import { Archive, Star, Tag, X, Loader2, ScanSearch, Link2 } from 'lucide-react';
-import { useRef } from 'react';
+import { useRef, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { MonitorData, Tag as TagType } from '../../api/types';
 import { ALL_TAGS_FILTER_ID } from '../../hooks/useEventFilters';
@@ -56,6 +56,8 @@ interface EventsFilterPopoverProps {
    *  (refs #493). */
   linkedFilter: LinkedEventFilter;
   onLinkedFilterChange: (value: LinkedEventFilter) => void;
+  /** Preset save/load/delete, shown beside the panel heading (refs #544). */
+  presetActions?: ReactNode;
 }
 
 const LINKED_FILTER_OPTIONS: Array<{ value: LinkedEventFilter; labelKey: string }> = [
@@ -89,6 +91,7 @@ export function EventsFilterPopover({
   onOnlyDetectedObjectsChange,
   linkedFilter,
   onLinkedFilterChange,
+  presetActions,
 }: EventsFilterPopoverProps) {
   const { t } = useTranslation();
 
@@ -175,7 +178,7 @@ export function EventsFilterPopover({
 
       {serverGroups ? (
         <div className="space-y-3" data-testid="events-monitor-filter-by-server">
-          {serverGroups.map((group) => {
+          {serverGroups.map((group, index) => {
             // All-mode selections are composite `${profileId}:${monitorId}`
             // tokens, not bare monitor ids: a bare id is only unique within
             // one server, so two groups sharing a numeric id would otherwise
@@ -204,6 +207,7 @@ export function EventsFilterPopover({
                   selectedMonitorIds={groupSelectedBareIds}
                   onSelectionChange={handleGroupChange}
                   idPrefix={`events-${group.profileId}`}
+                  headerActions={index === 0 ? presetActions : undefined}
                 />
               </div>
             );
@@ -215,6 +219,7 @@ export function EventsFilterPopover({
           selectedMonitorIds={selectedMonitorIds}
           onSelectionChange={onMonitorSelectionChange}
           idPrefix="events"
+          headerActions={presetActions}
         />
       )}
       <div className="grid gap-2 mt-3">

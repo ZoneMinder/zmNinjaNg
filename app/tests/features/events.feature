@@ -87,6 +87,21 @@ Feature: Event Browsing and Management
     And the events list should only show events for that monitor
 
   @all
+  Scenario: Save, load and delete an event filter preset (refs #544)
+    When I open the events filter panel
+    And I enable favorites only filter
+    And I save the event filter as preset "e2e favorites"
+    Then the event filter preset delete button should be visible
+    When I clear event filters
+    Then the favorites only filter should be off
+    And the event filter preset delete button should be gone
+    When I load the event filter preset "e2e favorites"
+    Then the favorites only filter should be on
+    And the event filter preset delete button should be visible
+    When I delete the loaded event filter preset
+    Then the event filter preset delete button should be gone
+
+  @all
   Scenario: Filter events by monitor
     When I open the events filter panel
     And I select a monitor filter if available

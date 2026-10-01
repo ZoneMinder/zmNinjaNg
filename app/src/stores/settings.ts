@@ -140,6 +140,11 @@ export const DEFAULT_EVENT_MONTAGE_GROUP_LAYOUT: EventMontageGroupLayout = {
 /** Events list treatment of ZoneMinder's linked recordings (refs #493). */
 export type LinkedEventFilter = 'all' | 'only' | 'hide';
 
+export interface EventFilterPreset {
+  name: string;
+  filters: ProfileSettings['eventsPageFilters'];
+}
+
 export interface ProfileSettings {
   viewMode: ViewMode;
   /**
@@ -280,6 +285,10 @@ export interface ProfileSettings {
      *  this object is spread rather than deep-merged. */
     linkedFilter: LinkedEventFilter;
   };
+  /** Named snapshots of `eventsPageFilters` (refs #544). */
+  eventFilterPresets: EventFilterPreset[];
+  /** Name of the preset last loaded or saved, '' when none is. */
+  activeEventFilterPreset: string;
   disableLogRedaction: boolean;
   lastRoute: string; // Last visited route for this profile
   // Screen the app opens on for this profile: a path from START_SCREENS, or
@@ -533,6 +542,8 @@ export const DEFAULT_SETTINGS: ProfileSettings = {
     activeQuickRange: null,
     linkedFilter: 'all',
   },
+  eventFilterPresets: [],
+  activeEventFilterPreset: '',
   disableLogRedaction: false,
   lastRoute: '/monitors',
   startScreen: START_SCREEN_LAST_USED,

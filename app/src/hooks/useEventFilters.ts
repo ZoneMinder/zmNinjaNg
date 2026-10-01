@@ -14,6 +14,7 @@ import { useSettingsStore, type LinkedEventFilter, type ProfileSettings } from '
 import type { EventFilters } from '../api/events';
 import { log, LogLevel } from '../lib/logger';
 import { ZM_LINKED_CAUSE } from '../lib/zm/zm-constants';
+import { formatLocalDateTimeSeconds, quickRangeDates } from '../lib/time';
 
 /** Sentinel value for the "All tagged events" filter option */
 export const ALL_TAGS_FILTER_ID = '__all_tags__';
@@ -53,6 +54,8 @@ interface UseEventFiltersReturn {
   setActiveQuickRange: (hours: number | null) => void;
   applyFilters: (overrides?: DateRangeOverrides) => void;
   clearFilters: () => void;
+  /** Replace every filter field with a saved snapshot (refs #544). */
+  loadFilters: (saved: ProfileSettings['eventsPageFilters']) => void;
   clearDateRange: () => void;
   toggleMonitorSelection: (monitorId: string) => void;
   toggleTagSelection: (tagId: string) => void;
@@ -96,6 +99,42 @@ interface UrlFilterValues {
   endDateTime: string | null;
   favorites: string | null;
   archived: string | null;
+}
+
+type UrlFilterState = Pick<ProfileSettings['eventsPageFilters'],
+  'monitorIds' | 'tagIds' | 'favoritesOnly' | 'archivedOnly'> & {
+  startDateTime?: string;
+  endDateTime?: string;
+};
+
+/** The search params with the URL-synced filter fields set to `f`. */
+function withUrlFilters(searchParams: URLSearchParams, f: UrlFilterState): URLSearchParams {
+  const params = new URLSearchParams(searchParams);
+  if (!params.has('sort')) params.set('sort', 'StartDateTime');
+  if (!params.has('direction')) params.set('direction', 'desc');
+  const values: Record<(typeof URL_FILTER_KEYS)[number], string | undefined> = {
+    monitorId: f.monitorIds.join(','),
+    startDateTime: f.startDateTime,
+    endDateTime: f.endDateTime,
+    favorites: f.favoritesOnly ? 'true' : undefined,
+    archived: f.archivedOnly ? 'true' : undefined,
+    // In All mode these tokens are tag NAMES, not ids: tag ids are per-server
+    // and collide, so the aggregate selection is keyed by name and
+    // resolveOwnTagIds maps it back per profile (useScopedEventTags). The name
+    // therefore lands in ?tagIds= too, and a URL copied from All mode into
+    // single mode asks ZoneMinder for Tags.Id:<name>, which matches nothing.
+    //
+    // Left as is deliberately: the filter still reads correctly in the mode it
+    // was made in, the failure is an empty list rather than wrong events, and
+    // the fix is a mode marker in the URL plus a resolver on the way back in -
+    // new plumbing for a cross-mode link nobody shares (refs #337).
+    tagIds: f.tagIds.join(','),
+  };
+  for (const key of URL_FILTER_KEYS) {
+    if (values[key]) params.set(key, values[key]);
+    else params.delete(key);
+  }
+  return params;
 }
 
 /** True if any deep-link filter param is present in the URL. */
@@ -342,52 +381,13 @@ export function useEventFilters(): UseEventFiltersReturn {
     const effectiveStart = overrides && 'startDateTime' in overrides ? overrides.startDateTime : startDateInput;
     const effectiveEnd = overrides && 'endDateTime' in overrides ? overrides.endDateTime : endDateInput;
 
-    const newParams = new URLSearchParams(searchParams);
-    if (!newParams.has('sort')) newParams.set('sort', 'StartDateTime');
-    if (!newParams.has('direction')) newParams.set('direction', 'desc');
-
-    if (selectedMonitorIds.length > 0) {
-      newParams.set('monitorId', selectedMonitorIds.join(','));
-    } else {
-      newParams.delete('monitorId');
-    }
-    if (effectiveStart) {
-      newParams.set('startDateTime', effectiveStart);
-    } else {
-      newParams.delete('startDateTime');
-    }
-    if (effectiveEnd) {
-      newParams.set('endDateTime', effectiveEnd);
-    } else {
-      newParams.delete('endDateTime');
-    }
-    if (favoritesOnly) {
-      newParams.set('favorites', 'true');
-    } else {
-      newParams.delete('favorites');
-    }
-    if (archivedOnly) {
-      newParams.set('archived', 'true');
-    } else {
-      newParams.delete('archived');
-    }
-    // In All mode these tokens are tag NAMES, not ids: tag ids are per-server
-    // and collide, so the aggregate selection is keyed by name and
-    // resolveOwnTagIds maps it back per profile (useScopedEventTags). The name
-    // therefore lands in ?tagIds= too, and a URL copied from All mode into
-    // single mode asks ZoneMinder for Tags.Id:<name>, which matches nothing.
-    //
-    // Left as is deliberately: the filter still reads correctly in the mode it
-    // was made in, the failure is an empty list rather than wrong events, and
-    // the fix is a mode marker in the URL plus a resolver on the way back in -
-    // new plumbing for a cross-mode link nobody shares (refs #337).
-    if (selectedTagIds.length > 0) {
-      newParams.set('tagIds', selectedTagIds.join(','));
-    } else {
-      newParams.delete('tagIds');
-    }
-
-    setSearchParams(newParams, { replace: true, state: location.state });
+    setSearchParams(
+      withUrlFilters(searchParams, {
+        monitorIds: selectedMonitorIds, tagIds: selectedTagIds, startDateTime: effectiveStart,
+        endDateTime: effectiveEnd, favoritesOnly, archivedOnly,
+      }),
+      { replace: true, state: location.state },
+    );
   }, [
     selectedMonitorIds, selectedTagIds, startDateInput, endDateInput, favoritesOnly, archivedOnly,
     searchParams, setSearchParams, location.state,
@@ -416,6 +416,31 @@ export function useEventFilters(): UseEventFiltersReturn {
     newParams.delete('archived');
     setSearchParams(newParams, { replace: true, state: location.state });
   }, [searchParams, setSearchParams, location.state, setSelectedMonitorIds, setSelectedTagIds, setStartDateInput, setEndDateInput, setFavoritesOnly, setArchivedOnly, setOnlyDetectedObjects, setLinkedFilter]);
+
+  // Replace the whole filter with a saved one (refs #544). A quick range is
+  // re-anchored to now: "past 4 hours" saved last week means the past 4 hours.
+  const loadFilters = useCallback((saved: ProfileSettings['eventsPageFilters']) => {
+    const quickRange = saved.activeQuickRange ?? null;
+    let { startDateTime, endDateTime } = saved;
+    if (quickRange !== null) {
+      const range = quickRangeDates(quickRange);
+      startDateTime = formatLocalDateTimeSeconds(range.start);
+      endDateTime = formatLocalDateTimeSeconds(range.end);
+    }
+    setSelectedMonitorIds(saved.monitorIds);
+    setSelectedTagIds(saved.tagIds);
+    setStartDateInput(startDateTime);
+    setEndDateInput(endDateTime);
+    setFavoritesOnly(saved.favoritesOnly);
+    setArchivedOnly(saved.archivedOnly ?? false);
+    setOnlyDetectedObjects(saved.onlyDetectedObjects);
+    setLinkedFilter(saved.linkedFilter ?? 'all');
+    setActiveQuickRange(quickRange);
+    setSearchParams(
+      withUrlFilters(searchParams, { ...saved, startDateTime, endDateTime, archivedOnly: saved.archivedOnly ?? false }),
+      { replace: true, state: location.state },
+    );
+  }, [searchParams, setSearchParams, location.state, setSelectedMonitorIds, setSelectedTagIds, setStartDateInput, setEndDateInput, setFavoritesOnly, setArchivedOnly, setOnlyDetectedObjects, setLinkedFilter, setActiveQuickRange]);
 
   // Clear only the time filter, leaving monitor/tag/favorite scope intact.
   // The "x" beside the quick-range chips uses this so removing the time window
@@ -469,6 +494,6 @@ export function useEventFilters(): UseEventFiltersReturn {
   return {
     filters, selectedMonitorIds, selectedTagIds, startDateInput, endDateInput, favoritesOnly, archivedOnly, onlyDetectedObjects, linkedFilter, activeQuickRange,
     setSelectedMonitorIds, setSelectedTagIds, setStartDateInput, setEndDateInput, setFavoritesOnly, setArchivedOnly, setOnlyDetectedObjects, setLinkedFilter, setActiveQuickRange,
-    applyFilters, clearFilters, clearDateRange, toggleMonitorSelection, toggleTagSelection, activeFilterCount,
+    applyFilters, clearFilters, loadFilters, clearDateRange, toggleMonitorSelection, toggleTagSelection, activeFilterCount,
   };
 }
