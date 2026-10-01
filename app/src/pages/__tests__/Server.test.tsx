@@ -108,8 +108,17 @@ describe('Server page - storage areas (refs #539)', () => {
 
     renderServer();
 
-    expect(await screen.findByTestId('storage-events-1')).toHaveTextContent('1.0 GB');
+    expect(await screen.findByTestId('storage-events-1')).toHaveTextContent('1.03 GB');
     expect(screen.queryByTestId('storage-events-drifted-1')).toBeNull();
+  });
+
+  it('shows a small DiskSpace in MB rather than rounding it to 0.0 GB', async () => {
+    const [profileA] = seedProfiles(['profile-a']);
+    installApiClient(profileA.id, fakeApiClient({ ...serverRoutes(), '/storage.json': { storage: [{ Storage: storageWithDiskSpace(40000000) }] } }));
+
+    renderServer();
+
+    expect(await screen.findByTestId('storage-events-1')).toHaveTextContent('38.15 MB');
   });
 
   it('says the value drifted instead of showing a negative DiskSpace', async () => {

@@ -605,7 +605,7 @@ export default function Server() {
                       </div>
                     ) : (
                       <div className="text-xs mt-1" data-testid={`storage-events-${storage.Id}`}>
-                        {t('server.storage_events')}: {(storage.DiskSpace / (1024 * 1024 * 1024)).toFixed(1)} GB
+                        {t('server.storage_events')}: {zmHumanFilesize(storage.DiskSpace)}
                       </div>
                     ))}
                     {totalGB && freeGB && (

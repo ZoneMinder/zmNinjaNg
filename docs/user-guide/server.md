@@ -35,7 +35,7 @@ In a single-server setup this card shows the server's details. In a multi-server
 Each enabled storage area is listed with:
 
 - Its name and filesystem path
-- The space its events take, in GB. ZoneMinder keeps this as a running total rather than measuring it each time, so it can drift. If the total drops below zero, the page says the reported value has drifted instead of showing it. Running `zmaudit.pl`, or turning on `ZM_RUN_AUDIT` in ZoneMinder's options, resets it to the real sum.
+- The space its events take, in the unit that fits its size (MB, GB, TB). ZoneMinder keeps this as a running total rather than measuring it each time, so it can drift. If the total drops below zero, the page says the reported value has drifted instead of showing it. Running `zmaudit.pl`, or turning on `ZM_RUN_AUDIT` in ZoneMinder's options, resets it to the real sum.
 - Free and total space in GB, with a usage bar. Free space matches the Avail column of `df`. The bar counts space the filesystem reserves for root (5% on ext4 by default) as used, so a disk that holds few events can still show a few percent full.
 - The server it belongs to (in multi-server setups)
 
