@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getDaemonCheck, getDiskPercent, getLoad, getServers, getStorages } from '../server';
+import { getDaemonCheck, getDiskPercent, getLatestServerStat, getLoad, getServers, getStorages } from '../server';
 import { validateApiResponse } from '../../lib/zm/api-validator';
 import type { ApiClient } from '../client';
 
@@ -49,6 +49,44 @@ describe('Server API', () => {
 
     expect(mockGet).toHaveBeenCalledWith('/host/getLoad.json', undefined);
     expect(load.load).toBe(1.2);
+  });
+
+  it('asks for server stats newer than the given server-local time and returns the newest row', async () => {
+    mockGet.mockResolvedValue({
+      data: {
+        serverstats: [
+          { ServerStat: { TimeStamp: '2026-09-30 19:30:10', CpuLoad: 2.0, CpuUsagePercent: 9.1 } },
+          { ServerStat: { TimeStamp: '2026-09-30 19:31:10', CpuLoad: 2.3, CpuUsagePercent: 9.8 } },
+        ],
+      },
+    });
+
+    const stat = await getLatestServerStat(mockClient, '2026-09-30 19:21:10');
+
+    expect(mockGet).toHaveBeenCalledWith(
+      '/server_stats/index/TimeStamp%20%3E%3D%3A2026-09-30%2019%3A21%3A10.json',
+    );
+    expect(stat?.CpuLoad).toBe(2.3);
+    expect(stat?.CpuUsagePercent).toBe(9.8);
+  });
+
+  it('returns undefined rather than guess when the rows come from several servers', async () => {
+    mockGet.mockResolvedValue({
+      data: {
+        serverstats: [
+          { ServerStat: { TimeStamp: '2026-09-30 19:31:00', ServerId: '13', CpuLoad: 4.7 } },
+          { ServerStat: { TimeStamp: '2026-09-30 19:31:10', ServerId: '2', CpuLoad: 0.8 } },
+        ],
+      },
+    });
+
+    expect(await getLatestServerStat(mockClient, '2026-09-30 19:21:10')).toBeUndefined();
+  });
+
+  it('returns undefined when no server stats are recent enough', async () => {
+    mockGet.mockResolvedValue({ data: { serverstats: [] } });
+
+    expect(await getLatestServerStat(mockClient, '2026-09-30 19:21:10')).toBeUndefined();
   });
 
   it('parses disk usage from complex response', async () => {

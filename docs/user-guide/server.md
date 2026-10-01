@@ -8,13 +8,16 @@ The Server page shows the health and configuration of your ZoneMinder server, or
 - **API version**: the version of the ZoneMinder API the app is talking to.
 - **Timezone**: the server's configured timezone, used to align event times correctly.
 
-## Load average
+## Server stats
 
-The server's CPU load average. Sustained high load can cause dropped frames or slow event recording.
+The cards under the version information show the same figures as the stats bar at the top of ZoneMinder's web console, calculated the same way, for the server that answers the app's API.
 
-## Disk usage
+- **Load average**: the server's CPU load average. Sustained high load can cause dropped frames or slow event recording.
+- **CPU load**: the share of CPU time in use.
+- **Storage**: one line per enabled storage area, with the percentage of its disk in use, used and total space, and the space its events take. The line turns orange above 95% and red above 98%.
+- **Swap**: the percentage of swap in use, with used and total space. It turns orange above 90% and red above 95%. The card is hidden when the server has no swap.
 
-Space used, in GB, on the disk that holds ZoneMinder's events directory (the `ZM_DIR_EVENTS` setting). If your storage areas are on other disks, this card measures a different disk from them. Use the storage areas below for those.
+ZoneMinder's `zmstats` process records the load, CPU and swap figures about once a minute. When no recent record exists, or in a multi-server cluster where records from several servers make it unclear which server answered, the page shows the live load average and hides CPU load and swap. The console's memory and database connection figures are not available through the API, so the page leaves them out.
 
 ## Status
 

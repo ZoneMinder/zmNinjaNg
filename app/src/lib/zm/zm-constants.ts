@@ -212,3 +212,14 @@ export const ZONE_PERCENT_MAX = 100;
  * events people ask to see on their own or to hide (refs #493).
  */
 export const ZM_LINKED_CAUSE = 'Linked';
+
+/**
+ * Usage percentages at which ZoneMinder's console navbar colours a stat
+ * (`web/skins/classic/includes/functions.php`): amber above the warning line,
+ * red above the danger line. The Server page uses the same lines so it flags
+ * what the console flags.
+ */
+export const ZM_STORAGE_USAGE_WARN_PERCENT = 95;
+export const ZM_STORAGE_USAGE_DANGER_PERCENT = 98;
+export const ZM_SWAP_USAGE_WARN_PERCENT = 90;
+export const ZM_SWAP_USAGE_DANGER_PERCENT = 95;
