@@ -642,6 +642,22 @@ describe('Native contract: Android local network permission', () => {
   });
 });
 
+describe('Native contract: Android push notifications have a status-bar icon', () => {
+  it('ships the ic_stat_notification drawable the event server names, and defaults to it', () => {
+    // zmeventnotification sends android.notification.icon = "ic_stat_notification"
+    // on every push. Without that drawable Android draws the launcher icon's
+    // silhouette, a blank white circle (refs #540).
+    const mainDir = path.join(repoRoot, 'app/android/app/src/main');
+    const icon = read(path.join(mainDir, 'res/drawable/ic_stat_notification.xml'));
+    expect(icon).toMatch(/<vector[\s>]/);
+
+    const manifest = read(path.join(mainDir, 'AndroidManifest.xml'));
+    expect(manifest).toMatch(
+      /android:name="com\.google\.firebase\.messaging\.default_notification_icon"\s+android:resource="@drawable\/ic_stat_notification"/,
+    );
+  });
+});
+
 describe('Native contract: R8 keeps Capacitor plugin metadata', () => {
   it('does not optimize the release build without keeping PluginHandle', () => {
     const androidDir = path.join(repoRoot, 'app/android');

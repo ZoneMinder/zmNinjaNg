@@ -66,6 +66,11 @@
              show a heads-up banner. Must match the id in
              services/pushNotifications.ts createChannel(). -->
         <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="zmninja-ng" />
+
+        <!-- Status-bar icon for FCM notifications that name none. The ZM event
+             server names ic_stat_notification itself; without the drawable,
+             Android draws the launcher icon as a blank white circle (refs #540). -->
+        <meta-data android:name="com.google.firebase.messaging.default_notification_icon" android:resource="@drawable/ic_stat_notification" />
     </application>
 
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
