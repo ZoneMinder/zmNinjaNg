@@ -20,7 +20,8 @@
  * starts playback again.
  *
  * One tap on a tile restarts the replay from that tile; a second tap right
- * after opens its event.
+ * after opens its event. Dragging a tile's corner resizes it inside the grid
+ * (useGridTrackResize).
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -39,6 +40,7 @@ import { useReturnHighlightStore } from '../../../stores/returnHighlight';
 import { useReturnFlash } from '../../../hooks/useReturnFlash';
 import { useInsomnia } from '../../../hooks/useInsomnia';
 import { useBandwidthSettings } from '../../../hooks/useBandwidthSettings';
+import { useGridTrackResize } from '../../../hooks/useGridTrackResize';
 import type { ZmsProbe } from '../../../hooks/useZmsEventProgress';
 import type { EventContextHistoryState } from '../../../stores/eventContext';
 import { resolveMinStreamingPort } from '../../../lib/monitor/multiport';
@@ -158,6 +160,9 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
     gridRef.current
       ?.querySelector(`[data-testid="event-context-sequence-tile-${eventId}"]`)
       ?.scrollIntoView?.({ block, behavior: 'smooth' });
+  const rowCount = Math.ceil(tiles.length / grid);
+  const { colWeights, rowWeights, handleProps } = useGridTrackResize(gridRef, grid, rowCount);
+  const rowWeightSum = rowWeights.reduce((a, b) => a + b, 0);
   const shownRef = useRef<ReadonlySet<string>>(new Set());
   useEffect(() => {
     const started = tiles.find(({ event }) => playing.has(event.Id) && !shownRef.current.has(event.Id));
@@ -259,9 +264,21 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
             </span>
           )}
         </div>
-        <div ref={gridRef} className="grid gap-1" style={{ gridTemplateColumns: `repeat(${grid}, minmax(0, 1fr))` }}>
-          {tiles.map(({ event, offsetMs, isAnchor }) => {
-            const { urls, aspectRatio } = buildRowThumbnail(event, {
+        {/* A container, so the rows can size from the grid's width (cqw): a
+            row is one 16:9 tile plus its name, scaled by its drag weight. */}
+        <div style={{ containerType: 'inline-size' }}>
+        <div
+          ref={gridRef}
+          className="grid gap-1"
+          data-testid="event-context-sequence-grid-tiles"
+          style={{
+            ['--replay-row' as string]: `calc((100cqw - ${grid - 1} * 0.25rem) / ${grid} * 9 / 16 + ${EVENT_CONTEXT.sequenceRowLabelRem}rem)`,
+            gridTemplateColumns: colWeights.map((w) => `minmax(0, ${w}fr)`).join(' '),
+            gridTemplateRows: rowWeights.map((w) => `calc(var(--replay-row) * ${(rowCount * w) / rowWeightSum})`).join(' '),
+          }}
+        >
+          {tiles.map(({ event, offsetMs, isAnchor }, i) => {
+            const { urls } = buildRowThumbnail(event, {
               portalUrl: profile?.portalUrl || '',
               thumbnailChain: settings.thumbnailFallbackChain,
               token: isFresh ? accessToken ?? undefined : undefined,
@@ -275,7 +292,7 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
                 offsetMs={offsetMs}
                 isAnchor={isAnchor}
                 urls={urls}
-                aspectRatio={aspectRatio}
+                resizeHandle={(sx, sy) => handleProps(i % grid, Math.floor(i / grid), sx, sy)}
                 monitorName={monitorNames.get(event.MonitorId) ?? event.MonitorId}
                 isPlaying={playing.has(event.Id)}
                 run={run}
@@ -288,17 +305,27 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
             );
           })}
         </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
 }
+
+const RESIZE_CORNERS = [
+  { sx: -1, sy: -1, corner: 'tl' },
+  { sx: 1, sy: -1, corner: 'tr' },
+  { sx: -1, sy: 1, corner: 'bl' },
+  { sx: 1, sy: 1, corner: 'br' },
+] as const;
 
 interface SequenceTileProps {
   event: Event;
   offsetMs: number;
   isAnchor: boolean;
   urls: string[];
-  aspectRatio: number;
+  /** Pointer props for the corner handle that moves the tile's left or right
+   *  edge (sx -1 or 1) and its top or bottom edge (sy -1 or 1). */
+  resizeHandle: (sx: number, sy: number) => ReturnType<ReturnType<typeof useGridTrackResize>['handleProps']>;
   monitorName: string;
   isPlaying: boolean;
   /** Keys the player, so a restart gets a fresh stream even for a tile already playing. */
@@ -314,7 +341,7 @@ interface SequenceTileProps {
   onTap: (at: number) => void;
 }
 
-function SequenceTile({ event, offsetMs, isAnchor, urls, aspectRatio, monitorName, isPlaying, run, probe, progressStepMs, onProbe, profileId, onTap }: SequenceTileProps) {
+function SequenceTile({ event, offsetMs, isAnchor, urls, resizeHandle, monitorName, isPlaying, run, probe, progressStepMs, onProbe, profileId, onTap }: SequenceTileProps) {
   const { t } = useTranslation();
   const flash = useReturnFlash(event.Id);
   return (
@@ -327,9 +354,9 @@ function SequenceTile({ event, offsetMs, isAnchor, urls, aspectRatio, monitorNam
       data-testid={`event-context-sequence-tile-${event.Id}`}
       data-playing={isPlaying}
       data-flash={flash}
-      className="min-w-0 rounded-sm border border-border/40 text-left hover:bg-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="relative flex min-h-0 min-w-0 flex-col rounded-sm border border-border/40 text-left hover:bg-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
-      <div className="relative w-full overflow-hidden rounded-t-sm bg-black" style={{ aspectRatio: String(aspectRatio) }}>
+      <div className="relative min-h-0 w-full flex-1 overflow-hidden rounded-t-sm bg-black">
         {/* The blinking triangle marks a playing tile, or the tile the user
             just came back from while playback is held. */}
         {(isPlaying || flash) && <ReturnFlashArrow className="top-1" />}
@@ -341,7 +368,7 @@ function SequenceTile({ event, offsetMs, isAnchor, urls, aspectRatio, monitorNam
               onProbe={onProbe}
             />
           ) : (
-            <EventThumbnail urls={urls} cacheKey={event.Id} alt={event.Name} className="h-full w-full" objectFit="cover" />
+            <EventThumbnail urls={urls} cacheKey={event.Id} alt={event.Name} className="h-full w-full" objectFit="contain" />
           )}
         </div>
         <span
@@ -372,6 +399,22 @@ function SequenceTile({ event, offsetMs, isAnchor, urls, aspectRatio, monitorNam
         </div>
       </div>
       <div className="truncate px-1 py-0.5 text-[11px] leading-tight">{monitorName}</div>
+      {/* Invisible corner handles; touch-none so a drag on a phone resizes
+          instead of scrolling. Pointer-only: the layout is a view preference. */}
+      {RESIZE_CORNERS.map(({ sx, sy, corner }) => (
+        <span
+          key={corner}
+          aria-hidden
+          data-testid={`event-context-sequence-resize-${event.Id}-${corner}`}
+          className={cn(
+            'absolute z-10 h-4 w-4 touch-none [@media(pointer:coarse)]:h-7 [@media(pointer:coarse)]:w-7',
+            sy < 0 ? 'top-0' : 'bottom-0',
+            sx < 0 ? 'left-0' : 'right-0',
+            sx * sy > 0 ? 'cursor-nwse-resize' : 'cursor-nesw-resize'
+          )}
+          {...resizeHandle(sx, sy)}
+        />
+      ))}
     </button>
   );
 }

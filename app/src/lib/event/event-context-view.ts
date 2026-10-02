@@ -8,6 +8,7 @@
 
 import { buildThumbnailChainForEvent, eventHasAlarmFrame } from './thumbnail-chain';
 import { calculateThumbnailDimensions, getMonitorDimensions, EVENT_GRID_CONSTANTS } from './event-utils';
+import { EVENT_CONTEXT } from '../zmninja-ng-constants';
 import type { EventAroundRow } from '../../hooks/useEventsAround';
 import type { ThumbnailFallbackEntry } from './thumbnail-chain';
 import type { Event, ProfileId } from '../../api/types';
@@ -126,3 +127,18 @@ export function currentRunIndex(runs: ReplayCue[][], done: ReadonlySet<string>):
   return runs.findIndex((run) => run.some(({ eventId }) => !done.has(eventId)));
 }
 
+/**
+ * Grid track weights (`fr` units) after dragging track `index` to `sizePx` of
+ * a `totalPx` grid (refs #534). Only the dragged track's weight changes, so
+ * the others keep their proportions and the grid keeps its size.
+ */
+export function resizeTrack(weights: number[], index: number, sizePx: number, totalPx: number): number[] {
+  if (weights.length < 2 || totalPx <= 0) return weights;
+  const min = EVENT_CONTEXT.sequenceMinTrackShare;
+  const others = weights.reduce((sum, w, i) => (i === index ? sum : sum + w), 0);
+  const smallest = Math.min(...weights.filter((_, i) => i !== index));
+  // Growing shrinks the others in proportion, so the cap keeps the smallest
+  // of them at `min` or above.
+  const share = Math.min(1 - (min * others) / smallest, Math.max(min, sizePx / totalPx));
+  return weights.map((w, i) => (i === index ? (share * others) / (1 - share) : w));
+}

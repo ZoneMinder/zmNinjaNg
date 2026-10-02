@@ -121,6 +121,39 @@ Then('sequence play lays its tiles out in {int} columns', async ({ page }, cols:
   expect(tops.filter((top) => top === tops[0])).toHaveLength(Math.min(cols, tops.length));
 });
 
+// Sizes before the corner drag, so the outcome compares against them.
+let beforeDrag: { tile: { width: number; height: number }; grid: { width: number; height: number } } | null = null;
+
+When("I drag the first sequence play tile's bottom right corner outward", async ({ page }) => {
+  if (!sequenceListIds) return;
+  const sequence = page.getByTestId('event-context-sequence');
+  const tile = sequence.locator('[data-testid^="event-context-sequence-tile-"]').first();
+  const grid = sequence.getByTestId('event-context-sequence-grid-tiles');
+  // The dialog zooms in as it opens; measure once it has settled.
+  // Its own animation only: playing tiles blink forever.
+  await sequence.evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished.catch(() => undefined))));
+  const tileBox = (await tile.boundingBox())!;
+  const gridBox = (await grid.boundingBox())!;
+  beforeDrag = { tile: tileBox, grid: gridBox };
+  const handle = sequence.locator('[data-testid^="event-context-sequence-resize-"][data-testid$="-br"]').first();
+  const h = (await handle.boundingBox())!;
+  await page.mouse.move(h.x + h.width / 2, h.y + h.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(h.x + tileBox.width / 2, h.y + tileBox.height / 2, { steps: 5 });
+  await page.mouse.up();
+});
+
+Then('the first sequence play tile is larger and the grid keeps its size', async ({ page }) => {
+  if (!sequenceListIds || !beforeDrag) return;
+  const sequence = page.getByTestId('event-context-sequence');
+  const tile = (await sequence.locator('[data-testid^="event-context-sequence-tile-"]').first().boundingBox())!;
+  const grid = (await sequence.getByTestId('event-context-sequence-grid-tiles').boundingBox())!;
+  // Area, not each side: with one row of tiles only the width can give.
+  expect(tile.width * tile.height).toBeGreaterThan(beforeDrag.tile.width * beforeDrag.tile.height * 1.2);
+  expect(Math.abs(grid.width - beforeDrag.grid.width)).toBeLessThan(2);
+  expect(Math.abs(grid.height - beforeDrag.grid.height)).toBeLessThan(2);
+});
+
 When('I pick {int} replay tiles in settings', async ({ page }, n: number) => {
   const choice = page.getByTestId(`settings-replay-tiles-${n}`);
   await choice.click();

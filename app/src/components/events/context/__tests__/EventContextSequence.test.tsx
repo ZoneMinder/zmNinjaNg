@@ -281,20 +281,20 @@ describe('EventContextSequence', () => {
     const { unmount } = render(view());
     const nearest = tileIds();
     expect(nearest).toHaveLength(12);
-    expect(columns()).toBe('repeat(3, minmax(0, 1fr))');
+    expect(columns()).toBe(Array(3).fill('minmax(0, 1fr)').join(' '));
 
     await user.click(screen.getByTestId('event-context-sequence-grid'));
     await user.click(screen.getByTestId('event-context-sequence-grid-2'));
     expect(tileIds()).toEqual(nearest);
-    expect(columns()).toBe('repeat(2, minmax(0, 1fr))');
+    expect(columns()).toBe(Array(2).fill('minmax(0, 1fr)').join(' '));
     unmount();
 
     render(view());
-    expect(columns()).toBe('repeat(2, minmax(0, 1fr))');
+    expect(columns()).toBe(Array(2).fill('minmax(0, 1fr)').join(' '));
     await user.click(screen.getByTestId('event-context-sequence-grid'));
     await user.click(screen.getByTestId('event-context-sequence-grid-4'));
     expect(tileIds()).toEqual(nearest);
-    expect(columns()).toBe('repeat(4, minmax(0, 1fr))');
+    expect(columns()).toBe(Array(4).fill('minmax(0, 1fr)').join(' '));
   });
 
   it('keeps the playing stream going when the grid size changes', async () => {

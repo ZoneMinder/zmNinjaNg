@@ -281,6 +281,9 @@ export const EVENT_CONTEXT = {
    *  N x N block of 16:9 tiles can be while it fits on screen. */
   sequenceChromeRem: 3,
   sequenceRowLabelRem: 1.25,
+  /** The smallest share of the grid's width or height a replay row or column
+   *  can be dragged down to, so no tile vanishes (refs #534). */
+  sequenceMinTrackShare: 0.1,
   /** Two taps on one Sequence play tile this close together open its event;
    *  one tap plays it (refs #534). Timed by hand, not `dblclick`, which touch
    *  WebViews do not fire reliably. */

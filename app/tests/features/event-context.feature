@@ -40,6 +40,14 @@ Feature: Events around an event
     Then sequence play lays its tiles out in 2 columns
 
   @all
+  Scenario: Dragging a sequence play tile's corner grows it inside the grid
+    When I open the around-this-event panel on the first event
+    And I choose the 60 minute window
+    And I open sequence play if there are two events
+    And I drag the first sequence play tile's bottom right corner outward
+    Then the first sequence play tile is larger and the grid keeps its size
+
+  @all
   Scenario: The Replay tiles setting sets how many nearby events show
     When I navigate to the "Settings" page
     And I search settings for "Replay tiles"

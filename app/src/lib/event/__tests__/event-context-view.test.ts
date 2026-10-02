@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { balancedAroundAnchor, buildReplayRuns, currentRunIndex } from '../event-context-view';
+import { balancedAroundAnchor, buildReplayRuns, currentRunIndex, resizeTrack } from '../event-context-view';
+import { EVENT_CONTEXT } from '../../zmninja-ng-constants';
 import type { EventAroundRow } from '../../../hooks/useEventsAround';
 import type { Event } from '../../../api/types';
 
@@ -90,3 +91,33 @@ describe('currentRunIndex', () => {
   });
 });
 
+
+describe('resizeTrack', () => {
+  const share = (w: number[], i: number) => w[i] / w.reduce((a, b) => a + b, 0);
+
+  it('gives the dragged track the size asked for and keeps the others in proportion', () => {
+    const next = resizeTrack([1, 1, 1], 1, 600, 900);
+    expect(share(next, 1)).toBeCloseTo(600 / 900);
+    expect(next[0]).toBe(next[2]);
+  });
+
+  it('shrinks a track the same way', () => {
+    const next = resizeTrack([1, 2, 1], 1, 100, 400);
+    expect(share(next, 1)).toBeCloseTo(0.25);
+    expect(next[0]).toBe(1);
+  });
+
+  it('keeps every track at least the minimum share', () => {
+    const min = EVENT_CONTEXT.sequenceMinTrackShare;
+    expect(share(resizeTrack([1, 1, 1], 0, 5000, 900), 0)).toBeCloseTo(1 - 2 * min);
+    expect(share(resizeTrack([1, 1, 1], 0, -50, 900), 0)).toBeCloseTo(min);
+    // Track 0 already holds most of the width; growing track 1 must not
+    // squeeze track 2 below the minimum.
+    const next = resizeTrack([8, 1, 1], 1, 5000, 900);
+    expect(Math.min(...next.map((_, i) => share(next, i)))).toBeCloseTo(min);
+  });
+
+  it('leaves a single track alone', () => {
+    expect(resizeTrack([1], 0, 50, 900)).toEqual([1]);
+  });
+});
