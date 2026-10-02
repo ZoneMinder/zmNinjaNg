@@ -297,6 +297,28 @@ describe('EventContextSequence', () => {
     expect(columns()).toBe(Array(4).fill('minmax(0, 1fr)').join(' '));
   });
 
+  it('shows the corner handles only while the pencil is pressed', async () => {
+    vi.useRealTimers();
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <EventContextSequence open onOpenChange={() => {}} rows={[row('a', 0, 10), row('b', 1_000, 10)]} profileId={P} monitorNames={new Map()} />
+      </MemoryRouter>
+    );
+    const toggle = screen.getByTestId('event-context-sequence-resize-toggle');
+    expect(screen.queryAllByTestId(/^event-context-sequence-resize-a-/)).toHaveLength(0);
+    expect(toggle).toHaveAttribute('aria-pressed', 'false');
+
+    await user.click(toggle);
+    expect(screen.queryAllByTestId(/^event-context-sequence-resize-a-/).map((el) => el.dataset.testid)).toEqual(
+      ['tl', 'tr', 'bl', 'br'].map((c) => `event-context-sequence-resize-a-${c}`)
+    );
+    expect(toggle).toHaveAttribute('aria-pressed', 'true');
+
+    await user.click(toggle);
+    expect(screen.queryAllByTestId(/^event-context-sequence-resize-a-/)).toHaveLength(0);
+  });
+
   it('starts every tile the same size again whenever a grid size is picked', async () => {
     vi.useRealTimers();
     const user = userEvent.setup();
@@ -318,6 +340,7 @@ describe('EventContextSequence', () => {
       await user.click(screen.getByTestId(`event-context-sequence-grid-${n}`));
     };
     await pick(3);
+    await user.click(screen.getByTestId('event-context-sequence-resize-toggle'));
     const handle = screen.getByTestId('event-context-sequence-resize-e0-br');
     fireEvent.pointerDown(handle, { clientX: 300, clientY: 200, pointerId: 1 });
     fireEvent.pointerMove(handle, { clientX: 500, clientY: 300, pointerId: 1 });

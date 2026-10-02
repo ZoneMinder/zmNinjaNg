@@ -124,6 +124,13 @@ Then('sequence play lays its tiles out in {int} columns', async ({ page }, cols:
 // Sizes before the corner drag, so the outcome compares against them.
 let beforeDrag: { tile: { width: number; height: number }; grid: { width: number; height: number } } | null = null;
 
+When('I press the sequence play resize pencil', async ({ page }) => {
+  if (!sequenceListIds) return;
+  const toggle = page.getByTestId('event-context-sequence-resize-toggle');
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+});
+
 When("I drag the first sequence play tile's bottom right corner outward", async ({ page }) => {
   if (!sequenceListIds) return;
   const sequence = page.getByTestId('event-context-sequence');

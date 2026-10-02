@@ -3443,7 +3443,8 @@ third should ask for.
    with ``{ returnedFrom: eventId }`` and then navigates to its event, so back
    remounts the dialog with playback held and ``useReturnFlash`` blinking that
    tile, the same hook the Events list uses for a returned-to row.
-   Each tile has four invisible corner handles. ``useGridTrackResize`` keeps
+   While the toolbar's pencil is pressed, each tile has four corner handles.
+   ``useGridTrackResize`` keeps
    one ``fr`` weight per column and per row; a drag captures the pointer and,
    on each move, ``resizeTrack`` sets the dragged column's and row's weight so
    that track takes the size the pointer asks for, with the other tracks
@@ -3452,7 +3453,7 @@ third should ask for.
    width through a ``cqw`` container unit, so the grid's total size never
    changes. The handle stops its click from reaching the tile, so a drag is
    not a tap. Nothing remounts, so playing streams carry on. Each handle draws
-   an L bracket on tile hover, sky blue on its own hover. Picking a grid size
+   an L bracket, sky blue on hover. Picking a grid size
    calls the hook's ``reset``; a change in the column or row count also
    resets the weights.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/events/context/EventContextSequence.tsx>`__

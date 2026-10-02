@@ -299,6 +299,7 @@
       "sequence_nearest_other": "Los {{count}} más cercanos de {{total}}",
       "sequence_tile_hint": "Toca para reproducir, toca dos veces para abrir",
       "sequence_grid": "Tamaño de cuadrícula",
+      "sequence_resize": "Cambiar tamaño",
       "sequence_grid_size": "{{n}} × {{n}}",
       "sequence_progress": "Progreso de reproducción",
       "close": "Cerrar",

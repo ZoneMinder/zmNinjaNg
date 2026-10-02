@@ -44,6 +44,7 @@ Feature: Events around an event
     When I open the around-this-event panel on the first event
     And I choose the 60 minute window
     And I open sequence play if there are two events
+    And I press the sequence play resize pencil
     And I drag the first sequence play tile's bottom right corner outward
     Then the first sequence play tile is larger and the grid keeps its size
 

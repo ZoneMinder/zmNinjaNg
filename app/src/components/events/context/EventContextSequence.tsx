@@ -20,13 +20,13 @@
  * starts playback again.
  *
  * One tap on a tile restarts the replay from that tile; a second tap right
- * after opens its event. Dragging a tile's corner resizes it inside the grid
- * (useGridTrackResize).
+ * after opens its event. With the pencil pressed, dragging a tile's corner
+ * resizes it inside the grid (useGridTrackResize).
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Grid2x2, LayoutGrid, RotateCcw } from 'lucide-react';
+import { Grid2x2, LayoutGrid, Pencil, RotateCcw } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '../../ui/dialog';
 import { Button } from '../../ui/button';
 import { EventThumbnail } from '../EventThumbnail';
@@ -98,6 +98,7 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
 
   const isMobile = useIsMobile();
   const [grid, setGrid] = useState(readStoredGrid);
+  const [resizing, setResizing] = useState(false);
   const tileCount = selectionSettings.eventContextReplayTiles;
   const tiles = useMemo(() => balancedAroundAnchor(rows, tileCount), [rows, tileCount]);
   // The screen stays awake for as long as the replay is open, on top of (never
@@ -256,6 +257,18 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
               resetTileSizes();
             }}
           />
+          <Button
+            variant={resizing ? 'default' : 'outline'}
+            size="sm"
+            className="h-7 px-2"
+            aria-pressed={resizing}
+            aria-label={t('events.around.sequence_resize')}
+            title={t('events.around.sequence_resize')}
+            onClick={() => setResizing((on) => !on)}
+            data-testid="event-context-sequence-resize-toggle"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
           {tiles.length < rows.length && (
             <span className="ml-auto min-w-0 truncate text-[11px] text-muted-foreground" data-testid="event-context-sequence-nearest">
               {t('events.around.sequence_nearest', {
@@ -293,7 +306,7 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
                 offsetMs={offsetMs}
                 isAnchor={isAnchor}
                 urls={urls}
-                resizeHandle={(sx, sy) => handleProps(i % grid, Math.floor(i / grid), sx, sy)}
+                resizeHandle={resizing ? (sx, sy) => handleProps(i % grid, Math.floor(i / grid), sx, sy) : undefined}
                 monitorName={monitorNames.get(event.MonitorId) ?? event.MonitorId}
                 isPlaying={playing.has(event.Id)}
                 run={run}
@@ -325,8 +338,9 @@ interface SequenceTileProps {
   isAnchor: boolean;
   urls: string[];
   /** Pointer props for the corner handle that moves the tile's left or right
-   *  edge (sx -1 or 1) and its top or bottom edge (sy -1 or 1). */
-  resizeHandle: (sx: number, sy: number) => ReturnType<ReturnType<typeof useGridTrackResize>['handleProps']>;
+   *  edge (sx -1 or 1) and its top or bottom edge (sy -1 or 1); no handles
+   *  without it. */
+  resizeHandle?: (sx: number, sy: number) => ReturnType<ReturnType<typeof useGridTrackResize>['handleProps']>;
   monitorName: string;
   isPlaying: boolean;
   /** Keys the player, so a restart gets a fresh stream even for a tile already playing. */
@@ -355,7 +369,7 @@ function SequenceTile({ event, offsetMs, isAnchor, urls, resizeHandle, monitorNa
       data-testid={`event-context-sequence-tile-${event.Id}`}
       data-playing={isPlaying}
       data-flash={flash}
-      className="group relative flex min-h-0 min-w-0 flex-col rounded-sm border border-border/40 text-left hover:bg-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="relative flex min-h-0 min-w-0 flex-col rounded-sm border border-border/40 text-left hover:bg-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <div className="relative min-h-0 w-full flex-1 overflow-hidden rounded-t-sm bg-black">
         {/* The blinking triangle marks a playing tile, or the tile the user
@@ -374,7 +388,9 @@ function SequenceTile({ event, offsetMs, isAnchor, urls, resizeHandle, monitorNa
         </div>
         <span
           className={cn(
-            'absolute right-4 top-0.5 rounded-sm px-1 text-[10px] [@media(pointer:coarse)]:right-7',
+            'absolute top-0.5 rounded-sm px-1 text-[10px]',
+            // Clear of the top-right handle while the handles show.
+            resizeHandle ? 'right-4 [@media(pointer:coarse)]:right-7' : 'right-0.5',
             isAnchor ? 'bg-blue-500/80 text-white' : 'bg-black/60 text-white'
           )}
           title={t('events.around.offset_title')}
@@ -400,18 +416,17 @@ function SequenceTile({ event, offsetMs, isAnchor, urls, resizeHandle, monitorNa
         </div>
       </div>
       <div className="truncate px-1 py-0.5 text-[11px] leading-tight">{monitorName}</div>
-      {/* Corner handles, drawn as an L bracket that shows while the pointer
-          is over the tile and turns sky blue over the handle itself, so it is
-          clear where a drag starts. touch-none so a drag on a phone resizes
-          instead of scrolling. Pointer-only: the layout is a view preference. */}
-      {RESIZE_CORNERS.map(({ sx, sy, corner }) => (
+      {/* Corner handles while the pencil is pressed, drawn as an L bracket
+          that turns sky blue under the pointer, so it is clear where a drag
+          starts. touch-none so a drag on a phone resizes instead of
+          scrolling. Pointer-only: the layout is a view preference. */}
+      {resizeHandle && RESIZE_CORNERS.map(({ sx, sy, corner }) => (
         <span
           key={corner}
           aria-hidden
           data-testid={`event-context-sequence-resize-${event.Id}-${corner}`}
           className={cn(
-            'absolute z-10 h-4 w-4 touch-none border-transparent [@media(pointer:coarse)]:h-7 [@media(pointer:coarse)]:w-7',
-            'group-hover:border-white/70 hover:!border-sky-400',
+            'absolute z-10 h-4 w-4 touch-none border-white/80 hover:border-sky-400 [@media(pointer:coarse)]:h-7 [@media(pointer:coarse)]:w-7',
             sy < 0 ? 'top-0 border-t-2' : 'bottom-0 border-b-2',
             sx < 0 ? 'left-0 border-l-2' : 'right-0 border-r-2',
             sy < 0 ? (sx < 0 ? 'rounded-tl-sm' : 'rounded-tr-sm') : sx < 0 ? 'rounded-bl-sm' : 'rounded-br-sm',
