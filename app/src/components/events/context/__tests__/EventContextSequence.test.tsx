@@ -297,6 +297,46 @@ describe('EventContextSequence', () => {
     expect(columns()).toBe(Array(4).fill('minmax(0, 1fr)').join(' '));
   });
 
+  it('starts every tile the same size again whenever a grid size is picked', async () => {
+    vi.useRealTimers();
+    const user = userEvent.setup();
+    // jsdom has no layout: give the grid and tiles real sizes, and pointer capture.
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(900);
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(800);
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ width: 300, height: 200 } as DOMRect);
+    HTMLElement.prototype.setPointerCapture = () => {};
+    const many = Array.from({ length: 12 }, (_, i) => row(`e${i}`, (i - 6) * 1_000, 10));
+    render(
+      <MemoryRouter>
+        <EventContextSequence open onOpenChange={() => {}} rows={many} profileId={P} monitorNames={new Map()} />
+      </MemoryRouter>
+    );
+    const columns = () => screen.getByTestId('event-context-sequence-grid-tiles').style.gridTemplateColumns;
+    const even = (n: number) => Array(n).fill('minmax(0, 1fr)').join(' ');
+    const pick = async (n: number) => {
+      await user.click(screen.getByTestId('event-context-sequence-grid'));
+      await user.click(screen.getByTestId(`event-context-sequence-grid-${n}`));
+    };
+    await pick(3);
+    const handle = screen.getByTestId('event-context-sequence-resize-e0-br');
+    fireEvent.pointerDown(handle, { clientX: 300, clientY: 200, pointerId: 1 });
+    fireEvent.pointerMove(handle, { clientX: 500, clientY: 300, pointerId: 1 });
+    fireEvent.pointerUp(handle, { pointerId: 1 });
+    expect(columns()).not.toBe(even(3));
+
+    await pick(3);
+    expect(columns()).toBe(even(3));
+
+    fireEvent.pointerDown(handle, { clientX: 300, clientY: 200, pointerId: 1 });
+    fireEvent.pointerMove(handle, { clientX: 500, clientY: 300, pointerId: 1 });
+    fireEvent.pointerUp(handle, { pointerId: 1 });
+    await pick(2);
+    await pick(3);
+    expect(columns()).toBe(even(3));
+    vi.restoreAllMocks();
+    delete (HTMLElement.prototype as Partial<HTMLElement>).setPointerCapture;
+  });
+
   it('keeps the playing stream going when the grid size changes', async () => {
     vi.useRealTimers();
     const user = userEvent.setup();

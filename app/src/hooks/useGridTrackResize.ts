@@ -5,7 +5,8 @@
  * or column give way, and the grid keeps its size. Layout only: nothing
  * remounts, so streams in the tiles keep playing.
  *
- * The weights reset whenever the column or row count changes.
+ * `reset` puts every track back to the same size; the weights also reset
+ * whenever the column or row count changes.
  */
 import { useRef, useState, type MouseEvent, type PointerEvent, type RefObject } from 'react';
 import { resizeTrack } from '../lib/event/event-context-view';
@@ -74,5 +75,5 @@ export function useGridTrackResize(gridRef: RefObject<HTMLElement | null>, cols:
     onClick: (e: MouseEvent<HTMLElement>) => e.stopPropagation(),
   });
 
-  return { colWeights: current.cols, rowWeights: current.rows, handleProps };
+  return { colWeights: current.cols, rowWeights: current.rows, handleProps, reset: () => setWeights(null) };
 }

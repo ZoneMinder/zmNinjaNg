@@ -161,7 +161,7 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
       ?.querySelector(`[data-testid="event-context-sequence-tile-${eventId}"]`)
       ?.scrollIntoView?.({ block, behavior: 'smooth' });
   const rowCount = Math.ceil(tiles.length / grid);
-  const { colWeights, rowWeights, handleProps } = useGridTrackResize(gridRef, grid, rowCount);
+  const { colWeights, rowWeights, handleProps, reset: resetTileSizes } = useGridTrackResize(gridRef, grid, rowCount);
   const rowWeightSum = rowWeights.reduce((a, b) => a + b, 0);
   const shownRef = useRef<ReadonlySet<string>>(new Set());
   useEffect(() => {
@@ -253,6 +253,7 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
               storeGrid(n);
               // Layout only: the tiles and their streams stay as they are.
               setGrid(n);
+              resetTileSizes();
             }}
           />
           {tiles.length < rows.length && (
@@ -354,7 +355,7 @@ function SequenceTile({ event, offsetMs, isAnchor, urls, resizeHandle, monitorNa
       data-testid={`event-context-sequence-tile-${event.Id}`}
       data-playing={isPlaying}
       data-flash={flash}
-      className="relative flex min-h-0 min-w-0 flex-col rounded-sm border border-border/40 text-left hover:bg-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="group relative flex min-h-0 min-w-0 flex-col rounded-sm border border-border/40 text-left hover:bg-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <div className="relative min-h-0 w-full flex-1 overflow-hidden rounded-t-sm bg-black">
         {/* The blinking triangle marks a playing tile, or the tile the user
@@ -373,7 +374,7 @@ function SequenceTile({ event, offsetMs, isAnchor, urls, resizeHandle, monitorNa
         </div>
         <span
           className={cn(
-            'absolute right-0.5 top-0.5 rounded-sm px-1 text-[10px]',
+            'absolute right-4 top-0.5 rounded-sm px-1 text-[10px] [@media(pointer:coarse)]:right-7',
             isAnchor ? 'bg-blue-500/80 text-white' : 'bg-black/60 text-white'
           )}
           title={t('events.around.offset_title')}
@@ -399,7 +400,9 @@ function SequenceTile({ event, offsetMs, isAnchor, urls, resizeHandle, monitorNa
         </div>
       </div>
       <div className="truncate px-1 py-0.5 text-[11px] leading-tight">{monitorName}</div>
-      {/* Invisible corner handles; touch-none so a drag on a phone resizes
+      {/* Corner handles, drawn as an L bracket that shows while the pointer
+          is over the tile and turns sky blue over the handle itself, so it is
+          clear where a drag starts. touch-none so a drag on a phone resizes
           instead of scrolling. Pointer-only: the layout is a view preference. */}
       {RESIZE_CORNERS.map(({ sx, sy, corner }) => (
         <span
@@ -407,9 +410,11 @@ function SequenceTile({ event, offsetMs, isAnchor, urls, resizeHandle, monitorNa
           aria-hidden
           data-testid={`event-context-sequence-resize-${event.Id}-${corner}`}
           className={cn(
-            'absolute z-10 h-4 w-4 touch-none [@media(pointer:coarse)]:h-7 [@media(pointer:coarse)]:w-7',
-            sy < 0 ? 'top-0' : 'bottom-0',
-            sx < 0 ? 'left-0' : 'right-0',
+            'absolute z-10 h-4 w-4 touch-none border-transparent [@media(pointer:coarse)]:h-7 [@media(pointer:coarse)]:w-7',
+            'group-hover:border-white/70 hover:!border-sky-400',
+            sy < 0 ? 'top-0 border-t-2' : 'bottom-0 border-b-2',
+            sx < 0 ? 'left-0 border-l-2' : 'right-0 border-r-2',
+            sy < 0 ? (sx < 0 ? 'rounded-tl-sm' : 'rounded-tr-sm') : sx < 0 ? 'rounded-bl-sm' : 'rounded-br-sm',
             sx * sy > 0 ? 'cursor-nwse-resize' : 'cursor-nesw-resize'
           )}
           {...resizeHandle(sx, sy)}

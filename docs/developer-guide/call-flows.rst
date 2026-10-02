@@ -3451,8 +3451,10 @@ third should ask for.
    ``EVENT_CONTEXT.sequenceMinTrackShare``. Rows are sized from the grid's
    width through a ``cqw`` container unit, so the grid's total size never
    changes. The handle stops its click from reaching the tile, so a drag is
-   not a tap. Nothing remounts, so playing streams carry on. The weights reset
-   when the column or row count changes.
+   not a tap. Nothing remounts, so playing streams carry on. Each handle draws
+   an L bracket on tile hover, sky blue on its own hover. Picking a grid size
+   calls the hook's ``reset``; a change in the column or row count also
+   resets the weights.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/events/context/EventContextSequence.tsx>`__
    · → :doc:`05-component-architecture`
 
