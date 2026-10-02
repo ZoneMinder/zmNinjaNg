@@ -288,7 +288,6 @@
       "empty_desc": "Aucun événement d'autres caméras dans cette période.",
       "widen": "Élargir",
       "truncated": "Affichage des {{count}} premiers. Réduisez la fenêtre ou ouvrez un événement pour en voir plus.",
-      "dot_label": "{{camera}}, {{offset}}",
       "offset_title": "Écart de temps par rapport à cet événement",
       "this_event": "Cet événement",
       "sequence": "Rejouer",
@@ -313,9 +312,7 @@
       "scope_all": "Tous",
       "scope_unavailable_linked": "Ce moniteur n'a aucun moniteur lié.",
       "scope_unavailable_group": "Ce moniteur n'appartient à aucun groupe.",
-      "scope_unavailable_filtered": "Définissez un filtre sur la page Événements, puis ouvrez À proximité depuis sa liste.",
-      "ribbon_count_one": "{{count}} moniteur",
-      "ribbon_count_other": "{{count}} moniteurs"
+      "scope_unavailable_filtered": "Définissez un filtre sur la page Événements, puis ouvrez À proximité depuis sa liste."
     },
     "linked_events": "Événements liés",
     "linked_all": "Tous",

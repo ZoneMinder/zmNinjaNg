@@ -288,7 +288,6 @@
       "empty_desc": "No events from other cameras in this window.",
       "widen": "Wider",
       "truncated": "Showing the first {{count}}. Narrow the window, or open an event to see more.",
-      "dot_label": "{{camera}}, {{offset}}",
       "offset_title": "Time from this event",
       "this_event": "This event",
       "sequence": "Replay",
@@ -313,9 +312,7 @@
       "scope_all": "All",
       "scope_unavailable_linked": "This camera has no linked cameras.",
       "scope_unavailable_group": "This camera is in no group.",
-      "scope_unavailable_filtered": "Set a filter on the Events page, then open Nearby from its list.",
-      "ribbon_count_one": "{{count}} camera",
-      "ribbon_count_other": "{{count}} cameras"
+      "scope_unavailable_filtered": "Set a filter on the Events page, then open Nearby from its list."
     },
     "linked_events": "Linked events",
     "linked_all": "All",

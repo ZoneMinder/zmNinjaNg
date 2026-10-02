@@ -290,10 +290,6 @@ export const EVENT_CONTEXT = {
    *  URLs cap out near 8KB. Nothing narrows the answer afterwards: a wider
    *  result is the deliberate trade against failing the request. */
   maxMonitorIds: 40,
-  /** Ribbon lane row height, in pixels. */
-  ribbonLaneHeight: 14,
-  /** Lanes visible before the ribbon scrolls inside its own box. */
-  ribbonMaxLanes: 8,
 } as const;
 
 /**
@@ -560,7 +556,6 @@ export const STORAGE_KEYS = {
   // UI section open/closed state
   hoverPreviewOpen: 'zmng-hover-preview-open',
   thumbnailChainOpen: 'zmng-thumbnail-chain-open',
-  eventContextRibbonOpen: 'zmng-event-context-ribbon-open',
   /** Nearby replay mode, 'in-order' or 'all' (refs #534). */
   eventContextReplayGrid: 'zmng-event-context-replay-grid',
   // Prefix, completed with a settings section id (see CollapsibleSection).

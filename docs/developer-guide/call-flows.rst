@@ -3282,8 +3282,8 @@ third should ask for.
        ZM-->>Hook: monitors (LinkedMonitors column), groups
        Hook->>ZM: GET events.json, StartDateTime within ±window, MonitorId filter from scope
        ZM-->>Hook: events in the window
-       Hook-->>Body: rows (offset from anchor), ribbon lanes, truncated, error
-       Body-->>User: controls, ribbon, and rows rendered in the sheet
+       Hook-->>Body: rows (offset from anchor), truncated, error
+       Body-->>User: controls and rows rendered in the sheet
        User->>Panel: Escape, backdrop, close button, or Android back
        Panel->>Router: navigate(-1)
        Router-->>Panel: location.state no longer carries the anchor, unmounts
@@ -3403,18 +3403,6 @@ third should ask for.
    offset is zero, so it is always kept.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/hooks/useEventsAround.ts>`__
    · → :doc:`07-api-and-data-fetching`
-
-#. **The ribbon and the list are two views over the same rows, and the ribbon
-   collapses.** ``buildRibbonLanes`` groups rows by ``MonitorId`` into one lane
-   per monitor and positions each dot 0-100% across the window from its
-   offset; it renders nothing for a single lane, since one monitor's dots say
-   nothing the list below does not. Tapping a dot scrolls that event's row
-   into view in the list below and marks it viewed through the
-   return-highlight store. A header row above the lanes toggles them
-   collapsed, showing the lane count instead; the choice persists per device
-   in ``localStorage`` under ``STORAGE_KEYS.eventContextRibbonOpen``.
-   `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/events/context/EventContextRibbon.tsx>`__
-   · → :doc:`05-component-architecture`
 
 #. **Replay plays the rows around the anchor, one run at a time.** The Replay
    button, enabled from two rows up, opens ``EventContextSequence`` in a

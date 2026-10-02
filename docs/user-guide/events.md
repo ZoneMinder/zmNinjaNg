@@ -144,7 +144,7 @@ Two controls at the top of the panel narrow what "close to" means:
 
 A camera scope with nothing to offer (the camera has no linked cameras, or belongs to no group) stays visible but greyed out rather than disappearing, so you can see why it is not an option. If the window comes up empty, a **Wider** link steps up to the next window size.
 
-A ribbon above the list shows one row per camera with a dot for each of its events in the window, so you can see at a glance which cameras were also busy; tapping a dot jumps to that event in the list below. From there, **Events** opens the same window and cameras on that page.
+**Events** opens the same window and cameras on the Events page.
 
 **Replay** opens up to 12 events (24 or 36 with **Replay tiles** in {doc}`settings`) around the one you tapped as tiles in time order, and plays them back. The button stays greyed out until the window holds at least two events. The grid button in the toolbar picks 2 × 2, 3 × 3 (the default) or 4 × 4: that many tiles fit on screen at once, and the rest are a scroll away. The choice is remembered on this device, and changing it mid-replay leaves playback running. They are split evenly between events before yours and events after it, taking the closest on each side. If one side has fewer, the other side fills the rest. When the window holds more, the toolbar says so, for example "Nearest 12 of 37". On a tablet or computer the replay grows to fill the screen, as far as the chosen grid still fits without scrolling.
 

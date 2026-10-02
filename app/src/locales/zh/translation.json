@@ -288,7 +288,6 @@
       "empty_desc": "此时段内没有其他摄像头的事件。",
       "widen": "扩大范围",
       "truncated": "显示前 {{count}} 个。缩小窗口或打开事件以查看更多。",
-      "dot_label": "{{camera}}，{{offset}}",
       "offset_title": "与该事件的时间差",
       "this_event": "此事件",
       "sequence": "回放",
@@ -313,9 +312,7 @@
       "scope_all": "全部",
       "scope_unavailable_linked": "此监视器没有关联的监视器。",
       "scope_unavailable_group": "此监视器不属于任何分组。",
-      "scope_unavailable_filtered": "请先在事件页面设置筛选，然后从列表中打开“附近”。",
-      "ribbon_count_one": "{{count}} 个监视器",
-      "ribbon_count_other": "{{count}} 个监视器"
+      "scope_unavailable_filtered": "请先在事件页面设置筛选，然后从列表中打开“附近”。"
     },
     "linked_events": "关联事件",
     "linked_all": "全部",

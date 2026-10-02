@@ -23,7 +23,7 @@ export interface EventContextWindow {
   /** ZoneMinder wall-clock bounds, in the owning profile's timezone. */
   startDateTime: string;
   endDateTime: string;
-  /** The anchor's own instant, for offsets the list and ribbon render. */
+  /** The anchor's own instant, for offsets the list and replay render. */
   anchorMs: number;
 }
 

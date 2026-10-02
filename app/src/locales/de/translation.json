@@ -288,7 +288,6 @@
       "empty_desc": "Keine Ereignisse anderer Kameras in diesem Zeitraum.",
       "widen": "Erweitern",
       "truncated": "Zeigt die ersten {{count}}. Fenster verkleinern oder ein Ereignis öffnen, um mehr zu sehen.",
-      "dot_label": "{{camera}}, {{offset}}",
       "offset_title": "Zeitabstand zu diesem Ereignis",
       "this_event": "Dieses Ereignis",
       "sequence": "Wiedergabe",
@@ -313,9 +312,7 @@
       "scope_all": "Alle",
       "scope_unavailable_linked": "Dieser Monitor hat keine verknüpften Monitore.",
       "scope_unavailable_group": "Dieser Monitor ist in keiner Gruppe.",
-      "scope_unavailable_filtered": "Setzen Sie auf der Ereignisseite einen Filter und öffnen Sie dann „In der Nähe“ aus der Liste.",
-      "ribbon_count_one": "{{count}} Monitor",
-      "ribbon_count_other": "{{count}} Monitore"
+      "scope_unavailable_filtered": "Setzen Sie auf der Ereignisseite einen Filter und öffnen Sie dann „In der Nähe“ aus der Liste."
     },
     "linked_events": "Verknüpfte Ereignisse",
     "linked_all": "Alle",

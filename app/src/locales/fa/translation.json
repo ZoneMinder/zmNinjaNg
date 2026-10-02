@@ -288,7 +288,6 @@
       "empty_desc": "رویدادی از دوربین‌های دیگر در این بازه وجود ندارد.",
       "widen": "گسترده‌تر",
       "truncated": "نمایش {{count}} مورد اول. بازه را محدود کنید یا رویدادی باز کنید تا بیشتر ببینید.",
-      "dot_label": "{{camera}}، {{offset}}",
       "offset_title": "زمان نسبت به این رویداد",
       "this_event": "این رویداد",
       "sequence": "بازپخش",
@@ -313,9 +312,7 @@
       "scope_all": "همه",
       "scope_unavailable_linked": "این دوربین دوربین مرتبطی ندارد.",
       "scope_unavailable_group": "این دوربین در هیچ گروهی نیست.",
-      "scope_unavailable_filtered": "ابتدا در صفحه رویدادها فیلتری تنظیم کنید، سپس «نزدیک» را از فهرست آن باز کنید.",
-      "ribbon_count_one": "{{count}} دوربین",
-      "ribbon_count_other": "{{count}} دوربین"
+      "scope_unavailable_filtered": "ابتدا در صفحه رویدادها فیلتری تنظیم کنید، سپس «نزدیک» را از فهرست آن باز کنید."
     },
     "linked_events": "رویدادهای مرتبط",
     "linked_all": "همه",

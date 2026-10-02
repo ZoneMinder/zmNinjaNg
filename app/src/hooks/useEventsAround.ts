@@ -57,7 +57,7 @@ export interface UseEventsAroundResult {
    *  renders this, not the request, so the pressed chip never disagrees with
    *  the rows underneath it. */
   effectiveScope: EventContextScope;
-  /** Monitor id -> name, for the ribbon's lane labels. */
+  /** Monitor id -> name, for the list rows and replay tiles. */
   monitorNames: Map<string, string>;
 }
 

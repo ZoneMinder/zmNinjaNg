@@ -298,7 +298,6 @@
       "empty_desc": "Нет событий с других камер в этом периоде.",
       "widen": "Расширить",
       "truncated": "Показаны первые {{count}}. Сузьте окно или откройте событие, чтобы увидеть больше.",
-      "dot_label": "{{camera}}, {{offset}}",
       "offset_title": "Время относительно этого события",
       "this_event": "Это событие",
       "sequence": "Воспроизвести",
@@ -329,11 +328,7 @@
       "scope_all": "Все",
       "scope_unavailable_linked": "У этого монитора нет связанных мониторов.",
       "scope_unavailable_group": "Этот монитор не состоит ни в одной группе.",
-      "scope_unavailable_filtered": "Задайте фильтр на странице событий и откройте «Рядом» из её списка.",
-      "ribbon_count_one": "{{count}} монитор",
-      "ribbon_count_few": "{{count}} монитора",
-      "ribbon_count_many": "{{count}} мониторов",
-      "ribbon_count_other": "{{count}} монитора"
+      "scope_unavailable_filtered": "Задайте фильтр на странице событий и откройте «Рядом» из её списка."
     },
     "linked_events": "Связанные события",
     "linked_all": "Все",

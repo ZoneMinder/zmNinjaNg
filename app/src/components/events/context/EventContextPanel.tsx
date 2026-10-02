@@ -11,21 +11,18 @@
  * fresh instance seeded from the *current* setting rather than
  * whatever was on screen the first time the (always-mounted) panel rendered.
  *
- * Task 6 mounts `<EventContextList/>`, Task 7 `<EventContextRibbon/>`.
- *
  * The open panel is itself a history entry (refs #494): EventContextButton
  * pushes it, so back/forward, the Android back button and this panel's own
  * dismissal controls all agree on whether it is showing. See
  * stores/eventContext.ts for the state that entry carries.
  */
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Grid3x3, Play } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useShallow } from 'zustand/react/shallow';
 import { cn } from '../../../lib/utils';
 import { useEventContextStore, type EventContextHistoryState } from '../../../stores/eventContext';
-import { useReturnHighlightStore } from '../../../stores/returnHighlight';
 import { useIsMobile } from '../../../hooks/useIsMobile';
 import { useEventsAround } from '../../../hooks/useEventsAround';
 import { useSettingsStore, type EventContextSettings } from '../../../stores/settings';
@@ -35,9 +32,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from '../../
 import { Button } from '../../ui/button';
 import { EventContextControls } from './EventContextControls';
 import { EventContextList } from './EventContextList';
-import { EventContextRibbon } from './EventContextRibbon';
 import { EventContextSequence } from './EventContextSequence';
-import { buildRibbonLanes } from '../../../lib/event/event-context-view';
 import { EVENT_CONTEXT } from '../../../lib/zmninja-ng-constants';
 import type { EventData, ProfileId } from '../../../api/types';
 
@@ -81,23 +76,6 @@ function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId:
       if (currentProfileId) useSettingsStore.getState().updateProfileSettings(currentProfileId, { eventContext: merged });
     },
     [currentProfileId, context.scope, effectiveScope]
-  );
-
-  const lanes = useMemo(
-    () => buildRibbonLanes(rows, monitorNames, context.windowMinutes * 60_000 * 2),
-    [rows, monitorNames, context.windowMinutes]
-  );
-
-  const listRef = useRef<HTMLDivElement>(null);
-  const markViewed = useReturnHighlightStore((s) => s.markViewed);
-  const onSelect = useCallback(
-    (eventId: string) => {
-      listRef.current
-        ?.querySelector<HTMLElement>(`[data-testid="event-context-row-${eventId}"]`)
-        ?.scrollIntoView({ block: 'nearest' });
-      markViewed(eventId);
-    },
-    [markViewed]
   );
 
   const widerMinutes = EVENT_CONTEXT.windowChoices.find((m) => m > context.windowMinutes);
@@ -150,18 +128,15 @@ function EventContextBody({ anchor, profileId }: { anchor: EventData; profileId:
           truncated={truncated}
         />
       )}
-      <EventContextRibbon lanes={lanes} onSelect={onSelect} />
-      <div ref={listRef} className="contents">
-        <EventContextList
-          rows={rows}
-          profileId={profileId}
-          monitorNames={monitorNames}
-          isLoading={isLoading}
-          error={error}
-          truncated={truncated}
-          onWiden={onWiden}
-        />
-      </div>
+      <EventContextList
+        rows={rows}
+        profileId={profileId}
+        monitorNames={monitorNames}
+        isLoading={isLoading}
+        error={error}
+        truncated={truncated}
+        onWiden={onWiden}
+      />
     </>
   );
 }
