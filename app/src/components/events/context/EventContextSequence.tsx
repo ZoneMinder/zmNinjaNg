@@ -21,7 +21,10 @@
  *
  * One tap on a tile restarts the replay from that tile; a second tap right
  * after opens its event. With the pencil pressed, dragging a tile's corner
- * resizes it inside the grid (useGridTrackResize).
+ * resizes it inside the grid (useGridTrackResize), and each tile zooms and
+ * pans like the event and monitor views (useZoomPan); taps do nothing then,
+ * so a pan does not restart the replay. Sizes and zoom stay after the pencil
+ * is released.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -41,6 +44,7 @@ import { useReturnFlash } from '../../../hooks/useReturnFlash';
 import { useInsomnia } from '../../../hooks/useInsomnia';
 import { useBandwidthSettings } from '../../../hooks/useBandwidthSettings';
 import { useGridTrackResize } from '../../../hooks/useGridTrackResize';
+import { useZoomPan } from '../../../hooks/useZoomPan';
 import type { ZmsProbe } from '../../../hooks/useZmsEventProgress';
 import type { EventContextHistoryState } from '../../../stores/eventContext';
 import { resolveMinStreamingPort } from '../../../lib/monitor/multiport';
@@ -314,7 +318,8 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
                 progressStepMs={zmsStatusInterval}
                 onProbe={(probe) => onProbe(event.Id, probe)}
                 profileId={profileId}
-                onTap={(at) => tapTile(event.Id, at)}
+                editing={resizing}
+                onTap={(at) => { if (!resizing) tapTile(event.Id, at); }}
               />
             );
           })}
@@ -340,6 +345,8 @@ interface SequenceTileProps {
   /** Pointer props for the corner handle that moves the tile's left or right
    *  edge (sx -1 or 1) and its top or bottom edge (sy -1 or 1); no handles
    *  without it. */
+  /** Pencil pressed: the tile zooms and pans, and shows its corner handles. */
+  editing: boolean;
   resizeHandle?: (sx: number, sy: number) => ReturnType<ReturnType<typeof useGridTrackResize>['handleProps']>;
   monitorName: string;
   isPlaying: boolean;
@@ -356,9 +363,11 @@ interface SequenceTileProps {
   onTap: (at: number) => void;
 }
 
-function SequenceTile({ event, offsetMs, isAnchor, urls, resizeHandle, monitorName, isPlaying, run, probe, progressStepMs, onProbe, profileId, onTap }: SequenceTileProps) {
+function SequenceTile({ event, offsetMs, isAnchor, urls, editing, resizeHandle, monitorName, isPlaying, run, probe, progressStepMs, onProbe, profileId, onTap }: SequenceTileProps) {
   const { t } = useTranslation();
   const flash = useReturnFlash(event.Id);
+  // Keys off: every tile has one of these, and arrows are window-wide.
+  const { ref: zoomRef, innerRef: zoomInnerRef } = useZoomPan({ enabled: editing, keyboard: false });
   return (
     <button
       type="button"
@@ -371,11 +380,12 @@ function SequenceTile({ event, offsetMs, isAnchor, urls, resizeHandle, monitorNa
       data-flash={flash}
       className="relative flex min-h-0 min-w-0 flex-col rounded-sm border border-border/40 text-left hover:bg-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
-      <div className="relative min-h-0 w-full flex-1 overflow-hidden rounded-t-sm bg-black">
+      <div ref={zoomRef} className="relative min-h-0 w-full flex-1 overflow-hidden rounded-t-sm bg-black">
         {/* The blinking triangle marks a playing tile, or the tile the user
             just came back from while playback is held. */}
         {(isPlaying || flash) && <ReturnFlashArrow className="top-1" />}
         <div className={cn('h-full w-full transition-opacity', !isPlaying && 'opacity-60')}>
+          <div ref={zoomInnerRef} data-testid={`event-context-sequence-zoom-${event.Id}`}>
           {isPlaying ? (
             <EventZmsHoverPlayer
               key={run}
@@ -385,6 +395,7 @@ function SequenceTile({ event, offsetMs, isAnchor, urls, resizeHandle, monitorNa
           ) : (
             <EventThumbnail urls={urls} cacheKey={event.Id} alt={event.Name} className="h-full w-full" objectFit="contain" />
           )}
+          </div>
         </div>
         <span
           className={cn(
@@ -416,9 +427,9 @@ function SequenceTile({ event, offsetMs, isAnchor, urls, resizeHandle, monitorNa
         </div>
       </div>
       <div className="truncate px-1 py-0.5 text-[11px] leading-tight">{monitorName}</div>
-      {/* Corner handles while the pencil is pressed, drawn as an L bracket
-          that turns sky blue under the pointer, so it is clear where a drag
-          starts. touch-none so a drag on a phone resizes instead of
+      {/* Corner handles while the pencil is pressed, drawn as Montage's
+          edit-mode L bracket (--edit-handle), so it is clear where a drag
+          starts. Siblings of the zoom box, so a handle drag never pans. touch-none so a drag on a phone resizes instead of
           scrolling. Pointer-only: the layout is a view preference. */}
       {resizeHandle && RESIZE_CORNERS.map(({ sx, sy, corner }) => (
         <span
@@ -426,9 +437,9 @@ function SequenceTile({ event, offsetMs, isAnchor, urls, resizeHandle, monitorNa
           aria-hidden
           data-testid={`event-context-sequence-resize-${event.Id}-${corner}`}
           className={cn(
-            'absolute z-10 h-4 w-4 touch-none border-white/80 hover:border-sky-400 [@media(pointer:coarse)]:h-7 [@media(pointer:coarse)]:w-7',
-            sy < 0 ? 'top-0 border-t-2' : 'bottom-0 border-b-2',
-            sx < 0 ? 'left-0 border-l-2' : 'right-0 border-r-2',
+            'absolute z-10 h-4 w-4 touch-none border-[color:var(--edit-handle)] [@media(pointer:coarse)]:h-7 [@media(pointer:coarse)]:w-7',
+            sy < 0 ? 'top-0 border-t-[3px]' : 'bottom-0 border-b-[3px]',
+            sx < 0 ? 'left-0 border-l-[3px]' : 'right-0 border-r-[3px]',
             sy < 0 ? (sx < 0 ? 'rounded-tl-sm' : 'rounded-tr-sm') : sx < 0 ? 'rounded-bl-sm' : 'rounded-br-sm',
             sx * sy > 0 ? 'cursor-nwse-resize' : 'cursor-nesw-resize'
           )}

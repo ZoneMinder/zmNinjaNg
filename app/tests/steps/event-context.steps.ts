@@ -131,6 +131,27 @@ When('I press the sequence play resize pencil', async ({ page }) => {
   await expect(toggle).toHaveAttribute('aria-pressed', 'true');
 });
 
+When('I scroll to zoom into the first sequence play tile', async ({ page }) => {
+  if (!sequenceListIds) return;
+  const tile = page.getByTestId('event-context-sequence').locator('[data-testid^="event-context-sequence-tile-"]').first();
+  const box = (await tile.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 3);
+  for (let i = 0; i < 3; i++) await page.mouse.wheel(0, -120);
+});
+
+When('I release the sequence play resize pencil', async ({ page }) => {
+  if (!sequenceListIds) return;
+  const toggle = page.getByTestId('event-context-sequence-resize-toggle');
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+});
+
+Then('the first sequence play tile is still zoomed in', async ({ page }) => {
+  if (!sequenceListIds) return;
+  const zoom = page.getByTestId('event-context-sequence').locator('[data-testid^="event-context-sequence-zoom-"]').first();
+  await expect.poll(() => zoom.evaluate((el) => new DOMMatrix(getComputedStyle(el).transform).a)).toBeGreaterThan(1.2);
+});
+
 When("I drag the first sequence play tile's bottom right corner outward", async ({ page }) => {
   if (!sequenceListIds) return;
   const sequence = page.getByTestId('event-context-sequence');

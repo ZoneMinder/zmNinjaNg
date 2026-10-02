@@ -299,7 +299,7 @@
       "sequence_nearest_other": "{{count}} مورد نزدیک‌تر از {{total}}",
       "sequence_tile_hint": "برای پخش ضربه بزنید، برای باز کردن دو بار ضربه بزنید",
       "sequence_grid": "اندازه شبکه",
-      "sequence_resize": "تغییر اندازه کاشی‌ها",
+      "sequence_resize": "اندازه/زوم",
       "sequence_grid_size": "{{n}} × {{n}}",
       "sequence_progress": "پیشرفت پخش",
       "close": "بستن",

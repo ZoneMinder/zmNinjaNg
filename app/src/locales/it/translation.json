@@ -299,7 +299,7 @@
       "sequence_nearest_other": "I {{count}} più vicini su {{total}}",
       "sequence_tile_hint": "Tocca per riprodurre, tocca due volte per aprire",
       "sequence_grid": "Dimensione griglia",
-      "sequence_resize": "Ridimensiona riquadri",
+      "sequence_resize": "Dimensione/zoom",
       "sequence_grid_size": "{{n}} × {{n}}",
       "sequence_progress": "Avanzamento riproduzione",
       "close": "Chiudi",

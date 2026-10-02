@@ -3453,7 +3453,13 @@ third should ask for.
    width through a ``cqw`` container unit, so the grid's total size never
    changes. The handle stops its click from reaching the tile, so a drag is
    not a tap. Nothing remounts, so playing streams carry on. Each handle draws
-   an L bracket, sky blue on hover. Picking a grid size
+   Montage's edit-mode L bracket in ``--edit-handle`` (``index.css``). Each
+   tile also runs ``useZoomPan`` with ``enabled`` following the pencil and
+   ``keyboard: false``, since window-wide arrow keys would pan every zoomed
+   tile at once. The handles are siblings of the zoom box, so a handle drag
+   never pans. While the pencil is pressed a tile tap does nothing, so the
+   click that ends a pan does not restart the replay. Releasing the pencil
+   turns the gestures off but leaves the transform applied. Picking a grid size
    calls the hook's ``reset``; a change in the column or row count also
    resets the weights.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/components/events/context/EventContextSequence.tsx>`__

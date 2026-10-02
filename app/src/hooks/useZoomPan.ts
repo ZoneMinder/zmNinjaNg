@@ -12,6 +12,12 @@ interface UseZoomPanOptions {
   onSwipeLeft?: () => void;
   onSwipeRight?: () => void;
   swipeEnabled?: boolean;
+  /** Off: no gestures, keys, grab cursor or touch-action, so the page has
+   *  them; the current zoom stays applied. Default on. */
+  enabled?: boolean;
+  /** Arrow keys pan when zoomed. Off where several views zoom at once, since
+   *  the keys are window-wide and would pan them all. Default on. */
+  keyboard?: boolean;
 }
 
 interface TransformState {
@@ -30,6 +36,8 @@ export function useZoomPan({
   onSwipeLeft,
   onSwipeRight,
   swipeEnabled = false,
+  enabled = true,
+  keyboard = true,
 }: UseZoomPanOptions = {}) {
   const [isZoomed, setIsZoomed] = useState(false);
   const [displayScale, setDisplayScale] = useState(1);
@@ -266,6 +274,7 @@ export function useZoomPan({
     },
     {
       target: containerRef,
+      enabled,
       eventOptions: { passive: false },
       pinch: {
         // Floor at fit, not at minScale: the wheel path already clamps to 1,
@@ -297,6 +306,7 @@ export function useZoomPan({
   // so native page scrolling and other shortcuts keep working. Ignores arrows
   // while typing in a form field.
   useEffect(() => {
+    if (!enabled || !keyboard) return;
     const onKeyDown = (e: KeyboardEvent) => {
       const el = document.activeElement as HTMLElement | null;
       if (
@@ -342,7 +352,7 @@ export function useZoomPan({
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [panLeft, panRight, panUp, panDown, swipeEnabled, onSwipeLeft, onSwipeRight]);
+  }, [enabled, keyboard, panLeft, panRight, panUp, panDown, swipeEnabled, onSwipeLeft, onSwipeRight]);
 
   // Grab cursor when zoomed so desktop users discover drag-to-pan.
   useEffect(() => {
@@ -351,8 +361,8 @@ export function useZoomPan({
     // react-hooks/immutability.
     const el = containerRef.current;
     if (!el) return;
-    el.style.cursor = isZoomed ? 'grab' : '';
-  }, [isZoomed, containerEl]);
+    el.style.cursor = enabled && isZoomed ? 'grab' : '';
+  }, [enabled, isZoomed, containerEl]);
 
   // Apply touch/drag styles to container and block the browser's native image
   // drag (ghost image) so a mouse drag pans instead of dragging the picture.
@@ -370,7 +380,7 @@ export function useZoomPan({
     // this once the node exists, and styling a value held in state trips
     // react-hooks/immutability.
     const el = containerRef.current;
-    if (!el) return;
+    if (!el || !enabled) return;
     el.classList.add('no-native-drag');
     el.style.touchAction = isZoomed ? 'none' : 'pan-y';
     const onDragStart = (e: Event) => e.preventDefault();
@@ -380,7 +390,7 @@ export function useZoomPan({
       el.style.touchAction = '';
       el.removeEventListener('dragstart', onDragStart);
     };
-  }, [containerEl, isZoomed]);
+  }, [enabled, containerEl, isZoomed]);
 
   return {
     ref: setContainer,

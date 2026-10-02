@@ -46,6 +46,8 @@
   --sai-right: var(--safe-area-inset-right, env(safe-area-inset-right, 0px));
   --sai-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
   --sai-left: var(--safe-area-inset-left, env(safe-area-inset-left, 0px));
+  /* Edit-mode resize handles: Montage's grid and the replay tiles. */
+  --edit-handle: rgba(250, 204, 21, 0.8);
 }
 
 /* Height of the thin fullscreen toolbars (montage, monitor detail). One
@@ -205,7 +207,7 @@
   z-index: 40 !important;
   background: transparent !important;
   border-style: solid !important;
-  border-color: rgba(250, 204, 21, 0.8) !important;
+  border-color: var(--edit-handle) !important;
   border-width: 0 !important;
 }
 .react-grid-item > .react-resizable-handle::after {

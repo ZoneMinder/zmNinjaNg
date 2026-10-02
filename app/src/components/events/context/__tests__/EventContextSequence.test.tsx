@@ -247,6 +247,29 @@ describe('EventContextSequence', () => {
     expect(screen.getByTestId('path')).toHaveTextContent('/all/events/p1/b');
   });
 
+  it('ignores taps while the pencil is pressed, so a pan is not a play or an open', () => {
+    function Path() {
+      return <div data-testid="path">{useLocation().pathname}</div>;
+    }
+    render(
+      <MemoryRouter>
+        <EventContextSequence open onOpenChange={() => {}} rows={rows} profileId={P} monitorNames={new Map()} />
+        <Path />
+      </MemoryRouter>
+    );
+    act(() => vi.advanceTimersByTime(0));
+    const before = playingIds();
+    fireEvent.click(screen.getByTestId('event-context-sequence-resize-toggle'));
+    const tile = screen.getByTestId('event-context-sequence-tile-b');
+    fireEvent.click(tile);
+    act(() => vi.advanceTimersByTime(100));
+    fireEvent.click(tile);
+    act(() => vi.advanceTimersByTime(0));
+    expect(screen.getByTestId('path')).toHaveTextContent(/^\/$/);
+    expect(playingIds()).toEqual(before);
+    expect(before).not.toEqual(['b']);
+  });
+
   it('treats two taps far apart as two plays, not an open', () => {
     function Path() {
       return <div data-testid="path">{useLocation().pathname}</div>;

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import { useEffect } from 'react';
 import { render, cleanup, act } from '@testing-library/react';
 import { useZoomPan } from '../useZoomPan';
 
@@ -234,5 +235,69 @@ describe('useZoomPan arrow keys step between items at 1x (refs #533)', () => {
 
     expect(onSwipeLeft).not.toHaveBeenCalled();
     document.body.removeChild(input);
+  });
+});
+
+describe('useZoomPan switched off (replay edit mode, refs #534)', () => {
+  let off: ReturnType<typeof useZoomPan>;
+  const expose = (z: ReturnType<typeof useZoomPan>) => { off = z; };
+  function OptHarness(opts: Parameters<typeof useZoomPan>[0]) {
+    const z = useZoomPan(opts);
+    const { ref, innerRef } = z;
+    useEffect(() => expose(z));
+    return (
+      <div ref={ref} data-testid="container">
+        <div ref={innerRef} data-testid="inner" />
+      </div>
+    );
+  }
+  function mount(opts: Parameters<typeof useZoomPan>[0]) {
+    const utils = render(<OptHarness {...opts} />);
+    const container = utils.getByTestId('container');
+    vi.spyOn(container, 'getBoundingClientRect').mockReturnValue({
+      width: 400, height: 300, top: 0, left: 0, right: 400, bottom: 300, x: 0, y: 0, toJSON: () => ({}),
+    } as DOMRect);
+    return { ...utils, container, inner: utils.getByTestId('inner') };
+  }
+  const wheelUp = () => new WheelEvent('wheel', { deltaY: -120, clientX: 200, clientY: 150, cancelable: true, bubbles: true });
+  const arrow = () => new KeyboardEvent('keydown', { key: 'ArrowLeft', cancelable: true });
+
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
+
+  it('leaves the wheel to the page while off', () => {
+    const { container } = mount({ enabled: false });
+    const ev = wheelUp();
+    act(() => { container.dispatchEvent(ev); });
+    expect(off.isZoomed).toBe(false);
+    expect(ev.defaultPrevented).toBe(false);
+  });
+
+  it('keeps the zoom it had when switched off, and hands touch, cursor and arrows back to the page', () => {
+    const { container, inner, rerender } = mount({ enabled: true });
+    act(() => { container.dispatchEvent(wheelUp()); });
+    expect(off.isZoomed).toBe(true);
+    const zoomed = inner.style.transform;
+
+    rerender(<OptHarness enabled={false} />);
+    expect(inner.style.transform).toBe(zoomed);
+    expect(container.style.touchAction).toBe('');
+    expect(container.style.cursor).toBe('');
+    const ev = arrow();
+    act(() => { window.dispatchEvent(ev); });
+    expect(ev.defaultPrevented).toBe(false);
+    expect(inner.style.transform).toBe(zoomed);
+  });
+
+  it('leaves arrow keys alone with keyboard off, even when zoomed', () => {
+    const { inner } = mount({ keyboard: false });
+    act(() => off.zoomIn());
+    const before = inner.style.transform;
+    const ev = arrow();
+    act(() => { window.dispatchEvent(ev); });
+    expect(ev.defaultPrevented).toBe(false);
+    expect(inner.style.transform).toBe(before);
   });
 });

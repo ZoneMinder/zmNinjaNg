@@ -49,6 +49,16 @@ Feature: Events around an event
     Then the first sequence play tile is larger and the grid keeps its size
 
   @all
+  Scenario: A sequence play tile zooms in edit mode and stays zoomed after it
+    When I open the around-this-event panel on the first event
+    And I choose the 60 minute window
+    And I open sequence play if there are two events
+    And I press the sequence play resize pencil
+    And I scroll to zoom into the first sequence play tile
+    And I release the sequence play resize pencil
+    Then the first sequence play tile is still zoomed in
+
+  @all
   Scenario: The Replay tiles setting sets how many nearby events show
     When I navigate to the "Settings" page
     And I search settings for "Replay tiles"

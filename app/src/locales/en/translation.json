@@ -299,7 +299,7 @@
       "sequence_nearest_other": "Nearest {{count}} of {{total}}",
       "sequence_tile_hint": "Tap to play, double tap to open",
       "sequence_grid": "Grid size",
-      "sequence_resize": "Resize tiles",
+      "sequence_resize": "Resize/zoom",
       "sequence_grid_size": "{{n}} × {{n}}",
       "sequence_progress": "Playback progress",
       "close": "Close",
