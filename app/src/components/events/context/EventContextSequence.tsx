@@ -228,7 +228,8 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
         )}
         data-testid="event-context-sequence"
         style={{
-          ['--replay-max-w' as string]: `calc((100dvh - 2rem - ${EVENT_CONTEXT.sequenceChromeRem}rem - ${grid} * ${EVENT_CONTEXT.sequenceRowLabelRem}rem) * 16 / 9)`,
+          // As wide as the rows the tiles fill can be while they fit on screen.
+          ['--replay-max-w' as string]: `calc((100dvh - 2rem - ${EVENT_CONTEXT.sequenceChromeRem}rem - ${Math.max(rowCount, 1)} * ${EVENT_CONTEXT.sequenceRowLabelRem}rem) * 16 / 9 * ${grid} / ${Math.max(rowCount, 1)})`,
         }}
       >
         {/* Only the toolbar and the tiles take space; the title and

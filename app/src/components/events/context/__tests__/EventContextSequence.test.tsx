@@ -320,6 +320,15 @@ describe('EventContextSequence', () => {
     expect(columns()).toBe(Array(4).fill('minmax(0, 1fr)').join(' '));
   });
 
+  it('sizes the dialog to the rows the tiles fill, not to a full N x N grid', () => {
+    // Three tiles in the default 3-column grid fill one row, so the height
+    // budget is one row's, stretched over three columns.
+    renderGrid();
+    expect(screen.getByTestId('event-context-sequence').style.getPropertyValue('--replay-max-w')).toBe(
+      'calc((100dvh - 2rem - 3rem - 1 * 1.25rem) * 16 / 9 * 3 / 1)'
+    );
+  });
+
   it('shows the corner handles only while the pencil is pressed', async () => {
     vi.useRealTimers();
     const user = userEvent.setup();

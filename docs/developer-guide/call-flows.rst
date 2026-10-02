@@ -3411,7 +3411,7 @@ third should ask for.
    selection-scoped setting, one of ``EVENT_CONTEXT.replayTileChoices``); the
    N x N size picked in its ``GridColumnsMenu`` (stored per device under
    ``STORAGE_KEYS.eventContextReplayGrid``) only sets N columns and a width
-   at which N rows fit the screen. It hands the tiles to ``buildReplayRuns``,
+   at which the rows the tiles fill (at most N) fit the screen. It hands the tiles to ``buildReplayRuns``,
    which groups events that overlap in time into runs and gives each tile a
    start offset inside its run, divided by
    ``hoverPreviewPlaybackRate``. ``EventZmsHoverPlayer`` reads the same setting

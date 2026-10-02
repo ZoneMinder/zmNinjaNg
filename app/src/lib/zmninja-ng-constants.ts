@@ -277,8 +277,8 @@ export const EVENT_CONTEXT = {
   sequenceGridSizes: [2, 3, 4] as const,
   sequenceDefaultGrid: 3,
   /** Replay dialog height, in rem, taken by its toolbar and padding, and by
-   *  each tile row's monitor name. From `sm` up the dialog is as wide as an
-   *  N x N block of 16:9 tiles can be while it fits on screen. */
+   *  each tile row's monitor name. From `sm` up the dialog is as wide as its
+   *  block of 16:9 tiles can be while its filled rows fit on screen. */
   sequenceChromeRem: 3,
   sequenceRowLabelRem: 1.25,
   /** The smallest share of the grid's width or height a replay row or column
