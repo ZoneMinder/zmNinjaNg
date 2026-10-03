@@ -235,6 +235,12 @@ matching reality, fixing it is a protocol change like any rule edit.
   pass and desync safe-area insets; tried and reverted (d1112e17,
   54af0cfe). CSS-only rotation fixes are the supported path; HTML5 video
   pausing on rotation is accepted behavior.
+- iPhone in landscape sends one small `touchmove` with most taps. Radix
+  modals' `react-remove-scroll` cancels any `touchmove` over content that
+  cannot scroll, and WebKit then drops the click: dialog buttons ignored
+  most landscape taps. Fixed by `lib/tap-jitter-guard.ts` (iOS only, stops
+  in-slop moves at window capture). Diagnose dropped taps by logging
+  `touchmove` count and `defaultPrevented` per tap, not by position (#534).
 - On-device WebLLM crashes iOS WKWebView (about 2GB jetsam limit). It is
   gated off on iOS; remote Ollama is the supported path there.
 - Google Play's native debug-symbols warning for Android builds is inherent

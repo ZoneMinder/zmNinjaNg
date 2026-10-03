@@ -689,6 +689,27 @@ or a cutout when a phone is in landscape, whatever padding the caller sets.
 **Used by:** ``main.tsx``, plus the CSS in ``index.css`` and component styles
 that consume ``var(--sai-*)``.
 
+Tap jitter guard (``lib/tap-jitter-guard.ts``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+An iPhone in landscape sends one small ``touchmove`` with most taps. Every
+Radix modal (``Dialog``, ``Sheet``, ``AlertDialog``, a modal
+``DropdownMenu``) mounts ``react-remove-scroll`` to stop the page behind it
+scrolling, and that library cancels any ``touchmove`` over content that
+cannot scroll, however small. When the move is cancelled, WebKit does not
+turn the tap into a click, so buttons in a dialog ignored most taps in
+landscape.
+
+``installTapJitterGuard()`` adds capture listeners on ``window``, which run
+before anything else sees the event. A one-finger move that stays within
+``UI_INTERACTIONS.moveCancelPx`` of the touch start is stopped there; once
+the finger goes past that, the gesture is a drag and every move goes
+through. Pinches are never held back. The app's own touch handlers measure
+from the ``touchstart`` point, so they lose nothing by missing the first
+few pixels. It returns a function that removes the listeners.
+
+**Used by:** ``main.tsx``, on iOS only.
+
 API validator (``lib/zm/api-validator.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

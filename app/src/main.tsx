@@ -6,6 +6,7 @@ import App from './App.tsx'
 import { Platform } from './lib/platform'
 import { installSafeAreaBootstrap } from './lib/safe-area-bootstrap'
 import { installGlobalErrorHandlers } from './lib/global-error-handlers'
+import { installTapJitterGuard } from './lib/tap-jitter-guard'
 
 // Route unhandled promise rejections and uncaught window errors into the
 // in-app log system before anything else runs. refs #182.
@@ -22,6 +23,12 @@ if (Platform.isNative) {
 // orientation change. Workaround for env(safe-area-inset-*) being stale in iOS
 // WKWebView with contentInset='never'. refs #147.
 void installSafeAreaBootstrap();
+
+// iPhone in landscape sends a small touchmove with most taps; Radix modals'
+// scroll lock cancels it and WebKit then drops the click. refs #534.
+if (Platform.isIOS) {
+  installTapJitterGuard();
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
