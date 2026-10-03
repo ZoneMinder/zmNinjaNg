@@ -347,6 +347,11 @@ share ``useAssistantChrome`` for the clear/minimize/close controls, so they
 differ only in layout. The shell stays mounted (hidden) while minimized, so a
 running turn survives collapsing to the button.
 
+``useIsPhone``, in the same file, also counts a touch screen shorter than the
+breakpoint, so a phone in landscape is still a phone. The event Replay grid
+uses it to stay full screen, with its grid picker in a bottom sheet, when the
+phone is rotated.
+
 **Empty state and connection dot.** With an empty thread ``AskPanel`` renders
 ``AssistantIntro``: a greeting from Ninjii (the assistant's name in the UI) plus a row of clickable example prompts
 (``assistant.intro_example_1..4``, one of them "Summarize my day") that teach

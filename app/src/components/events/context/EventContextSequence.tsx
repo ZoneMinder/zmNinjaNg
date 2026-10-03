@@ -34,7 +34,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from '../../ui/
 import { Button } from '../../ui/button';
 import { EventThumbnail } from '../EventThumbnail';
 import { GridColumnsMenu } from '../../common/GridColumnsMenu';
-import { useIsMobile } from '../../../hooks/useIsMobile';
+import { useIsPhone } from '../../../hooks/useIsMobile';
 import { ReturnFlashArrow } from '../ReturnFlashArrow';
 import { EventZmsHoverPlayer } from '../EventThumbnailHoverPreview';
 import { useCurrentProfile, useProfileById } from '../../../hooks/useCurrentProfile';
@@ -100,7 +100,7 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
   const minStreamingPort = resolveMinStreamingPort(profile?.minStreamingPort, settings.forceDisableMultiPort);
   const rate = selectionSettings.hoverPreviewPlaybackRate ?? DEFAULT_HOVER_PREVIEW_PLAYBACK_RATE;
 
-  const isMobile = useIsMobile();
+  const isPhone = useIsPhone();
   const [grid, setGrid] = useState(readStoredGrid);
   const [resizing, setResizing] = useState(false);
   const tileCount = selectionSettings.eventContextReplayTiles;
@@ -215,14 +215,17 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
         // the app under them, so a box from the top edge put the toolbar and
         // the close button under the status bar. Insetting the box itself
         // (rather than padding it) moves the dialog's own close button too.
-        // From sm up it is the stock centred dialog again.
+        // Phones stay full screen in landscape too; on anything else (always
+        // sm and up) it is the stock centred dialog again.
         className={cn(
           'bottom-[var(--sai-bottom,0px)] left-[var(--sai-left,0px)] right-[var(--sai-right,0px)] top-[var(--sai-top,0px)]',
           'max-h-none w-auto max-w-none translate-x-0 translate-y-0 gap-1 rounded-none p-1.5',
           'data-[state=open]:slide-in-from-left-0 data-[state=open]:slide-in-from-top-0',
-          'sm:bottom-auto sm:left-[50%] sm:right-auto sm:top-[50%] sm:max-h-[calc(100dvh-2rem)] sm:w-full sm:max-w-[min(95vw,var(--replay-max-w))]',
-          'sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-lg sm:p-2',
-          'sm:data-[state=open]:slide-in-from-left-1/2 sm:data-[state=open]:slide-in-from-top-[48%]',
+          !isPhone && [
+            'sm:bottom-auto sm:left-[50%] sm:right-auto sm:top-[50%] sm:max-h-[calc(100dvh-2rem)] sm:w-full sm:max-w-[min(95vw,var(--replay-max-w))]',
+            'sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-lg sm:p-2',
+            'sm:data-[state=open]:slide-in-from-left-1/2 sm:data-[state=open]:slide-in-from-top-[48%]',
+          ],
           // Above the sticky toolbar, which would otherwise paint over it.
           '[&>[data-testid=dialog-close-button]]:z-20'
         )}
@@ -244,7 +247,7 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
             {t('events.around.sequence_replay')}
           </Button>
           <GridColumnsMenu
-            isMobile={isMobile}
+            isMobile={isPhone}
             gridCols={grid}
             title={t('events.around.sequence_grid')}
             triggerIcon={Grid2x2}

@@ -95,6 +95,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.unstubAllGlobals();
   vi.useRealTimers();
   localStorage.clear();
   useReturnHighlightStore.getState().clear();
@@ -327,6 +328,21 @@ describe('EventContextSequence', () => {
     expect(screen.getByTestId('event-context-sequence').style.getPropertyValue('--replay-max-w')).toBe(
       'calc((100dvh - 2rem - 3rem - 1 * 1.25rem) * 16 / 9 * 3 / 1)'
     );
+  });
+
+  it.each([
+    [true, 'fills the screen and picks the grid from a sheet on a phone, in either orientation'],
+    [false, 'is a centred box with a grid dropdown on a tablet or computer'],
+  ])('%s: %s', async (phone) => {
+    vi.useRealTimers();
+    // jsdom has no matchMedia; which screens count as a phone is useIsMobile.test's job.
+    vi.stubGlobal('matchMedia', () => ({ matches: phone, addEventListener: () => {}, removeEventListener: () => {} }));
+    const user = userEvent.setup();
+    renderGrid();
+    expect(screen.getByTestId('event-context-sequence').className.includes('sm:top-[50%]')).toBe(!phone);
+    await user.click(screen.getByTestId('event-context-sequence-grid'));
+    // The sheet lists the sizes as pressable buttons, the dropdown as menu items.
+    expect(screen.getByTestId('event-context-sequence-grid-3').getAttribute('role')).toBe(phone ? null : 'menuitem');
   });
 
   it('shows the corner handles only while the pencil is pressed', async () => {
