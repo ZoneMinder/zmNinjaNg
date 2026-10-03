@@ -682,6 +682,10 @@ the browser value:
 The plugin's TypeScript surface (``SafeAreaInsets``, ``SafeAreaPlugin``) is in
 ``plugins/safe-area/definitions.ts``; the web stub never invokes the listener.
 
+``SheetContent`` (``components/ui/sheet.tsx``) insets its box by
+``--sai-left`` and ``--sai-right``, so every sheet clears the Dynamic Island
+or a cutout when a phone is in landscape, whatever padding the caller sets.
+
 **Used by:** ``main.tsx``, plus the CSS in ``index.css`` and component styles
 that consume ``var(--sai-*)``.
 

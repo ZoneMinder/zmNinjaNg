@@ -36,17 +36,20 @@ const SheetOverlay = React.forwardRef<
 ))
 SheetOverlay.displayName = SheetPrimitive.Overlay.displayName
 
+// Each side is inset by the side safe areas (--sai-*, index.css), so a phone
+// in landscape keeps the content and the close button clear of the Dynamic
+// Island or a cutout (refs #534).
 const sheetVariants = cva(
     "fixed z-50 gap-4 bg-background p-6 shadow-lg transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-200 data-[state=open]:duration-200",
     {
         variants: {
             side: {
-                top: "inset-x-0 top-0 border-b data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top",
+                top: "left-[var(--sai-left,0px)] right-[var(--sai-right,0px)] top-0 border-b data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top",
                 bottom:
-                    "inset-x-0 bottom-0 border-t data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
-                left: "inset-y-0 left-0 h-full w-3/4 border-r data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left sm:max-w-sm",
+                    "left-[var(--sai-left,0px)] right-[var(--sai-right,0px)] bottom-0 border-t data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
+                left: "inset-y-0 left-[var(--sai-left,0px)] h-full w-3/4 border-r data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left sm:max-w-sm",
                 right:
-                    "inset-y-0 right-0 h-full w-3/4 border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-sm",
+                    "inset-y-0 right-[var(--sai-right,0px)] h-full w-3/4 border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-sm",
             },
         },
         defaultVariants: {
