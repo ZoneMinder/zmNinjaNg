@@ -176,6 +176,19 @@ export async function getStorages(client: ApiClient): Promise<Storage[]> {
 }
 
 /**
+ * Count the events stored in a storage area, the figure ZoneMinder's
+ * Options > Storage table shows before "using". One row is enough: ZoneMinder
+ * reports the full match size in `pagination.count`.
+ */
+export async function getStorageEventCount(client: ApiClient, storageId: string): Promise<number> {
+  const response = await client.get<{ pagination?: { count?: number } }>(
+    `/events/index/${encodeURIComponent(`StorageId:${storageId}`)}.json`,
+    { params: { limit: 1 }, intent: `Count events in storage ${storageId}` },
+  );
+  return response.data.pagination?.count ?? 0;
+}
+
+/**
  * Check if ZoneMinder daemon is running
  *
  * Calls /host/daemonCheck.json to verify if the core service is active.

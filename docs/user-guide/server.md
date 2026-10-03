@@ -35,11 +35,11 @@ ZoneMinder updates these figures only while the server's `zmstats` runs, so a se
 
 ## Storage areas
 
-Each enabled storage area is listed with:
+Each enabled storage area is listed the way ZoneMinder's Options then Storage table shows it:
 
 - Its name and filesystem path
-- The space its events take, in the unit that fits its size (MB, GB, TB). ZoneMinder keeps this as a running total rather than measuring it each time, so it can drift. If the total drops below zero, the page says the reported value has drifted instead of showing it. Running `zmaudit.pl`, or turning on `ZM_RUN_AUDIT` in ZoneMinder's options, resets it to the real sum.
-- Free and total space in GB, with a usage bar. Free space matches the Avail column of `df`. The bar counts space the filesystem reserves for root (5% on ext4 by default) as used, so a disk that holds few events can still show a few percent full.
+- Disk usage as a percentage, then used and total space, for example `70% 69.38 GB of 97.87 GB`. Used space counts what the filesystem reserves for root (5% on ext4 by default), so a disk that holds few events can still show a few percent used. The percentage is rounded down, as in that table, so it can read one lower than the console's header bar, which rounds to the nearest.
+- The number of events stored there and the space ZoneMinder says they take, for example `132 using 1.45 GB`. ZoneMinder keeps that space as a running total rather than measuring it each time, so it can drift, even below zero. The page shows a negative total too, in MB or GB where ZoneMinder prints the raw byte count. Running `zmaudit.pl`, or turning on `ZM_RUN_AUDIT` in ZoneMinder's options, resets it to the real sum.
 - The server it belongs to (in multi-server setups)
 
 ## Account permissions

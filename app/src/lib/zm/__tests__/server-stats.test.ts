@@ -14,6 +14,11 @@ describe('zmHumanFilesize', () => {
     expect(zmHumanFilesize(1000)).toBe('0.98 kB');
     expect(zmHumanFilesize(900)).toBe('900.00 B');
   });
+
+  it('scales a negative size by its magnitude, where ZoneMinder leaves it in bytes', () => {
+    expect(zmHumanFilesize(-355152783)).toBe('-338.70 MB');
+    expect(zmHumanFilesize(-900)).toBe('-900.00 B');
+  });
 });
 
 describe('zmUsageLevel', () => {

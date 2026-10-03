@@ -72,63 +72,57 @@ function renderServer() {
   );
 }
 
-describe('Server page - storage areas (refs #539)', () => {
+// Values read off a ZoneMinder 1.39.18 server, whose Options > Storage row read
+// "70% 69.38GB of 97.87GB" and "132 using -204831925.00B". The negative size is
+// scaled to MB here, where ZoneMinder leaves it in bytes.
+describe('Server page - storage areas', () => {
   afterEach(() => {
     resetProfileFixture();
     resetFakeStoreGates();
-  });
-
-  it('shows free space as total minus DiskUsedSpace, not DiskUsedSpace itself', async () => {
-    const [profileA] = seedProfiles(['profile-a']);
-    // A 208.5 GB partition whose DiskUsedSpace includes ext4's reserved blocks.
-    const storage = {
-      Id: 1, Path: '/video4/zoneminder/events', Name: 'Default', Type: 'local', Url: null,
-      DiskSpace: 840478311, Scheme: 'Medium', ServerId: 0, DoDelete: true, Enabled: true,
-      DiskTotalSpace: 223854247936, DiskUsedSpace: 12300128256,
-    };
-    installApiClient(profileA.id, fakeApiClient({ ...serverRoutes(), '/storage.json': { storage: [{ Storage: storage }] } }));
-
-    renderServer();
-
-    expect(await screen.findByTestId('storage-free-1')).toHaveTextContent('197.0 GB server.storage_free');
-    expect(screen.getByTestId('storage-total-1')).toHaveTextContent('208.5 GB server.storage_total');
   });
 
   function storageWithDiskSpace(diskSpace: number | null) {
     return {
       Id: 1, Path: '/var/cache/zoneminder/events', Name: 'Default', Type: 'local', Url: null,
       DiskSpace: diskSpace, Scheme: 'Medium', ServerId: 0, DoDelete: true, Enabled: true,
-      DiskTotalSpace: 105089261568, DiskUsedSpace: 72923566080,
+      DiskTotalSpace: 105089261568, DiskUsedSpace: 74492252160,
     };
   }
 
-  it('shows the space events take from DiskSpace', async () => {
+  function renderStorage(diskSpace: number | null) {
     const [profileA] = seedProfiles(['profile-a']);
-    installApiClient(profileA.id, fakeApiClient({ ...serverRoutes(), '/storage.json': { storage: [{ Storage: storageWithDiskSpace(1101004402) }] } }));
-
+    const client = fakeApiClient({
+      ...serverRoutes(),
+      '/storage.json': { storage: [{ Storage: storageWithDiskSpace(diskSpace) }] },
+      '/events/index/StorageId%3A1.json': { events: [], pagination: { count: 132 } },
+    });
+    installApiClient(profileA.id, client);
     renderServer();
+    return client;
+  }
 
-    expect(await screen.findByTestId('storage-events-1')).toHaveTextContent('1.03 GB');
-    expect(screen.queryByTestId('storage-events-drifted-1')).toBeNull();
+  it('shows disk usage as the Options > Storage DiskSpace column does, percentage truncated', async () => {
+    renderStorage(-204831925);
+
+    expect(await screen.findByTestId('storage-usage-1')).toHaveTextContent('70% server.used_of_total 69.38 GB 97.87 GB');
   });
 
-  it('shows a small DiskSpace in MB rather than rounding it to 0.0 GB', async () => {
-    const [profileA] = seedProfiles(['profile-a']);
-    installApiClient(profileA.id, fakeApiClient({ ...serverRoutes(), '/storage.json': { storage: [{ Storage: storageWithDiskSpace(40000000) }] } }));
+  it('shows the event count and the raw DiskSpace, negative included', async () => {
+    renderStorage(-204831925);
 
-    renderServer();
-
-    expect(await screen.findByTestId('storage-events-1')).toHaveTextContent('38.15 MB');
+    expect(await screen.findByTestId('storage-events-1')).toHaveTextContent('server.storage_events_using 132 -195.34 MB');
   });
 
-  it('says the value drifted instead of showing a negative DiskSpace', async () => {
-    const [profileA] = seedProfiles(['profile-a']);
-    installApiClient(profileA.id, fakeApiClient({ ...serverRoutes(), '/storage.json': { storage: [{ Storage: storageWithDiskSpace(-129197848613) }] } }));
+  it('shows a null DiskSpace as 0, as ZoneMinder does', async () => {
+    renderStorage(null);
 
-    renderServer();
+    expect(await screen.findByTestId('storage-events-1')).toHaveTextContent('server.storage_events_using 132 0.00 B');
+  });
 
-    expect(await screen.findByTestId('storage-events-drifted-1')).toHaveTextContent('server.storage_events_drifted');
-    expect(screen.queryByTestId('storage-events-1')).toBeNull();
+  it('shows a negative DiskSpace under the console storage stat too', async () => {
+    renderStorage(-204831925);
+
+    expect(await screen.findByTestId('stat-storage-events-1')).toHaveTextContent('-195.34 MB');
   });
 });
 

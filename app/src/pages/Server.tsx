@@ -35,7 +35,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getServers, getLoad, getLatestServerStat, getDaemonCheck, getStorages } from '../api/server';
+import { getServers, getLoad, getLatestServerStat, getDaemonCheck, getStorages, getStorageEventCount } from '../api/server';
 import { formatForServerInTz, resolveProfileTimezone } from '../lib/time';
 import { SERVER_STATS_WINDOW_MINUTES } from '../lib/zmninja-ng-constants';
 import {
@@ -147,6 +147,17 @@ export default function Server() {
     queryKey: queryKeys.storages(currentProfile?.id),
     queryFn: () => getStorages(getSession(currentProfile!.id).client),
     enabled: !!currentProfile && isAuthenticated,
+  });
+
+  const enabledStorageIds = storages?.filter((s) => s.Enabled).map((s) => s.Id);
+  const { data: storageEventCounts } = useQuery({
+    queryKey: queryKeys.storageEventCounts(currentProfile?.id),
+    queryFn: async () => {
+      const client = getSession(currentProfile!.id).client;
+      const counts = await Promise.all(enabledStorageIds!.map((id) => getStorageEventCount(client, id)));
+      return Object.fromEntries(enabledStorageIds!.map((id, i) => [id, counts[i]]));
+    },
+    enabled: !!currentProfile && isAuthenticated && !!enabledStorageIds?.length,
   });
 
   // Mutation for state change
@@ -351,7 +362,7 @@ export default function Server() {
                         {t('server.used_of_total', { used: zmHumanFilesize(used), total: zmHumanFilesize(total) })}
                       </div>
                     )}
-                    {storage.DiskSpace != null && storage.DiskSpace >= 0 && storage.DiskSpace !== used && (
+                    {storage.DiskSpace != null && storage.DiskSpace !== used && (
                       <div className="text-xs text-muted-foreground" data-testid={`stat-storage-events-${storage.Id}`}>
                         {t('server.used_by_events', { size: zmHumanFilesize(storage.DiskSpace) })}
                       </div>
@@ -553,20 +564,14 @@ export default function Server() {
             <div className="space-y-3" data-testid="storage-list">
               {storages.filter((s) => s.Enabled).map((storage) => {
                 const serverName = servers?.find((s) => s.Id === storage.ServerId)?.Name;
-                const totalGB = storage.DiskTotalSpace
-                  ? (storage.DiskTotalSpace / (1024 * 1024 * 1024)).toFixed(1)
-                  : null;
-                // Free, not used: ZoneMinder's DiskUsedSpace is total minus
-                // available, so it counts the filesystem's root-reserved blocks
-                // (5% on ext4) as used. Free matches df's Avail (refs #539).
-                const freeGB = storage.DiskTotalSpace && storage.DiskUsedSpace
-                  ? ((storage.DiskTotalSpace - storage.DiskUsedSpace) / (1024 * 1024 * 1024)).toFixed(1)
-                  : null;
-                const usagePercent =
-                  storage.DiskTotalSpace && storage.DiskUsedSpace
-                    ? ((storage.DiskUsedSpace / storage.DiskTotalSpace) * 100).toFixed(0)
-                    : null;
+                const total = storage.DiskTotalSpace;
+                const used = storage.DiskUsedSpace;
+                const eventCount = storageEventCounts?.[storage.Id];
 
+                // Options > Storage in ZoneMinder: the percentage truncates
+                // (intval), unlike the console navbar's, which rounds. DiskSpace
+                // is a running total that can drift below zero; it is shown,
+                // not hidden, as ZoneMinder shows it.
                 return (
                   <div
                     key={storage.Id}
@@ -586,40 +591,15 @@ export default function Server() {
                     <div className="text-xs text-muted-foreground truncate" title={storage.Path ?? undefined}>
                       {storage.Path}
                     </div>
-                    {/* DiskSpace is ZoneMinder's running total of event sizes, not
-                        a live sum, so it can drift below zero; zmaudit resyncs it
-                        (refs #539). */}
-                    {storage.DiskSpace != null && (storage.DiskSpace < 0 ? (
-                      <div className="text-xs text-orange-600 dark:text-orange-400 mt-1" data-testid={`storage-events-drifted-${storage.Id}`}>
-                        {t('server.storage_events_drifted')}
+                    {total != null && used != null && (
+                      <div className="text-xs mt-1" data-testid={`storage-usage-${storage.Id}`}>
+                        {total ? `${Math.trunc((100 * used) / total)}% ` : ''}
+                        {t('server.used_of_total', { used: zmHumanFilesize(used), total: zmHumanFilesize(total) })}
                       </div>
-                    ) : (
+                    )}
+                    {eventCount !== undefined && (
                       <div className="text-xs mt-1" data-testid={`storage-events-${storage.Id}`}>
-                        {t('server.storage_events')}: {zmHumanFilesize(storage.DiskSpace)}
-                      </div>
-                    ))}
-                    {totalGB && freeGB && (
-                      <div className="mt-2">
-                        <div className="flex justify-between text-xs mb-1">
-                          <span data-testid={`storage-free-${storage.Id}`}>
-                            {freeGB} GB {t('server.storage_free')}
-                          </span>
-                          <span data-testid={`storage-total-${storage.Id}`}>
-                            {totalGB} GB {t('server.storage_total')}
-                          </span>
-                        </div>
-                        <div className="w-full bg-muted rounded-full h-2">
-                          <div
-                            className={`h-2 rounded-full ${
-                              Number(usagePercent) > 90
-                                ? 'bg-red-500'
-                                : Number(usagePercent) > 75
-                                  ? 'bg-yellow-500'
-                                  : 'bg-primary'
-                            }`}
-                            style={{ width: `${Math.min(Number(usagePercent), 100)}%` }}
-                          />
-                        </div>
+                        {t('server.storage_events_using', { count: eventCount, size: zmHumanFilesize(storage.DiskSpace || 0) })}
                       </div>
                     )}
                   </div>
