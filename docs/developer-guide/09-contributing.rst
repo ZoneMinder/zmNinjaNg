@@ -124,11 +124,11 @@ trip on, and the checklist at the end of this chapter is the short form.
   ``CURRENT_PROJECT_VERSION`` in ``app/ios/App/App.xcodeproj/project.pbxproj``)
   unless the message is a ``chore:`` commit. The project rule in
   ``AGENTS.project.md`` reads "Do not commit incidental native build-number
-  bumps. Commit intended bumps alone as ``chore:``." ``npm run android:sync``
-  and ``npm run ios:sync`` bump both as a side effect (via
-  ``scripts/sync-version.js``; ``npm run build`` alone does not), and the guard
-  (``scripts/check-native-version-bump.mjs``) keeps that bump from riding along
-  in an unrelated commit. When it fires and you did not mean to bump anything:
+  bumps. Commit intended bumps alone as ``chore:``." No build writes those
+  lines any more (the build number is computed at build time, see
+  :doc:`/building/index`), so the guard
+  (``scripts/check-native-version-bump.mjs``) now only catches a hand edit.
+  When it fires and you did not mean to change anything:
 
   .. code:: bash
 
@@ -278,10 +278,9 @@ come up:
   the right way: it asks the ZoneMinder API whether the monitor is controllable
   (``isMonitorControllable``) instead of peeking at the DOM.
 - **Project rules, native build numbers.** "Do not commit incidental native
-  build-number bumps." ``npm run android:sync`` / ``ios:sync`` bump
-  ``versionCode`` and ``CURRENT_PROJECT_VERSION`` as a side effect
-  (``npm run build`` alone does not). Revert them before committing anything
-  that is not a version-bump ``chore:``.
+  build-number bumps." Builds compute ``versionCode`` and
+  ``CURRENT_PROJECT_VERSION`` themselves and leave the tracked files alone, so
+  this only bites a hand edit.
 - **Project rules, docs teach.** "Developer docs teach React where they first
   rely on it." A new hook or component is not documented by an entry listing
   its location and props. Say what user-visible behavior it serves, and if it
@@ -532,10 +531,10 @@ Workflow
 3. Run or debug via Android Studio or Xcode, or let ``npm run android`` /
    ``npm run ios`` install and launch it for you.
 
-Step 2 bumps the native build numbers, because the ``sync`` scripts run
-``scripts/sync-version.js`` first; ``npm run build`` on its own writes nothing
-native. The project rule applies: "Do not commit incidental native build-number
-bumps." Revert the bump before committing.
+Step 2 leaves the tracked native files clean, so you can switch branches
+freely. Every build still carries the current build number: Gradle computes the
+Android ``versionCode``, and the ``sync`` scripts write the iOS one into the
+gitignored ``app/ios/App/BuildNumber.xcconfig``.
 
 .. tip::
 

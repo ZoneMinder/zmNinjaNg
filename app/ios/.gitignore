@@ -1,6 +1,7 @@
 App/build
 App/output
 App/App/public
+App/BuildNumber.xcconfig
 DerivedData
 xcuserdata
 

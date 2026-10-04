@@ -1,48 +1,59 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 // scripts/sync-version.js is a repo-root CommonJS build script. It exports pure
 // string transforms that this suite exercises; the file-writing main() only
 // runs when the script is invoked directly (require.main === module).
 import syncVersion from '../../../../scripts/sync-version.js';
 
-const { androidVersionCode, applyGradleVersion, applyXcodeVersion } = syncVersion;
+const { applyGradleVersion, applyXcodeVersion, buildNumberXcconfig } = syncVersion;
 
-describe('sync-version build number injection', () => {
-  it('offsets the Android versionCode above the legacy major*10000+minor*100+patch scheme', () => {
-    // The live Play release used the legacy scheme (v1.1.14 -> 10114). A raw
-    // commit-count code (~1533) would be a downgrade and Play rejects it. The
-    // offset must clear any legacy code (<= 99999 for versions below 10.0.0).
-    expect(androidVersionCode(1533)).toBe(101533);
-    expect(androidVersionCode(1533)).toBeGreaterThan(10114);
-    // Monotonic: a later commit yields a higher code.
-    expect(androidVersionCode(1534)).toBeGreaterThan(androidVersionCode(1533));
-  });
+const repo = resolve(__dirname, '../../../..');
+const read = (path: string) => readFileSync(resolve(repo, path), 'utf8');
 
-  it('sets Android versionName to the marketing version and versionCode to the build number', () => {
+describe('sync-version', () => {
+  it('sets Android versionName to the marketing version', () => {
     const gradle = `    defaultConfig {
         applicationId "com.zoneminder.zmNinjaNG"
-        versionCode 10114
         versionName "1.1.14"
     }`;
 
-    const out = applyGradleVersion(gradle, '2.1.1', 1600);
-
-    expect(out).toContain('versionName "2.1.1"');
-    expect(out).toContain('versionCode 1600');
-    // The derived formula must be gone, not left alongside the new value.
-    expect(out).not.toContain('10114');
+    expect(applyGradleVersion(gradle, '2.1.1')).toContain('versionName "2.1.1"');
   });
 
-  it('sets iOS MARKETING_VERSION and CURRENT_PROJECT_VERSION across every build config', () => {
+  it('sets iOS MARKETING_VERSION across every build config', () => {
     const pbxproj = `
-				CURRENT_PROJECT_VERSION = 1;
 				MARKETING_VERSION = 1.1.14;
-				CURRENT_PROJECT_VERSION = 1;
 				MARKETING_VERSION = 1.1.14;`;
 
-    const out = applyXcodeVersion(pbxproj, '2.1.1', 1600);
+    expect(applyXcodeVersion(pbxproj, '2.1.1').match(/MARKETING_VERSION = 2\.1\.1;/g)).toHaveLength(2);
+  });
 
-    expect(out).not.toContain('CURRENT_PROJECT_VERSION = 1;');
-    expect(out.match(/CURRENT_PROJECT_VERSION = 1600;/g)).toHaveLength(2);
-    expect(out.match(/MARKETING_VERSION = 2\.1\.1;/g)).toHaveLength(2);
+  it('writes the build number as an xcconfig setting', () => {
+    expect(buildNumberXcconfig(3035)).toMatch(/^CURRENT_PROJECT_VERSION = 3035$/m);
+  });
+});
+
+// The build number is the git commit count, worked out when a build runs, so a
+// build never rewrites a tracked file (and a dirty tree never blocks a branch
+// switch). A literal number in either file would be stale after the next commit.
+describe('native build numbers come from the build, not the tracked files', () => {
+  it('Android computes versionCode from the git commit count, above the legacy scheme', () => {
+    // Builds before mid-2026 used major*10000 + minor*100 + patch (v1.1.14 ->
+    // 10114); the 100000 offset keeps every commit-count code above those.
+    const gradle = read('app/android/app/build.gradle');
+    expect(gradle).not.toMatch(/versionCode \d+\s*$/m);
+    expect(gradle).toMatch(/versionCode 100000 \+ gitCommitCount/);
+    expect(gradle).toMatch(/'rev-list', '--count', 'HEAD'/);
+  });
+
+  it('iOS targets inherit CURRENT_PROJECT_VERSION from the project xcconfig', () => {
+    const pbxproj = read('app/ios/App/App.xcodeproj/project.pbxproj');
+    expect(pbxproj).not.toMatch(/CURRENT_PROJECT_VERSION/);
+    expect(pbxproj.match(/baseConfigurationReference = \w+ \/\* Version\.xcconfig \*\//g)).toHaveLength(2);
+
+    const xcconfig = read('app/ios/App/Version.xcconfig');
+    expect(xcconfig).toMatch(/#include\? "BuildNumber\.xcconfig"/);
+    expect(read('app/ios/.gitignore')).toMatch(/^App\/BuildNumber\.xcconfig$/m);
   });
 });

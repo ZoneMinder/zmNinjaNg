@@ -84,10 +84,10 @@ AUTH=(
     -authenticationKeyIssuerID "$ASC_ISSUER_ID"
 )
 
-# Writes MARKETING_VERSION and CURRENT_PROJECT_VERSION into the Xcode project,
-# builds the web bundle and copies it into the native project. The build number
-# is the git commit count, so this must run at the commit being released.
-# project.pbxproj is left dirty; that bump is incidental and is not committed.
+# Writes MARKETING_VERSION into the Xcode project and the build number into the
+# gitignored BuildNumber.xcconfig, then builds the web bundle and copies it into
+# the native project. The build number is the git commit count, so this must
+# run at the commit being released.
 echo "📦 Syncing version and web assets..."
 (cd app && npm run ios:sync)
 

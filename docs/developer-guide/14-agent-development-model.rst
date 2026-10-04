@@ -616,9 +616,10 @@ locally, because no macOS runner builds it in CI. After the tag,
 (``scripts/upload-ios.sh``). Once the tag's workflow has built the Android
 bundle, it offers to upload that to Google Play (``scripts/upload-android.sh``).
 
-``npm run build`` raises the native build numbers (the Android
-``versionCode`` and the iOS ``CURRENT_PROJECT_VERSION``) as a side effect.
-Those changes belong only in a deliberate ``chore:`` commit. The version guard
+The native build numbers (the Android ``versionCode`` and the iOS
+``CURRENT_PROJECT_VERSION``) are computed at build time, so no build changes a
+tracked file. A hand edit to those lines belongs only in a deliberate
+``chore:`` commit. The version guard
 enforces this: a commit-msg hook, and the ``native-version-guard`` check in CI,
 reject any other commit that changes those lines. Test builds reuse the
 existing workflows instead of adding new ones.
