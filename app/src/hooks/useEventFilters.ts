@@ -334,8 +334,13 @@ export function useEventFilters(): UseEventFiltersReturn {
       // Store the whole filter the URL produced, not only the fields it
       // carries: the fields it resets must not keep their old stored values,
       // or the store (which a preset saves) disagrees with the screen (refs #544).
+      // The loaded preset no longer describes that filter, so its name goes too
+      // (refs #546).
       if (hasUrlFilters(searchParams) && profileIdRef.current) {
-        useSettingsStore.getState().updateProfileSettings(profileIdRef.current, { eventsPageFilters: initial });
+        useSettingsStore.getState().updateProfileSettings(profileIdRef.current, {
+          eventsPageFilters: initial,
+          activeEventFilterPreset: '',
+        });
       }
       return;
     }
