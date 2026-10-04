@@ -699,10 +699,17 @@ coordinates, the frame counts the scrubber needs, and three behavior flags:
 ``suspended``, plus ``playbackRate`` / ``onRateChange``, which carry the
 chosen speed across events during continuous playback.
 
-``suspended`` pauses the stream while something covers it, currently the
-full-size viewer in ``EventFrameCarousel``. The effect remembers whether the
-stream was running when suspension began and only sends ``CMD_PLAY`` on release
-if it was, so a stream the user paused stays paused. It depends on ``suspended``
+``suspended`` stops the stream while something covers it: the full-size viewer
+in ``EventFrameCarousel`` or the Nearby panel. It sends ``CMD_QUIT`` rather than
+``CMD_PAUSE``, because a paused zms keeps its MJPEG response open and holds one
+of the browser's few connections to the server; the ``<img>`` keeps showing the
+last frame. The effect remembers whether the stream was running when suspension
+began and, only if it was, restarts it on release with ``restartStream``, on a
+fresh connkey from the frame it reached. A stream the user had paused stays
+stopped, marked dead so the play button starts a new one. A player that mounts
+already suspended, as it does when back from a nearby event lands under the
+open panel, holds its stream URL empty (``deferStart``) and starts its first
+stream on release. It depends on ``suspended``
 alone and reads ``isPlaying`` without depending on it; taking ``isPlaying`` as a
 dependency would re-run the effect on every ordinary play/pause.
 
@@ -781,6 +788,8 @@ holds the Video.js instance from ``Mp4EventPlayer``'s ``onReady`` in a ref typed
 structurally (``paused``/``play``/``pause``) so the page does not import
 ``video.js`` itself, pauses it when the viewer opens, and resumes it on close
 only if it had been playing. The ZMS branches receive the same state through
+``suspended``. The open Nearby panel (``eventContextAnchor`` in the history
+state) pauses and resumes the MP4 player the same way and is ORed into
 ``suspended``.
 
 Player selection in EventDetail

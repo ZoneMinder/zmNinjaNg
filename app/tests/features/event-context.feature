@@ -13,6 +13,14 @@ Feature: Events around an event
     And I should be on the "Events" page
 
   @all
+  Scenario: Opening the panel from an event's detail page stops its playback
+    When I open the first event's detail page with playback running
+    And I open the around-this-event panel from the event detail page
+    Then the event's playback is stopped
+    When I press Escape key
+    Then I should not see the event context panel
+
+  @all
   Scenario: Widening the window asks the server for more
     When I open the around-this-event panel on the first event
     And I choose the 60 minute window
