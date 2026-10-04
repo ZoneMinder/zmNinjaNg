@@ -1,5 +1,14 @@
 [
   {
+    "id": "release-2.7.0",
+    "title": "Filter presets, nearby replay, and settings search",
+    "body": "- Added filter presets so you can save and reuse event filters\n- Added nearby replay, which plays events that happened around the same time together, in time order\n- Added a search box to Settings that finds settings even inside collapsed sections\n- Reorganized the Settings page so it is clearer which settings apply to the current server and which apply everywhere\n- Swiping past the first or last monitor in live view now wraps around to the other end\n- The Server page now shows the same storage figures as ZoneMinder's own console, with correct labels\n- Fixed swiping between monitors in live view\n- Fixed the plain white app icon in the Android notification bar\n\n[Full changelog](https://github.com/ZoneMinder/zmNinjaNg/releases/tag/zmNinjaNg-2.7.0)",
+    "publishedAt": "2026-10-04T10:46:16.745Z",
+    "severity": "info",
+    "link": "https://github.com/ZoneMinder/zmNinjaNg/releases/tag/zmNinjaNg-2.7.0",
+    "minAppVersion": "2.7.0"
+  },
+  {
     "id": "release-2.6.0",
     "title": "Persian language, server grouping, and image fixes",
     "body": "- Added Persian as an interface language, with right-to-left layout\n- Live Activity, Timeline, and the Dashboard can now group items by server when you view several servers together\n- Dashboard widgets can now show monitors from more than one server\n- Event thumbnails have a toggle to hide their labels, which helps on small screens. The grid star and link now sit below the image\n- Large montages and monitor lists now load in pages, so camera images show up reliably again\n- The whole montage stays visible while you edit its layout\n\n[Full changelog](https://github.com/ZoneMinder/zmNinjaNg/releases/tag/zmNinjaNg-2.6.0)",
