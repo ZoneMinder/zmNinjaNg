@@ -3472,5 +3472,17 @@ from that event returns to the panel's entry and reopens it on the same
 anchor, with the window and scope it already had - those come back from the
 anchor profile's own settings, not from anything the history entry carries.
 
+The opened event's own entry does carry the panel's rows: the list passes
+``openState`` to ``CompactEventRow`` and a Replay tile passes the same state,
+``eventContextQueue``, the row ids in time order. With continuous play on,
+``goToNextEvent({ continuousPlayback: true })`` in ``useEventNavigation`` finds
+the current id in that list and navigates to the one after it instead of asking
+the server for the next filtered event, carrying the list forward and marking
+the new event viewed so back flashes its row. Past the last id it resolves
+``false`` and the page shows "no more videos". While the panel is open over
+``EventDetail``, the page pauses the MP4 player, passes ``suspended`` to the ZMS
+player, and ignores ``onEnded``, so an event cannot finish behind the sheet and
+navigate it away (refs #547).
+
 When you need to change something, find the nearest flow, open its ``source`` link to land on the exact
 code, and follow the ``→`` link for the chapter that explains that layer.

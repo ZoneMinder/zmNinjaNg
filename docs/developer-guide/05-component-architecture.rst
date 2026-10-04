@@ -830,6 +830,9 @@ was detected, event id, start time, relative time, score, delete button.
 Clicking it (or pressing Enter or Space while it is focused) opens
 ``/events/<id>`` with ``state: { from: '/monitors/<monitorId>' }``, so the event
 page's back action returns to the monitor rather than the events list.
+An optional ``openState`` object is spread into that state; the Nearby list
+uses it to hand the opened event the panel's event ids (Flow 25 in
+:doc:`call-flows`).
 
 The primary text line comes from ``parseDetectedObjects(event.Notes)``
 (``src/lib/event/event-detection.ts``). ZoneMinder writes detections into the

@@ -58,9 +58,12 @@ interface CompactEventRowProps {
    *  detail line instead. Absent, the row renders exactly as
    *  MonitorRecentEvents relies on today (refs #494). */
   monitorName?: string;
+  /** Extra navigation state for the event this row opens, such as the Nearby
+   *  panel's event list (refs #547). */
+  openState?: object;
 }
 
-export function CompactEventRow({ event, thumbnailUrls, aspectRatio, objectFit = 'cover', profileId, ownerProfileId, hoverPreview = false, badgeLabel, badgeTitle, badgeClassName, monitorName }: CompactEventRowProps) {
+export function CompactEventRow({ event, thumbnailUrls, aspectRatio, objectFit = 'cover', profileId, ownerProfileId, hoverPreview = false, badgeLabel, badgeTitle, badgeClassName, monitorName, openState }: CompactEventRowProps) {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const { fmtTime } = useDateTimeFormat();
@@ -87,7 +90,7 @@ export function CompactEventRow({ event, thumbnailUrls, aspectRatio, objectFit =
     markViewed(event.Id);
     // All mode: deep route carries the owning profile (refs #337).
     const path = profileId ? `/all/events/${profileId}/${event.Id}` : `/events/${event.Id}`;
-    navigate(path, { state: { from: `/monitors/${event.MonitorId}` } });
+    navigate(path, { state: { from: `/monitors/${event.MonitorId}`, ...openState } });
   };
 
   return (

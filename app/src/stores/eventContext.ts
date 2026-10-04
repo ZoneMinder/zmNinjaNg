@@ -24,6 +24,10 @@ export interface EventContextHistoryState {
   /** Sequence play is open over the panel (refs #534). A tile that opens its
    *  event first records itself here, so back reopens Sequence play on it. */
   eventContextSequence?: { returnedFrom?: string };
+  /** On an event opened from the panel or Sequence play: the panel's events in
+   *  time order, so continuous play walks them instead of the Events filter
+   *  (refs #547). */
+  eventContextQueue?: string[];
 }
 
 /**
