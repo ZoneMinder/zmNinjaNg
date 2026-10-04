@@ -189,6 +189,11 @@ export function ZmsEventPlayer({
   // stream zms has dropped gets a new one.
   const [connKey, setConnKey] = useState(() => Math.floor(Math.random() * 1000000).toString());
 
+  // Mounted already covered (back from a nearby event lands under the open
+  // Nearby panel): no stream until release, so none runs behind the cover
+  // only to be replaced, unquit, when release restarts it (refs #547).
+  const [deferStart, setDeferStart] = useState(suspended);
+
   // Calculate alarm frame positions for progress bar
   const alarmFramePositions = useMemo(() => {
     const positions = [];
@@ -218,7 +223,7 @@ export function ZmsEventPlayer({
   // mid-event speed change does not recompute the URL); later speed changes go
   // through CMD_VARPLAY so the img src never changes after mount.
   const zmsUrl = useMemo(() => {
-    if (!isAccessTokenFresh) return '';
+    if (!isAccessTokenFresh || deferStart) return '';
     return getEventZmsUrl(portalUrl, eventId, {
       token,
       apiUrl,
@@ -230,7 +235,7 @@ export function ZmsEventPlayer({
       minStreamingPort,
       monitorId,
     });
-  }, [portalUrl, apiUrl, eventId, connKey, token, minStreamingPort, monitorId, isAccessTokenFresh]);
+  }, [portalUrl, apiUrl, eventId, connKey, token, minStreamingPort, monitorId, isAccessTokenFresh, deferStart]);
 
   // The stream itself is an <img> load, so it never appears in the HTTP log the
   // way commands and status queries do: without this line a stream that never
@@ -468,20 +473,31 @@ export function ZmsEventPlayer({
     setIsPlaying(true);
   }, [isPlaying, sendCommand, restartStream]);
 
-  // Pause while suspended and resume on release, but only for a stream that was
-  // running: a stream the user had paused stays paused. isPlaying and sendCommand
-  // are read, not depended on, so a normal play/pause does not re-run this.
+  // Quit while suspended rather than pause: a paused zms keeps its MJPEG
+  // response open, holding one of the browser's few connections to the server
+  // (refs #547). The <img> keeps the last frame. On release a stream that was
+  // running restarts on a fresh connkey from the frame it reached; one the user
+  // had paused stays stopped, marked dead so play starts a new stream.
+  // isPlaying and sendCommand are read, not depended on, so a normal
+  // play/pause does not re-run this.
   const resumeAfterSuspendRef = useRef(false);
   useEffect(() => {
     if (suspended) {
       resumeAfterSuspendRef.current = isPlaying;
-      if (isPlaying) {
-        sendCommand(ZMS_COMMANDS.cmdPause);
-        setIsPlaying(false);
+      setIsPlaying(false);
+      streamDeadRef.current = true;
+      if (streamStartedRef.current) {
+        streamStartedRef.current = false;
+        sendCommand(ZMS_COMMANDS.cmdQuit);
       }
+    } else if (deferStart) {
+      resumeAfterSuspendRef.current = false;
+      streamDeadRef.current = false;
+      setDeferStart(false);
+      setIsPlaying(true);
     } else if (resumeAfterSuspendRef.current) {
       resumeAfterSuspendRef.current = false;
-      sendCommand(ZMS_COMMANDS.cmdPlay);
+      restartStream();
       setIsPlaying(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

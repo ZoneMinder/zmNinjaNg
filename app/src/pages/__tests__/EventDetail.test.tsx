@@ -37,6 +37,7 @@ const h = vi.hoisted(() => ({
   logOther: vi.fn(),
   toastError: vi.fn(),
   zoomReset: vi.fn(),
+  mp4Player: { paused: vi.fn(() => false), play: vi.fn(), pause: vi.fn() },
 }));
 
 vi.mock('@tanstack/react-query', () => ({
@@ -135,8 +136,9 @@ vi.mock('../../components/ui/zoom-controls', () => ({
 }));
 
 vi.mock('../../components/events/Mp4EventPlayer', () => ({
-  Mp4EventPlayer: ({ onEnded, onError, muted, onMutedChange, fill, onFullscreenChange, autoplay }: {
+  Mp4EventPlayer: ({ onEnded, onError, onReady, muted, onMutedChange, fill, onFullscreenChange, autoplay }: {
     autoplay?: boolean;
+    onReady?: (player: typeof h.mp4Player) => void;
     onEnded?: () => void;
     onError?: () => void;
     muted?: boolean;
@@ -145,6 +147,7 @@ vi.mock('../../components/events/Mp4EventPlayer', () => ({
     onFullscreenChange?: (fullscreen: boolean) => void;
   }) => (
     <div data-testid="mp4-player" data-muted={String(muted ?? true)} data-fill={String(fill ?? false)} data-autoplay={String(autoplay ?? false)}>
+      <button data-testid="mp4-fire-ready" onClick={() => onReady?.(h.mp4Player)} />
       <button data-testid="mp4-fire-ended" onClick={() => onEnded?.()} />
       <button data-testid="mp4-fire-error" onClick={() => onError?.()} />
       <button data-testid="mp4-fire-unmute" onClick={() => onMutedChange?.(false)} />
@@ -155,8 +158,8 @@ vi.mock('../../components/events/Mp4EventPlayer', () => ({
 }));
 
 vi.mock('../../components/events/ZmsEventPlayer', () => ({
-  ZmsEventPlayer: ({ onEnded, fullscreen }: { onEnded?: () => void; fullscreen?: boolean }) => (
-    <div data-testid="zms-player" data-fullscreen={String(fullscreen ?? false)}>
+  ZmsEventPlayer: ({ onEnded, fullscreen, suspended }: { onEnded?: () => void; fullscreen?: boolean; suspended?: boolean }) => (
+    <div data-testid="zms-player" data-fullscreen={String(fullscreen ?? false)} data-suspended={String(suspended ?? false)}>
       <button data-testid="zms-fire-ended" onClick={() => onEnded?.()} />
     </div>
   ),
@@ -674,5 +677,92 @@ describe('EventDetail playback preferences in a group (refs #536)', () => {
     render(<EventDetail />);
 
     expect(screen.getByTestId('mp4-player')).toHaveAttribute('data-autoplay', 'true');
+  });
+});
+
+/**
+ * Refs #547. The Nearby panel is a modal sheet over the player. Playback
+ * stops while it is open, so the event cannot end behind it and let
+ * continuous play navigate the panel away.
+ */
+describe('EventDetail with the Nearby panel open (refs #547)', () => {
+  const mp4Event = {
+    Event: { ...event.Event, DefaultVideo: '101-video.mp4', Videoed: '1' },
+  };
+  const panelOpen = { eventContextAnchor: { eventId: '101', profileId: 'profile-1' } };
+
+  function serve(data: typeof event) {
+    useQueryMock.mockReset();
+    useQueryMock.mockImplementation(({ queryKey }: { queryKey: readonly unknown[] }) => {
+      if (queryKey[0] === 'event') return { data, isLoading: false, error: null };
+      if (queryKey[0] === 'monitor') return { data: monitorData, isLoading: false, error: null };
+      return { data: null, isLoading: false, error: null };
+    });
+  }
+
+  beforeEach(() => {
+    h.routeParams = { id: '101' };
+    h.locationState = {};
+    h.goToNextEvent.mockReset();
+    h.mp4Player.paused.mockReturnValue(false);
+    h.mp4Player.play.mockClear();
+    h.mp4Player.pause.mockClear();
+  });
+
+  afterEach(() => {
+    h.locationState = {};
+  });
+
+  it('suspends the ZMS stream while the panel is open', () => {
+    serve(event);
+    const { rerender } = render(<EventDetail />);
+    expect(screen.getByTestId('zms-player')).toHaveAttribute('data-suspended', 'false');
+
+    h.locationState = panelOpen;
+    rerender(<EventDetail />);
+    expect(screen.getByTestId('zms-player')).toHaveAttribute('data-suspended', 'true');
+
+    h.locationState = {};
+    rerender(<EventDetail />);
+    expect(screen.getByTestId('zms-player')).toHaveAttribute('data-suspended', 'false');
+  });
+
+  it('pauses a playing MP4 while the panel is open and resumes it on close', () => {
+    serve(mp4Event);
+    const { rerender } = render(<EventDetail />);
+    fireEvent.click(screen.getByTestId('mp4-fire-ready'));
+
+    h.locationState = panelOpen;
+    rerender(<EventDetail />);
+    expect(h.mp4Player.pause).toHaveBeenCalledTimes(1);
+
+    h.locationState = {};
+    rerender(<EventDetail />);
+    expect(h.mp4Player.play).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves an MP4 the user had paused paused when the panel closes', () => {
+    serve(mp4Event);
+    h.mp4Player.paused.mockReturnValue(true);
+    const { rerender } = render(<EventDetail />);
+    fireEvent.click(screen.getByTestId('mp4-fire-ready'));
+
+    h.locationState = panelOpen;
+    rerender(<EventDetail />);
+    h.locationState = {};
+    rerender(<EventDetail />);
+
+    expect(h.mp4Player.play).not.toHaveBeenCalled();
+  });
+
+  it('does not advance when an event ends behind the panel', () => {
+    serve(mp4Event);
+    setSettings(PROFILE_1, { eventContinuousPlay: true });
+    h.locationState = panelOpen;
+    render(<EventDetail />);
+
+    fireEvent.click(screen.getByTestId('mp4-fire-ended'));
+
+    expect(h.goToNextEvent).not.toHaveBeenCalled();
   });
 });

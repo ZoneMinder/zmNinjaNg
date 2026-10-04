@@ -133,6 +133,8 @@ The toggle is remembered per profile: once turned on it stays on for future even
 
 Every event card, montage tile, and the Timing card on the event detail page carry a link icon labeled "Nearby". Tapping it opens a panel - on the right on desktop, from the bottom on mobile - listing every event from other cameras that happened close to the one you tapped, useful for seeing what the rest of your cameras caught at the same moment.
 
+Opening Nearby from the event detail page pauses the event, so it cannot finish and move on to the next one while you browse. Closing the panel resumes it if it was playing.
+
 Two controls at the top of the panel narrow what "close to" means:
 
 - **Window** - How far either side of the event to look: ±5, ±10, ±15, ±30, or ±60 minutes.

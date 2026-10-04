@@ -34,6 +34,44 @@ When('I open the around-this-event panel on the first event', async ({ page }) =
   log.info('E2E event-context baseline captured', { component: 'e2e', count: baselineRowIds.length });
 });
 
+// Refs #547: an event playing behind the panel used to finish and let
+// continuous play navigate the panel away. MP4 shows as a <video>, ZMS as the
+// player's play/pause button; whichever the event uses must be running before
+// the panel opens, so the stopped check below can fail.
+const detailVideo = (page: Page) => page.getByTestId('event-detail-scroller').locator('video');
+const zmsPlayPause = (page: Page) => page.getByTestId('zms-play-pause');
+
+async function isPlaybackRunning(page: Page): Promise<boolean | null> {
+  if (await detailVideo(page).count()) return detailVideo(page).first().evaluate((v: HTMLVideoElement) => !v.paused);
+  if (await zmsPlayPause(page).count()) return (await zmsPlayPause(page).getAttribute('title')) === 'Pause';
+  return null;
+}
+
+When("I open the first event's detail page with playback running", async ({ page }) => {
+  const firstCard = page.getByTestId('event-card').first();
+  await firstCard.waitFor({ state: 'visible', timeout: testConfig.timeouts.element });
+  await firstCard.click();
+  await page.waitForURL(/.*events\/\d+/, { timeout: testConfig.timeouts.transition });
+
+  await expect.poll(async () => (await detailVideo(page).count()) + (await zmsPlayPause(page).count()), {
+    timeout: testConfig.timeouts.transition * 3,
+  }).toBeGreaterThan(0);
+  // Autoplay may be off; start an MP4 so the event is playing either way.
+  if (await detailVideo(page).count()) {
+    await detailVideo(page).first().evaluate((v: HTMLVideoElement) => { v.muted = true; return v.play(); });
+  }
+  await expect.poll(() => isPlaybackRunning(page), { timeout: testConfig.timeouts.transition }).toBe(true);
+});
+
+When('I open the around-this-event panel from the event detail page', async ({ page }) => {
+  await page.getByTestId('event-context-open').click();
+  await expect(panel(page)).toBeVisible({ timeout: testConfig.timeouts.transition });
+});
+
+Then("the event's playback is stopped", async ({ page }) => {
+  await expect.poll(() => isPlaybackRunning(page), { timeout: testConfig.timeouts.transition }).toBe(false);
+});
+
 Then('I should see the event context panel', async ({ page }) => {
   await expect(panel(page)).toBeVisible({ timeout: testConfig.timeouts.transition });
 });

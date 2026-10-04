@@ -36,6 +36,7 @@ import { ZmsEventPlayer } from '../components/events/ZmsEventPlayer';
 import { EventFrameCarousel } from '../components/events/EventFrameCarousel';
 import { TagChip } from '../components/events/TagChip';
 import { EventContextButton } from '../components/events/context/EventContextButton';
+import type { EventContextHistoryState } from '../stores/eventContext';
 import { ArrowLeft, Calendar, Clock, HardDrive, AlertTriangle, Download, Archive, ArchiveRestore, Video, Star, Timer, Tag, ChevronLeft, ChevronRight, ChevronsUpDown, Loader2, ListVideo } from 'lucide-react';
 import { getEventCauseIcon } from '../lib/event/event-icons';
 import { getObjectClassIconFromList } from '../lib/event/object-class-icons';
@@ -194,19 +195,24 @@ export default function EventDetail() {
     landscape: selectionSettings.landscapeFullscreen,
   });
 
+  // The Nearby panel is a history entry over this page (refs #494). An event
+  // ending behind it must not advance: that navigation drops the panel's entry
+  // and closes it under the user (refs #547).
+  const contextPanelOpen = Boolean((location.state as EventContextHistoryState | null)?.eventContextAnchor);
+
   // Guards against a stray second 'ended' (video.js can emit it during teardown)
   // triggering a double advance. Re-armed for each event by the id-change effect.
   const advancingRef = useRef(false);
   useEffect(() => { advancingRef.current = false; }, [id]);
   const handleVideoEnded = useCallback(async () => {
-    if (!continuousPlay || advancingRef.current) return;
+    if (!continuousPlay || contextPanelOpen || advancingRef.current) return;
     advancingRef.current = true;
     const advanced = await goToNextEvent({ continuousPlayback: true });
     if (!advanced) {
       advancingRef.current = false;
       toast.info(t('event_detail.no_more_videos'));
     }
-  }, [continuousPlay, goToNextEvent, t]);
+  }, [continuousPlay, contextPanelOpen, goToNextEvent, t]);
 
   const announcedContinuousEventRef = useRef<string | undefined>(undefined);
   useEffect(() => {
@@ -368,6 +374,22 @@ export default function EventDetail() {
       void player?.play();
     }
   }, []);
+
+  // The Nearby panel covers the player the same way (refs #547). The players
+  // remount per event, so a resume pending from the last event is dropped
+  // before this runs for the next one. ZMS gets the panel through `suspended`.
+  const resumeAfterPanelRef = useRef(false);
+  useEffect(() => { resumeAfterPanelRef.current = false; }, [id]);
+  useEffect(() => {
+    const player = mp4PlayerRef.current;
+    if (contextPanelOpen) {
+      resumeAfterPanelRef.current = !!player && !player.paused();
+      player?.pause();
+    } else if (resumeAfterPanelRef.current) {
+      resumeAfterPanelRef.current = false;
+      void player?.play();
+    }
+  }, [contextPanelOpen]);
 
   const orientedResolution = useMemo(
     () => getOrientedResolution(
@@ -689,7 +711,7 @@ export default function EventDetail() {
                   eventId={event.Event.Id}
                   profileId={ownerProfileId}
                   token={isAccessTokenFresh ? accessToken ?? undefined : undefined}
-                  suspended={frameViewerOpen}
+                  suspended={frameViewerOpen || contextPanelOpen}
                   apiUrl={ownerProfile.apiUrl}
                   totalFrames={parseInt(event.Event.Frames)}
                   alarmFrames={parseInt(event.Event.AlarmFrames)}
@@ -757,7 +779,7 @@ export default function EventDetail() {
                 eventId={event.Event.Id}
                 profileId={ownerProfileId}
                 token={accessToken || undefined}
-                suspended={frameViewerOpen}
+                suspended={frameViewerOpen || contextPanelOpen}
                 apiUrl={ownerProfile.apiUrl}
                 totalFrames={parseInt(event.Event.Frames)}
                 alarmFrames={parseInt(event.Event.AlarmFrames)}
