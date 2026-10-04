@@ -1,5 +1,27 @@
 # Changelog
 
+## [zmNinjaNg-2.7.0](https://github.com/ZoneMinder/zmNinjaNg/tree/zmNinjaNg-2.7.0) (2026-10-04)
+
+[Full Changelog](https://github.com/ZoneMinder/zmNinjaNg/compare/zmNinjaNg-2.6.0...zmNinjaNg-2.7.0)
+
+**Implemented enhancements:**
+
+- Feature:  Filter presets [\#544](https://github.com/ZoneMinder/zmNinjaNg/issues/544)
+- Reorganize Settings and make each setting save and read from one scope [\#536](https://github.com/ZoneMinder/zmNinjaNg/issues/536)
+- Nearby replay: play nearby events back together, in time order [\#534](https://github.com/ZoneMinder/zmNinjaNg/issues/534)
+- Wrap around when swiping past the first or last monitor [\#533](https://github.com/ZoneMinder/zmNinjaNg/issues/533)
+- Settings: search to filter settings, including collapsed sections [\#531](https://github.com/ZoneMinder/zmNinjaNg/issues/531)
+
+**Fixed bugs:**
+
+- plain white icon in the Android Notification bar [\#540](https://github.com/ZoneMinder/zmNinjaNg/issues/540)
+- Server page disk figures are labeled as something they don't measure [\#539](https://github.com/ZoneMinder/zmNinjaNg/issues/539)
+- Monitors live view swiping [\#527](https://github.com/ZoneMinder/zmNinjaNg/issues/527)
+
+**Closed issues:**
+
+- Server page: show the stats ZoneMinder's console shows instead of the ZM\_DIR\_EVENTS disk [\#542](https://github.com/ZoneMinder/zmNinjaNg/issues/542)
+
 ## [zmNinjaNg-2.6.0](https://github.com/ZoneMinder/zmNinjaNg/tree/zmNinjaNg-2.6.0) (2026-09-25)
 
 [Full Changelog](https://github.com/ZoneMinder/zmNinjaNg/compare/zmNinjaNg-2.5.0...zmNinjaNg-2.6.0)
@@ -11,7 +33,6 @@
 
 **Fixed bugs:**
 
-- Monitors live view swiping [\#527](https://github.com/ZoneMinder/zmNinjaNg/issues/527)
 - Images not shown on zmNinjaNG [\#507](https://github.com/ZoneMinder/zmNinjaNg/issues/507)
 
 **Closed issues:**
