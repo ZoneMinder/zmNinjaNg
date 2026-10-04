@@ -1723,7 +1723,10 @@ Continuous playback (#250) reuses this same path. The event player calls
 ``eventContinuousPlay`` profile setting is on. ``goToNextEvent`` resolves
 ``Promise<boolean>`` because the auto-advance needs to know whether a next
 event existed. On ``false`` (the filtered list is exhausted) it stops and shows
-a "no more videos" toast rather than looping. Advancing goes through the same
+a "no more videos" toast rather than looping. An event opened from the Nearby
+panel advances through the panel's events instead, from the
+``eventContextQueue`` list in its history state (Flow 25 in
+:doc:`call-flows`). Advancing goes through the same
 ``navigateToEvent(id, 'left')`` call as the next button, so the new event slides
 in from the right with no extra animation code. Speed carries across the run via
 the ``eventPlaybackRate`` setting, applied to both players (video.js

@@ -204,8 +204,10 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
       eventContextSequence: { returnedFrom: eventId },
     };
     navigate({ pathname: location.pathname, search: location.search }, { replace: true, state });
-    // Same route the panel's list rows take (CompactEventRow).
-    navigate(profileId ? `/all/events/${profileId}/${eventId}` : `/events/${eventId}`);
+    // Same route and event list the panel's rows give it (CompactEventRow).
+    navigate(profileId ? `/all/events/${profileId}/${eventId}` : `/events/${eventId}`, {
+      state: { eventContextQueue: rows.map((r) => r.event.Id) } satisfies EventContextHistoryState,
+    });
   };
 
   return (

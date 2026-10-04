@@ -12,6 +12,8 @@ import { getAdjacentEvent, type EventFilters } from '../api/events';
 import { getSession, getCurrentSession } from '../services/sessions';
 import { log, LogLevel } from '../lib/logger';
 import type { ProfileId } from '../api/types';
+import type { EventContextHistoryState } from '../stores/eventContext';
+import { useReturnHighlightStore } from '../stores/returnHighlight';
 
 interface UseEventNavigationOptions {
   currentEventId: string | undefined;
@@ -38,6 +40,7 @@ interface UseEventNavigationReturn {
 }
 
 export function useEventNavigation({
+  currentEventId,
   currentStartDateTime,
   profileId,
 }: UseEventNavigationOptions): UseEventNavigationReturn {
@@ -54,6 +57,10 @@ export function useEventNavigation({
   // Preserve the original referrer (e.g., '/timeline' or '/events') across prev/next navigation
   const originalFrom = (location.state?.from as string) || '/events';
 
+  // Events opened from the Nearby panel (refs #547): carried across prev/next
+  // so continuous play keeps walking them in the panel's order.
+  const nearbyQueue = (location.state as EventContextHistoryState | null)?.eventContextQueue;
+
   const navigateToEvent = useCallback(
     (eventId: string, direction: 'left' | 'right', continuousPlayback = false) => {
       setSlideDirection(direction);
@@ -64,11 +71,12 @@ export function useEventNavigation({
           eventFilters,
           slideDirection: direction,
           ...(continuousPlayback && { continuousPlayback: true }),
+          ...(nearbyQueue && { eventContextQueue: nearbyQueue }),
         },
         replace: true,
       });
     },
-    [navigate, eventFilters, originalFrom, profileId]
+    [navigate, eventFilters, originalFrom, profileId, nearbyQueue]
   );
 
   const goToPrevEvent = useCallback(async (): Promise<boolean> => {
@@ -91,6 +99,16 @@ export function useEventNavigation({
   }, [currentStartDateTime, eventFilters, isLoadingPrev, navigateToEvent, profileId]);
 
   const goToNextEvent = useCallback(async ({ continuousPlayback = false } = {}): Promise<boolean> => {
+    // Continuous play from a nearby event follows the panel's list. The panel
+    // highlights where playback got to when back returns to it.
+    const nearbyIndex = continuousPlayback && currentEventId ? nearbyQueue?.indexOf(currentEventId) ?? -1 : -1;
+    if (nearbyQueue && nearbyIndex >= 0) {
+      const nextId = nearbyQueue[nearbyIndex + 1];
+      if (!nextId) return false;
+      useReturnHighlightStore.getState().markViewed(nextId);
+      navigateToEvent(nextId, 'left', true);
+      return true;
+    }
     if (!currentStartDateTime || isLoadingNext) return false;
     setIsLoadingNext(true);
     try {
@@ -107,7 +125,7 @@ export function useEventNavigation({
     } finally {
       setIsLoadingNext(false);
     }
-  }, [currentStartDateTime, eventFilters, isLoadingNext, navigateToEvent, profileId]);
+  }, [currentEventId, currentStartDateTime, eventFilters, isLoadingNext, nearbyQueue, navigateToEvent, profileId]);
 
   return {
     goToPrevEvent,

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, within, fireEvent, act, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 vi.mock('../../../../api/store-gates', () => import('../../../../tests/fake-store-gates'));
@@ -130,6 +130,28 @@ describe('EventContextList', () => {
     const second = renderList(<EventContextList {...props} rows={rows} />);
     const restored = second.container.querySelector('.overflow-y-auto') as HTMLElement;
     await waitFor(() => expect(restored.scrollTop).toBe(240));
+  });
+
+  // Refs #547: the opened event carries the list, in order, so continuous
+  // play walks the nearby events.
+  it('opens a row with the nearby events in list order', () => {
+    function State() {
+      const state = useLocation().state as { eventContextQueue?: string[] } | null;
+      return <div data-testid="queue">{state?.eventContextQueue?.join(',')}</div>;
+    }
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <EventContextList {...props} rows={[row('405', -252_000), row('406', 0, true), row('407', 60_000)]} />
+          <State />
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+
+    fireEvent.click(within(screen.getByTestId('event-context-row-407')).getByTestId('compact-event-row'));
+
+    expect(screen.getByTestId('queue')).toHaveTextContent('405,406,407');
   });
 
   it('gives the offset badge its own title, not the duration tooltip', () => {

@@ -20,6 +20,7 @@ import { resolveMinStreamingPort } from '../../../lib/monitor/multiport';
 import { cn } from '../../../lib/utils';
 import type { EventAroundRow } from '../../../hooks/useEventsAround';
 import type { ProfileId } from '../../../api/types';
+import type { EventContextHistoryState } from '../../../stores/eventContext';
 
 export interface EventContextListProps {
   rows: EventAroundRow[];
@@ -82,6 +83,8 @@ export function EventContextList({ rows, profileId, monitorNames, isLoading, err
     );
   }
 
+  const openState: EventContextHistoryState = { eventContextQueue: rows.map((r) => r.event.Id) };
+
   return (
     <div className="flex-1 overflow-y-auto" ref={restoreScrollRef}>
       {truncated && (
@@ -122,6 +125,7 @@ export function EventContextList({ rows, profileId, monitorNames, isLoading, err
                 badgeLabel={isAnchor ? t('events.around.this_event') : offsetLabel(offsetMs)}
                 badgeTitle={t('events.around.offset_title')}
                 badgeClassName={isAnchor ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' : undefined}
+                openState={openState}
               />
             </div>
           );

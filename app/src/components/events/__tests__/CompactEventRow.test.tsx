@@ -97,6 +97,23 @@ describe('CompactEventRow', () => {
     expect(navigate).toHaveBeenCalledWith('/all/events/profile-b/233228', { state: { from: '/monitors/4' } });
   });
 
+  it('adds caller state to the navigation that opens the event (refs #547)', () => {
+    render(withQuery(
+      <MemoryRouter>
+        <CompactEventRow
+          event={base as never}
+          thumbnailUrls={['http://x/1.jpg']}
+          aspectRatio={1.6}
+          openState={{ eventContextQueue: ['233228', '233229'] }}
+        />
+      </MemoryRouter>
+    ));
+    fireEvent.click(screen.getByTestId('compact-event-row'));
+    expect(navigate).toHaveBeenCalledWith('/events/233228', {
+      state: { from: '/monitors/4', eventContextQueue: ['233228', '233229'] },
+    });
+  });
+
   it('shows the return-flash indicator when returning to this event', () => {
     useReturnHighlightStore.getState().markViewed('233228');
     render1();

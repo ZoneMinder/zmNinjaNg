@@ -248,6 +248,24 @@ describe('EventContextSequence', () => {
     expect(screen.getByTestId('path')).toHaveTextContent('/all/events/p1/b');
   });
 
+  it('opens the event with the nearby events in order (refs #547)', () => {
+    function State() {
+      const state = useLocation().state as { eventContextQueue?: string[] } | null;
+      return <div data-testid="queue">{state?.eventContextQueue?.join(',')}</div>;
+    }
+    render(
+      <MemoryRouter>
+        <EventContextSequence open onOpenChange={() => {}} rows={rows} profileId={P} monitorNames={new Map()} />
+        <State />
+      </MemoryRouter>
+    );
+    const tile = screen.getByTestId('event-context-sequence-tile-b');
+    fireEvent.click(tile);
+    act(() => vi.advanceTimersByTime(100));
+    fireEvent.click(tile);
+    expect(screen.getByTestId('queue')).toHaveTextContent('a,b,c');
+  });
+
   it('ignores taps while the pencil is pressed, so a pan is not a play or an open', () => {
     function Path() {
       return <div data-testid="path">{useLocation().pathname}</div>;
