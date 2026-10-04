@@ -56,7 +56,7 @@ The buttons next to the **Filters** heading in the filter panel save the current
 - **Load** lists your saved filters. Picking one replaces the whole current filter, and its name appears in small text beside the buttons. A filter saved with a quick range such as "past 4 hours" covers the past 4 hours from the moment you load it. A filter saved with typed dates keeps those dates. Typing a date after picking a quick range turns the quick range off, so the typed dates are what gets saved.
 - **Delete** appears only while a saved filter is loaded, and removes that filter after you confirm. The filter in the panel stays as it is.
 
-**Clear** empties the filter, including dates you typed but did not apply, and the name and delete button go away until you load a saved filter again. Saved filters belong to the profile, or to the profile group when one is selected.
+**Clear** empties the filter, including dates you typed but did not apply, and the name and delete button go away until you load a saved filter again. They also go away when another screen opens Events with its own filter, such as **All Events** on a monitor, since that filter replaces the saved one. Saved filters belong to the profile, or to the profile group when one is selected.
 
 The eye button in the toolbar shows or hides the labels drawn over event
 thumbnails, such as how long ago an event happened. It is on by default. Turn

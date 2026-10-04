@@ -128,6 +128,26 @@ describe('useEventFilters first-render hydration (refs #197)', () => {
       monitorIds: ['1'],
     });
   });
+
+  // Refs #546: the loaded preset no longer describes the filter on screen.
+  it('drops the loaded preset name when a deep link replaces the filter', () => {
+    mockSearchParams.set('monitorId', '1');
+    setupMocks();
+    useSettingsStore.getState().updateProfileSettings('profile-1', { activeEventFilterPreset: 'Night' });
+
+    renderCapturingFilters();
+
+    expect(useSettingsStore.getState().getProfileSettings('profile-1').activeEventFilterPreset).toBe('');
+  });
+
+  it('keeps the loaded preset name when Events opens without URL filters', () => {
+    setupMocks();
+    useSettingsStore.getState().updateProfileSettings('profile-1', { activeEventFilterPreset: 'Night' });
+
+    renderCapturingFilters();
+
+    expect(useSettingsStore.getState().getProfileSettings('profile-1').activeEventFilterPreset).toBe('Night');
+  });
 });
 
 describe('useEventFilters', () => {
