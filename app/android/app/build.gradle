@@ -1,5 +1,12 @@
 apply plugin: 'com.android.application'
 
+// Build number: the git commit count, read when Gradle runs so a build never
+// rewrites this file. Fails the build if git cannot answer, rather than ship a
+// wrong versionCode. Shallow clones count 1; CI checks out with full history.
+def gitCommitCount = providers.exec {
+    commandLine 'git', 'rev-list', '--count', 'HEAD'
+}.standardOutput.asText.get().trim().toInteger()
+
 android {
     namespace "com.zoneminder.zmNinjaNG"
     compileSdk rootProject.ext.compileSdkVersion
@@ -23,7 +30,10 @@ android {
         applicationId "com.zoneminder.zmNinjaNG"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 103032
+        // Builds before mid-2026 used major*10000 + minor*100 + patch
+        // (v1.1.14 -> 10114), above the raw commit count; Play rejects a lower
+        // code, so the offset keeps every build above that scheme.
+        versionCode 100000 + gitCommitCount
         versionName "2.7.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {

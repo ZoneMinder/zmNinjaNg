@@ -75,15 +75,17 @@ Release Notices
 Versioning
 ----------
 
-Two numbers identify a build, set by
-`sync-version.js <https://github.com/ZoneMinder/zmNinjaNg/blob/main/scripts/sync-version.js>`_
-(run by ``npm run android:sync`` / ``npm run ios:sync`` and by the release
-script):
+Two numbers identify a build. The marketing version lives in the tracked
+native files; the build number is worked out when a build runs, so building
+never modifies a tracked file:
 
 - **Marketing version**, from ``package.json`` ``version`` (e.g. ``1.1.14``).
-  Written to Android ``versionName`` and iOS ``MARKETING_VERSION``
+  `sync-version.js <https://github.com/ZoneMinder/zmNinjaNg/blob/main/scripts/sync-version.js>`_
+  (run by ``npm run android:sync`` / ``npm run ios:sync`` and by the release
+  script) writes it to Android ``versionName`` and iOS ``MARKETING_VERSION``
   (``CFBundleShortVersionString``). This is the version shown in the store
-  listing and the app sidebar. Bump it on a prod release.
+  listing and the app sidebar. Bump it on a prod release; between releases a
+  sync rewrites the same value, so the files stay as committed.
 - **Build number**, the git commit count (``git rev-list --count HEAD``).
   The stores require this to strictly increase per upload. iOS
   ``CURRENT_PROJECT_VERSION`` (``CFBundleVersion``) uses the commit count
@@ -101,10 +103,18 @@ release builds come from ``main`` without rewriting published history. The
 Android ``versionCode`` is a signed 32-bit integer capped at 2,100,000,000 by
 Google Play, which ``100000 + commit count`` stays far below.
 
-The generated ``versionCode`` / ``CURRENT_PROJECT_VERSION`` values in
-``app/android/app/build.gradle`` and the Xcode project are regenerated and
-committed at release time by ``make_release.sh``; they are not committed on
-every change.
+Where each platform gets the build number:
+
+- **Android**: ``app/android/app/build.gradle`` runs
+  ``git rev-list --count HEAD`` when Gradle configures the build and sets
+  ``versionCode`` from it, for every build: debug, APK, or the release bundle.
+- **iOS**: every target inherits ``CURRENT_PROJECT_VERSION`` from the project
+  level, which reads ``app/ios/App/Version.xcconfig``. That file includes
+  ``BuildNumber.xcconfig``, which ``sync-version.js`` writes with the commit
+  count on every sync and git ignores. A build from Xcode without a sync since
+  the last commit carries the previous count; one with no sync ever carries 1.
+- **App sidebar**: Vite injects the same count at build time
+  (``app/vite.config.ts``).
 
 The build number also goes into the desktop artifact filenames, so a
 downloaded binary identifies its exact build:

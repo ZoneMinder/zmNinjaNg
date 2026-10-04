@@ -122,6 +122,7 @@
 		DCEC04202EE7528400FEFD4D /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
 		DD9E269869C2E60B8123C68F /* LlamaEngine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LlamaEngine.swift; sourceTree = "<group>"; };
 		F157104D33B31424FDFCB439 /* LlamaEngineBridging.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LlamaEngineBridging.swift; sourceTree = "<group>"; };
+		A7B30C1E2F00000000000001 /* Version.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Version.xcconfig; sourceTree = "<group>"; };
 		F334D5C61ABB10E6E182918F /* debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = debug.xcconfig; path = ../debug.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -179,6 +180,7 @@
 				DC10E70100000000000F0006 /* ImageNotification */,
 				504EC3051FED79650016851F /* Products */,
 				F334D5C61ABB10E6E182918F /* debug.xcconfig */,
+				A7B30C1E2F00000000000001 /* Version.xcconfig */,
 				CD7F01012ABAF7375946FB81 /* Frameworks */,
 				4CCB1072CC161B10BC71806C /* LlamaBridge */,
 				5275FCF16B89DD7C02B972BC /* LlamaBridgeInterface */,
@@ -553,6 +555,7 @@
 /* Begin XCBuildConfiguration section */
 		504EC3141FED79650016851F /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = A7B30C1E2F00000000000001 /* Version.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -611,6 +614,7 @@
 		};
 		504EC3151FED79650016851F /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = A7B30C1E2F00000000000001 /* Version.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -669,7 +673,6 @@
 				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3032;
 				DEVELOPMENT_TEAM = P97TSUFFDX;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -701,7 +704,6 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = App/AppRelease.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3032;
 				DEVELOPMENT_TEAM = P97TSUFFDX;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -728,7 +730,6 @@
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3032;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = P97TSUFFDX;
 				DYLIB_COMPATIBILITY_VERSION = 1;
@@ -760,7 +761,6 @@
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3032;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = P97TSUFFDX;
 				DYLIB_COMPATIBILITY_VERSION = 1;
@@ -792,7 +792,6 @@
 				BUILD_LIBRARY_FOR_DISTRIBUTION = NO;
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3032;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = P97TSUFFDX;
 				DYLIB_COMPATIBILITY_VERSION = 1;
@@ -824,7 +823,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3032;
 				DEVELOPMENT_TEAM = P97TSUFFDX;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ImageNotification/Info.plist;
@@ -847,7 +845,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3032;
 				DEVELOPMENT_TEAM = P97TSUFFDX;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ImageNotification/Info.plist;
@@ -872,7 +869,6 @@
 				BUILD_LIBRARY_FOR_DISTRIBUTION = NO;
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3032;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = P97TSUFFDX;
 				DYLIB_COMPATIBILITY_VERSION = 1;

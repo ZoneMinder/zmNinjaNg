@@ -1,0 +1,7 @@
+// Build number for every target in the project. Targets set no
+// CURRENT_PROJECT_VERSION of their own, so they inherit this one.
+// scripts/sync-version.js writes the git commit count into BuildNumber.xcconfig
+// beside this file (gitignored) on every sync, so a build carries the current
+// number without editing a tracked file. A checkout that never synced builds 1.
+CURRENT_PROJECT_VERSION = 1
+#include? "BuildNumber.xcconfig"
