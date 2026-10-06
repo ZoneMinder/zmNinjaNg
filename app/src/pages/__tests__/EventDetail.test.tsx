@@ -37,7 +37,13 @@ const h = vi.hoisted(() => ({
   logOther: vi.fn(),
   toastError: vi.fn(),
   zoomReset: vi.fn(),
-  mp4Player: { paused: vi.fn(() => false), play: vi.fn(), pause: vi.fn() },
+  mp4Player: {
+    paused: vi.fn(() => false),
+    play: vi.fn(),
+    pause: vi.fn(),
+    on: vi.fn((type: string, listener: () => void) => { if (type === 'dispose') h.mp4DisposeListeners.push(listener); }),
+  },
+  mp4DisposeListeners: [] as Array<() => void>,
 }));
 
 vi.mock('@tanstack/react-query', () => ({
@@ -135,7 +141,9 @@ vi.mock('../../components/ui/zoom-controls', () => ({
   ZoomControls: () => <div data-testid="zoom-controls" />,
 }));
 
-vi.mock('../../components/events/Mp4EventPlayer', () => ({
+vi.mock('../../components/events/Mp4EventPlayer', async () => {
+  const { useEffect } = await vi.importActual<typeof import('react')>('react');
+  return {
   Mp4EventPlayer: ({ onEnded, onError, onReady, muted, onMutedChange, fill, onFullscreenChange, autoplay }: {
     autoplay?: boolean;
     onReady?: (player: typeof h.mp4Player) => void;
@@ -145,7 +153,10 @@ vi.mock('../../components/events/Mp4EventPlayer', () => ({
     onMutedChange?: (muted: boolean) => void;
     fill?: boolean;
     onFullscreenChange?: (fullscreen: boolean) => void;
-  }) => (
+  }) => {
+    // Like the real player, unmount disposes the video.js player.
+    useEffect(() => () => { h.mp4DisposeListeners.forEach((listener) => listener()); }, []);
+    return (
     <div data-testid="mp4-player" data-muted={String(muted ?? true)} data-fill={String(fill ?? false)} data-autoplay={String(autoplay ?? false)}>
       <button data-testid="mp4-fire-ready" onClick={() => onReady?.(h.mp4Player)} />
       <button data-testid="mp4-fire-ended" onClick={() => onEnded?.()} />
@@ -154,8 +165,10 @@ vi.mock('../../components/events/Mp4EventPlayer', () => ({
       <button data-testid="mp4-fire-fullscreen" onClick={() => onFullscreenChange?.(true)} />
       <button data-testid="mp4-fire-exit-fullscreen" onClick={() => onFullscreenChange?.(false)} />
     </div>
-  ),
-}));
+    );
+  },
+  };
+});
 
 vi.mock('../../components/events/ZmsEventPlayer', () => ({
   ZmsEventPlayer: ({ onEnded, fullscreen, suspended }: { onEnded?: () => void; fullscreen?: boolean; suspended?: boolean }) => (
@@ -704,7 +717,8 @@ describe('EventDetail with the Nearby panel open (refs #547)', () => {
     h.routeParams = { id: '101' };
     h.locationState = {};
     h.goToNextEvent.mockReset();
-    h.mp4Player.paused.mockReturnValue(false);
+    h.mp4Player.paused.mockReset().mockReturnValue(false);
+    h.mp4DisposeListeners = [];
     h.mp4Player.play.mockClear();
     h.mp4Player.pause.mockClear();
   });
@@ -753,6 +767,21 @@ describe('EventDetail with the Nearby panel open (refs #547)', () => {
     rerender(<EventDetail />);
 
     expect(h.mp4Player.play).not.toHaveBeenCalled();
+  });
+
+  it('opens the panel without touching an MP4 player disposed by the ZMS fallback', () => {
+    serve(mp4Event);
+    const { rerender } = render(<EventDetail />);
+    fireEvent.click(screen.getByTestId('mp4-fire-ready'));
+    // A disposed video.js player throws on paused() (its element is gone).
+    h.mp4Player.paused.mockImplementation(() => { throw new TypeError("null is not an object (evaluating 'this.el_[prop]')"); });
+    fireEvent.click(screen.getByTestId('mp4-fire-error'));
+
+    h.locationState = panelOpen;
+    rerender(<EventDetail />);
+
+    expect(screen.getByTestId('zms-player')).toHaveAttribute('data-suspended', 'true');
+    expect(h.mp4Player.pause).not.toHaveBeenCalled();
   });
 
   it('does not advance when an event ends behind the panel', () => {

@@ -751,7 +751,14 @@ export default function EventDetail() {
                         markers={videoMarkers}
                         onMarkerClick={handleMarkerClick}
                         eventId={event.Event.Id}
-                        onReady={(player) => { mp4PlayerRef.current = player; }}
+                        onReady={(player) => {
+                          mp4PlayerRef.current = player;
+                          // Unmount (ZMS fallback, a ZMS next event) disposes the
+                          // player; a disposed one throws on paused() (refs #547).
+                          player.on('dispose', () => {
+                            if (mp4PlayerRef.current === player) mp4PlayerRef.current = null;
+                          });
+                        }}
                         onError={handleVideoError}
                         onEnded={handleVideoEnded}
                         playbackRate={settings.eventPlaybackRate}
