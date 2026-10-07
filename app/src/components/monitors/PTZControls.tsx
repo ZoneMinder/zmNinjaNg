@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, type ReactNode } from 'react';
-import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Home, Square, RotateCcw } from 'lucide-react';
+import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Home, Moon, Power, RotateCcw, RotateCw, Square } from 'lucide-react';
 import { Button } from '../ui/button';
 import { cn } from '../../lib/utils';
 import { useTranslation } from 'react-i18next';
@@ -171,7 +171,10 @@ export function PTZControls({ onCommand, profileId, className, disabled, control
   const hasPresets = control?.HasPresets === '1';
   const numPresets = parseInt(control?.NumPresets || '0', 10);
   const hasHome = control?.HasHomePreset === '1' || hasPresets;
+  const canWake = control?.CanWake === '1';
+  const canSleep = control?.CanSleep === '1';
   const canReset = control?.CanReset === '1';
+  const canReboot = control?.CanReboot === '1';
 
   const movePrefix = canMoveCon ? 'moveCon' : (canMoveRel ? 'moveRel' : 'moveCon');
   const zoomPrefix = canZoomCon ? 'zoomCon' : (canZoomRel ? 'zoomRel' : 'zoomCon');
@@ -345,6 +348,56 @@ export function PTZControls({ onCommand, profileId, className, disabled, control
           >
             <ZoomIn className="h-4 w-4" />
           </HoldButton>
+        </div>
+      )}
+
+      {(canWake || canSleep || canReboot) && (
+        <div className="flex items-center gap-2 w-full justify-center border-t pt-4">
+          {canWake && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="flex-1"
+              onClick={() => onCommand('wake')}
+              disabled={disabled}
+              title={t('ptz.wake')}
+              data-testid="ptz-wake"
+            >
+              <Power className="h-4 w-4 mr-2" />
+              {t('ptz.wake')}
+            </Button>
+          )}
+          {canSleep && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="flex-1"
+              onClick={() => onCommand('sleep')}
+              disabled={disabled}
+              title={t('ptz.sleep')}
+              data-testid="ptz-sleep"
+            >
+              <Moon className="h-4 w-4 mr-2" />
+              {t('ptz.sleep')}
+            </Button>
+          )}
+          {canReboot && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="flex-1"
+              onClick={() => onCommand('reboot')}
+              disabled={disabled}
+              title={t('ptz.reboot')}
+              data-testid="ptz-reboot"
+            >
+              <RotateCw className="h-4 w-4 mr-2" />
+              {t('ptz.reboot')}
+            </Button>
+          )}
         </div>
       )}
 

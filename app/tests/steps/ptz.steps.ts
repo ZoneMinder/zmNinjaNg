@@ -1,7 +1,7 @@
 import { createBdd } from 'playwright-bdd';
 import { expect } from '@playwright/test';
 import { testConfig } from '../helpers/config';
-import { isMonitorControllable } from '../helpers/zm-api';
+import { getMonitorPtzPowerCapabilities, isMonitorControllable } from '../helpers/zm-api';
 import { log } from '../../src/lib/logger';
 
 const { Given, When, Then } = createBdd();
@@ -61,6 +61,29 @@ Then('I should see directional arrows', async ({ page }) => {
   if (!hasPTZ) return;
   const arrows = page.locator('[data-testid*="ptz"]');
   await expect(arrows.first()).toBeVisible();
+});
+
+Then('I should see camera power controls according to PTZ capabilities', async ({ page }) => {
+  if (!hasPTZ) return;
+  const urlMatch = page.url().match(/monitors\/(\d+)/);
+  if (!urlMatch) {
+    throw new Error('E2E: PTZ capability assertion ran without a monitor id in the URL');
+  }
+
+  const capabilities = await getMonitorPtzPowerCapabilities(urlMatch[1]);
+  for (const [testId, supported] of [
+    ['ptz-wake', capabilities.canWake],
+    ['ptz-sleep', capabilities.canSleep],
+    ['ptz-reset', capabilities.canReset],
+    ['ptz-reboot', capabilities.canReboot],
+  ] as const) {
+    const button = page.getByTestId(testId);
+    if (supported) {
+      await expect(button).toBeVisible();
+    } else {
+      await expect(button).toBeHidden();
+    }
+  }
 });
 
 When('I click the PTZ pan right button', async ({ page }) => {

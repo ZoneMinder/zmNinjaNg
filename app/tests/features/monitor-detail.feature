@@ -46,6 +46,7 @@ Feature: Monitor Detail Page
     Given the current monitor supports PTZ
     Then I should see the PTZ control panel
     And I should see directional arrows
+    And I should see camera power controls according to PTZ capabilities
     When I click the PTZ pan right button
     Then the PTZ command should be sent
     When I click the PTZ stop button

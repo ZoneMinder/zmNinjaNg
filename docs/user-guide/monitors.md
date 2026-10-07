@@ -67,6 +67,13 @@ On Monitor Detail, the arrows beside the monitor name, a sideways swipe, and the
 
 For tile views (Monitors list, Montage, Dashboard widgets), the *Streaming Mode* setting does apply, see {doc}`settings` for details.
 
+### Camera PTZ Controls
+
+When ZoneMinder provides a PTZ control profile for the camera, its controls
+appear below the live view. Wake, Sleep, Reset, and Reboot are shown only when
+that profile advertises the corresponding capability. These commands operate
+the camera; Reset is different from the digital zoom reset described below.
+
 #### Scroll Pad
 
 The live view is a zoom and pan surface, so a swipe over it zooms or pans rather
