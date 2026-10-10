@@ -478,6 +478,28 @@ describe('useScopedEvents', () => {
     expect(result.current.errors).toBe(errorsRef);
   });
 
+  it('keeps the current list on screen while a moved date window fetches (refs #556)', async () => {
+    setupScope([profileA], 'single');
+    let release: (r: EventsResponse) => void = () => {};
+    vi.mocked(getEvents)
+      .mockResolvedValueOnce(eventsResponse([event('1', '2026-01-15 09:00:00')]))
+      .mockImplementationOnce(() => new Promise((resolve) => { release = resolve; }));
+
+    const { result, rerender } = renderHook(
+      ({ end }) => useScopedEvents({ ...baseOptions, filters: { endDateTime: end } }),
+      { wrapper: createWrapper(), initialProps: { end: '2026-01-15T10:00:00' } },
+    );
+    await waitFor(() => expect(result.current.events).toHaveLength(1));
+
+    rerender({ end: '2026-01-15T10:01:00' });
+    await waitFor(() => expect(vi.mocked(getEvents)).toHaveBeenCalledTimes(2));
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.events.map((e) => e.item.Event.Id)).toEqual(['1']);
+
+    release(eventsResponse([event('2', '2026-01-15 10:00:30')]));
+    await waitFor(() => expect(result.current.events.map((e) => e.item.Event.Id)).toEqual(['2']));
+  });
+
   it('fetches every profile in scope even when neither has ever authenticated this session (refs #337)', async () => {
     setupScope([profileA, profileB]);
     vi.mocked(getEvents).mockResolvedValue(eventsResponse([event('1', '2026-01-15 09:00:00')]));

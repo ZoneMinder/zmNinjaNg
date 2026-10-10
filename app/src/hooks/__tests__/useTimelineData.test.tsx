@@ -114,6 +114,23 @@ describe('useTimelineData', () => {
     expect(result.current.rawEventMap.get('42')).toBe(apiEvent);
   });
 
+  it('keeps the current events while a moved date window fetches (refs #556)', async () => {
+    vi.mocked(getEvents)
+      .mockResolvedValueOnce({ events: [apiEvent] } as never)
+      .mockImplementationOnce(() => new Promise(() => {}));
+
+    const { result, rerender } = renderHook(
+      ({ end }) => useTimelineData({ ...defaultOptions, endDate: end }),
+      { wrapper: createWrapper(), initialProps: { end: '2026-06-10T10:00' } },
+    );
+    await waitFor(() => expect(result.current.allTimelineEvents).toHaveLength(1));
+
+    rerender({ end: '2026-06-10T10:01' });
+    await waitFor(() => expect(vi.mocked(getEvents)).toHaveBeenCalledTimes(2));
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.eventIds).toEqual(['42']);
+  });
+
   it('injects a synthetic event on a live notification and dedups repeats', async () => {
     const { result } = renderHook(
       () => useTimelineData({ ...defaultOptions, liveMode: true }),

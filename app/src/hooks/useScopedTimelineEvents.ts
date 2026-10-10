@@ -23,7 +23,7 @@
  * (refs #337).
  */
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { useQueries, useQueryClient } from '@tanstack/react-query';
 import { getEvents } from '../api/events';
 import { getSession } from '../services/sessions';
@@ -36,7 +36,7 @@ import { filterEnabledMonitors } from '../lib/monitor/filters';
 import { getMonitors } from '../api/monitors';
 import { TIMELINE } from '../lib/zmninja-ng-constants';
 import type { Scoped, ProfileError } from '../api/scoped-types';
-import type { EventData, MonitorData, ProfileId } from '../api/types';
+import type { EventData, EventsResponse, MonitorData, ProfileId } from '../api/types';
 import type { TimelineEvent } from '../components/timeline/timeline-layout';
 
 export interface UseScopedTimelineEventsOptions {
@@ -82,6 +82,10 @@ export function useScopedTimelineEvents({
   const monitorFilter = selectedMonitorIds.length > 0 ? selectedMonitorIds.join(',') : undefined;
   const causeFields = causeToEventFilter(causeFilter, onlyDetectedObjects);
   const queriesEnabled = enabled ?? true;
+  // Each profile's last real page, shown while a moved window fetches -
+  // useQueries starts a fresh observer per key, so keepPreviousData alone
+  // would blank the canvas (refs #556, same as useScopedEvents).
+  const lastPage = useRef(new Map<ProfileId, EventsResponse>());
 
   const monitorsResult = useQueries({
     queries: profiles.map((p) => ({
@@ -122,6 +126,7 @@ export function useScopedTimelineEvents({
         });
       },
       enabled: queriesEnabled,
+      placeholderData: (prev: EventsResponse | undefined) => prev ?? lastPage.current.get(p.id),
     })),
     combine: (results) => {
       const timezoneById = new Map(profiles.map((p) => [p.id, p.timezone ?? 'UTC']));
@@ -135,6 +140,7 @@ export function useScopedTimelineEvents({
         if (!q) return;
         if (q.data) {
           anyHasData = true;
+          if (!q.isPlaceholderData) lastPage.current.set(p.id, q.data);
           const tz = timezoneById.get(p.id) ?? 'UTC';
           for (const item of q.data.events) {
             rawEvents.push(item);

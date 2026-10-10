@@ -7,7 +7,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { getEvents } from '../api/events';
 import { getMonitors } from '../api/monitors';
 import { getCurrentSession } from '../services/sessions';
@@ -132,6 +132,9 @@ export function useTimelineData({
     },
     refetchInterval: livePolling ? bandwidth.timelineHeatmapInterval : false,
     enabled,
+    // A moved window (auto-refresh, quick range) keeps the old events up
+    // until the new ones land instead of blanking the canvas (refs #556).
+    placeholderData: keepPreviousData,
   });
 
   // Log live mode source when it changes

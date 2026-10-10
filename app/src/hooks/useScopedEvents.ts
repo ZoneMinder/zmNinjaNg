@@ -34,8 +34,8 @@
  * the call site) and passes it through.
  */
 
-import { useCallback } from 'react';
-import { useQueries, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { useCallback, useRef } from 'react';
+import { useQueries, useQueryClient } from '@tanstack/react-query';
 import { getEvents } from '../api/events';
 import type { EventFilters } from '../api/events';
 import { getSession } from '../services/sessions';
@@ -46,7 +46,7 @@ import { staggeredRefetchInterval } from '../lib/query/stagger-interval';
 import { eventInstant } from '../lib/event/event-instant';
 import { formatForServerInTz, resolveProfileTimezone } from '../lib/time';
 import type { Scoped, ProfileError } from '../api/scoped-types';
-import type { EventData, ProfileId } from '../api/types';
+import type { EventData, EventsResponse, ProfileId } from '../api/types';
 
 /**
  * Resolves the comma-joined `monitorId` filter down to the ids one profile
@@ -168,6 +168,11 @@ export function useScopedEvents(options: UseScopedEventsOptions): UseScopedEvent
   // not a per-profile derived array, so an untouched profile's entry stays
   // reference-stable across renders).
   const profileFavorites = useEventFavoritesStore((s) => s.profileFavorites);
+  // Each profile's last real page. useQueries builds a fresh observer for a
+  // new key, so keepPreviousData has nothing to keep once the key changes
+  // (a refreshed quick range, Load More) - without this the list blanks to
+  // skeletons until the new page lands (refs #556).
+  const lastPage = useRef(new Map<ProfileId, EventsResponse>());
 
   // Shared by the fan-out and both refetch paths so the query key they
   // compute is byte-identical to the one that ran.
@@ -214,10 +219,10 @@ export function useScopedEvents(options: UseScopedEventsOptions): UseScopedEvent
         // the same concurrent fan-out; cert pinning order across profiles is
         // best-effort, not guaranteed (refs #337, W8).
         enabled: enabled ?? true,
-        // Keeps showing a profile's previous page while fetching the next one
-        // (pagination "Load More") instead of flashing empty - matches the
-        // Events page's old single-query behavior exactly.
-        placeholderData: keepPreviousData,
+        // Keeps showing a profile's previous page while a new key fetches
+        // instead of flashing empty - matches the Events page's old
+        // single-query behavior.
+        placeholderData: (prev: EventsResponse | undefined) => prev ?? lastPage.current.get(p.id),
         // Opt-in only - see the module doc comment: undefined means no polling,
         // and must stay undefined rather than accidentally turning into one via
         // staggering. When a caller does pass a base interval, stagger it the
@@ -245,6 +250,7 @@ export function useScopedEvents(options: UseScopedEventsOptions): UseScopedEvent
         if (!q) return;
         if (q.data) {
           anyHasData = true;
+          if (!q.isPlaceholderData) lastPage.current.set(p.id, q.data);
           for (const item of q.data.events) {
             events.push({ profileId: p.id, profileName: p.name, item });
           }
