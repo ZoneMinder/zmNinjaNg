@@ -40,7 +40,7 @@ The same selection and delete flow is available in the Recent Events list on a m
 
 Filter events using the controls at the top:
 
-- **Date range** - Select a start and end date. A date you type applies when you press Apply or Enter, so you can finish typing it and move between the two fields first. The quick range buttons below apply as soon as you press them. The quick range you pick is remembered, and each time you open Events (or Timeline) it covers that many hours back from now, so new events show up without pressing it again.
+- **Date range** - Select a start and end date. A date you type applies when you press Apply or Enter, so you can finish typing it and move between the two fields first. The quick range buttons below apply as soon as you press them. The quick range you pick is remembered, and each time you open Events (or Timeline) it covers that many hours back from now, so new events show up without pressing it again. Pulling down to refresh the list moves the window up to now as well.
 - **Monitor** - Show events from a specific camera only. In a {doc}`profiles` group the picker groups cameras by server, and picking from one server narrows the list to that server's events - the other servers drop out rather than showing everything they have.
 - **Linked events** - ZoneMinder records a monitor whenever a monitor it is linked to alarms, and writes `Linked` as the cause. Choose **All** to leave those events in place, **Only** to see nothing else, or **Hide** to keep them out of the list. The choice is remembered for that server.
 - **Groups** - Filter by monitor group

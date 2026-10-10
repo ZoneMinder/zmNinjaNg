@@ -115,6 +115,7 @@ export default function Events() {
     activeQuickRange,
     setActiveQuickRange,
     applyFilters,
+    refreshQuickRange,
     clearFilters,
     loadFilters,
     clearDateRange,
@@ -377,7 +378,7 @@ export default function Events() {
   // Pull-to-refresh gesture
   const pullToRefresh = usePullToRefresh({
     containerRef: parentRef,
-    onRefresh: refetchAll,
+    onRefresh: () => (refreshQuickRange() ? undefined : refetchAll()),
     enabled: true,
   });
 

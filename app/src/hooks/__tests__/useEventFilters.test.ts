@@ -864,6 +864,36 @@ describe('useEventFilters persisted quick range (refs #556)', () => {
     expect(result.current.activeQuickRange).toBe(4);
   });
 
+  it('moves a quick range window up to now on refresh', () => {
+    setupMocks({ activeQuickRange: 4, startDateTime: '2026-10-10T08:00:00', endDateTime: '2026-10-10T12:00:00' });
+    const { result } = renderHook(() => useEventFilters());
+
+    vi.setSystemTime(new Date(2026, 9, 10, 13, 0, 0));
+    let moved = false;
+    act(() => {
+      moved = result.current.refreshQuickRange();
+    });
+
+    expect(moved).toBe(true);
+    expect(result.current.filters.startDateTime).toBe('2026-10-10T09:00:00');
+    expect(result.current.filters.endDateTime).toBe('2026-10-10T13:00:00');
+    expect(mockSetSearchParams.mock.lastCall?.[0].get('endDateTime')).toBe('2026-10-10T13:00:00');
+  });
+
+  it('leaves an explicit range alone on refresh so the caller refetches it', () => {
+    setupMocks({ activeQuickRange: null, startDateTime: '2026-10-01T08:00:00', endDateTime: '2026-10-01T12:00:00' });
+    const { result } = renderHook(() => useEventFilters());
+
+    vi.setSystemTime(new Date(2026, 9, 10, 13, 0, 0));
+    let moved = true;
+    act(() => {
+      moved = result.current.refreshQuickRange();
+    });
+
+    expect(moved).toBe(false);
+    expect(result.current.filters.endDateTime).toBe('2026-10-01T12:00:00');
+  });
+
   it('keeps a saved explicit range as it was', () => {
     setupMocks({ activeQuickRange: null, startDateTime: '2026-10-01T08:00:00', endDateTime: '2026-10-01T12:00:00' });
 

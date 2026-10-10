@@ -54,6 +54,8 @@ interface UseEventFiltersReturn {
   setActiveQuickRange: (hours: number | null) => void;
   applyFilters: (overrides?: DateRangeOverrides) => void;
   clearFilters: () => void;
+  /** Move an active quick range's window up to now; false when there is none to move. */
+  refreshQuickRange: () => boolean;
   /** Replace every filter field with a saved snapshot (refs #544). */
   loadFilters: (saved: ProfileSettings['eventsPageFilters']) => void;
   clearDateRange: () => void;
@@ -397,6 +399,20 @@ export function useEventFilters(): UseEventFiltersReturn {
     searchParams, setSearchParams, location.state,
   ]);
 
+  // A refresh on "past 4 hours" means the past 4 hours from now, not from when
+  // the chip was pressed. The new range changes the query key, which fetches it,
+  // so the caller only refetches when this returns false (refs #556).
+  const refreshQuickRange = useCallback((): boolean => {
+    const { startDateTime, endDateTime } = withFreshQuickRange({
+      startDateTime: startDateInput, endDateTime: endDateInput, activeQuickRange,
+    });
+    if (startDateTime === startDateInput && endDateTime === endDateInput) return false;
+    setStartDateInput(startDateTime);
+    setEndDateInput(endDateTime);
+    applyFilters({ startDateTime, endDateTime });
+    return true;
+  }, [startDateInput, endDateInput, activeQuickRange, setStartDateInput, setEndDateInput, applyFilters]);
+
   const clearFilters = useCallback(() => {
     // Use wrapped setters so clearing also saves to settings
     setSelectedMonitorIds([]);
@@ -493,6 +509,6 @@ export function useEventFilters(): UseEventFiltersReturn {
   return {
     filters, selectedMonitorIds, selectedTagIds, startDateInput, endDateInput, favoritesOnly, archivedOnly, onlyDetectedObjects, linkedFilter, activeQuickRange,
     setSelectedMonitorIds, setSelectedTagIds, setStartDateInput, setEndDateInput, setFavoritesOnly, setArchivedOnly, setOnlyDetectedObjects, setLinkedFilter, setActiveQuickRange,
-    applyFilters, clearFilters, loadFilters, clearDateRange, toggleMonitorSelection, toggleTagSelection, activeFilterCount,
+    applyFilters, refreshQuickRange, clearFilters, loadFilters, clearDateRange, toggleMonitorSelection, toggleTagSelection, activeFilterCount,
   };
 }
