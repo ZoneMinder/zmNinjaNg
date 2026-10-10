@@ -74,6 +74,17 @@ Feature: Event Browsing and Management
     Then the quick time filter clear button should be gone
     And I should see events list or empty state
 
+  # Auto-refresh on a quick range means "the past N hours from now" on every
+  # tick, not a refetch of the window from when the chip was pressed (refs #556).
+  @all
+  Scenario: Auto-refresh moves a quick range up to now
+    When I navigate to the "Settings" page
+    And I expand the "events-playback" settings section
+    And I set auto-refresh to 10 seconds
+    And I navigate to the "Events" page
+    And I select the past week quick time filter
+    Then the quick range end time should move forward on its own
+
   @all
   Scenario: Clearing a URL-driven date range keeps the monitor filter (refs #239)
     When I navigate to the "Monitors" page

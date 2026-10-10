@@ -25,6 +25,7 @@ import { useSettingsStore, ALL_GROUPS_KEY, DEFAULT_EVENT_MONTAGE_GROUP_LAYOUT } 
 import { useEventFilterPresets } from '../hooks/useEventFilterPresets';
 import { useEventFilters, ALL_TAGS_FILTER_ID } from '../hooks/useEventFilters';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
+import { useAutoRefresh } from '../hooks/useAutoRefresh';
 import { useEventPagination } from '../hooks/useEventPagination';
 import { useEventMontageGrid } from '../hooks/useEventMontageGrid';
 import { useScopedTags, useScopedEventTagMapping, type ScopedEventRef } from '../hooks/useScopedEventTags';
@@ -376,11 +377,15 @@ export default function Events() {
   const serverFilterHidesEverything = isAllMode && effectiveServerFilter !== null && effectiveServerFilter.length === 0;
 
   // Pull-to-refresh gesture
+  // A quick range moves up to now, which fetches through the new query key;
+  // anything else refetches as it is.
+  const refreshList = () => (refreshQuickRange() ? undefined : refetchAll());
   const pullToRefresh = usePullToRefresh({
     containerRef: parentRef,
-    onRefresh: () => (refreshQuickRange() ? undefined : refetchAll()),
+    onRefresh: refreshList,
     enabled: true,
   });
+  useAutoRefresh(settings.eventsAutoRefreshSeconds, () => void refreshList());
 
   // Displayed events with their owning profile, so each server is asked only
   // for its own event ids and the merged map stays collision-free.

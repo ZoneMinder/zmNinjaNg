@@ -201,6 +201,7 @@ None of these change any server's own settings. With one profile selected the gr
 | Setting | Description |
 |---------|-------------|
 | **Events Per Page** | How many events to load per page on the Events screen (10 to 1000, default 100; presets 100/300/500). |
+| **Auto-refresh** | Reloads the Events and Timeline screens every this many seconds while they are open. 0 is off (the default); otherwise 10 to 3600 seconds, presets Off/30s/60s. A quick range such as 4h moves up to now on each refresh. Timeline skips it in live mode, which already stays at now. |
 | **Event Video Autoplay** | Start video playback automatically when opening the Event Detail page. |
 | **Open events in fullscreen** | Play event video fullscreen as soon as the Event Detail page opens. Going fullscreen on the player itself lasts only for that event. |
 | **Recent events on monitor** | How many recent events a monitor's live view lists under the video (1 to 50, default 20; presets 10/20/50). |

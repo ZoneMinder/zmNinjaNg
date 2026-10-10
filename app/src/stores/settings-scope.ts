@@ -32,6 +32,7 @@ export const SELECTION_SCOPED_SETTINGS = [
   'skipOfflineMonitors',
   'monitorDetailFullscreen',
   'defaultEventLimit',
+  'eventsAutoRefreshSeconds',
   'eventVideoAutoplay',
   'eventPlaybackFullscreen',
   'monitorDetailRecentEventsCount',

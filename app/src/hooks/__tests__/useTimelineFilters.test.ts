@@ -156,4 +156,29 @@ describe('useTimelineFilters persisted quick range (refs #556)', () => {
     expect(result.current.endDateInput).toBe('2026-10-10T12:00');
     expect(result.current.activeQuickRange).toBe(8);
   });
+
+  it('moves a quick range up to now on refresh and reports when nothing moved', () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 9, 10, 12, 0, 0));
+    seedProfiles(['profile-1'], {
+      current: 'profile-1',
+      settings: {
+        'profile-1': {
+          timelinePageFilters: { ...DEFAULT_SETTINGS.timelinePageFilters, activeQuickRange: 8 },
+        },
+      },
+    });
+    const { result } = renderHook(() => useTimelineFilters());
+
+    let moved = true;
+    act(() => { moved = result.current.refreshQuickRange(); });
+    expect(moved).toBe(false);
+
+    vi.setSystemTime(new Date(2026, 9, 10, 13, 0, 0));
+    act(() => { moved = result.current.refreshQuickRange(); });
+    expect(moved).toBe(true);
+    expect(result.current.startDateInput).toBe('2026-10-10T05:00');
+    expect(result.current.endDateInput).toBe('2026-10-10T13:00');
+  });
 });
+

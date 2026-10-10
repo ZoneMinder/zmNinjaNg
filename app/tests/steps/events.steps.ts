@@ -399,6 +399,22 @@ function hashSearchParams(url: string): URLSearchParams {
   return new URLSearchParams(queryString);
 }
 
+When('I set auto-refresh to {int} seconds', async ({ page }, seconds: number) => {
+  const input = page.getByTestId('settings-auto-refresh');
+  await input.waitFor({ state: 'visible', timeout: testConfig.timeouts.element });
+  await input.fill(String(seconds));
+  await input.blur();
+});
+
+Then('the quick range end time should move forward on its own', async ({ page }) => {
+  await expect.poll(() => hashSearchParams(page.url()).get('endDateTime'), {
+    timeout: testConfig.timeouts.transition,
+  }).toBeTruthy();
+  const first = hashSearchParams(page.url()).get('endDateTime')!;
+  // One 10 s tick plus slack for the fetch; nothing is pressed in between.
+  await expect.poll(() => hashSearchParams(page.url()).get('endDateTime')! > first, { timeout: 25_000 }).toBe(true);
+});
+
 Then('the date filter should be gone from the URL but the monitor filter should remain', async ({ page }) => {
   await expect.poll(() => hashSearchParams(page.url()).has('startDateTime'), {
     timeout: testConfig.timeouts.transition,

@@ -713,3 +713,18 @@ describe('mergeProfileSettings eventContext', () => {
     });
   });
 });
+
+describe('eventsAutoRefreshSeconds', () => {
+  const merged = (raw: Record<string, unknown>) =>
+    mergeProfileSettings(raw as Partial<ProfileSettings>).eventsAutoRefreshSeconds;
+
+  it('defaults to off', () => {
+    expect(merged({})).toBe(0);
+  });
+
+  it('pulls a persisted value back into bounds on every read', () => {
+    expect(merged({ eventsAutoRefreshSeconds: 60 })).toBe(60);
+    expect(merged({ eventsAutoRefreshSeconds: 2 })).toBe(10);
+    expect(merged({ eventsAutoRefreshSeconds: 'soon' })).toBe(0);
+  });
+});

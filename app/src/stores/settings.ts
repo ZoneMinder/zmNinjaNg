@@ -1,3 +1,4 @@
+import { clampAutoRefreshSeconds } from '../lib/event/auto-refresh';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Layout, Layouts } from 'react-grid-layout';
@@ -161,6 +162,8 @@ export interface ProfileSettings {
   streamMaxFps: number; // Max FPS for live streams
   streamScale: number; // Scale percentage for live streams (1-100)
   defaultEventLimit: number; // Default number of events to fetch when no filters applied
+  /** Events and Timeline refetch every this many seconds; 0 is off. */
+  eventsAutoRefreshSeconds: number;
   /** Number of recent events shown under the live view on the monitor detail page. */
   monitorDetailRecentEventsCount: number;
   /** Monitor IDs whose recent-events list is collapsed/hidden on the detail page. */
@@ -485,6 +488,7 @@ export const DEFAULT_SETTINGS: ProfileSettings = {
   streamMaxFps: 10,
   streamScale: 50,
   defaultEventLimit: 100,
+  eventsAutoRefreshSeconds: 0,
   monitorDetailRecentEventsCount: 20,
   monitorDetailRecentEventsHidden: [],
   montageByGroup: {},
@@ -667,6 +671,7 @@ export function mergeProfileSettings(raw: Partial<ProfileSettings> | undefined):
   if (!(EVENT_CONTEXT.replayTileChoices as readonly unknown[]).includes(merged.eventContextReplayTiles)) {
     merged.eventContextReplayTiles = DEFAULT_SETTINGS.eventContextReplayTiles;
   }
+  merged.eventsAutoRefreshSeconds = clampAutoRefreshSeconds(merged.eventsAutoRefreshSeconds);
   coerceAllModePerformance(merged, DEFAULT_SETTINGS);
   coerceEventContext(merged, DEFAULT_SETTINGS);
   return merged;

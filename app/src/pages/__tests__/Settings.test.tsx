@@ -129,6 +129,20 @@ describe('Settings Page', () => {
     expect(stored().defaultEventLimit).toBe(400);
   });
 
+  it('saves the auto-refresh interval as typed and turns it off from the Off preset', () => {
+    renderSettings();
+    const input = screen.getByTestId('settings-auto-refresh') as HTMLInputElement;
+
+    fireEvent.change(input, { target: { value: '3' } });
+    expect(input.value).toBe('3');
+    fireEvent.change(input, { target: { value: '30' } });
+    expect(stored().eventsAutoRefreshSeconds).toBe(30);
+
+    fireEvent.click(screen.getByTestId('settings-auto-refresh-preset-0'));
+    expect(stored().eventsAutoRefreshSeconds).toBe(0);
+    expect(input.value).toBe('0');
+  });
+
   it('changes language selection', async () => {
     const user = userEvent.setup();
     renderSettings();
@@ -223,6 +237,7 @@ describe('Settings Page', () => {
       skipOfflineMonitors: 'settings-skip-offline-monitors-switch',
       monitorDetailFullscreen: 'settings-live-fullscreen-switch',
       defaultEventLimit: 'settings-event-limit',
+      eventsAutoRefreshSeconds: 'settings-auto-refresh',
       eventVideoAutoplay: 'settings-event-autoplay-switch',
       eventPlaybackFullscreen: 'settings-event-fullscreen-switch',
       monitorDetailRecentEventsCount: 'settings-monitor-recent-events-count',

@@ -1,7 +1,7 @@
 /**
  * Events & Playback section.
  *
- * Selection-scoped rows (paging, autoplay, fullscreen, the monitor page's
+ * Selection-scoped rows (paging, auto-refresh, autoplay, fullscreen, the monitor page's
  * recent events, nearby-event defaults) save through the page's `update`.
  * The server sub-card holds Event thumbnails, which depends on what each
  * server can serve.
@@ -17,8 +17,9 @@ import { ThumbnailFallbackChainEditor } from './ThumbnailFallbackChainEditor';
 import { EventContextControls } from '../events/context/EventContextControls';
 import type { Profile } from '../../api/types';
 import type { ProfileSettings } from '../../stores/settings';
-import { EVENT_CONTEXT, MONITOR_DETAIL_RECENT_EVENTS } from '../../lib/zmninja-ng-constants';
+import { EVENT_CONTEXT, EVENTS_AUTO_REFRESH, MONITOR_DETAIL_RECENT_EVENTS } from '../../lib/zmninja-ng-constants';
 import { clampRecentEventsCount } from '../../lib/monitor/monitor-recent-events';
+import { clampAutoRefreshSeconds } from '../../lib/event/auto-refresh';
 
 type Update = <K extends keyof ProfileSettings>(key: K, value: ProfileSettings[K]) => void;
 
@@ -48,6 +49,14 @@ export function EventsPlaybackSection({
   useEffect(() => {
     setRecentEventsText(String(recentEventsCount));
   }, [recentEventsCount]);
+
+  // Same buffer for auto-refresh: storage clamps 3 up to 10 on read, so a
+  // controlled value would turn "30" into "100" while it is typed.
+  const autoRefresh = settings.eventsAutoRefreshSeconds;
+  const [autoRefreshText, setAutoRefreshText] = useState(String(autoRefresh));
+  useEffect(() => {
+    setAutoRefreshText((text) => (clampAutoRefreshSeconds(Number(text)) === autoRefresh ? text : String(autoRefresh)));
+  }, [autoRefresh]);
 
   return (
     <CollapsibleSection id="events-playback" label={t('settings.section_events_playback')}>
@@ -83,6 +92,37 @@ export function EventsPlaybackSection({
               </div>
             </div>
             <p className="text-xs text-muted-foreground">{t('settings.event_limit_tip')}</p>
+          </div>
+
+          {/* Auto-refresh for Events and Timeline */}
+          <div className="px-4 py-3 space-y-2">
+            <RowLabel label={t('settings.auto_refresh')} desc={t('settings.auto_refresh_desc')} />
+            <div className="flex flex-wrap items-center gap-3">
+              <Input
+                id="auto-refresh"
+                type="number"
+                min="0"
+                max={EVENTS_AUTO_REFRESH.maxSeconds}
+                value={autoRefreshText}
+                onChange={(e) => {
+                  setAutoRefreshText(e.target.value);
+                  if (e.target.value !== '') update('eventsAutoRefreshSeconds', Number(e.target.value));
+                }}
+                onBlur={() => setAutoRefreshText(String(autoRefresh))}
+                className="w-20"
+                data-testid="settings-auto-refresh"
+              />
+              <span className="text-xs text-muted-foreground">{t('settings.seconds')}</span>
+              <div className="flex gap-1.5">
+                {EVENTS_AUTO_REFRESH.presets.map((val) => (
+                  <Button key={val} variant="outline" size="sm" className="h-7 text-xs px-2"
+                    onClick={() => update('eventsAutoRefreshSeconds', val)}
+                    data-testid={`settings-auto-refresh-preset-${val}`}>
+                    {val === 0 ? t('common.off') : `${val}s`}
+                  </Button>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Event Autoplay */}

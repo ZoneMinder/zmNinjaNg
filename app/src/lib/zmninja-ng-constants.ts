@@ -379,6 +379,16 @@ export const API_PAGINATION = {
  * Recent-events list shown under the live view on the monitor detail page.
  * Count is a per-profile setting; these are its default and clamp bounds.
  */
+/**
+ * Auto-refresh for the Events and Timeline pages, in seconds; 0 is off. The
+ * floor keeps a typo like 1 from polling ZoneMinder every second.
+ */
+export const EVENTS_AUTO_REFRESH = {
+  minSeconds: 10,
+  maxSeconds: 3600,
+  presets: [0, 30, 60],
+} as const;
+
 export const MONITOR_DETAIL_RECENT_EVENTS = {
   defaultCount: 20,
   minCount: 1,

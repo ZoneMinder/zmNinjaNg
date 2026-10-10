@@ -25,6 +25,8 @@ export interface UseTimelineFiltersReturn {
   setOnlyDetectedObjects: (enabled: boolean) => void;
   setCauseFilter: (cause: string) => void;
   setActiveQuickRange: (hours: number | null) => void;
+  /** Move an active quick range's window up to now; false when nothing moved. */
+  refreshQuickRange: () => boolean;
   clearFilters: () => void;
   activeFilterCount: number;
 }
@@ -107,6 +109,19 @@ export function useTimelineFilters(): UseTimelineFiltersReturn {
     _setActiveQuickRange(saved.activeQuickRange ?? null);
   }, [currentProfileId, settings.timelinePageFilters]);
 
+  // Auto-refresh on "past 8 hours" means the past 8 hours from now. A new range
+  // changes the query key, which fetches it; on false the caller refetches.
+  const refreshQuickRange = useCallback((): boolean => {
+    const { startDateTime, endDateTime } = withFreshQuickRange(
+      { startDateTime: startDateInput, endDateTime: endDateInput, activeQuickRange },
+      formatLocalDateTime,
+    );
+    if (startDateTime === startDateInput && endDateTime === endDateInput) return false;
+    setStartDateInput(startDateTime);
+    setEndDateInput(endDateTime);
+    return true;
+  }, [startDateInput, endDateInput, activeQuickRange, setStartDateInput, setEndDateInput]);
+
   const clearFilters = useCallback(() => {
     setSelectedMonitorIds([]);
     setStartDateInput('');
@@ -126,6 +141,6 @@ export function useTimelineFilters(): UseTimelineFiltersReturn {
   return {
     selectedMonitorIds, startDateInput, endDateInput, onlyDetectedObjects, causeFilter, activeQuickRange,
     setSelectedMonitorIds, setStartDateInput, setEndDateInput, setOnlyDetectedObjects, setCauseFilter, setActiveQuickRange,
-    clearFilters, activeFilterCount,
+    refreshQuickRange, clearFilters, activeFilterCount,
   };
 }

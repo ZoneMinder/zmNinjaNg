@@ -529,6 +529,8 @@
     "events_per_page": "رویداد در هر صفحه",
     "events_per_page_desc": "تعداد رویدادهایی که یک‌باره بارگذاری می‌شوند",
     "events_per_page_suffix": "رویداد",
+    "auto_refresh": "بازخوانی خودکار",
+    "auto_refresh_desc": "رویدادها و خط زمانی هر چند ثانیه دوباره بارگذاری می‌شوند. ۰ آن را خاموش می‌کند.",
     "event_limit_tip": "محدودیت بالاتر ممکن است روی عملکرد تأثیر بگذارد",
     "monitor_recent_events_count": "رویدادهای اخیر روی مانیتور",
     "monitor_recent_events_count_desc": "چند رویداد اخیر زیر نمای زنده نشان داده شود",

@@ -10,6 +10,10 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { FilterX, Clock } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '../lib/query/query-keys';
+import { useCurrentProfile } from '../hooks/useCurrentProfile';
+import { useAutoRefresh } from '../hooks/useAutoRefresh';
 import { PageContainer } from '../components/common/PageContainer';
 import { ScrollPad } from '../components/ui/scroll-pad';
 import { NinjiiToolbarButton } from '../components/assistant/NinjiiToolbarButton';
@@ -51,13 +55,12 @@ export default function Timeline() {
   const filters = useTimelineFilters();
   const { selectedMonitorIds, onlyDetectedObjects, causeFilter } = filters;
 
-  // Stable default dates: computed once, not every render
-  const defaultDates = useRef({
-    start: formatLocalDateTime(subDays(new Date(), 1)),
-    end: formatLocalDateTime(new Date()),
-  });
-  const startDate = filters.startDateInput || defaultDates.current.start;
-  const endDate = filters.endDateInput || defaultDates.current.end;
+  // The past day, used when no dates are set. State, not a ref: auto-refresh
+  // moves it up to now, and a ref change would not re-render the new window.
+  const lastDay = () => ({ start: formatLocalDateTime(subDays(new Date(), 1)), end: formatLocalDateTime(new Date()) });
+  const [defaultDates, setDefaultDates] = useState(lastDay);
+  const startDate = filters.startDateInput || defaultDates.start;
+  const endDate = filters.endDateInput || defaultDates.end;
 
   // Brush-to-zoom mode toggle
   const [brushMode, setBrushMode] = useState(false);
@@ -154,6 +157,19 @@ export default function Timeline() {
     onlyDetectedObjects,
     causeFilter,
     enabled: isAllMode,
+  });
+
+  // Auto-refresh (Settings > Events & Playback). A window that moved up to now
+  // fetches through its new query key; one that did not is refetched. Live mode
+  // already keeps the window at now.
+  const queryClient = useQueryClient();
+  const { settings } = useCurrentProfile();
+  useAutoRefresh(liveMode ? 0 : settings.eventsAutoRefreshSeconds, () => {
+    if (!filters.startDateInput && !filters.endDateInput) {
+      const next = lastDay();
+      if (next.end !== defaultDates.end) return setDefaultDates(next);
+    } else if (filters.refreshQuickRange()) return;
+    for (const p of scope?.profiles ?? []) void queryClient.invalidateQueries({ queryKey: queryKeys.timelineEvents(p.id) });
   });
 
   const data = single.data;
@@ -421,7 +437,7 @@ export default function Timeline() {
         <div className="flex items-center gap-2">
           <GroupByServerToggle setting="eventsGroupByServer" testId="timeline-group-by-server" className="h-8 w-8 sm:h-9 sm:w-9" />
           <NinjiiToolbarButton />
-          <Button onClick={() => { filters.clearFilters(); filters.setActiveQuickRange(null); defaultDates.current = { start: formatLocalDateTime(subDays(new Date(), 1)), end: formatLocalDateTime(new Date()) }; }} variant="outline" size="sm" className="h-8 sm:h-9" data-testid="timeline-clear-button">
+          <Button onClick={() => { filters.clearFilters(); filters.setActiveQuickRange(null); setDefaultDates(lastDay()); }} variant="outline" size="sm" className="h-8 sm:h-9" data-testid="timeline-clear-button">
             <FilterX className="h-4 w-4 sm:mr-2" />
             <span className="hidden sm:inline">{t('common.clear')}</span>
           </Button>

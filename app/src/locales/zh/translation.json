@@ -529,6 +529,8 @@
     "events_per_page": "每页事件数",
     "events_per_page_desc": "一次加载的事件数量",
     "events_per_page_suffix": "事件",
+    "auto_refresh": "自动刷新",
+    "auto_refresh_desc": "每隔指定秒数重新加载事件和时间线。0 表示关闭。",
     "event_limit_tip": "更高的限制可能会影响性能",
     "monitor_recent_events_count": "最近事件数",
     "monitor_recent_events_count_desc": "实时画面下方显示的事件数量",
