@@ -125,3 +125,35 @@ describe('useTimelineFilters in All Servers mode', () => {
     expect(inSingleMode.result.current.causeFilter).toBe('');
   });
 });
+
+describe('useTimelineFilters persisted quick range (refs #556)', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    resetProfileFixture();
+    resetFakeStoreGates();
+  });
+
+  it('re-anchors a saved quick range to now on mount', () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 9, 10, 12, 0, 0));
+    seedProfiles(['profile-1'], {
+      current: 'profile-1',
+      settings: {
+        'profile-1': {
+          timelinePageFilters: {
+            ...DEFAULT_SETTINGS.timelinePageFilters,
+            activeQuickRange: 8,
+            startDateTime: '2026-10-01T04:00',
+            endDateTime: '2026-10-01T12:00',
+          },
+        },
+      },
+    });
+
+    const { result } = renderHook(() => useTimelineFilters());
+
+    expect(result.current.startDateInput).toBe('2026-10-10T04:00');
+    expect(result.current.endDateInput).toBe('2026-10-10T12:00');
+    expect(result.current.activeQuickRange).toBe(8);
+  });
+});

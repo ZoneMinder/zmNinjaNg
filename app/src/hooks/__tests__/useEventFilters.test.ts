@@ -831,3 +831,45 @@ describe('useEventFilters - linked event cause', () => {
     expect(result.current.filters.causeExclude).toBeUndefined();
   });
 });
+
+// A saved quick range means "the past N hours", so reopening the page must
+// measure it back from now, not keep the window from the day it was picked.
+// Otherwise the 4h chip lights up over a list that misses every new event (refs #556).
+describe('useEventFilters persisted quick range (refs #556)', () => {
+  beforeEach(() => {
+    Array.from(mockSearchParams.keys()).forEach((key) => mockSearchParams.delete(key));
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 9, 10, 12, 0, 0));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    resetProfileFixture();
+    resetFakeStoreGates();
+  });
+
+  it('re-anchors a saved quick range to now on the first render and after effects', () => {
+    setupMocks({ activeQuickRange: 4, startDateTime: '2026-10-01T08:00:00', endDateTime: '2026-10-01T12:00:00' });
+
+    const startPerRender: (string | undefined)[] = [];
+    const { result } = renderHook(() => {
+      const r = useEventFilters();
+      startPerRender.push(r.filters.startDateTime);
+      return r;
+    });
+
+    expect(startPerRender[0]).toBe('2026-10-10T08:00:00');
+    expect(result.current.filters.startDateTime).toBe('2026-10-10T08:00:00');
+    expect(result.current.filters.endDateTime).toBe('2026-10-10T12:00:00');
+    expect(result.current.activeQuickRange).toBe(4);
+  });
+
+  it('keeps a saved explicit range as it was', () => {
+    setupMocks({ activeQuickRange: null, startDateTime: '2026-10-01T08:00:00', endDateTime: '2026-10-01T12:00:00' });
+
+    const { result } = renderHook(() => useEventFilters());
+
+    expect(result.current.filters.startDateTime).toBe('2026-10-01T08:00:00');
+    expect(result.current.filters.endDateTime).toBe('2026-10-01T12:00:00');
+  });
+});

@@ -116,3 +116,17 @@ export function quickRangeDates(hours: number, end: Date = new Date()): { start:
     }
     return { start, end };
 }
+
+/**
+ * A persisted filter with its quick range measured back from now. A saved
+ * quick range means "the past N hours", not the window it covered when it was
+ * picked (refs #556); an explicit range passes through unchanged.
+ */
+export function withFreshQuickRange<T extends { startDateTime: string; endDateTime: string; activeQuickRange?: number | null }>(
+    saved: T,
+    format: (date: Date) => string = formatLocalDateTimeSeconds,
+): T {
+    if (saved.activeQuickRange == null) return saved;
+    const { start, end } = quickRangeDates(saved.activeQuickRange);
+    return { ...saved, startDateTime: format(start), endDateTime: format(end) };
+}

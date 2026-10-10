@@ -10,6 +10,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useCurrentProfile } from './useCurrentProfile';
 import { useProfileStore } from '../stores/profile';
 import { useSettingsStore } from '../stores/settings';
+import { formatLocalDateTime, withFreshQuickRange } from '../lib/time';
 
 export interface UseTimelineFiltersReturn {
   selectedMonitorIds: string[];
@@ -91,9 +92,11 @@ export function useTimelineFilters(): UseTimelineFiltersReturn {
   const prevSettingsRef = useRef<string>('');
   useEffect(() => {
     if (!currentProfileId) return;
-    const saved = settings.timelinePageFilters;
-    const settingsKey = JSON.stringify(saved);
+    const persisted = settings.timelinePageFilters;
+    const settingsKey = JSON.stringify(persisted);
     if (settingsKey === prevSettingsRef.current) return;
+    // Only the mount restore re-anchors: later runs echo what the user just set.
+    const saved = prevSettingsRef.current === '' ? withFreshQuickRange(persisted, formatLocalDateTime) : persisted;
     prevSettingsRef.current = settingsKey;
 
     _setMonitorIds(saved.monitorIds);

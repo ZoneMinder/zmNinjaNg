@@ -14,7 +14,7 @@ import { useSettingsStore, type LinkedEventFilter, type ProfileSettings } from '
 import type { EventFilters } from '../api/events';
 import { log, LogLevel } from '../lib/logger';
 import { ZM_LINKED_CAUSE } from '../lib/zm/zm-constants';
-import { formatLocalDateTimeSeconds, quickRangeDates } from '../lib/time';
+import { withFreshQuickRange } from '../lib/time';
 
 /** Sentinel value for the "All tagged events" filter option */
 export const ALL_TAGS_FILTER_ID = '__all_tags__';
@@ -194,6 +194,7 @@ function resolveInitialFilters(
       activeQuickRange: null,
     };
   }
+  if (saved) saved = withFreshQuickRange(saved);
   return {
     monitorIds: saved?.monitorIds ?? [],
     tagIds: saved?.tagIds ?? [],
@@ -296,7 +297,9 @@ export function useEventFilters(): UseEventFiltersReturn {
 
   // ----- Restore filters from settings on mount / profile change -----
   // Does NOT trigger auto-save because it uses the raw _set* functions.
-  const prevSettingsRef = useRef<string>('');
+  // Seeded with the bucket `initial` hydrated from, so the mount run does not
+  // put back the stale window resolveInitialFilters re-anchored (refs #556).
+  const prevSettingsRef = useRef<string>(JSON.stringify(settings.eventsPageFilters));
   useEffect(() => {
     // Symmetry with the write path, not a covered branch: initial state
     // already hydrates synchronously from the same bucket, and the profile
@@ -422,12 +425,7 @@ export function useEventFilters(): UseEventFiltersReturn {
   // re-anchored to now: "past 4 hours" saved last week means the past 4 hours.
   const loadFilters = useCallback((saved: ProfileSettings['eventsPageFilters']) => {
     const quickRange = saved.activeQuickRange ?? null;
-    let { startDateTime, endDateTime } = saved;
-    if (quickRange !== null) {
-      const range = quickRangeDates(quickRange);
-      startDateTime = formatLocalDateTimeSeconds(range.start);
-      endDateTime = formatLocalDateTimeSeconds(range.end);
-    }
+    const { startDateTime, endDateTime } = withFreshQuickRange(saved);
     setSelectedMonitorIds(saved.monitorIds);
     setSelectedTagIds(saved.tagIds);
     setStartDateInput(startDateTime);
