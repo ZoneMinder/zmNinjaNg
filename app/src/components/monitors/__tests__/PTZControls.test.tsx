@@ -74,11 +74,25 @@ describe('PTZControls panel', () => {
     fireEvent.click(screen.getByTestId('ptz-sleep'));
     fireEvent.click(screen.getByTestId('ptz-reset'));
     fireEvent.click(screen.getByTestId('ptz-reboot'));
+    expect(onCommand).toHaveBeenCalledTimes(3);
+    fireEvent.click(screen.getByTestId('ptz-reboot-confirm'));
 
     expect(onCommand).toHaveBeenNthCalledWith(1, 'wake');
     expect(onCommand).toHaveBeenNthCalledWith(2, 'sleep');
     expect(onCommand).toHaveBeenNthCalledWith(3, 'reset');
     expect(onCommand).toHaveBeenNthCalledWith(4, 'reboot');
+  });
+
+  it('does not reboot the camera when the confirm is cancelled', () => {
+    const onCommand = vi.fn();
+    const control = { CanReboot: '1' } as unknown as ZMControl;
+
+    render(withQuery(<PTZControls onCommand={onCommand} control={control} />));
+
+    fireEvent.click(screen.getByTestId('ptz-reboot'));
+    fireEvent.click(screen.getByTestId('ptz-reboot-cancel'));
+
+    expect(onCommand).not.toHaveBeenCalled();
   });
 
   it('hides camera wake, sleep, reset, and reboot actions when unsupported', () => {

@@ -1454,6 +1454,8 @@
     "wake": "Riattiva",
     "sleep": "Sospendi",
     "reboot": "Riavvia",
+    "reboot_confirm_title": "Riavviare la telecamera?",
+    "reboot_confirm_desc": "La telecamera resta offline fino al riavvio.",
     "presets": "Preimpostazioni",
     "show_controls": "Mostra controlli",
     "hide_controls": "Nascondi controlli",

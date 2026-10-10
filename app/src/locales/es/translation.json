@@ -1454,6 +1454,8 @@
     "wake": "Activar",
     "sleep": "Suspender",
     "reboot": "Reiniciar",
+    "reboot_confirm_title": "¿Reiniciar la cámara?",
+    "reboot_confirm_desc": "La cámara queda sin conexión hasta que se reinicie.",
     "presets": "Preajustes",
     "show_controls": "Mostrar controles",
     "hide_controls": "Ocultar controles",

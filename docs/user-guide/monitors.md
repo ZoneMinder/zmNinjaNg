@@ -71,8 +71,8 @@ For tile views (Monitors list, Montage, Dashboard widgets), the *Streaming Mode*
 
 When ZoneMinder provides a PTZ control profile for the camera, its controls
 appear below the live view. Wake, Sleep, Reset, and Reboot are shown only when
-that profile advertises the corresponding capability. These commands operate
-the camera; Reset is different from the digital zoom reset described below.
+that profile advertises the corresponding capability. Reboot asks you to
+confirm first. These commands operate the camera; Reset is different from the digital zoom reset described below.
 
 #### Scroll Pad
 

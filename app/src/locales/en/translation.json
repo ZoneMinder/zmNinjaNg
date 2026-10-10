@@ -1454,6 +1454,8 @@
     "wake": "Wake",
     "sleep": "Sleep",
     "reboot": "Reboot",
+    "reboot_confirm_title": "Reboot camera?",
+    "reboot_confirm_desc": "The camera goes offline until it restarts.",
     "presets": "Presets",
     "show_controls": "Show Controls",
     "hide_controls": "Hide Controls",
