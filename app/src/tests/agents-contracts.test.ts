@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { SERVER_SCOPED_SETTINGS } from '../stores/settings-scope';
@@ -26,6 +26,10 @@ const sourceText = walk(appSrc)
 
 function srcFiles(): string[] {
   return walk(appSrc);
+}
+
+function srcRelativePath(file: string): string {
+  return path.relative(appSrc, file).split(path.sep).join('/');
 }
 
 function read(f: string): string {
@@ -171,12 +175,13 @@ describe('knowledge files stay evidence-backed and private-data-free (M5)', () =
     const md = fs.readFileSync(path.join(repoRoot, 'agents/project/domain-context.md'), 'utf8');
     const hashes = [...new Set([...md.matchAll(/\b[0-9a-f]{8}\b/g)].map((m) => m[0]))];
     expect(hashes.length).toBeGreaterThan(0);
-    for (const hash of hashes) {
-      expect(
-        () => execSync(`git cat-file -e ${hash}^{commit}`, { cwd: repoRoot, stdio: 'pipe' }),
-        `cited commit ${hash} not found in history`,
-      ).not.toThrow();
-    }
+    const results = execFileSync('git', ['cat-file', '--batch-check'], {
+      cwd: repoRoot,
+      input: `${hashes.map((hash) => `${hash}^{commit}`).join('\n')}\n`,
+      encoding: 'utf8',
+    }).trim().split(/\r?\n/);
+    const missing = results.filter((result) => result.endsWith(' missing'));
+    expect(missing, 'cited commit hashes must resolve to commits').toEqual([]);
   });
 
   it('agent knowledge files contain no emails or IP addresses', () => {
@@ -327,7 +332,7 @@ describe('contract Never clauses a grep can decide', () => {
   const codeFiles = (): [string, string][] =>
     srcFiles()
       .filter((f) => !f.includes('__tests__'))
-      .map((f) => [path.relative(appSrc, f), stripComments(read(f))]);
+      .map((f) => [srcRelativePath(f), stripComments(read(f))]);
 
   const offenders = (pattern: RegExp, exempt: (rel: string) => boolean = () => false) =>
     codeFiles()
@@ -485,9 +490,9 @@ describe('Sessions contract', () => {
   it('ApiClient is constructed only in sanctioned files', () => {
     const offenders = srcFiles().filter(
       (f) =>
-        !SANCTIONED.some((ok) => f.endsWith(ok)) &&
+        !SANCTIONED.some((ok) => srcRelativePath(f).endsWith(ok)) &&
         !f.includes('__tests__') &&
-        !f.endsWith('api/client.ts') &&
+        !srcRelativePath(f).endsWith('api/client.ts') &&
         /\bcreate(?:Store)?ApiClient\s*\(/.test(read(f)),
     );
     expect(offenders).toEqual([]);
@@ -513,7 +518,7 @@ describe('Sessions contract', () => {
         (read(f).includes("'__all_profiles__'") ||
           read(f).includes("'__probe__'") ||
           /['"`]__virtual_/.test(read(f))) &&
-        !f.endsWith('api/types.ts'),
+        !srcRelativePath(f).endsWith('api/types.ts'),
     );
     expect(offenders).toEqual([]);
   });
@@ -521,7 +526,7 @@ describe('Sessions contract', () => {
   it('stores/auth.ts never statically imports services/sessions.ts', () => {
     // sessions.ts injects a gate instead (see its file header) precisely to
     // avoid this cycle; a static import here would reintroduce it.
-    const authFile = srcFiles().find((f) => f.endsWith('stores/auth.ts'))!;
+    const authFile = srcFiles().find((f) => srcRelativePath(f).endsWith('stores/auth.ts'))!;
     expect(/from\s+['"][^'"]*services\/sessions['"]/.test(read(authFile))).toBe(false);
   });
 });

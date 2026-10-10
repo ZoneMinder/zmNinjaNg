@@ -74,6 +74,61 @@ export async function isMonitorControllable(monitorId: string): Promise<boolean>
   return controllable === '1' || controllable === 1;
 }
 
+export interface MonitorPtzPowerCapabilities {
+  canWake: boolean;
+  canSleep: boolean;
+  canReset: boolean;
+  canReboot: boolean;
+}
+
+/**
+ * Read the camera's PTZ power capabilities directly from its control profile.
+ * The UI assertion must use server data rather than its own rendered buttons.
+ */
+export async function getMonitorPtzPowerCapabilities(
+  monitorId: string
+): Promise<MonitorPtzPowerCapabilities> {
+  const token = await getAccessToken();
+  const { host } = testConfig.server;
+  const monitorRes = await fetch(`${host}/api/monitors/${monitorId}.json?token=${encodeURIComponent(token)}`);
+  if (!monitorRes.ok) {
+    throw new Error(`ZM API monitor fetch failed for id ${monitorId}: ${monitorRes.status} ${monitorRes.statusText}`);
+  }
+
+  const monitorData = (await monitorRes.json()) as {
+    monitor?: { Monitor?: { ControlId?: string | number | null } };
+  };
+  const controlId = monitorData.monitor?.Monitor?.ControlId;
+  if (controlId === undefined || controlId === null || String(controlId) === '') {
+    return { canWake: false, canSleep: false, canReset: false, canReboot: false };
+  }
+
+  const controlRes = await fetch(
+    `${host}/api/controls/${encodeURIComponent(String(controlId))}.json?token=${encodeURIComponent(token)}`
+  );
+  if (!controlRes.ok) {
+    throw new Error(`ZM API control fetch failed for id ${controlId}: ${controlRes.status} ${controlRes.statusText}`);
+  }
+
+  const controlData = (await controlRes.json()) as {
+    control?: {
+      Control?: {
+        CanWake?: string | number;
+        CanSleep?: string | number;
+        CanReset?: string | number;
+        CanReboot?: string | number;
+      };
+    };
+  };
+  const control = controlData.control?.Control;
+  return {
+    canWake: control?.CanWake === '1' || control?.CanWake === 1,
+    canSleep: control?.CanSleep === '1' || control?.CanSleep === 1,
+    canReset: control?.CanReset === '1' || control?.CanReset === 1,
+    canReboot: control?.CanReboot === '1' || control?.CanReboot === 1,
+  };
+}
+
 /**
  * How many monitors the server has.
  *

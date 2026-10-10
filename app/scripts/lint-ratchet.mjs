@@ -37,7 +37,7 @@ const update = process.argv.includes('--update');
 function currentCounts() {
   let raw;
   try {
-    raw = execFileSync('npx', ['eslint', '.', '-f', 'json'], {
+    raw = execFileSync(process.execPath, [path.join(appDir, 'node_modules/eslint/bin/eslint.js'), '.', '-f', 'json'], {
       cwd: appDir,
       encoding: 'utf8',
       maxBuffer: 64 * 1024 * 1024,

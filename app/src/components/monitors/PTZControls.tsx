@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, type ReactNode } from 'react';
-import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Home, Square, RotateCcw } from 'lucide-react';
+import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Home, RotateCcw, Square } from 'lucide-react';
+import { PTZPowerControls } from './PTZPowerControls';
 import { Button } from '../ui/button';
 import { cn } from '../../lib/utils';
 import { useTranslation } from 'react-i18next';
@@ -347,6 +348,8 @@ export function PTZControls({ onCommand, profileId, className, disabled, control
           </HoldButton>
         </div>
       )}
+
+      <PTZPowerControls control={control} onCommand={onCommand} disabled={disabled} />
 
       {(hasHome || canReset) && (
         <div className="flex items-center gap-2 w-full justify-center border-t pt-4">

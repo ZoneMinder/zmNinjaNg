@@ -34,7 +34,14 @@ function buttonTags(source: string): string[] {
 function sourceFiles(): { path: string; rel: string; text: string }[] {
   return globSync('{pages,components}/**/*.tsx', { cwd: SRC, absolute: false })
     .filter((rel) => !rel.includes('__tests__'))
-    .map((rel) => ({ path: join(SRC, rel), rel, text: readFileSync(join(SRC, rel), 'utf8') }));
+    .map((rel) => {
+      const normalizedRel = rel.replaceAll('\\', '/');
+      return {
+        path: join(SRC, rel),
+        rel: normalizedRel,
+        text: readFileSync(join(SRC, rel), 'utf8'),
+      };
+    });
 }
 
 describe('pressable controls', () => {

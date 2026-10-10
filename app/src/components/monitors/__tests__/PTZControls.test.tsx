@@ -63,6 +63,48 @@ describe('PTZControls panel', () => {
     const { container } = render(withQuery(<PTZControls onCommand={vi.fn()} />));
     expect(container).toBeEmptyDOMElement();
   });
+
+  it('shows and dispatches camera wake, sleep, reset, and reboot actions when supported', () => {
+    const onCommand = vi.fn();
+    const control = { CanWake: '1', CanSleep: '1', CanReset: '1', CanReboot: '1' } as unknown as ZMControl;
+
+    render(withQuery(<PTZControls onCommand={onCommand} control={control} />));
+
+    fireEvent.click(screen.getByTestId('ptz-wake'));
+    fireEvent.click(screen.getByTestId('ptz-sleep'));
+    fireEvent.click(screen.getByTestId('ptz-reset'));
+    fireEvent.click(screen.getByTestId('ptz-reboot'));
+    expect(onCommand).toHaveBeenCalledTimes(3);
+    fireEvent.click(screen.getByTestId('ptz-reboot-confirm'));
+
+    expect(onCommand).toHaveBeenNthCalledWith(1, 'wake');
+    expect(onCommand).toHaveBeenNthCalledWith(2, 'sleep');
+    expect(onCommand).toHaveBeenNthCalledWith(3, 'reset');
+    expect(onCommand).toHaveBeenNthCalledWith(4, 'reboot');
+  });
+
+  it('does not reboot the camera when the confirm is cancelled', () => {
+    const onCommand = vi.fn();
+    const control = { CanReboot: '1' } as unknown as ZMControl;
+
+    render(withQuery(<PTZControls onCommand={onCommand} control={control} />));
+
+    fireEvent.click(screen.getByTestId('ptz-reboot'));
+    fireEvent.click(screen.getByTestId('ptz-reboot-cancel'));
+
+    expect(onCommand).not.toHaveBeenCalled();
+  });
+
+  it('hides camera wake, sleep, reset, and reboot actions when unsupported', () => {
+    const control = { CanWake: '0', CanSleep: '0', CanReset: '0', CanReboot: '0' } as unknown as ZMControl;
+
+    render(withQuery(<PTZControls onCommand={vi.fn()} control={control} />));
+
+    expect(screen.queryByTestId('ptz-wake')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('ptz-sleep')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('ptz-reset')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('ptz-reboot')).not.toBeInTheDocument();
+  });
 });
 
 describe('PTZControls hold button', () => {
