@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { SERVER_SCOPED_SETTINGS } from '../stores/settings-scope';
+import { LANGUAGE_CODES } from '../locales/resources';
 
 const repoRoot = path.resolve(__dirname, '../../..');
 const appSrc = path.resolve(repoRoot, 'app/src');
@@ -91,6 +92,16 @@ describe('AGENTS.project.md architecture contracts', () => {
         }
       }
     }
+  });
+
+  it('the Localization contract lists every bundled locale', () => {
+    // The contract names the locales so an agent knows how many files a string
+    // touches. It said seven while fa made eight (refs #555).
+    const md = fs.readFileSync(projectFile, 'utf8');
+    const localization = parseContracts(md).find((c) => c.name === 'Localization');
+    const pathLine = localization?.body.split('\n').find((l) => l.startsWith('Path:')) ?? '';
+    const listed = pathLine.match(/`app\/src\/locales\/` \(([^)]+)\)/)?.[1].split(/,\s*/) ?? [];
+    expect(listed.sort()).toEqual([...LANGUAGE_CODES].sort());
   });
 });
 

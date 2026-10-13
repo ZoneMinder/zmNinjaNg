@@ -75,6 +75,10 @@ which pins the expected sequence, so add the new code there.
 `docs/user-guide/settings.md`, Appearance table, Language row, names the
 available languages in English. Add the new one.
 
+Also add the code to the Localization contract's list in `AGENTS.project.md`.
+`app/src/tests/agents-contracts.test.ts` fails until the list matches
+`LANGUAGE_CODES`.
+
 ## 7. Add the plural forms the language needs
 
 English declares `_one` and `_other`. A language with more plural categories
@@ -123,4 +127,5 @@ change the visible text.
 - [ ] expected order updated in `LanguageSwitcher.test.tsx`
 - [ ] plural forms for every category the language needs
 - [ ] `docs/user-guide/settings.md` Language row
+- [ ] code added to the Localization contract in `AGENTS.project.md`
 - [ ] `npm test`, `npx tsc -b`, `npm run build`, `npm run test:e2e -- settings.feature`
