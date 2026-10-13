@@ -51,6 +51,7 @@ async function openHelpDocs(): Promise<void> {
   }
 }
 import { cn } from '../../lib/utils';
+import { ExitAppNavItem } from './ExitAppNavItem';
 import { useState, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getAppVersion, getFullVersion } from '../../lib/version';
@@ -408,6 +409,7 @@ export function SidebarContent({ onMobileClose, isCollapsed }: SidebarContentPro
             <HelpCircle className="h-4 w-4 transition-transform group-hover:scale-110 flex-shrink-0" />
             {!isCollapsed && <span className="truncate">{t('sidebar.help')}</span>}
           </button>
+          <ExitAppNavItem isCollapsed={isCollapsed} isMobileDrawer={isMobileDrawer} />
         </nav>
 
       <div className={cn("border-t bg-card/50 backdrop-blur-sm transition-all duration-300 mt-4", isCollapsed ? "p-2 space-y-3" : isMobileDrawer ? "px-2 py-2 space-y-1" : "px-3 py-2 space-y-1.5")}>

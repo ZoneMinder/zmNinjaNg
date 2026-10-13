@@ -57,6 +57,16 @@ export function decideBackAction(params: {
   return params.doubleTapActive ? 'exit' : 'confirm-exit';
 }
 
+/** Close the app. Only Android honours this; iOS and the web ignore it. */
+export async function exitApp(): Promise<void> {
+  try {
+    const { App } = await import('@capacitor/app');
+    await App.exitApp();
+  } catch (error) {
+    log.app('exitApp failed', LogLevel.WARN, { error });
+  }
+}
+
 export function useAndroidBackButton(): void {
   const navigate = useNavigate();
   const location = useLocation();
@@ -84,12 +94,7 @@ export function useAndroidBackButton(): void {
         toast(t('common.press_back_again_to_exit'));
         return;
       case 'exit':
-        try {
-          const { App } = await import('@capacitor/app');
-          await App.exitApp();
-        } catch (error) {
-          log.app('exitApp failed', LogLevel.WARN, { error });
-        }
+        await exitApp();
         return;
     }
   }, [navigate, location.pathname, t]);

@@ -64,6 +64,8 @@ This switch only covers rotation. **Open live view in fullscreen**, **Open event
 
 TV mode adapts the interface for televisions and set-top boxes (for example Fire TV or Android TV). It enlarges touch targets and enables D-pad and remote navigation, so you can move focus and select with a remote instead of a pointer. Turn it on when running zmNinjaNg on a TV; leave it off on phones, tablets, and desktops.
 
+To leave the app on an Android TV or Fire TV, pick **Exit** at the bottom of the sidebar menu, or press the remote's back button twice on a top-level page such as Monitors or Events. Home only hides the app and leaves it running. Neither way works while the kiosk lock is on.
+
 ### Kiosk PIN
 
 Manage the PIN used to lock and unlock kiosk mode. See {doc}`kiosk` for full details on kiosk mode.
