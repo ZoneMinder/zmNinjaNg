@@ -57,10 +57,11 @@ Then('I should see snapshot download initiated', async ({ page }) => {
 
 // Monitor Settings Dialog
 When('I open the monitor settings dialog', async ({ page }) => {
-  const settingsBtn = page.getByTestId('monitor-detail-settings')
-    .or(page.getByRole('button', { name: /settings/i }));
-  await expect(settingsBtn.first()).toBeVisible({ timeout: 10000 });
-  await settingsBtn.first().click();
+  // The test id alone: a "Settings" button by role also matches each monitor
+  // card's settings button, and the Monitors page's ones come first.
+  const settingsBtn = page.getByTestId('monitor-detail-settings');
+  await expect(settingsBtn).toBeVisible({ timeout: 10000 });
+  await settingsBtn.click();
 });
 
 Then('I should see the monitor mode dropdown', async ({ page }) => {

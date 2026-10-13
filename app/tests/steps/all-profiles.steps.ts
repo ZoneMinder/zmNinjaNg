@@ -1,6 +1,7 @@
 import { createBdd } from 'playwright-bdd';
 import { expect, type Page } from '@playwright/test';
 import { testConfig } from '../helpers/config';
+import { waitForMonitorDetail } from '../helpers/navigation';
 import { MONTAGE_GRID } from '../../src/lib/zmninja-ng-constants';
 import { openProfileRowMenu } from './profiles.steps';
 
@@ -313,6 +314,7 @@ When('I click a monitor card', async ({ page }) => {
 
 Then('the URL should match the all-mode monitor detail route', async ({ page }) => {
   await expect(page).toHaveURL(/\/all\/monitors\/[^/]+\/[^/]+$/, { timeout: testConfig.timeouts.transition });
+  await waitForMonitorDetail(page);
 });
 
 Then('the profile switcher should still show the group', async ({ page }) => {

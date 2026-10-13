@@ -2,6 +2,7 @@ import { createBdd } from 'playwright-bdd';
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { testConfig } from '../helpers/config';
+import { waitForMonitorDetail } from '../helpers/navigation';
 import { getMonitorCount, getMonitorEventCountSince } from '../helpers/zm-api';
 import { log } from '../../src/lib/logger';
 
@@ -76,6 +77,7 @@ When('I click into the first monitor detail page', async ({ page }) => {
   }
 
   await page.waitForURL(/.*monitors\/\d+/, { timeout: testConfig.timeouts.transition });
+  await waitForMonitorDetail(page);
 });
 
 Then('I should see the monitor grid', async ({ page }) => {
