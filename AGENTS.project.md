@@ -103,9 +103,9 @@ Gate: `app/src/tests/agents-contracts.test.ts`.
 
 ### Localization
 Owns: all user-facing text.
-Path: locale files under `app/src/locales/` (de, en, es, fr, it, ru, zh); every locale updates together; both pickers read `useLanguageOptions`, which lists the codes in `app/src/locales/resources.ts` with English first.
+Path: locale files under `app/src/locales/` (de, en, es, fa, fr, it, ru, zh); every locale updates together; both pickers read `useLanguageOptions`, which lists the codes in `app/src/locales/resources.ts` with English first.
 Never: hardcoded user-facing strings; hand-written locale lists in a picker.
-Gate: `app/src/locales/__tests__/translation-keys.test.ts`; `app/src/components/layout/__tests__/LanguageSwitcher.test.tsx` (picker order); review for hardcoded strings.
+Gate: `app/src/locales/__tests__/translation-keys.test.ts`; `app/src/components/layout/__tests__/LanguageSwitcher.test.tsx` (picker order); `app/src/tests/agents-contracts.test.ts` (this list matches `LANGUAGE_CODES`); review for hardcoded strings.
 
 ### Native
 Owns: everything touching Capacitor or platform APIs.

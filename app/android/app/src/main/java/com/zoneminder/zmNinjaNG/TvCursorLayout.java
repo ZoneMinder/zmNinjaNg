@@ -141,18 +141,9 @@ public class TvCursorLayout extends FrameLayout {
             case KeyEvent.KEYCODE_NUMPAD_ENTER:
                 return handleSelectKey(isDown);
 
-            case KeyEvent.KEYCODE_BACK:
-                if (isDown) {
-                    View child = getChildAt(0);
-                    if (child instanceof WebView) {
-                        WebView webView = (WebView) child;
-                        if (webView.canGoBack()) {
-                            webView.goBack();
-                        }
-                    }
-                }
-                return true; // Always consume — use Home to exit
-
+            // BACK falls through so Capacitor's backButton listener
+            // (useAndroidBackButton) gets it: close overlay, go back, or
+            // double-press to exit (refs #555).
             default:
                 return super.dispatchKeyEvent(event);
         }
