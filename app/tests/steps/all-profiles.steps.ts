@@ -313,6 +313,8 @@ When('I click a monitor card', async ({ page }) => {
 
 Then('the URL should match the all-mode monitor detail route', async ({ page }) => {
   await expect(page).toHaveURL(/\/all\/monitors\/[^/]+\/[^/]+$/, { timeout: testConfig.timeouts.transition });
+  // The lazy detail page renders after the URL changes; see the monitor detail click step.
+  await expect(page.getByTestId('monitor-detail-name')).toBeVisible({ timeout: testConfig.timeouts.pageLoad });
 });
 
 Then('the profile switcher should still show the group', async ({ page }) => {

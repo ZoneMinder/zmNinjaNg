@@ -76,6 +76,9 @@ When('I click into the first monitor detail page', async ({ page }) => {
   }
 
   await page.waitForURL(/.*monitors\/\d+/, { timeout: testConfig.timeouts.transition });
+  // MonitorDetail is lazy, so the Monitors page outlives the URL change; wait
+  // for the detail page itself or the next step can act on an outgoing card.
+  await expect(page.getByTestId('monitor-detail-name')).toBeVisible({ timeout: testConfig.timeouts.pageLoad });
 });
 
 Then('I should see the monitor grid', async ({ page }) => {
