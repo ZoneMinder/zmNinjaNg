@@ -81,3 +81,44 @@
 .admonition.tip > .admonition-title {
     background-color: #1abc9c22;
 }
+
+/* -- Screenshots ----------------------------------------------------------- */
+
+/* Phone screenshots float right so the text wraps around them. Each section
+   heading starts below the previous section's shot, so a shot never drifts
+   into the next section. */
+.rst-content figure.align-right {
+    margin: 0 0 24px 24px;
+}
+
+/* Wide crops (a toolbar, a dialog) sit centered at their own width. */
+.rst-content figure.align-right img,
+.rst-content figure.align-center img {
+    border: 1px solid #e1e4e5;
+    border-radius: 8px;
+}
+
+.rst-content figure.align-center {
+    margin: 0 auto 24px;
+    text-align: center;
+}
+
+.rst-content figure.align-right figcaption,
+.rst-content figure.align-center figcaption {
+    font-size: 90%;
+    color: #6a6a6a;
+    text-align: center;
+}
+
+.rst-content h2 {
+    clear: both;
+}
+
+/* On a phone there is no room beside the shot; center it instead. */
+@media screen and (max-width: 768px) {
+    .rst-content figure.align-right {
+        float: none;
+        margin: 0 auto 24px;
+        text-align: center;
+    }
+}

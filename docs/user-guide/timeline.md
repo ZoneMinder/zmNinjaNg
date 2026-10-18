@@ -4,11 +4,27 @@ The Timeline view shows events over time and lets you jump to specific time peri
 
 ## Timeline
 
+```{figure} ../_static/img/screens/timeline/page.jpg
+:align: right
+:width: 240px
+:alt: Timeline on a phone, with category chips, the toolbar and one row per monitor with event bars
+
+The Timeline on a phone
+```
+
 Events are drawn as colored bars on a horizontal time axis. Each monitor gets its own row.
 
 - **Zoom** in and out to view different time spans (hours, days, weeks)
 - **Pan** left and right to move through time
 - **Tap an event bar** to jump to that event's detail view
+
+```{figure} ../_static/img/screens/timeline/toolbar.jpg
+:align: center
+:width: 348px
+:alt: The timeline toolbar, with scroll pad, zoom in, zoom out, brush, live, center, go to now and help buttons
+
+The timeline toolbar
+```
 
 The canvas owns touch gestures for panning and zooming, so a swipe over it moves
 through time rather than scrolling the page, and it grows one row per monitor, so
@@ -24,6 +40,14 @@ where the next server starts. The events stay on one shared time axis. The
 button shares its on/off state with the one on Events and the Dashboard.
 
 ## Filtering
+
+```{figure} ../_static/img/screens/timeline/filters.jpg
+:align: center
+:width: 360px
+:alt: The Timeline Filters panel with start and end dates, a monitor picker, Event Cause, Only Detected Objects and quick ranges
+
+The Timeline Filters panel
+```
 
 Open the **Filters** panel at the top of the page to narrow what the timeline shows. Filter selections are saved per profile.
 

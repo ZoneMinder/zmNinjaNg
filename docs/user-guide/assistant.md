@@ -6,6 +6,14 @@ Ninjii answers questions about your cameras and events. It is read-only: it cann
 
 Go to **Settings > Ninjii** and turn on **Enable Ninjii**.
 
+```{figure} ../_static/img/screens/assistant/settings.jpg
+:align: center
+:width: 360px
+:alt: The Ninjii section of Settings with the Enable Ninjii and Show in toolbar switches, the Backend picker and an Advanced fold
+
+The Ninjii section of Settings
+```
+
 Underneath it, **Show in toolbar** puts the Ninjii icon in the toolbar of the
 Dashboard, Monitors, Montage, Events, Timeline, and Live Activity screens,
 beside their menu, so a question is one tap away. It is off by default: Ninjii
@@ -39,6 +47,14 @@ The WebGPU on-device backend is not offered on phones or tablets: those models n
 The chat window's header always names the model that is answering and where it runs, for example "Llama 3.2 3B · On-device" or "llama3.2:latest · Ollama", so you never have to open Settings to check which one you are talking to. On the Ollama backend a coloured dot next to that label shows whether the server is reachable: green means connected, red means it cannot be reached (check the address, or that the server is running), and a pulsing amber dot means the app is still checking. The dot rechecks periodically while the window is open. On-device has no server to reach, so no dot appears.
 
 ## Asking a Question
+
+```{figure} ../_static/img/screens/assistant/chat.jpg
+:align: right
+:width: 300px
+:alt: The Ninjii chat window answering "summarize events this week - where did we have most activity?" with a per-monitor count, the tool it used, and event cards with Open buttons
+
+A question about the week's activity, answered from a list_events lookup with event cards underneath
+```
 
 Once enabled, there are three ways to start a conversation:
 

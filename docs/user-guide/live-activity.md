@@ -1,5 +1,13 @@
 # Live Activity
 
+```{figure} ../_static/img/screens/live-activity/page.jpg
+:align: right
+:width: 240px
+:alt: The Live Activity screen on a phone with the message All quiet and Watching 4 monitors
+
+Live Activity when nothing is alarming
+```
+
 Live Activity shows only the cameras that ZoneMinder currently reports as alarming, as live video tiles. Instead of scanning a full grid of quiet monitors, you see just the ones that need attention right now.
 
 Tapping a tile's video opens that camera's monitor page, the same as tapping one in Montage; on a computer the tile outlines itself as you hover to show it will. The X in the corner dismisses a tile instead, and the buttons in its header still do their own jobs.
@@ -37,6 +45,14 @@ A camera that is still alarming would normally be put straight back on the next 
 The camera that alarmed most recently sits at the top, and the ones that have gone quiet sink toward the bottom as they cool. Two cameras that alarm in the same check keep a fixed order between them rather than swapping around. Tiles slide to their new positions where your browser supports it, so a reorder is visible rather than an instant jump. If more monitors are alarming than the page can show, the extra ones collapse into a "+N more active" line instead of overcrowding the grid, which means the tiles you keep are the most recent activity.
 
 ## Settings
+
+```{figure} ../_static/img/screens/live-activity/settings.jpg
+:align: right
+:width: 300px
+:alt: The Live Activity settings dialog with Check every, Keep on screen for, Maximum tiles and a switch per monitor under Monitors to watch
+
+The Live Activity settings dialog
+```
 
 Open the gear icon at the top of the page to configure:
 

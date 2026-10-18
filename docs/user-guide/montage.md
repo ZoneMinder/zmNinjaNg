@@ -1,8 +1,24 @@
 # Montage
 
+```{figure} ../_static/img/screens/montage/grid-desktop.jpg
+:align: center
+:width: 100%
+:alt: The Montage on desktop: a toolbar with group filter, column count, Edit, fullscreen, refresh and more buttons above four live camera tiles in two columns
+
+The Montage on desktop
+```
+
 The Montage view shows multiple camera feeds at once in a drag-and-drop grid.
 
 ## Toolbar
+
+```{figure} ../_static/img/screens/montage/toolbar.jpg
+:align: center
+:width: 360px
+:alt: The Montage toolbar on a phone: group filter, column presets, Edit Layout, Fullscreen, Refresh and the more menu
+
+The Montage toolbar
+```
 
 The toolbar appears above the grid. You can hide or show it using the eye icon in the app header (desktop sidebar or mobile top bar). The toolbar contains:
 
@@ -13,6 +29,14 @@ The toolbar appears above the grid. You can hide or show it using the eye icon i
 - **Edit Layout**: enter edit mode to drag and resize cells
 - **Fullscreen**: expand the grid to fill the entire screen
 - **More (⋮) → Show monitors**: uncheck a camera to drop its tile from the grid, check it again to bring it back. Nothing changes on the server, and the choice survives a reload
+
+```{figure} ../_static/img/screens/montage/menu.jpg
+:align: right
+:width: 162px
+:alt: The Montage more menu with Fit whole image, Crop to fill, Analysis frames, Scroll buttons and Show monitors
+
+The ⋮ menu
+```
 
 While aggregating, each entry in **Show monitors** names the server it comes
 from, since two servers can have cameras with the same name. Hiding one
@@ -33,6 +57,14 @@ server's single-profile layout alone. Tiles are tracked per server, so two
 servers with a camera on the same ID keep separate cells.
 
 ## Edit Mode
+
+```{figure} ../_static/img/screens/montage/edit.jpg
+:align: right
+:width: 240px
+:alt: The Montage in edit mode on a phone: yellow handles on each tile corner, a pin on each tile and the scroll pad on the right edge
+
+Edit mode
+```
 
 Tap **Edit Layout** to rearrange the grid:
 
@@ -60,6 +92,14 @@ turning on for a tablet, where a swipe lands on a tile rather than the page.
 Tap **Done** to leave edit mode.
 
 ## Fullscreen Mode
+
+```{figure} ../_static/img/screens/montage/fullscreen.jpg
+:align: right
+:width: 240px
+:alt: The Montage in fullscreen on a phone: a thin toolbar with refresh, lock and a red Exit button above the camera tiles
+
+Fullscreen mode
+```
 
 Tap **Fullscreen** to expand the grid to fill the screen. In fullscreen mode:
 

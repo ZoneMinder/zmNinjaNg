@@ -4,6 +4,14 @@ The Dashboard is the main screen after login. It shows configurable widgets givi
 
 ## Widgets
 
+```{figure} ../_static/img/screens/dashboard/overview.jpg
+:align: right
+:width: 240px
+:alt: The dashboard on a phone with a Monitor Stream widget showing a live harbor camera and a Timeline widget with an event-count bar chart
+
+A Monitor widget and a Timeline widget on a phone
+```
+
 The dashboard supports several widget types:
 
 | Widget | Description |
@@ -21,11 +29,19 @@ In a group, a Monitor or Recent Events widget can hold monitors from more than o
 
 ## Customizing the Layout
 
+```{figure} ../_static/img/screens/dashboard/add-widget.jpg
+:align: center
+:width: 360px
+:alt: The Add widget dialog with Monitor Stream, Recent Events, Timeline, and Event Heatmap types, a title field, a monitor list, and a fit selector
+
+The dialog for adding a widget
+```
+
 The dashboard uses a drag-and-drop grid layout:
 
 - Drag a widget's header to move it
 - Drag the bottom-right corner of a widget to resize it
-- Tap the add button to place a new widget
+- Tap the add button (the + in the header) to place a new widget
 - Tap the close button on a widget's header to remove it
 
 Your layout is saved automatically per profile.

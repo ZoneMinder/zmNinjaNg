@@ -11,6 +11,14 @@ There are two places to activate kiosk mode:
 
 ### First Use, PIN Setup
 
+```{figure} ../_static/img/screens/kiosk/pin-setup.jpg
+:align: right
+:width: 240px
+:alt: The Set Kiosk PIN dialog showing four empty PIN dots and a numeric keypad over the dimmed sidebar
+
+The PIN pad on first use
+```
+
 The first time you tap the lock icon, the app prompts you to set a 4-digit PIN:
 
 1. Enter a 4-digit PIN
