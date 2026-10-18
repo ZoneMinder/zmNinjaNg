@@ -14,7 +14,7 @@
     "test:coverage": "npm --prefix app run test:coverage",
     "test:watch": "npm --prefix app run test:watch",
     "test:unit": "npm --prefix app run test:unit",
-    "test:e2e": "npm --prefix app run test:e2e",
+    "test:e2e": "sh -c 'if [ $# -eq 0 ]; then npm --prefix app run test:e2e:full; else npm --prefix app run test:e2e -- \"$@\"; fi' sh",
     "test:e2e:ui": "npm --prefix app run test:e2e:ui",
     "test:all": "npm --prefix app run test:all",
     "notice": "node scripts/generate_notice.mjs",

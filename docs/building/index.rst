@@ -158,8 +158,10 @@ without the question, for scripted runs.
 
 The release runs the suite with ``npm run test:e2e:full``, which writes the
 date to ``app/.e2e-full-pass`` (gitignored) only when the whole suite passes.
-A failed run, or a run of some features with ``npm run test:e2e``, leaves the
-date alone. The prompt says when the full suite last passed on this machine,
+From the repo root, ``npm run test:e2e`` with no arguments runs
+``test:e2e:full`` too, so it also writes the date. A failed run, or a run of
+some features (``npm run test:e2e -- monitors.feature``), leaves the date
+alone. The prompt says when the full suite last passed on this machine,
 and recommends a run when there is no date or it is older than two weeks. It
 only recommends; the answer is still yours.
 

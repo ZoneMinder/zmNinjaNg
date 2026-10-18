@@ -22,6 +22,12 @@ test('test:e2e:full stamps .e2e-full-pass only after the whole suite passes', ()
   assert.match(full ?? '', /^npm run test:e2e && .*\.e2e-full-pass/);
 });
 
+test('root test:e2e runs the stamping full suite when given no arguments', () => {
+  const rootE2e = JSON.parse(read('package.json')).scripts['test:e2e'];
+  assert.match(rootE2e ?? '', /\$# -eq 0 \]; then npm --prefix app run test:e2e:full;/);
+  assert.match(rootE2e ?? '', /else npm --prefix app run test:e2e -- "\$@"/);
+});
+
 test('make_release.sh runs the full suite and reads only the full-pass stamp', () => {
   const release = read('scripts/make_release.sh');
   assert.match(release, /npm run test:e2e:full/);
