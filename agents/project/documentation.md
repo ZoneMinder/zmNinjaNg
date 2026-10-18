@@ -18,6 +18,16 @@ Read before editing user or developer documentation.
 
 Connect each artifact to its user-visible behavior and relevant flow. Examples must grep-hit the codebase, unless explicitly marked simplified. Use exact constants, verify cross-reference targets, and state platform gotchas.
 
+## Screenshots
+
+- A change to a screen, option, dialog, or control the user guide covers retakes its shots in the same PR; a new user-visible screen or option gets one where the text describes it.
+- Capture from demo.zoneminder.com with `app/scripts/docs-screenshots.mjs` (needs `npm run dev` and `npm run proxy`); credentials come from the maintainer through the `DOCS_ZM_*` env vars and never enter the repo. Shot lists: `app/scripts/docs-shots/<doc>.mjs`. Images: `docs/_static/img/screens/<doc>/`.
+- Default to a full phone screen (`:align: right`, `:width: 240px`). Crop only when the text is about a small part of a screen or full shots would pile up; crops wider than 300px use `:align: center`.
+- Never change demo server state: no deletes, archives, monitor or zone saves, run-state changes, PTZ, or alarm triggers.
+- Look at every image before placing it. A shot that contradicts the text means the text is wrong; fix the text.
+- Shots the demo cannot produce (an LLM answer, alarms, push) may come from the maintainer; they stay out of the shot lists.
+- Gate: `app/src/tests/docs-screenshots.test.ts` (every referenced image exists, every image is referenced); review for freshness.
+
 ## Call flows
 
 - Name flow after user action.
