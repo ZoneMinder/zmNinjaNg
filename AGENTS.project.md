@@ -124,6 +124,7 @@ Gate: review.
 - Run npm commands from `app/`. Run root `npm install` once so hooks exist.
 - A `feat` PR links its spec under `docs/superpowers/specs/` or says in its `## Spec` section why it needs none. Gate: the `pr-acceptance` CI job.
 - UI changes that alter behavior or navigation need an outcome-based e2e test with platform tags and `data-testid` on new interactive elements. Cosmetic changes (spacing, styling, label wording) rely on existing gates.
+- UI changes to anything the user guide shows retake its screenshots in the same PR (documentation playbook, Screenshots). Gate: `app/src/tests/docs-screenshots.test.ts`; review for freshness.
 - Only one `npm run test:e2e` per working tree.
 - Device e2e (iOS, Android, Tauri) is manual-only; agents never auto-run it.
 - Labels must fit 320px; prefer concise translations.

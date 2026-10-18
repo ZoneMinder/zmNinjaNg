@@ -17,9 +17,17 @@ The file is named `zmninja-ng.log` and lives in the per-app log directory chosen
 
 ## Buttons on the Logs page
 
+```{figure} ../_static/img/screens/logs/page.jpg
+:align: right
+:width: 240px
+:alt: The Logs page with the App and ZM tabs, level picker, component filter, Save and Clear buttons, and log entries
+
+The Logs page
+```
+
 - **Share** (iOS / Android): sends the `.log` file via the system share sheet. Pick AirDrop, email, Slack, etc., the recipient gets a real file attachment.
 - **Open** (Desktop): reveals `zmninja-ng.log` in Finder, Explorer, or your file manager.
-- **Share** (Web, dev only): falls back to a one-shot text download.
+- **Save** (Web, dev only): downloads the logs as a text file.
 - **Clear**: prompts for confirmation, then zeros the file and clears the in-memory buffer.
 
 A status line below the action row shows the current entry count (e.g. *4,237 of 10,000 entries*). On desktop it also shows the absolute path. On mobile the path is a sandboxed URI you can't navigate to anyway, so it's omitted.
@@ -31,6 +39,14 @@ A status line below the action row shows the current entry count (e.g. *4,237 of
 - Lines that fail to parse (e.g. from a crash mid-write) are skipped silently when the file is read back.
 
 ## Filtering and log levels
+
+```{figure} ../_static/img/screens/logs/components.jpg
+:align: right
+:width: 240px
+:alt: The Logs page with the component filter open, listing All and each component with a checkbox
+
+The component filter in the Logs toolbar
+```
 
 The on-disk file mirrors the in-memory Logs view, so anything filtered out by your level or component settings is not persisted either. Three settings decide what gets recorded. All three are under **Settings > General**:
 

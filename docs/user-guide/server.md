@@ -4,11 +4,27 @@ The Server page shows the health and configuration of your ZoneMinder server, or
 
 ## Version information
 
+```{figure} ../_static/img/screens/server/page.jpg
+:align: right
+:width: 240px
+:alt: The Server page on a phone, showing version information, load, CPU, storage and swap cards
+
+The Server page
+```
+
 - **ZoneMinder version**: the server's ZM release.
 - **API version**: the version of the ZoneMinder API the app is talking to.
 - **Timezone**: the server's configured timezone, used to align event times correctly.
 
 ## Server stats
+
+```{figure} ../_static/img/screens/server/stats.jpg
+:align: center
+:width: 360px
+:alt: Load average, CPU load, storage, swap and server status cards
+
+The stats cards on the Server page
+```
 
 The cards under the version information show the same figures as the stats bar at the top of ZoneMinder's web console, calculated the same way. The console describes the server it runs on. The app uses the server in the Servers list whose hostname matches the profile's API URL, or the single server when the install has only one.
 
@@ -35,6 +51,14 @@ ZoneMinder updates these figures only while the server's `zmstats` runs, so a se
 
 ## Storage areas
 
+```{figure} ../_static/img/screens/server/storage.jpg
+:align: center
+:width: 344px
+:alt: One storage area listing its name, path, disk usage and event count
+
+A storage area entry
+```
+
 Each enabled storage area is listed the way ZoneMinder's Options then Storage table shows it:
 
 - Its name and filesystem path
@@ -44,6 +68,14 @@ Each enabled storage area is listed the way ZoneMinder's Options then Storage ta
 
 ## Account permissions
 
+```{figure} ../_static/img/screens/server/permissions.jpg
+:align: center
+:width: 360px
+:alt: Account permissions card listing System, Monitors, Stream, Events, Control and Groups levels
+
+The Account permissions card
+```
+
 Lists what the ZoneMinder account this profile signs in as is allowed to do: its System, Monitors, Stream, Events, Control and Groups levels. These come from the account's own ZoneMinder user record, and only an administrator can change them, in Options then Users in the ZoneMinder web console.
 
 Where a level reads "Not determined", the app could not read it. ZoneMinder only lets an account read its own permissions when it has at least System View, so an account below that is told what is known about it, which is that it has no system access.
@@ -51,6 +83,14 @@ Where a level reads "Not determined", the app could not read it. ZoneMinder only
 These levels explain what the rest of the app does or does not offer you. See [What your account can do](#what-your-account-can-do) below.
 
 ## ZoneMinder control
+
+```{figure} ../_static/img/screens/server/zm-control.jpg
+:align: center
+:width: 360px
+:alt: ZoneMinder Control card with the current state, a state picker and an Apply button
+
+The ZoneMinder Control card
+```
 
 Shows the current ZoneMinder run state and lets you apply a different one. Changing the run state takes effect on the server, so you can switch between configured states (for example a "Home" or "Away" state) without opening the ZoneMinder web console.
 

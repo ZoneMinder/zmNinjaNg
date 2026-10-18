@@ -30,15 +30,31 @@ zmNinjaNg runs on Android, iOS, Windows, macOS, Linux, and the web from a single
 
 ## Quick Start
 
+```{figure} ../_static/img/screens/getting-started/setup.jpg
+:align: right
+:width: 240px
+:alt: The first-run Welcome screen with fields for profile name, server URL, username, and password
+
+The Welcome screen on first launch
+```
+
 1. **Download** the latest release for your platform from [GitHub Releases](https://github.com/ZoneMinder/zmNinjaNg/releases)
-2. **Open** the app - you'll land on the Profiles screen
-3. **Add a profile** by entering your ZoneMinder server URL, username, and password
-4. **Test the connection** - zmNinjaNg will validate your credentials and discover the API
-5. **Save** the profile and you're in
+2. **Open** the app - you'll land on the Welcome screen
+3. **Add a profile** by entering a name, your ZoneMinder server URL, username, and password
+4. **Tap Connect** - zmNinjaNg validates your credentials and discovers the API
+5. You're in
 
 See {doc}`installation` for detailed instructions per platform, and {doc}`profiles` for profile configuration options.
 
 ## Navigation and sidebar
+
+```{figure} ../_static/img/screens/getting-started/sidebar-bottom.jpg
+:align: right
+:width: 240px
+:alt: The mobile sidebar menu listing the main screens, with the profile switcher, theme, language, insomnia, and lock controls at the bottom
+
+The sidebar on a phone
+```
 
 The sidebar (fixed on the left on desktop, a slide-out menu on mobile) moves you between the main screens: Dashboard, {doc}`monitors`, {doc}`montage`, {doc}`events`, {doc}`timeline`, {doc}`notifications`, {doc}`profiles`, {doc}`settings`, {doc}`server`, and {doc}`logs`.
 

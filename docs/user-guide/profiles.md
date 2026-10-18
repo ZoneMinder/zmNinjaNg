@@ -4,31 +4,46 @@ Profiles store connection details for your ZoneMinder servers. You can create mu
 
 ## Adding a Profile
 
+```{figure} ../_static/img/screens/profiles/add.jpg
+:align: right
+:width: 240px
+:alt: The Add New Profile form with an Import from QR Code button, profile name, server URL, username, password, and a self-signed certificate switch
+
+The Add New Profile form
+```
+
 1. Open zmNinjaNg, if no profile exists, you'll land on the Profiles screen
-2. Tap **Add Profile**
+2. Tap the **+** button at the top of the Server Connections card
 3. Fill in the connection details:
 
 | Field | Description | Example |
 |-------|-------------|---------|
-| **Name** | A label for this profile | "Home Cameras" |
-| **Portal URL** | Your ZoneMinder server URL | `https://zm.example.com/zm` |
+| **Profile Name** | A label for this profile | "Home Cameras" |
+| **Server URL** | Your ZoneMinder server URL | `https://zm.example.com/zm` |
 | **Username** | ZoneMinder login username | `admin` |
 | **Password** | ZoneMinder login password | |
 
-4. Tap **Test Connection** to verify the credentials and API access
-5. Tap **Save**
+4. Tap **Add**. The app verifies the credentials and API access before saving the profile
 
 :::{tip}
-The Portal URL should point to the base ZoneMinder web path, typically ending in `/zm`. zmNinjaNg will auto-discover the API endpoint from there.
+The Server URL should point to the base ZoneMinder web path, typically ending in `/zm`. zmNinjaNg will auto-discover the API endpoint from there.
 :::
 
 ## QR Code Import
 
-When adding a profile, tap the **Scan QR Code** button to populate the form by scanning a QR code that contains profile data. This avoids retyping the URL, username, and password on a new device.
+When adding a profile, tap the **Import from QR Code** button to populate the form by scanning a QR code that contains profile data. This avoids retyping the URL, username, and password on a new device.
 
 The profile data (including password) is transferred via the QR code. No data is sent over the network during this process.
 
 ## Switching Profiles
+
+```{figure} ../_static/img/screens/profiles/list.jpg
+:align: right
+:width: 240px
+:alt: The Profiles screen with one profile card named Demo Server marked Default
+
+The Profiles screen
+```
 
 If you have multiple profiles, tap on a profile card to switch to it. The app will reconnect to the selected server.
 
@@ -64,6 +79,14 @@ Deleting a group deletes the group and the settings it accumulated. The servers 
 
 ## Editing a Profile
 
+```{figure} ../_static/img/screens/profiles/edit.jpg
+:align: center
+:width: 360px
+:alt: The Edit Profile dialog with name, portal, API, and streaming URLs, username, password, and a self-signed certificate switch
+
+The Edit Profile dialog
+```
+
 Choose **Edit** from a profile card's ⋮ menu to modify the connection details. You can change the URL, credentials, or display name.
 
 Each profile card keeps its portal, API, and streaming addresses behind
@@ -78,7 +101,7 @@ Choose **Disable** from a profile card's ⋮ menu to switch it off without delet
 
 Choose **Delete** from a profile card's ⋮ menu. You'll be asked to confirm before the profile is removed. The last remaining profile offers no Delete, since the app would have no server left to talk to.
 
-**Delete all profiles** lives in the ⋮ menu beside **Add Profile**, away from the buttons you reach for daily.
+**Delete All** lives in the ⋮ menu beside the **+** button, away from the buttons you reach for daily.
 
 ## Security
 

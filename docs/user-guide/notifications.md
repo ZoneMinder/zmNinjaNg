@@ -4,6 +4,14 @@ zmNinjaNg can notify you when ZoneMinder detects events. There are two notificat
 
 ## Notification Modes
 
+```{figure} ../_static/img/screens/notifications/settings.jpg
+:align: center
+:width: 360px
+:alt: Notification Settings with a History button, the connection status and the Enable Notifications switch
+
+Notification Settings before notifications are enabled
+```
+
 zmNinjaNg supports two notification modes. You choose the mode in **Notification Settings** based on your ZoneMinder setup.
 
 ### Event Server (ES) Mode

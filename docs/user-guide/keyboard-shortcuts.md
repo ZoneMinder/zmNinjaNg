@@ -11,6 +11,14 @@ instead. On a desktop or laptop the shortcuts keep working even with TV mode on.
 
 ## Navigation
 
+```{figure} ../_static/img/screens/keyboard-shortcuts/help.jpg
+:align: center
+:width: 512px
+:alt: The Keyboard shortcuts dialog listing each key and the page it opens
+
+The shortcuts list shown by pressing ?
+```
+
 Press a single key to jump to a section:
 
 | Key | Goes to |
@@ -28,6 +36,14 @@ Press a single key to jump to a section:
 | `r` | Server |
 
 ## Command palette
+
+```{figure} ../_static/img/screens/keyboard-shortcuts/palette.jpg
+:align: center
+:width: 512px
+:alt: The Jump to palette with a search box and a list of pages, each with its shortcut key
+
+The Jump to palette
+```
 
 Open the "Jump to" palette in any of three ways: press `/` (desktop/web), tap
 the command icon in the top bar (phone), or use the "Jump to" button in the

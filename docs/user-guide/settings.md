@@ -2,6 +2,14 @@
 
 The Settings page has six sections: General, Live Streaming, Events & Playback, Network, Ninjii (Beta) - AI chatbot, and More settings. Each section heading collapses. Click or tap a heading to fold that section away, and the app remembers which sections you left closed. All sections start open.
 
+```{figure} ../_static/img/screens/settings/page.jpg
+:align: right
+:width: 240px
+:alt: The top of the Settings page with the General section
+
+The Settings page
+```
+
 To find a setting, tap the search icon at the top right of the page and type part of its name, its description, or its current value. Only the matching settings stay on screen, including ones in sections you have collapsed and in folded rows such as Previews or Advanced streaming. Typing a section's name shows that whole section, and with a group selected, typing a server's name shows every setting for that server. Tap the X or press Esc to clear the search. The sections you collapsed are still collapsed afterwards.
 
 ## Your settings and server settings
@@ -20,6 +28,14 @@ A few settings apply to the whole app on this device, whichever profile or group
 
 ## General
 
+```{figure} ../_static/img/screens/settings/general.jpg
+:align: center
+:width: 360px
+:alt: The General section of Settings with its rows from Language down to Hidden Monitors
+
+The General section
+```
+
 | Setting | Description |
 |---------|-------------|
 | **Language** | Interface language (English, German, Spanish, Persian, French, Italian, Chinese, Russian). |
@@ -37,9 +53,25 @@ A few settings apply to the whole app on this device, whichever profile or group
 | **Component Logs** | Folded by default. Its summary shows the log level and how many components are set differently. Open it to give one component its own level (DEBUG, INFO, WARN, ERROR, or NONE). **Reset** puts every component back on the log level. |
 | **Disable Log Redaction** | Shows passwords and tokens in logs instead of scrubbing them. An orange warning shows while it is on. Turn it off when you are done. See [What gets redacted](logs.md#what-gets-redacted). |
 
+```{figure} ../_static/img/screens/settings/component-logs.jpg
+:align: center
+:width: 360px
+:alt: Component Logs folded open, with a level picker for each component
+
+Component Logs folded open
+```
+
 The server rows under General hold **Hidden Monitors**. See [Hidden Monitors](#hidden-monitors).
 
 ### Previews
+
+```{figure} ../_static/img/screens/settings/previews.jpg
+:align: center
+:width: 360px
+:alt: Previews folded open, with a checkbox for each screen and a Playback speed picker
+
+Previews folded open
+```
 
 Previews enlarge a feed or event in place when you hover over it on desktop, or long-press it on mobile. Each screen has its own checkbox, so you can turn previews on only where you want them:
 
@@ -78,6 +110,14 @@ Manage the PIN used to lock and unlock kiosk mode. See {doc}`kiosk` for full det
 
 ### Hidden Monitors
 
+```{figure} ../_static/img/screens/settings/hidden-monitors.jpg
+:align: center
+:width: 358px
+:alt: Hidden Monitors list with a checkbox beside each monitor on the server
+
+The Hidden Monitors list
+```
+
 Hide monitors you do not want to see. A hidden monitor is removed from the Monitors list, Montage, Dashboard, the Events list, and the Timeline, and its events are hidden too. The list belongs to one server, so hiding a monitor on one server does not affect another.
 
 The button on the **Hidden Monitors** row opens a list of every monitor on the server, including ones you have already hidden, each with a checkbox. Tick a monitor to hide it; clear the tick to restore it. The button shows how many monitors are currently hidden.
@@ -85,6 +125,14 @@ The button on the **Hidden Monitors** row opens a list of every monitor on the s
 Hiding a monitor does not change anything on the ZoneMinder server. It only controls what this app shows.
 
 ## Live Streaming
+
+```{figure} ../_static/img/screens/settings/live-streaming.jpg
+:align: center
+:width: 360px
+:alt: The Live Streaming section with Monitors per page, Streaming Mode, Refresh Interval, Stream FPS and Stream Scale
+
+The Live Streaming section
+```
 
 | Setting | Description |
 |---------|-------------|
@@ -106,6 +154,14 @@ The server rows under Live Streaming set how that server sends live video:
 | **STUN Servers** | Enable only when you reach go2rtc directly over the internet. Leave it off on a LAN or VPN. |
 | **Protocol Label** | Shows or hides the streaming protocol indicator (MJPEG/MSE/WebRTC) on this server's video feeds. |
 | **Force disable multi-port streaming** | Off by default: when the server reports `ZM_MIN_STREAMING_PORT`, the app routes each monitor to its own port (`base port + monitor ID`). Turn this on to ignore that config and use the portal's default port for all streams. Use it when the per-monitor ports are not reachable (firewall, reverse proxy, or partial server config). |
+
+```{figure} ../_static/img/screens/settings/advanced-streaming.jpg
+:align: center
+:width: 360px
+:alt: Advanced streaming folded open, with the go2rtc switch, STUN Servers, Protocol Label and multi-port switches
+
+Advanced streaming folded open
+```
 
 With one profile selected, switching **Bandwidth Mode** (under Network) resets Stream FPS, Stream Scale, and Refresh Interval to that mode's defaults.
 
@@ -200,6 +256,14 @@ None of these change any server's own settings. With one profile selected the gr
 
 ## Events & Playback
 
+```{figure} ../_static/img/screens/settings/events-playback.jpg
+:align: center
+:width: 360px
+:alt: The Events and Playback section with Events Per Page, Auto-refresh, Nearby events and Replay tiles
+
+The Events & Playback section
+```
+
 | Setting | Description |
 |---------|-------------|
 | **Events Per Page** | How many events to load per page on the Events screen (10 to 1000, default 100; presets 100/300/500). |
@@ -214,6 +278,14 @@ The server rows under Events & Playback hold **Event thumbnails**.
 
 ### Event thumbnails
 
+```{figure} ../_static/img/screens/settings/thumbnail-chain.jpg
+:align: center
+:width: 360px
+:alt: Event thumbnails folded open, listing Alarm frame, Snapshot, Object detection and Custom frame ID with arrows and checkboxes
+
+The Event thumbnails order
+```
+
 Event thumbnails can come from different frame types in ZoneMinder: `alarm` (first alarmed frame), `snapshot` (representative frame), `objdetect` (object-detection frame from zmeventnotification), or a custom frame ID. Different ZoneMinder setups populate different frame types depending on motion and ML configuration, so a single fixed choice leaves some users with missing images. Because this depends on the server, each server keeps its own order.
 
 The **Event thumbnails** row folds open to let you pick the order in which the app tries each frame type. Each row has up and down arrows to move it, a checkbox to enable it, and the frame type label. The last row is a custom slot where you can type any frame ID your setup uses (for example `1` for the first frame). Disabled rows and empty custom rows are skipped.
@@ -223,6 +295,14 @@ When a thumbnail loads successfully, the winning frame type is cached for the se
 The setting applies to every thumbnail surface in the app: events list, event montage, event detail hero, timeline scrubber, timeline preview popover, and notification history. Each event's thumbnail follows the order set for the server that recorded it.
 
 ## Network
+
+```{figure} ../_static/img/screens/settings/network.jpg
+:align: center
+:width: 360px
+:alt: The Network section with Bandwidth Mode, Allow Self-Signed Certificates and API timeout
+
+The Network section
+```
 
 | Setting | Description |
 |---------|-------------|

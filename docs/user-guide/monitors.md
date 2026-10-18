@@ -4,6 +4,14 @@ The Monitors screen lists all cameras configured on your ZoneMinder server. Each
 
 ## Monitor Cards
 
+```{figure} ../_static/img/screens/monitors/list.jpg
+:align: right
+:width: 240px
+:alt: The Monitors screen on a phone: a Groups selector and toolbar above a list of four monitor cards, each with a live thumbnail, name, status dot, frame rate and Events, Settings and download buttons
+
+The Monitors screen
+```
+
 Each card shows:
 
 - **Live snapshot** - A periodically refreshed image from the camera
@@ -12,9 +20,25 @@ Each card shows:
 - **Status** - Whether the monitor is online, in alarm, or offline
 - **Event count** - Number of recent events
 
+```{figure} ../_static/img/screens/monitors/card.jpg
+:align: center
+:width: 360px
+:alt: One monitor card with its thumbnail, name, ID chip, frame rate, resolution and the Events, Settings and download buttons
+
+A monitor card
+```
+
 Tap a card to open the [Monitor Detail](#monitor-detail) view.
 
-On desktop, hovering a monitor card for a moment opens a larger (400px wide) live preview next to the card. The preview uses its own streaming connection that is opened when the preview appears and closed the moment your cursor leaves. The underlying card remains clickable while the preview is visible.
+On desktop, hovering a monitor card for a moment opens a larger live preview next to the card, sized to about 70% of the window. The preview uses its own streaming connection that is opened when the preview appears and closed the moment your cursor leaves. The underlying card remains clickable while the preview is visible.
+
+```{figure} ../_static/img/screens/monitors/hover-preview.jpg
+:align: center
+:width: 100%
+:alt: The Monitors screen on desktop with a large live preview of Monitor-45 open over its card
+
+The live preview that opens when you hover a card on desktop
+```
 
 ### Paging a long list
 
@@ -39,6 +63,14 @@ To remove a monitor from this list (and from the Events and Timeline views) for 
 
 ## Monitor Detail
 
+```{figure} ../_static/img/screens/monitors/detail.jpg
+:align: right
+:width: 240px
+:alt: The Monitor Detail screen on a phone: back arrow, previous and next arrows around the monitor name, a live view with zoom buttons, a download and zones button below it, then recent events and monitor controls
+
+Monitor Detail
+```
+
 The detail view for a single monitor includes:
 
 ### Live View
@@ -54,6 +86,14 @@ The actual transport depends on your server:
 - **MJPEG streaming**: used when Go2RTC is disabled, unsupported, or fails. Continuous Motion JPEG via ZoneMinder's ZMS.
 
 If Go2RTC connects but no video frames appear within 8 seconds, the app automatically falls back to MJPEG. Monitors that fail Go2RTC are cached for 5 minutes before the app retries Go2RTC on them.
+
+```{figure} ../_static/img/screens/monitors/info-popover.jpg
+:align: right
+:width: 256px
+:alt: The monitor info popover listing Capturing, Analysing, Recording, Decoding, Resolution and Max FPS for Monitor-45
+
+The info popover for a monitor
+```
 
 The small info button next to each monitor's name, on the Monitors page and at the top of Monitor Detail, opens the monitor's capture settings with their names: Capturing, Analysing, Recording and Decoding on ZoneMinder 1.38 and later, or Function on older servers, plus the resolution and frame-rate cap. Hover it with a mouse or tap it on a phone. In the Montage the same popover is under **Monitor details** in a tile's ⋮ menu. The Decoding value is also listed read-only on the Capture tab of the monitor's Settings dialog; what On demand decoding means for snapshot tiles is under Streaming Mode in {doc}`settings`.
 
@@ -129,6 +169,14 @@ The **Always use ZMS for events** toggle at the top of the Video tab in the moni
 
 #### Show Zones
 
+```{figure} ../_static/img/screens/monitors/detail-zones.jpg
+:align: right
+:width: 240px
+:alt: Monitor-45 with the zone overlay on: green semi-transparent polygons over the water and the bridge, and an Active label in the corner
+
+Zones drawn over the live view
+```
+
 The Layers button in the live view toolbar toggles the zone overlay. When active, each detection zone is drawn as a semi-transparent polygon colored by its type: Active (green), Inclusive (blue), Exclusive (red), Preclusive (amber), Inactive (gray), Privacy (purple). A legend in the bottom-left of the player lists the types present on that monitor. Hovering a zone shows its name and type. Inactive zones appear gray.
 
 #### Analysis Frames
@@ -146,6 +194,14 @@ If the monitor has PTZ (Pan-Tilt-Zoom) configured in ZoneMinder, directional con
 The pad shows only the directions the camera's control definition claims. A mount that pans but cannot tilt gets the left and right arrows without up and down, and the diagonals need both axes, so the arrows you see are the ones the camera will act on.
 
 ### Recent Events
+
+```{figure} ../_static/img/screens/monitors/detail-recent.jpg
+:align: center
+:width: 360px
+:alt: The Recent Events list on Monitor Detail, three events with thumbnails, times, durations and delete buttons
+
+Recent Events on Monitor Detail
+```
 
 A list of recent events for this specific monitor, with thumbnails and timestamps. You can select and delete multiple events from this list the same way as on the main Events screen, see {doc}`events`.
 
