@@ -34,7 +34,7 @@ android {
         // (v1.1.14 -> 10114), above the raw commit count; Play rejects a lower
         // code, so the offset keeps every build above that scheme.
         versionCode 100000 + gitCommitCount
-        versionName "2.7.0"
+        versionName "2.8.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
