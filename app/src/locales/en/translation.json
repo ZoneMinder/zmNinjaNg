@@ -322,9 +322,6 @@
   },
   "event_detail": {
     "event_id": "Event ID",
-    "date": "Date",
-    "time": "Time",
-    "duration": "Duration",
     "frames": "Frames",
     "score": "Score",
     "detected": "Detected",
@@ -353,8 +350,6 @@
     "continuous_play": "Continue",
     "continuous_playing": "Playing: {{monitor}} ({{id}})",
     "no_more_videos": "No more videos to play",
-    "seconds": "seconds",
-    "timing": "Timing",
     "event_playback": "Event Playback",
     "zms_playback": "ZMS Playback",
     "frame": "Frame",
@@ -369,7 +364,7 @@
     "previous_frame": "Previous Frame",
     "next_frame": "Next Frame",
     "frame_position": "Frame Position",
-    "playback_speed": "Playback Speed",
+    "playback_options": "Playback Options",
     "first_alarm_frame": "First Alarm Frame",
     "max_score_frame": "Max Score Frame",
     "alarm_frames_count": "{{count}} of {{total}} frames alarmed",
@@ -383,7 +378,8 @@
       "alarm": "Alarm",
       "snapshot": "Snapshot",
       "objdetect": "Object detection"
-    }
+    },
+    "time": "Time"
   },
   "settings": {
     "server": "Server",

@@ -338,9 +338,6 @@
   },
   "event_detail": {
     "event_id": "ID события",
-    "date": "Дата",
-    "time": "Время",
-    "duration": "Длительность",
     "frames": "Кадры",
     "score": "Оценка",
     "detected": "Обнаружено",
@@ -369,8 +366,6 @@
     "continuous_play": "Продолжить",
     "continuous_playing": "Воспроизведение: {{monitor}} ({{id}})",
     "no_more_videos": "Больше видео нет",
-    "seconds": "секунд",
-    "timing": "Тайминг",
     "event_playback": "Воспроизведение события",
     "zms_playback": "Воспроизведение через ZMS",
     "frame": "Кадр",
@@ -385,7 +380,7 @@
     "previous_frame": "Предыдущий кадр",
     "next_frame": "Следующий кадр",
     "frame_position": "Позиция кадра",
-    "playback_speed": "Скорость воспроизведения",
+    "playback_options": "Параметры воспроизведения",
     "first_alarm_frame": "Первый кадр тревоги",
     "max_score_frame": "Кадр с макс. оценкой",
     "alarm_frames_count": "{{count}} из {{total}} кадров с тревогой",
@@ -399,7 +394,8 @@
       "alarm": "Тревога",
       "snapshot": "Снимок",
       "objdetect": "Обнаружение объектов"
-    }
+    },
+    "time": "Время"
   },
   "settings": {
     "server": "Сервер",

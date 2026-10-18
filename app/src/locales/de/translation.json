@@ -322,9 +322,6 @@
   },
   "event_detail": {
     "event_id": "Ereignis ID",
-    "date": "Datum",
-    "time": "Zeit",
-    "duration": "Dauer",
     "frames": "Frames",
     "score": "Bewertung",
     "detected": "Erkannt",
@@ -353,8 +350,6 @@
     "continuous_play": "Weiter",
     "continuous_playing": "Wiedergabe: {{monitor}} ({{id}})",
     "no_more_videos": "Keine weiteren Videos",
-    "seconds": "Sekunden",
-    "timing": "Zeitplanung",
     "event_playback": "Ereigniswiedergabe",
     "zms_playback": "ZMS-Wiedergabe",
     "frame": "Frame",
@@ -369,7 +364,7 @@
     "previous_frame": "Vorheriges Frame",
     "next_frame": "Nächstes Frame",
     "frame_position": "Frame-Position",
-    "playback_speed": "Wiedergabegeschwindigkeit",
+    "playback_options": "Wiedergabeoptionen",
     "first_alarm_frame": "Erstes Alarm-Frame",
     "max_score_frame": "Frame mit Höchstwertung",
     "alarm_frames_count": "{{count}} von {{total}} Frames mit Alarm",
@@ -383,7 +378,8 @@
       "alarm": "Alarm",
       "snapshot": "Schnappschuss",
       "objdetect": "Objekterkennung"
-    }
+    },
+    "time": "Zeit"
   },
   "settings": {
     "server": "Server",

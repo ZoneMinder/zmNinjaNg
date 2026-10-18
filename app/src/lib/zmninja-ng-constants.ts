@@ -512,6 +512,9 @@ export const EVENT_FRAME_THUMB_WIDTH = 240;
 /** localStorage key holding the event frame carousel's expanded state. */
 export const EVENT_FRAMES_OPEN_STORAGE_KEY = 'zmninja-event-frames-open';
 
+/** localStorage key holding the ZMS player's speed and frame-jump card expanded state. */
+export const ZMS_PLAYBACK_OPTIONS_OPEN_STORAGE_KEY = 'zmninja-zms-playback-options-open';
+
 /**
  * Relative time labels on events (issue #210).
  * List chip only renders for events within this many days; older events read

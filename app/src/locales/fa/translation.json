@@ -322,9 +322,6 @@
   },
   "event_detail": {
     "event_id": "شناسه رویداد",
-    "date": "تاریخ",
-    "time": "زمان",
-    "duration": "مدت",
     "frames": "فریم‌ها",
     "score": "امتیاز",
     "detected": "شناسایی‌شده",
@@ -353,8 +350,6 @@
     "continuous_play": "ادامه",
     "continuous_playing": "در حال پخش: {{monitor}} ({{id}})",
     "no_more_videos": "ویدیوی بیشتری برای پخش نیست",
-    "seconds": "ثانیه",
-    "timing": "زمان‌بندی",
     "event_playback": "پخش رویداد",
     "zms_playback": "پخش ZMS",
     "frame": "فریم",
@@ -369,7 +364,7 @@
     "previous_frame": "فریم قبلی",
     "next_frame": "فریم بعدی",
     "frame_position": "موقعیت فریم",
-    "playback_speed": "سرعت پخش",
+    "playback_options": "گزینه‌های پخش",
     "first_alarm_frame": "اولین فریم آلارم",
     "max_score_frame": "فریم با بیشترین امتیاز",
     "alarm_frames_count": "{{count}} از {{total}} فریم آلارم",
@@ -383,7 +378,8 @@
       "alarm": "آلارم",
       "snapshot": "عکس فوری",
       "objdetect": "تشخیص شیء"
-    }
+    },
+    "time": "زمان"
   },
   "settings": {
     "server": "سرور",
