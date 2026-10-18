@@ -56,7 +56,7 @@ vi.mock('../../../api/events', () => ({
 }));
 
 function renderPlayer(
-  props: { suspended?: boolean; showNotice?: boolean; profileId?: ProfileId; fullscreen?: boolean } = {}
+  props: { suspended?: boolean; showNotice?: boolean; profileId?: ProfileId; fullscreen?: boolean; caption?: React.ReactNode } = {}
 ) {
   return render(
     <ZmsEventPlayer
@@ -160,6 +160,31 @@ describe('ZmsEventPlayer', () => {
     expect(screen.queryByTestId('zms-speed-100')).toBeNull();
   });
 
+  it('puts the caption between the picture and the transport controls, and drops it in fullscreen', () => {
+    renderPlayer({ caption: <p data-testid="zms-caption">Oct 18, 6:00 AM</p> });
+    const caption = screen.getByTestId('zms-caption');
+    const follows = Node.DOCUMENT_POSITION_FOLLOWING;
+    expect(screen.getByTestId('zms-video-area').compareDocumentPosition(caption) & follows).toBeTruthy();
+    expect(caption.compareDocumentPosition(screen.getByTestId('zms-play-pause')) & follows).toBeTruthy();
+
+    cleanup();
+    renderPlayer({ caption: <p data-testid="zms-caption">Oct 18, 6:00 AM</p>, fullscreen: true });
+    expect(screen.queryByTestId('zms-caption')).toBeNull();
+  });
+
+  it('collapses the speed and frame-jump card, keeping play controls, and remembers it', () => {
+    localStorage.clear();
+    renderPlayer();
+    fireEvent.click(screen.getByTestId('zms-options-card-toggle'));
+    expect(screen.queryByTestId('zms-speed-100')).toBeNull();
+    expect(screen.getByTestId('zms-play-pause')).toBeTruthy();
+
+    cleanup();
+    renderPlayer();
+    expect(screen.queryByTestId('zms-speed-100')).toBeNull();
+    localStorage.clear();
+  });
+
   it('shows the ZMS notice only when playback fell back from video', () => {
     renderPlayer();
     expect(screen.queryByText('event_detail.zms_playback')).toBeNull();
@@ -244,7 +269,8 @@ describe('ZmsEventPlayer', () => {
 
     expect(screen.queryByTestId('zms-jump-to-alarm-frame')).toBeNull();
     expect(screen.getByTestId('zms-quick-jump-alarm-frame')).toBeTruthy();
-    expect(screen.getByTestId('zms-jump-to-max-score-frame')).toBeTruthy();
+    // The max-score thumbnail folds away with the rest of Playback options.
+    expect(screen.getByTestId('zms-options-card')).toContainElement(screen.getByTestId('zms-jump-to-max-score-frame'));
   });
 
   it('drops the max-score card when it is the same frame as the alarm', () => {

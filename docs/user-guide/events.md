@@ -93,6 +93,8 @@ ZMS playback renders frames one at a time from ZoneMinder's streaming server. Co
 - **Seek** - Jump to any point in the event
 - **Playback speed** - Adjust speed
 
+The event's start date and time sit just under the picture, above the controls. The speed presets, the jumps to the first alarm and max score frames, the alarmed frame count, and the max score frame thumbnail share a **Playback options** card that collapses when you tap its header; the app remembers whether you left it open or closed.
+
 ZoneMinder's streaming server sometimes gives up part way through an event and leaves an error such as "Failed getting frame" on screen. The player notices the stream has stopped and starts a new one from the frame it stopped on, so playback continues without leaving the event. If the server fails at the same point every time, playback stops there after a few attempts; press Play to try again.
 
 #### Standard Controls
@@ -105,10 +107,10 @@ For video-based playback (HLS or MP4), the player provides:
 
 ### Event Info
 
-Details about the event:
+The line under the player shows when the event started and, in brackets, how long it ran (30s, 1.5m, 1.5hr). The cards below it list:
 
-- Start and end time
-- Duration
+- Detected objects, first, when object detection found any
+- How long ago the event happened
 - Number of alarm and total frames
 - Monitor name and ID
 
@@ -131,7 +133,7 @@ The toggle is remembered per profile: once turned on it stays on for future even
 
 ## Nearby
 
-Every event card, montage tile, and the Timing card on the event detail page carry a link icon labeled "Nearby". Tapping it opens a panel - on the right on desktop, from the bottom on mobile - listing every event from other cameras that happened close to the one you tapped, useful for seeing what the rest of your cameras caught at the same moment.
+Every event card and montage tile carries a link icon labeled "Nearby", and the event detail page has a compact Nearby button next to the date under the player. Tapping it opens a panel - on the right on desktop, from the bottom on mobile - listing every event from other cameras that happened close to the one you tapped, useful for seeing what the rest of your cameras caught at the same moment.
 
 Opening Nearby from the event detail page pauses the event, so it cannot finish and move on to the next one while you browse. Closing the panel resumes it if it was playing.
 

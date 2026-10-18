@@ -24,8 +24,9 @@ interface EventContextButtonProps {
   event: Event;
   profileId?: ProfileId;
   className?: string;
-  /** Full-width labelled form for a surface with room for a label (event
-   *  detail's Timing card), instead of the icon-only overlay control. */
+  /** Labelled form for a surface with room for a label (the caption line
+   *  under the event detail player), instead of the icon-only overlay
+   *  control. Full width unless className narrows it. */
   labelled?: boolean;
 }
 

@@ -8,7 +8,7 @@
  */
 
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import EventDetail from '../EventDetail';
 import { useEventFavoritesStore } from '../../stores/eventFavorites';
 import { useSettingsStore } from '../../stores/settings';
@@ -171,8 +171,9 @@ vi.mock('../../components/events/Mp4EventPlayer', async () => {
 });
 
 vi.mock('../../components/events/ZmsEventPlayer', () => ({
-  ZmsEventPlayer: ({ onEnded, fullscreen, suspended }: { onEnded?: () => void; fullscreen?: boolean; suspended?: boolean }) => (
+  ZmsEventPlayer: ({ onEnded, fullscreen, suspended, caption }: { onEnded?: () => void; fullscreen?: boolean; suspended?: boolean; caption?: React.ReactNode }) => (
     <div data-testid="zms-player" data-fullscreen={String(fullscreen ?? false)} data-suspended={String(suspended ?? false)}>
+      {caption}
       <button data-testid="zms-fire-ended" onClick={() => onEnded?.()} />
     </div>
   ),
@@ -255,6 +256,33 @@ describe('EventDetail favorite toggle', () => {
     });
   });
 
+  it('shows the event start date and time once, inside the ZMS player', () => {
+    render(<EventDetail />);
+    const start = screen.getByTestId('event-detail-start');
+    expect(start).toHaveTextContent('2024-01-01 10:00:00');
+    expect(screen.getByTestId('zms-player')).toContainElement(start);
+    // The caption replaced the Timing card: the duration rides along in
+    // short form, and the Nearby trigger sits on the same line.
+    expect(start).toHaveTextContent('2024-01-01 10:00:00 (12s)');
+    expect(start).toContainElement(screen.getByTestId('event-context-open'));
+    expect(screen.queryByText('event_detail.timing')).toBeNull();
+  });
+
+  it('leads the Details card with detected objects and keeps a relative Time row', () => {
+    const detected = { ...event, Event: { ...event.Event, Notes: 'detected:person' } };
+    useQueryMock.mockImplementation(({ queryKey }: { queryKey: readonly unknown[] }) => {
+      if (queryKey[0] === 'event') return { data: detected, isLoading: false, error: null };
+      if (queryKey[0] === 'monitor') return { data: monitorData, isLoading: false, error: null };
+      return { data: null, isLoading: false, error: null };
+    });
+    render(<EventDetail />);
+    const rows = within(screen.getByTestId('event-detail-details')).getAllByTestId(/^event-detail-.*-row$/);
+    expect(rows[0]).toHaveTextContent('person');
+    const timeRow = screen.getByTestId('event-detail-time-row');
+    expect(timeRow).toHaveTextContent('event_detail.time');
+    expect(within(timeRow).getByTestId('event-detail-relative-time').textContent).not.toBe('');
+  });
+
   it('starts unfavorited when the store has no entry for the event', () => {
     render(<EventDetail />);
     expect(star()).not.toHaveClass('fill-current');
@@ -333,8 +361,8 @@ describe('EventDetail continuous playback (#250)', () => {
       'event_detail.continuous_playing',
       { monitor: 'Front Door', id: '1' },
     ));
-    render(toastInfo.mock.calls[0][0]);
-    expect(screen.getByText('2024-01-01 10:00:00')).toHaveClass('text-xs', 'text-muted-foreground');
+    const toastView = render(toastInfo.mock.calls[0][0]);
+    expect(within(toastView.container).getByText('2024-01-01 10:00:00')).toHaveClass('text-xs', 'text-muted-foreground');
   });
 
   it('shows "no more videos" and stops when there is no next event', async () => {
@@ -621,8 +649,8 @@ describe('EventDetail All-mode deep route (refs #337)', () => {
   });
 });
 
-// The around-this-event trigger, added to the Timing card as a full-width
-// labelled button (refs #494 Task 9). Reuses EventContextButton rather than
+// The around-this-event trigger, a compact labelled button on the caption
+// line under the player (refs #494 Task 9). Reuses EventContextButton rather than
 // duplicating its open/permission logic, so these tests only need to prove
 // the page wires it to its OWN route profile and that it reads as a labelled
 // control, not an icon-only one.
@@ -641,7 +669,7 @@ describe('EventDetail around-this-event trigger (refs #494 Task 9)', () => {
     useEventContextStore.setState({ anchor: null, profileId: undefined });
   });
 
-  it('opens the panel for the current profile from the Timing card in single mode', () => {
+  it('opens the panel for the current profile from the caption line in single mode', () => {
     render(<EventDetail />);
 
     const button = screen.getByTestId('event-context-open');

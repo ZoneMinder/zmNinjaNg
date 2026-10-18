@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatAppWeekday, formatElapsedShort } from '../format-date-time';
+import { formatAppWeekday, formatCompactDuration, formatElapsedShort } from '../format-date-time';
 
 describe('formatAppWeekday', () => {
   it('returns the short weekday name for a known date', () => {
@@ -28,5 +28,21 @@ describe('formatElapsedShort', () => {
     // once a second, so a monitor that enters between two ticks is briefly
     // "in the future". That must read 0:00, not a minus sign.
     expect(formatElapsedShort(-500)).toBe('0:00');
+  });
+});
+
+describe('formatCompactDuration', () => {
+  it('uses the largest unit that fits, with at most one decimal', () => {
+    expect(formatCompactDuration(30.4)).toBe('30s');
+    expect(formatCompactDuration(59.6)).toBe('60s');
+    expect(formatCompactDuration(60)).toBe('1m');
+    expect(formatCompactDuration(90)).toBe('1.5m');
+    expect(formatCompactDuration(5400)).toBe('1.5hr');
+    expect(formatCompactDuration(7200)).toBe('2hr');
+  });
+
+  it('reads zero for a missing or negative length', () => {
+    expect(formatCompactDuration(NaN)).toBe('0s');
+    expect(formatCompactDuration(-3)).toBe('0s');
   });
 });

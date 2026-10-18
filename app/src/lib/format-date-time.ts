@@ -124,6 +124,19 @@ export function formatElapsedShort(ms: number): string {
 }
 
 /**
+ * An event length as "30s", "1.5m" or "1.5hr": the largest unit that fits,
+ * with at most one decimal. Untranslated, like the other short duration
+ * labels on event rows.
+ */
+export function formatCompactDuration(seconds: number): string {
+  const s = Math.max(0, seconds) || 0;
+  const oneDecimal = (n: number) => String(Math.round(n * 10) / 10);
+  if (s < 60) return `${Math.round(s)}s`;
+  if (s < 3600) return `${oneDecimal(s / 60)}m`;
+  return `${oneDecimal(s / 3600)}hr`;
+}
+
+/**
  * Validate a custom format string.
  * Returns the formatted preview string, or null if invalid.
  */

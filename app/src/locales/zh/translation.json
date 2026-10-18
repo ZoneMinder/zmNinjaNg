@@ -322,9 +322,6 @@
   },
   "event_detail": {
     "event_id": "事件 ID",
-    "date": "日期",
-    "time": "时间",
-    "duration": "时长",
     "frames": "帧数",
     "score": "评分",
     "detected": "已检测",
@@ -353,8 +350,6 @@
     "continuous_play": "继续",
     "continuous_playing": "正在播放：{{monitor}} ({{id}})",
     "no_more_videos": "没有更多视频",
-    "seconds": "秒",
-    "timing": "时间安排",
     "event_playback": "事件回放",
     "zms_playback": "ZMS回放",
     "frame": "帧",
@@ -369,7 +364,7 @@
     "previous_frame": "上一帧",
     "next_frame": "下一帧",
     "frame_position": "帧位置",
-    "playback_speed": "播放速度",
+    "playback_options": "播放选项",
     "first_alarm_frame": "首个报警帧",
     "max_score_frame": "最高分数帧",
     "alarm_frames_count": "{{total}}帧中有{{count}}个报警帧",
@@ -383,7 +378,8 @@
       "alarm": "报警",
       "snapshot": "快照",
       "objdetect": "目标检测"
-    }
+    },
+    "time": "时间"
   },
   "settings": {
     "server": "服务器",
