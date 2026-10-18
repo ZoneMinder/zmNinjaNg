@@ -1,5 +1,28 @@
 # Changelog
 
+## [zmNinjaNg-2.8.0](https://github.com/ZoneMinder/zmNinjaNg/tree/zmNinjaNg-2.8.0) (2026-10-18)
+
+[Full Changelog](https://github.com/ZoneMinder/zmNinjaNg/compare/zmNinjaNg-2.7.0...zmNinjaNg-2.8.0)
+
+**Implemented enhancements:**
+
+- User guide: add screenshots of the key screens [\#564](https://github.com/ZoneMinder/zmNinjaNg/issues/564)
+- Event detail, sidebar and notices: surface date, length and version [\#562](https://github.com/ZoneMinder/zmNinjaNg/issues/562)
+- Events page does not refresh on opening + add event refresh option [\#556](https://github.com/ZoneMinder/zmNinjaNg/issues/556)
+- fix\(monitor\): show camera power and reset controls [\#553](https://github.com/ZoneMinder/zmNinjaNg/issues/553)
+
+**Fixed bugs:**
+
+- If "Continue" is enabled, trying to view Nearby events it starts the next event [\#547](https://github.com/ZoneMinder/zmNinjaNg/issues/547)
+- Event Filter should be cleared when viewing monitor events [\#546](https://github.com/ZoneMinder/zmNinjaNg/issues/546)
+
+**Closed issues:**
+
+- test\(e2e\): steps after a monitor card click act on the outgoing Monitors page [\#559](https://github.com/ZoneMinder/zmNinjaNg/issues/559)
+- chore\(ci\): lint PR bodies for slop-mop's mechanical tells [\#557](https://github.com/ZoneMinder/zmNinjaNg/issues/557)
+- In landscape mode, Live view opens in fullscreen with option disabled [\#552](https://github.com/ZoneMinder/zmNinjaNg/issues/552)
+- Enhancement: Nearby Events Replay grid hover [\#551](https://github.com/ZoneMinder/zmNinjaNg/issues/551)
+
 ## [zmNinjaNg-2.7.0](https://github.com/ZoneMinder/zmNinjaNg/tree/zmNinjaNg-2.7.0) (2026-10-04)
 
 [Full Changelog](https://github.com/ZoneMinder/zmNinjaNg/compare/zmNinjaNg-2.6.0...zmNinjaNg-2.7.0)
