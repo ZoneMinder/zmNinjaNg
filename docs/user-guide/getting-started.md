@@ -42,7 +42,7 @@ See {doc}`installation` for detailed instructions per platform, and {doc}`profil
 
 The sidebar (fixed on the left on desktop, a slide-out menu on mobile) moves you between the main screens: Dashboard, {doc}`monitors`, {doc}`montage`, {doc}`events`, {doc}`timeline`, {doc}`notifications`, {doc}`profiles`, {doc}`settings`, {doc}`server`, and {doc}`logs`.
 
-Controls at the bottom of the sidebar:
+The top of the sidebar shows the current profile's name and, under it, the app version and build number. Controls at the bottom of the sidebar:
 
 - **Menu Order**: drag the navigation items into the order you prefer. The order is saved per device.
 - **Theme**: a quick toggle that switches theme without opening Settings.

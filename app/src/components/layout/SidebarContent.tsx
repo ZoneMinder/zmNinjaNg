@@ -223,6 +223,13 @@ export function SidebarContent({ onMobileClose, isCollapsed }: SidebarContentPro
             {currentProfile.name}
           </p>
         )}
+        <span
+          className={cn("block text-[10px] text-muted-foreground truncate min-w-0", isCollapsed ? "text-center" : "px-1")}
+          title={getFullVersion()}
+          data-testid="sidebar-app-version"
+        >
+          v{isCollapsed ? getAppVersion() : getFullVersion()}
+        </span>
       </div>
 
       <div className={cn("flex-1 overflow-y-auto overflow-x-hidden", isMobileDrawer ? "px-2 py-1" : "px-3 py-2")}>
@@ -490,14 +497,6 @@ export function SidebarContent({ onMobileClose, isCollapsed }: SidebarContentPro
             {isCollapsed ? 'TV' : t('sidebar.tv_mode')}
           </span>
         )}
-        <span
-          className={cn("block text-[10px] pt-1 opacity-40 truncate min-w-0", isCollapsed ? "text-center" : "px-1")}
-          style={{ fontSize: '10px' }}
-          title={getFullVersion()}
-          data-testid="sidebar-app-version"
-        >
-          v{isCollapsed ? getAppVersion() : getFullVersion()}
-        </span>
       </div>
       </div>
       {showSetPin && (

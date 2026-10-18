@@ -81,3 +81,18 @@ describe('SidebarContent developer-notice nav item', () => {
     expect(screen.getByTestId('nav-item-dashboard')).toBeInTheDocument();
   });
 });
+
+describe('SidebarContent app version', () => {
+  afterEach(() => {
+    resetProfileFixture();
+    resetFakeStoreGates();
+  });
+
+  it('shows the version in the header, above the nav items', () => {
+    renderSidebar();
+    const version = screen.getByTestId('sidebar-app-version');
+    expect(version.textContent).toMatch(/^v\d+\.\d+\.\d+/);
+    const follows = Node.DOCUMENT_POSITION_FOLLOWING;
+    expect(version.compareDocumentPosition(screen.getByTestId('nav-item-dashboard')) & follows).toBeTruthy();
+  });
+});
