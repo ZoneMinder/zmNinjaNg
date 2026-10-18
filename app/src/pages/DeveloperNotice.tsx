@@ -91,7 +91,9 @@ function NoticeRow({ notice }: { notice: DeveloperNoticeView }) {
                 </Badge>
               )}
             </div>
-            <div className="text-[11px] text-muted-foreground mt-0.5">
+            <div className="text-[11px] text-muted-foreground mt-0.5" data-testid={`developer-notice-meta-${notice.id}`}>
+              {/* Release notices carry their version as minAppVersion. */}
+              {notice.minAppVersion && `v${notice.minAppVersion} · `}
               {fmtDateTime(new Date(notice.publishedAt))}
             </div>
           </div>
