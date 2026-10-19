@@ -168,6 +168,15 @@ export function GeneralSection({
             />
           </SettingsRow>
 
+          <SettingsRow>
+            <RowLabel label={t('settings.appearance.more_below_cue')} desc={t('settings.appearance.more_below_cue_desc')} />
+            <Switch
+              checked={settings.showMoreBelowCue}
+              onCheckedChange={(checked) => update('showMoreBelowCue', checked)}
+              data-testid="settings-more-below-cue"
+            />
+          </SettingsRow>
+
           <KioskPinRow />
 
           <SettingsRow>

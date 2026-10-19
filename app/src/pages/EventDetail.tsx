@@ -55,6 +55,7 @@ import { useEventFavoritesStore } from '../stores/eventFavorites';
 import { useZoomPan } from '../hooks/useZoomPan';
 import { useScrollPad } from '../hooks/useScrollPad';
 import { ScrollPad } from '../components/ui/scroll-pad';
+import { MoreBelowCue } from '../components/ui/more-below-cue';
 import { ZoomControls } from '../components/ui/zoom-controls';
 import { ErrorBanner, DetailPageSkeleton } from '../components/ui/query-state';
 import { useEventNavigation } from '../hooks/useEventNavigation';
@@ -945,6 +946,7 @@ export default function EventDetail() {
       </div>
 
       {showScrollPad && <ScrollPad targetRef={scrollerRef} />}
+      {!showScrollPad && !pageFullscreen && <MoreBelowCue key={`more-below-${id}`} targetRef={scrollerRef} />}
     </div>
   );
 }

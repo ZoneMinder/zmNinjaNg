@@ -223,3 +223,32 @@ export function resolveLastRouteSaveTarget(
   if (excludedRoutes.includes(pathname) || fromNotification) return null;
   return aggregateId ?? currentProfileId ?? null;
 }
+
+/**
+ * Pages made of repeated rows or tiles. A row cut off at the fold already
+ * says there is more, so the "more below" cue stays off there.
+ */
+const MORE_BELOW_CUE_LIST_ROUTES = new Set([
+  '/events',
+  '/logs',
+  '/notifications/history',
+  '/monitors',
+  '/montage',
+  '/event-montage',
+  '/live-activity',
+]);
+
+/**
+ * Whether AppLayout shows the "more below" cue on its <main> scroller for
+ * `pathname`. Every page gets it except the row lists above, pages that
+ * scroll inside their own container (they mount the cue on that container),
+ * and pages whose scroll pad is on, since the pad has its own down button.
+ */
+export function layoutShowsMoreBelowCue(pathname: string, scrollPadOn: boolean): boolean {
+  const path = pathname.replace(/\/+$/, '') || '/';
+  if (MORE_BELOW_CUE_LIST_ROUTES.has(path) || path === '/dashboard') return false;
+  const view = viewNameForPath(path);
+  if (view === 'Event Detail') return false;
+  if (scrollPadOn && (view === 'Monitor Detail' || path === '/timeline')) return false;
+  return true;
+}

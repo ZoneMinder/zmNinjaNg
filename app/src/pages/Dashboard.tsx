@@ -18,14 +18,17 @@ import { useDashboardStore } from '../stores/dashboard';
 import { useCurrentProfile } from '../hooks/useCurrentProfile';
 import { useProfileScope } from '../hooks/useProfileScope';
 import { asProfileId } from '../api/types';
+import { useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from 'react-i18next';
 import { NotificationBadge } from '../components/NotificationBadge';
 import { NinjiiToolbarButton } from '../components/assistant/NinjiiToolbarButton';
 import { GroupByServerToggle } from '../components/profiles/GroupByServerToggle';
+import { MoreBelowCue } from '../components/ui/more-below-cue';
 
 export default function Dashboard() {
     const { t } = useTranslation();
+    const scrollerRef = useRef<HTMLDivElement | null>(null);
     const isEditing = useDashboardStore((state) => state.isEditing);
     const toggleEditMode = useDashboardStore((state) => state.toggleEditMode);
     const { currentProfile } = useCurrentProfile();
@@ -82,9 +85,10 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            <div className="flex-1 overflow-auto bg-muted/10 w-full">
+            <div ref={scrollerRef} className="flex-1 overflow-auto bg-muted/10 w-full">
                 <DashboardLayout />
             </div>
+            <MoreBelowCue targetRef={scrollerRef} />
         </div>
     );
 }

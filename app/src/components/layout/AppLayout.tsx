@@ -14,7 +14,8 @@ import { useProfileStore } from '../../stores/profile';
 import { useSettingsStore } from '../../stores/settings';
 import { Button } from '../ui/button';
 import { log, LogLevel } from '../../lib/logger';
-import { viewNameForPath, resolveLastRouteSaveTarget } from '../../lib/navigation';
+import { viewNameForPath, resolveLastRouteSaveTarget, layoutShowsMoreBelowCue } from '../../lib/navigation';
+import { MoreBelowCue } from '../ui/more-below-cue';
 import { useInsomnia } from '../../hooks/useInsomnia';
 import {
   Menu,
@@ -80,6 +81,7 @@ export default function AppLayout() {
   }, [isTvMode]);
 
   const tvAutoDetectedRef = useRef(false);
+  const mainRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!currentProfileId || tvAutoDetectedRef.current) return;
@@ -286,7 +288,7 @@ export default function AppLayout() {
       )}
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto overflow-x-hidden relative w-full pt-[calc(3rem+var(--sai-top,env(safe-area-inset-top)))] md:pt-0 pb-[var(--sai-bottom,env(safe-area-inset-bottom))]" data-tv-region="main">
+      <main ref={mainRef} className="flex-1 overflow-y-auto overflow-x-hidden relative w-full pt-[calc(3rem+var(--sai-top,env(safe-area-inset-top)))] md:pt-0 pb-[var(--sai-bottom,env(safe-area-inset-bottom))]" data-tv-region="main">
         {/* md+ has no fixed header, so the safe-area inset is this sticky
             strip instead of padding: padding scrolls with the content and
             lets it slide behind the status bar icons (refs #357). Sticky
@@ -307,6 +309,9 @@ export default function AppLayout() {
         <Outlet />
         <DeleteBatchBar />
       </main>
+      {layoutShowsMoreBelowCue(location.pathname, settings.showScrollPad) && (
+        <MoreBelowCue key={location.pathname} targetRef={mainRef} />
+      )}
 
       {/* Global Background Task Drawer */}
       <BackgroundTaskDrawer />

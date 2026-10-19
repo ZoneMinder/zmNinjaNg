@@ -659,6 +659,8 @@
       "twenty_four_hour": "24-hour",
       "tv_mode": "TV mode",
       "tv_mode_desc": "D-pad navigation and larger UI",
+      "more_below_cue": "Scroll hint",
+      "more_below_cue_desc": "Show a down arrow when a page has more content below",
       "event_context": {
         "title": "Nearby events",
         "desc": "Default window and cameras for nearby events.",

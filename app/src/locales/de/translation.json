@@ -659,6 +659,8 @@
       "twenty_four_hour": "24-Stunden",
       "tv_mode": "TV-Modus",
       "tv_mode_desc": "D-Pad-Navigation und Anzeige",
+      "more_below_cue": "Scrollhinweis",
+      "more_below_cue_desc": "Pfeil nach unten zeigen, wenn unten mehr Inhalt folgt",
       "event_context": {
         "title": "Ereignisse in der Nähe",
         "desc": "Standardfenster und Kameras für Ereignisse in der Nähe.",
