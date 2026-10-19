@@ -659,6 +659,8 @@
       "twenty_four_hour": "24小时制",
       "tv_mode": "TV模式",
       "tv_mode_desc": "D-pad导航和显示",
+      "more_below_cue": "滚动提示",
+      "more_below_cue_desc": "页面下方还有内容时显示向下箭头",
       "event_context": {
         "title": "附近事件",
         "desc": "附近事件的默认时间窗口和摄像头。",

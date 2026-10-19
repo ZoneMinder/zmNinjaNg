@@ -233,6 +233,7 @@ describe('Settings Page', () => {
       insomnia: 'settings-insomnia-switch',
       landscapeFullscreen: 'settings-landscape-fullscreen-switch',
       tvMode: 'settings-tv-mode',
+      showMoreBelowCue: 'settings-more-below-cue',
       monitorsPerPage: 'settings-monitors-per-page',
       skipOfflineMonitors: 'settings-skip-offline-monitors-switch',
       monitorDetailFullscreen: 'settings-live-fullscreen-switch',

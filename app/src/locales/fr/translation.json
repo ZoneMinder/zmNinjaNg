@@ -659,6 +659,8 @@
       "twenty_four_hour": "24 heures",
       "tv_mode": "Mode TV",
       "tv_mode_desc": "Navigation D-pad et affichage",
+      "more_below_cue": "Indice de défilement",
+      "more_below_cue_desc": "Afficher une flèche quand la page continue plus bas",
       "event_context": {
         "title": "Événements à proximité",
         "desc": "Fenêtre et caméras par défaut pour les événements à proximité.",

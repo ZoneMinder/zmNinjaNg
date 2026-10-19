@@ -659,6 +659,8 @@
       "twenty_four_hour": "24 horas",
       "tv_mode": "Modo TV",
       "tv_mode_desc": "Navegacion D-pad y pantalla",
+      "more_below_cue": "Aviso de desplazamiento",
+      "more_below_cue_desc": "Mostrar una flecha cuando hay más contenido abajo",
       "event_context": {
         "title": "Eventos cercanos",
         "desc": "Ventana y cámaras predeterminadas para eventos cercanos.",

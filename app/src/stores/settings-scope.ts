@@ -28,6 +28,7 @@ export const SELECTION_SCOPED_SETTINGS = [
   'insomnia',
   'landscapeFullscreen',
   'tvMode',
+  'showMoreBelowCue',
   'monitorsPerPage',
   'skipOfflineMonitors',
   'monitorDetailFullscreen',

@@ -416,6 +416,8 @@ export interface ProfileSettings {
    * to ask again on each visit.
    */
   showScrollPad: boolean;
+  /** Whether a page taller than the screen shows the "more below" chevron. */
+  showMoreBelowCue: boolean;
   // Playback speed for event hover/longpress preview (ZMS rate percentage).
   // Only affects EventZmsHoverPlayer; live monitor previews are real-time.
   hoverPreviewPlaybackRate: HoverPreviewPlaybackRate;
@@ -608,6 +610,7 @@ export const DEFAULT_SETTINGS: ProfileSettings = {
   thumbnailFallbackChain: DEFAULT_THUMBNAIL_FALLBACK_CHAIN,
   hoverPreview: DEFAULT_HOVER_PREVIEW,
   showScrollPad: false,
+  showMoreBelowCue: true,
   hoverPreviewPlaybackRate: DEFAULT_HOVER_PREVIEW_PLAYBACK_RATE,
   assistantEnabled: false,
   // Off by default: the assistant already answers from the command palette and

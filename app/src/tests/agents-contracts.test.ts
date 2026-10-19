@@ -356,6 +356,25 @@ describe('contract Never clauses a grep can decide', () => {
     ).toEqual([]);
   });
 
+  // AppLayout's cue watches <main>; a page that scrolls inside its own
+  // container never makes <main> overflow, so it has to mount the cue itself.
+  it('Scroll cue: every page with its own scroller mounts MoreBelowCue', () => {
+    const exempt = new Set([
+      // Row and tile lists (MORE_BELOW_CUE_LIST_ROUTES in lib/navigation.ts).
+      'pages/Events.tsx',
+      'pages/LiveActivity.tsx',
+      'pages/Logs.tsx',
+      'pages/Montage.tsx',
+      // First-run setup, rendered outside AppLayout.
+      'pages/ProfileForm.tsx',
+    ]);
+    const missing = codeFiles()
+      .filter(([rel, code]) => /^pages\/[^/]+\.tsx$/.test(rel) && /\boverflow-(y-)?auto\b/.test(code))
+      .filter(([rel, code]) => !exempt.has(rel) && !code.includes('<MoreBelowCue'))
+      .map(([rel]) => rel);
+    expect(missing).toEqual([]);
+  });
+
   it('HTTP: no raw fetch or axios outside lib/http', () => {
     expect(offenders(/(^|[^.\w])fetch\s*\(|\baxios\b/, (f) => f.startsWith('lib/http'))).toEqual(
       [],

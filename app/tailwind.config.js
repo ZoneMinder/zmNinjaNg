@@ -70,11 +70,17 @@ export default {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.15" },
         },
+        // One small dip for the "more below" cue as it appears.
+        "nudge-down": {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(4px)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         blink: "blink 0.9s ease-in-out infinite",
+        "nudge-down": "nudge-down 0.7s ease-in-out 0.4s 1",
       },
     },
   },

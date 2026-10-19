@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  layoutShowsMoreBelowCue,
   resolveLastRouteSaveTarget,
   resolveStartRoute,
   resolveSwitchDestination,
@@ -128,5 +129,34 @@ describe('resolveStartRoute', () => {
   it('offers only section views, never an entity or kiosk route', () => {
     const paths = START_SCREENS.map((screen) => screen.path);
     expect(paths).toEqual(['/dashboard', '/monitors', '/montage', '/live-activity', '/events', '/timeline']);
+  });
+});
+
+describe('layoutShowsMoreBelowCue', () => {
+  it('shows on pages of stacked sections', () => {
+    for (const path of ['/server', '/settings', '/profiles', '/notifications', '/timeline', '/monitors/3', '/developer-notice']) {
+      expect(layoutShowsMoreBelowCue(path, false), path).toBe(true);
+    }
+  });
+
+  it('skips pages of repeated rows or tiles', () => {
+    for (const path of ['/events', '/logs/', '/notifications/history', '/monitors', '/montage', '/event-montage', '/live-activity']) {
+      expect(layoutShowsMoreBelowCue(path, false), path).toBe(false);
+    }
+  });
+
+  // Event detail and the dashboard scroll inside their own container and
+  // mount the cue there; a second one on <main> would stack on top of it.
+  it('skips pages that mount the cue on their own scroller', () => {
+    expect(layoutShowsMoreBelowCue('/events/12', false)).toBe(false);
+    expect(layoutShowsMoreBelowCue('/all/events/p1/12', false)).toBe(false);
+    expect(layoutShowsMoreBelowCue('/dashboard', false)).toBe(false);
+  });
+
+  it('gives way to the scroll pad only where the pad is shown', () => {
+    expect(layoutShowsMoreBelowCue('/monitors/3', true)).toBe(false);
+    expect(layoutShowsMoreBelowCue('/all/monitors/p1/3', true)).toBe(false);
+    expect(layoutShowsMoreBelowCue('/timeline', true)).toBe(false);
+    expect(layoutShowsMoreBelowCue('/server', true)).toBe(true);
   });
 });
