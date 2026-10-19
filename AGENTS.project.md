@@ -89,6 +89,12 @@ Path: `ErrorBanner` (`app/src/components/ui/query-state.tsx`) with `resolveQuery
 Never: ad-hoc error markup or raw error strings.
 Gate: review.
 
+### Scroll cue
+Owns: the "more below" chevron on pages taller than the screen.
+Path: `MoreBelowCue` (`app/src/components/ui/more-below-cue.tsx`), mounted once by `AppLayout` on its main scroller; `layoutShowsMoreBelowCue` (`app/src/lib/navigation.ts`) skips row/tile lists and pages with their own scroller, which mount the cue on that scroller; `showMoreBelowCue` setting turns it off.
+Never: the cue on a page of repeated rows or tiles; a new page of stacked sections without it (fold can land between cards on some screen height).
+Gate: `app/src/lib/__tests__/navigation.test.ts`; `app/src/components/ui/__tests__/more-below-cue.test.tsx`; `app/src/tests/agents-contracts.test.ts` (self-scrolling pages mount the cue).
+
 ### Controls
 Owns: pressable control state.
 Path: pressed is `default` over `outline`, with `aria-pressed`; icon-only buttons need `title`/`aria-label`.
