@@ -47,7 +47,7 @@ The General section
 | **Insomnia** | Keeps the screen awake while viewing. This is the same setting as the Insomnia toggle in the sidebar. |
 | **Fullscreen when turned sideways** | Phones and tablets only. On by default. See [Fullscreen when turned sideways](#fullscreen-when-turned-sideways). |
 | **TV mode** | Larger touch targets and D-pad/remote navigation for TV and set-top devices. See [TV mode](#tv-mode). |
-| **Scroll hint** | Shows a small down arrow in the bottom-right corner when a page has more content below the screen, so a page that looks finished but isn't still says so. It goes away as soon as you scroll. On by default; lists of events, monitors and logs never show it. |
+| **Scroll hint** | Shows a small down arrow in the bottom-right corner when a page has more content below the screen, so a page that looks finished but isn't still says so. It goes away as soon as you scroll. On by default. Montage never shows it, since it has its own scroll controls. |
 | **Kiosk PIN** | Set, change, or clear the PIN that locks kiosk mode. See [Kiosk PIN](#kiosk-pin). |
 | **Show developer notices** | Shows maintainer announcements in the app. Each notice shows its date, and a release notice also shows the app version it covers. |
 | **Log level** | DEBUG, INFO, WARN, or ERROR. The lowest level of entry the app records. Changing it also clears every component level below it. This is the same setting as the level picker on the Logs page. See {doc}`logs`. |

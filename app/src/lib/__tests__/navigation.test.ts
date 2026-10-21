@@ -139,18 +139,23 @@ describe('layoutShowsMoreBelowCue', () => {
     }
   });
 
-  it('skips pages of repeated rows or tiles', () => {
-    for (const path of ['/events', '/logs/', '/notifications/history', '/monitors', '/montage', '/event-montage', '/live-activity']) {
-      expect(layoutShowsMoreBelowCue(path, false), path).toBe(false);
+  it('shows on lists that scroll in <main>', () => {
+    for (const path of ['/monitors', '/notifications/history', '/live-activity/']) {
+      expect(layoutShowsMoreBelowCue(path, false), path).toBe(true);
     }
   });
 
-  // Event detail and the dashboard scroll inside their own container and
-  // mount the cue there; a second one on <main> would stack on top of it.
+  // Montage has its own scroll pad and pinch zoom.
+  it('skips montage', () => {
+    expect(layoutShowsMoreBelowCue('/montage', false)).toBe(false);
+  });
+
+  // These scroll inside their own container and mount the cue there; a
+  // second one on <main> would stack on top of it.
   it('skips pages that mount the cue on their own scroller', () => {
-    expect(layoutShowsMoreBelowCue('/events/12', false)).toBe(false);
-    expect(layoutShowsMoreBelowCue('/all/events/p1/12', false)).toBe(false);
-    expect(layoutShowsMoreBelowCue('/dashboard', false)).toBe(false);
+    for (const path of ['/events/12', '/all/events/p1/12', '/dashboard', '/events', '/logs/']) {
+      expect(layoutShowsMoreBelowCue(path, false), path).toBe(false);
+    }
   });
 
   it('gives way to the scroll pad only where the pad is shown', () => {
