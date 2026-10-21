@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { Server as ZmServer } from '../api/server';
 import { getServers, getLoad, getLatestServerStat, getDaemonCheck, getStorages, getStorageEventCount } from '../api/server';
 import { formatForServerInTz, resolveProfileTimezone } from '../lib/time';
 import { SERVER_STATS_WINDOW_MINUTES } from '../lib/zmninja-ng-constants';
@@ -228,6 +229,10 @@ export default function Server() {
     ? zmUsageLevel(swapPercent, ZM_SWAP_USAGE_WARN_PERCENT, ZM_SWAP_USAGE_DANGER_PERCENT)
     : undefined;
   const levelClass = { danger: 'text-destructive', warning: 'text-orange-600 dark:text-orange-400' };
+  // One server or storage area shows as tiles; several get their own list below.
+  const soleServer = servers?.length === 1 ? servers[0] : undefined;
+  const enabledStorages = storages?.filter((s) => s.Enabled) ?? [];
+  const soleStorage = enabledStorages.length === 1 ? enabledStorages[0] : undefined;
 
   return (
     <PageContainer spacing="none" className="space-y-4 sm:space-y-6">
@@ -331,48 +336,52 @@ export default function Server() {
           </Card>
         )}
 
-        {/* Storage: one line per enabled area */}
-        {storages && storages.some((s) => s.Enabled) && (
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <HardDrive className="h-4 w-4 text-primary" />
-                <CardTitle className="text-base">{t('server.storage_title')}</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {storages.filter((s) => s.Enabled).map((storage) => {
-                const total = storage.DiskTotalSpace;
-                const used = storage.DiskUsedSpace;
-                const percent = total && used != null ? Math.round((used / total) * 100) : undefined;
-                const level = percent !== undefined
-                  ? zmUsageLevel(percent, ZM_STORAGE_USAGE_WARN_PERCENT, ZM_STORAGE_USAGE_DANGER_PERCENT)
-                  : undefined;
-                return (
-                  <div key={storage.Id} className="min-w-0">
-                    <div
-                      className={`text-sm font-semibold truncate ${level ? levelClass[level] : ''}`}
-                      title={storage.Name}
-                      data-testid={`stat-storage-${storage.Id}`}
-                    >
-                      {storage.Name}: {percent !== undefined ? `${percent}%` : '--'}
-                    </div>
-                    {total && used != null && (
-                      <div className="text-xs text-muted-foreground" data-testid={`stat-storage-detail-${storage.Id}`}>
-                        {t('server.used_of_total', { used: zmHumanFilesize(used), total: zmHumanFilesize(total) })}
-                      </div>
-                    )}
-                    {storage.DiskSpace != null && storage.DiskSpace !== used && (
-                      <div className="text-xs text-muted-foreground" data-testid={`stat-storage-events-${storage.Id}`}>
-                        {t('server.used_by_events', { size: zmHumanFilesize(storage.DiskSpace) })}
-                      </div>
-                    )}
+        {/* Storage: the only enabled area */}
+        {soleStorage && (() => {
+          const total = soleStorage.DiskTotalSpace;
+          const used = soleStorage.DiskUsedSpace;
+          const percent = total && used != null ? Math.round((used / total) * 100) : undefined;
+          const level = percent !== undefined
+            ? zmUsageLevel(percent, ZM_STORAGE_USAGE_WARN_PERCENT, ZM_STORAGE_USAGE_DANGER_PERCENT)
+            : undefined;
+          const eventCount = storageEventCounts?.[soleStorage.Id];
+          return (
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2">
+                  <HardDrive className="h-4 w-4 text-primary" />
+                  <CardTitle className="text-base">{t('server.storage_title')}</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="min-w-0">
+                <div
+                  className={`text-sm font-semibold truncate ${level ? levelClass[level] : ''}`}
+                  title={soleStorage.Name}
+                  data-testid={`stat-storage-${soleStorage.Id}`}
+                >
+                  {soleStorage.Name}: {percent !== undefined ? `${percent}%` : '--'}
+                </div>
+                {total && used != null && (
+                  <div className="text-xs text-muted-foreground" data-testid={`stat-storage-detail-${soleStorage.Id}`}>
+                    {t('server.used_of_total', { used: zmHumanFilesize(used), total: zmHumanFilesize(total) })}
                   </div>
-                );
-              })}
-            </CardContent>
-          </Card>
-        )}
+                )}
+                {eventCount !== undefined && (
+                  <div className="text-xs text-muted-foreground" data-testid={`stat-storage-events-${soleStorage.Id}`}>
+                    {t('server.storage_events_using', { count: eventCount, size: zmHumanFilesize(soleStorage.DiskSpace || 0) })}
+                  </div>
+                )}
+                <div
+                  className="text-xs text-muted-foreground truncate"
+                  title={soleStorage.Path ?? undefined}
+                  data-testid={`stat-storage-path-${soleStorage.Id}`}
+                >
+                  {soleStorage.Path}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })()}
 
         {/* Swap: hidden when the server has none, as in the console */}
         {swapPercent !== undefined && swapTotal && swapUsed !== undefined && (
@@ -394,6 +403,26 @@ export default function Server() {
             </Card>
         )}
 
+        {/* Memory: from the Servers row, as Options > Servers shows it */}
+        {soleServer?.TotalMem !== undefined && soleServer.FreeMem !== undefined && (
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <MemoryStick className="h-4 w-4 text-primary" />
+                <CardTitle className="text-base">{t('server.free_total_memory')}</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div
+                className={`text-2xl font-bold ${zmLowFree(soleServer.FreeMem, soleServer.TotalMem) ? 'text-destructive' : ''}`}
+                data-testid="stat-memory"
+              >
+                {zmHumanFilesize(soleServer.FreeMem)} / {zmHumanFilesize(soleServer.TotalMem)}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Server Status: multi-server installs list each server below */}
         {!isMultiServer && (
           <Card>
@@ -407,35 +436,36 @@ export default function Server() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
+              <div className="space-y-2" data-testid="stat-status">
                 <div className="flex items-center gap-2">
                   <Badge variant={isDaemonRunning ? 'default' : 'destructive'}>
                     {isDaemonRunning ? t('common.running') : t('common.stopped')}
                   </Badge>
                 </div>
-                {servers?.[0]?.Hostname && (
+                {soleServer?.Hostname && (
                   <p className="text-xs text-muted-foreground">
-                    {t('server.hostname')}: {servers[0].Hostname}
+                    {t('server.hostname')}: {soleServer.Hostname}
                   </p>
                 )}
+                {soleServer && <ServiceBadges server={soleServer} />}
               </div>
             </CardContent>
           </Card>
         )}
       </div>
 
-      {/* Server Details: all servers */}
-      {servers && servers.length > 0 && (
+      {/* Server Details: one row per server, on multi-server installs */}
+      {isMultiServer && (
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
               <ServerIcon className="h-5 w-5 text-primary" />
               <CardTitle>
-                {isMultiServer ? t('server.servers_title') : t('server.details')}
+                {t('server.servers_title')}
               </CardTitle>
             </div>
             <CardDescription>
-              {isMultiServer ? t('server.servers_desc') : t('server.details_desc')}
+              {t('server.servers_desc')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -516,32 +546,7 @@ export default function Server() {
                       )}
                     </div>
 
-                    {/* ZM service badges */}
-                    {(srv.zmstats !== undefined || srv.zmaudit !== undefined ||
-                      srv.zmtrigger !== undefined || srv.zmeventnotification !== undefined) && (
-                      <div className="flex flex-wrap gap-1.5 mt-3">
-                        {srv.zmstats !== undefined && (
-                          <Badge variant={srv.zmstats ? 'default' : 'secondary'} className="text-xs">
-                            zmstats
-                          </Badge>
-                        )}
-                        {srv.zmaudit !== undefined && (
-                          <Badge variant={srv.zmaudit ? 'default' : 'secondary'} className="text-xs">
-                            zmaudit
-                          </Badge>
-                        )}
-                        {srv.zmtrigger !== undefined && (
-                          <Badge variant={srv.zmtrigger ? 'default' : 'secondary'} className="text-xs">
-                            zmtrigger
-                          </Badge>
-                        )}
-                        {srv.zmeventnotification !== undefined && (
-                          <Badge variant={srv.zmeventnotification ? 'default' : 'secondary'} className="text-xs">
-                            zmeventnotificationNg
-                          </Badge>
-                        )}
-                      </div>
-                    )}
+                    <ServiceBadges server={srv} className="mt-3" />
                   </div>
                 );
               })}
@@ -551,7 +556,7 @@ export default function Server() {
       )}
 
       {/* Storage Areas */}
-      {storages && storages.length > 0 && (
+      {enabledStorages.length > 1 && (
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
@@ -562,11 +567,15 @@ export default function Server() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3" data-testid="storage-list">
-              {storages.filter((s) => s.Enabled).map((storage) => {
+              {enabledStorages.map((storage) => {
                 const serverName = servers?.find((s) => s.Id === storage.ServerId)?.Name;
                 const total = storage.DiskTotalSpace;
                 const used = storage.DiskUsedSpace;
                 const eventCount = storageEventCounts?.[storage.Id];
+                const percent = total ? Math.trunc((100 * (used ?? 0)) / total) : undefined;
+                const level = percent !== undefined
+                  ? zmUsageLevel(percent, ZM_STORAGE_USAGE_WARN_PERCENT, ZM_STORAGE_USAGE_DANGER_PERCENT)
+                  : undefined;
 
                 // Options > Storage in ZoneMinder: the percentage truncates
                 // (intval), unlike the console navbar's, which rounds. DiskSpace
@@ -592,8 +601,11 @@ export default function Server() {
                       {storage.Path}
                     </div>
                     {total != null && used != null && (
-                      <div className="text-xs mt-1" data-testid={`storage-usage-${storage.Id}`}>
-                        {total ? `${Math.trunc((100 * used) / total)}% ` : ''}
+                      <div
+                        className={`text-xs mt-1 ${level ? levelClass[level] : ''}`}
+                        data-testid={`storage-usage-${storage.Id}`}
+                      >
+                        {percent !== undefined ? `${percent}% ` : ''}
                         {t('server.used_of_total', { used: zmHumanFilesize(used), total: zmHumanFilesize(total) })}
                       </div>
                     )}
@@ -715,5 +727,27 @@ export default function Server() {
       </Card>
       )}
     </PageContainer>
+  );
+}
+
+// The ZoneMinder services a Servers row reports, as Options > Servers lists them.
+const SERVICE_BADGES = [
+  ['zmstats', 'zmstats'],
+  ['zmaudit', 'zmaudit'],
+  ['zmtrigger', 'zmtrigger'],
+  ['zmeventnotification', 'zmeventnotificationNg'],
+] as const;
+
+function ServiceBadges({ server, className = '' }: { server: ZmServer; className?: string }) {
+  const known = SERVICE_BADGES.filter(([key]) => server[key] !== undefined);
+  if (known.length === 0) return null;
+  return (
+    <div className={`flex flex-wrap gap-1.5 ${className}`}>
+      {known.map(([key, label]) => (
+        <Badge key={key} variant={server[key] ? 'default' : 'secondary'} className="text-xs">
+          {label}
+        </Badge>
+      ))}
+    </div>
   );
 }

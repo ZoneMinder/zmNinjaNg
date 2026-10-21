@@ -89,40 +89,56 @@ describe('Server page - storage areas', () => {
     };
   }
 
-  function renderStorage(diskSpace: number | null) {
+  // A second area at 99% of its disk, and a third at 96%.
+  const fullStorage = {
+    ...storageWithDiskSpace(0), Id: 2, Name: 'Full', Path: '/mnt/full',
+    DiskTotalSpace: 100_000_000_000, DiskUsedSpace: 99_000_000_000,
+  };
+  const nearlyFullStorage = { ...fullStorage, Id: 3, Name: 'Nearly', DiskUsedSpace: 96_000_000_000 };
+
+  function renderStorage(storages: object[]) {
     const [profileA] = seedProfiles(['profile-a']);
     const client = fakeApiClient({
       ...serverRoutes(),
-      '/storage.json': { storage: [{ Storage: storageWithDiskSpace(diskSpace) }] },
+      '/storage.json': { storage: storages.map((Storage) => ({ Storage })) },
       '/events/index/StorageId%3A1.json': { events: [], pagination: { count: 132 } },
+      '/events/index/StorageId%3A2.json': { events: [], pagination: { count: 5 } },
+      '/events/index/StorageId%3A3.json': { events: [], pagination: { count: 6 } },
     });
     installApiClient(profileA.id, client);
     renderServer();
     return client;
   }
 
-  it('shows disk usage as the Options > Storage DiskSpace column does, percentage truncated', async () => {
-    renderStorage(-204831925);
+  it('with one area, the storage tile carries its path and event count and the list is gone', async () => {
+    renderStorage([storageWithDiskSpace(-204831925)]);
+
+    expect(await screen.findByTestId('stat-storage-events-1')).toHaveTextContent('server.storage_events_using 132 -195.34 MB');
+    expect(screen.getByTestId('stat-storage-path-1')).toHaveTextContent('/var/cache/zoneminder/events');
+    expect(screen.queryByTestId('storage-list')).toBeNull();
+  });
+
+  it('with one area, shows a null DiskSpace as 0, as ZoneMinder does', async () => {
+    renderStorage([storageWithDiskSpace(null)]);
+
+    expect(await screen.findByTestId('stat-storage-events-1')).toHaveTextContent('server.storage_events_using 132 0.00 B');
+  });
+
+  it('with several areas, drops the tile and lists them as Options > Storage does, percentage truncated', async () => {
+    renderStorage([storageWithDiskSpace(-204831925), fullStorage]);
 
     expect(await screen.findByTestId('storage-usage-1')).toHaveTextContent('70% server.used_of_total 69.38 GB 97.87 GB');
-  });
-
-  it('shows the event count and the raw DiskSpace, negative included', async () => {
-    renderStorage(-204831925);
-
     expect(await screen.findByTestId('storage-events-1')).toHaveTextContent('server.storage_events_using 132 -195.34 MB');
+    expect(screen.queryByTestId('stat-storage-1')).toBeNull();
   });
 
-  it('shows a null DiskSpace as 0, as ZoneMinder does', async () => {
-    renderStorage(null);
+  it('with several areas, colours each entry as the console colours its storage figure', async () => {
+    renderStorage([storageWithDiskSpace(0), fullStorage, nearlyFullStorage]);
 
-    expect(await screen.findByTestId('storage-events-1')).toHaveTextContent('server.storage_events_using 132 0.00 B');
-  });
-
-  it('shows a negative DiskSpace under the console storage stat too', async () => {
-    renderStorage(-204831925);
-
-    expect(await screen.findByTestId('stat-storage-events-1')).toHaveTextContent('-195.34 MB');
+    expect(await screen.findByTestId('storage-usage-2')).toHaveClass('text-destructive');
+    expect(screen.getByTestId('storage-usage-3')).toHaveClass('text-orange-600');
+    expect(screen.getByTestId('storage-usage-1')).not.toHaveClass('text-destructive');
+    expect(screen.getByTestId('storage-usage-1')).not.toHaveClass('text-orange-600');
   });
 });
 
@@ -153,6 +169,7 @@ describe('Server page - stats as the ZoneMinder console shows them', () => {
       ...serverRoutes(),
       '/server_stats/': { serverstats: [{ ServerStat: portalStat }] },
       '/storage.json': { storage: [{ Storage: portalStorage }] },
+      '/events/index/StorageId%3A1.json': { events: [], pagination: { count: 132 } },
     }));
 
     renderServer();
@@ -161,7 +178,7 @@ describe('Server page - stats as the ZoneMinder console shows them', () => {
     expect(screen.getByTestId('stat-cpu')).toHaveTextContent('9.8%');
     expect(await screen.findByTestId('stat-storage-1')).toHaveTextContent('Default: 71%');
     expect(screen.getByTestId('stat-storage-detail-1')).toHaveTextContent('69.35 GB 97.87 GB');
-    expect(screen.getByTestId('stat-storage-events-1')).toHaveTextContent('562.43 MB');
+    expect(await screen.findByTestId('stat-storage-events-1')).toHaveTextContent('562.43 MB');
     expect(screen.getByTestId('stat-swap')).toHaveTextContent('0%');
     expect(screen.getByTestId('stat-swap-detail')).toHaveTextContent('0.00 B 8.00 GB');
     expect(screen.queryByText('server.disk_usage')).toBeNull();
@@ -285,6 +302,32 @@ describe('Server page - server rows as ZoneMinder Options > Servers shows them',
     expect(screen.getByTestId('server-memory-13')).toHaveClass('text-destructive');
     expect(screen.getByTestId('server-memory-7')).not.toHaveClass('text-destructive');
     expect(screen.getAllByText('server.free_total_swap')).toHaveLength(2);
+  });
+});
+
+describe('Server page - a single server', () => {
+  afterEach(() => {
+    resetProfileFixture();
+    resetFakeStoreGates();
+  });
+
+  it('folds memory and the service badges into the tiles and drops the details card', async () => {
+    const [profileA] = seedProfiles(['profile-a']);
+    installApiClient(profileA.id, fakeApiClient({
+      ...serverRoutes(),
+      '/servers.json': { servers: [{ Server: {
+        Id: '13', Name: 'unicron', Hostname: 'profile-a.test', Status: 'Running', CpuLoad: '11.9',
+        TotalMem: 535960010752, FreeMem: 36829298688, zmstats: true, zmaudit: false,
+      } }] },
+    }));
+
+    renderServer();
+
+    expect(await screen.findByTestId('stat-memory')).toHaveTextContent('34.30 GB / 499.15 GB');
+    expect(screen.getByTestId('stat-memory')).toHaveClass('text-destructive');
+    expect(screen.getByTestId('stat-status')).toHaveTextContent('zmstats');
+    expect(screen.getByTestId('stat-status')).toHaveTextContent('zmaudit');
+    expect(screen.queryByTestId('server-details-list')).toBeNull();
   });
 });
 
