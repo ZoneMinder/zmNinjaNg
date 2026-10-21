@@ -360,10 +360,9 @@ describe('contract Never clauses a grep can decide', () => {
   // container never makes <main> overflow, so it has to mount the cue itself.
   it('Scroll cue: every page with its own scroller mounts MoreBelowCue', () => {
     const exempt = new Set([
-      // Row and tile lists (MORE_BELOW_CUE_LIST_ROUTES in lib/navigation.ts).
-      'pages/Events.tsx',
+      // Its own scroller is the fullscreen overlay; the page view scrolls in <main>.
       'pages/LiveActivity.tsx',
-      'pages/Logs.tsx',
+      // Has its own scroll pad and pinch zoom.
       'pages/Montage.tsx',
       // First-run setup, rendered outside AppLayout.
       'pages/ProfileForm.tsx',

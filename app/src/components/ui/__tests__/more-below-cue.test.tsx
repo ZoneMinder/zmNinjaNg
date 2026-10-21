@@ -1,6 +1,5 @@
 /**
- * Tests for MoreBelowCue: the "more content below" chevron on the detail
- * pages and the timeline.
+ * Tests for MoreBelowCue: the "more content below" chevron.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';

@@ -17,7 +17,7 @@ import { Platform } from '../lib/platform';
 import { getLogFile } from '../lib/log-file';
 import { LOG_FILE_MAX_ENTRIES } from '../lib/log-file/types';
 import { useToast } from '../hooks/use-toast';
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useRef, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
 import {
@@ -33,6 +33,7 @@ import {
 } from '../components/ui/alert-dialog';
 import { Checkbox } from '../components/ui/checkbox';
 import { Label } from '../components/ui/label';
+import { MoreBelowCue } from '../components/ui/more-below-cue';
 import type { LogEntry } from '../stores/logs';
 import { getZMLogs, getZMLogLevel, getUniqueZMComponents } from '../api/logs';
 import { getSession } from '../services/sessions';
@@ -85,6 +86,7 @@ export default function Logs() {
     const clearLogs = useLogStore((state) => state.clearLogs);
     const { toast } = useToast();
     const { t } = useTranslation();
+    const entriesRef = useRef<HTMLDivElement>(null);
     const isNative = Platform.isNative;
     const logFile = getLogFile();
     const showShareFile = logFile.capabilities.share;      // Capacitor only
@@ -587,7 +589,7 @@ export default function Logs() {
                         <CardTitle className="text-base">{t('logs.log_entries', { count: filteredLogs.length })}</CardTitle>
                     </div>
                 </CardHeader>
-                <CardContent className="p-0 flex-1 overflow-y-auto font-mono text-xs sm:text-sm">
+                <CardContent ref={entriesRef} className="p-0 flex-1 overflow-y-auto font-mono text-xs sm:text-sm">
                     {isLoadingZmLogs ? (
                         <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-8">
                             <ScrollText className="h-12 w-12 mb-4 opacity-20 animate-pulse" />
@@ -651,6 +653,7 @@ export default function Logs() {
                     )}
                 </CardContent>
             </Card>
+            <MoreBelowCue targetRef={entriesRef} />
         </PageContainer>
     );
 }

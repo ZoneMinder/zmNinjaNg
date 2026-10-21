@@ -52,6 +52,7 @@ import { QuickDateRangeButtons } from '../components/ui/quick-date-range-buttons
 import { useTranslation } from 'react-i18next';
 import { formatForServer, formatLocalDateTimeSeconds } from '../lib/time';
 import { EmptyState } from '../components/ui/empty-state';
+import { MoreBelowCue } from '../components/ui/more-below-cue';
 import { NotificationBadge } from '../components/NotificationBadge';
 
 /** Stable empty list, so the monitor-filter memo does not rerun each render. */
@@ -846,6 +847,7 @@ export default function Events() {
           />
         )}
       </div>
+      <MoreBelowCue targetRef={parentRef} />
     </>
   );
 }

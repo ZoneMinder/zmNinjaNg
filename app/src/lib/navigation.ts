@@ -228,25 +228,22 @@ export function resolveLastRouteSaveTarget(
  * Pages made of repeated rows or tiles. A row cut off at the fold already
  * says there is more, so the "more below" cue stays off there.
  */
-const MORE_BELOW_CUE_LIST_ROUTES = new Set([
-  '/events',
-  '/logs',
-  '/notifications/history',
-  '/monitors',
-  '/montage',
-  '/event-montage',
-  '/live-activity',
-]);
+/**
+ * Pages AppLayout leaves the cue to: the dashboard, events and logs scroll
+ * inside their own container and mount the cue there, and montage has its own
+ * scroll pad and pinch zoom, so it gets none.
+ */
+const MORE_BELOW_CUE_SKIP_ROUTES = new Set(['/dashboard', '/events', '/logs', '/montage']);
 
 /**
  * Whether AppLayout shows the "more below" cue on its <main> scroller for
- * `pathname`. Every page gets it except the row lists above, pages that
- * scroll inside their own container (they mount the cue on that container),
- * and pages whose scroll pad is on, since the pad has its own down button.
+ * `pathname`. Every page gets it except the routes above, event detail (its
+ * own scroller), and pages whose scroll pad is on, since the pad has its own
+ * down button.
  */
 export function layoutShowsMoreBelowCue(pathname: string, scrollPadOn: boolean): boolean {
   const path = pathname.replace(/\/+$/, '') || '/';
-  if (MORE_BELOW_CUE_LIST_ROUTES.has(path) || path === '/dashboard') return false;
+  if (MORE_BELOW_CUE_SKIP_ROUTES.has(path)) return false;
   const view = viewNameForPath(path);
   if (view === 'Event Detail') return false;
   if (scrollPadOn && (view === 'Monitor Detail' || path === '/timeline')) return false;

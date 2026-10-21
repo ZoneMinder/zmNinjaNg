@@ -91,8 +91,8 @@ Gate: review.
 
 ### Scroll cue
 Owns: the "more below" chevron on pages taller than the screen.
-Path: `MoreBelowCue` (`app/src/components/ui/more-below-cue.tsx`), mounted once by `AppLayout` on its main scroller; `layoutShowsMoreBelowCue` (`app/src/lib/navigation.ts`) skips row/tile lists and pages with their own scroller, which mount the cue on that scroller; `showMoreBelowCue` setting turns it off.
-Never: the cue on a page of repeated rows or tiles; a new page of stacked sections without it (fold can land between cards on some screen height).
+Path: `MoreBelowCue` (`app/src/components/ui/more-below-cue.tsx`) on every page, lists included, mounted once by `AppLayout` on its main scroller; `layoutShowsMoreBelowCue` (`app/src/lib/navigation.ts`) skips pages with their own scroller, which mount the cue on that scroller, and pages with their own scroll or zoom controls (Montage, a page while its scroll pad is on); `showMoreBelowCue` setting turns it off.
+Never: a new page without it (the fold can land between cards on some screen height); the cue next to a page's own scroll or zoom controls.
 Gate: `app/src/lib/__tests__/navigation.test.ts`; `app/src/components/ui/__tests__/more-below-cue.test.tsx`; `app/src/tests/agents-contracts.test.ts` (self-scrolling pages mount the cue).
 
 ### Controls
