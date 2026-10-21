@@ -26,7 +26,7 @@ import {
   Command,
 } from 'lucide-react';
 import { useCommandPaletteStore } from '../../stores/commandPalette';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useLayoutEffect, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from '../ui/sheet';
 import { useTranslation } from 'react-i18next';
@@ -82,6 +82,18 @@ export default function AppLayout() {
 
   const tvAutoDetectedRef = useRef(false);
   const mainRef = useRef<HTMLElement | null>(null);
+
+  // <main> outlives every page, so without this a page opens at whatever
+  // offset the last one was scrolled to. The reset runs in the cleanup: React
+  // runs it after the old page's unmount cleanups (useMainScrollRestoration
+  // saves its offset there) and before the new page's layout effects (it
+  // restores there on browser back).
+  useLayoutEffect(() => {
+    const main = mainRef.current;
+    return () => {
+      if (main) main.scrollTop = 0;
+    };
+  }, [location.key]);
 
   useEffect(() => {
     if (!currentProfileId || tvAutoDetectedRef.current) return;
