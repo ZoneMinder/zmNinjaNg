@@ -30,18 +30,19 @@ The cards under the version information show the same figures as the stats bar a
 
 - **Load average**: the server's CPU load average. Sustained high load can cause dropped frames or slow event recording.
 - **CPU load**: the share of CPU time in use.
-- **Storage**: one line per enabled storage area, with the percentage of its disk in use, used and total space, and the space its events take. The line turns orange above 95% and red above 98%.
+- **Storage**: shown when the install has one enabled storage area. It gives the percentage of the area's disk in use, used and total space, the number of events stored there with the space they take, and the area's path. The percentage turns orange above 95% and red above 98%. With several areas, the page lists them under [Storage areas](#storage-areas) instead.
 - **Swap**: the percentage of swap in use, with used and total space. It turns orange above 90% and red above 95%. The card is hidden when the server has no swap.
+- **Free/Total Memory**: on a single-server install, free memory, then total, from the server's row in Options then Servers. Red when less than a tenth is free.
 
-ZoneMinder's `zmstats` process records the load, CPU and swap figures about once a minute. When that server has no recent record, or no server's hostname matches the profile, the page shows the live load average of the server answering the API and hides CPU load and swap. An account without System view permission sees no load average, as in the console. The console's memory and database connection figures are not available through the API, so the page leaves them out.
+ZoneMinder's `zmstats` process records the load, CPU and swap figures about once a minute. When that server has no recent record, or no server's hostname matches the profile, the page shows the live load average of the server answering the API and hides CPU load and swap. An account without System view permission sees no load average, as in the console. The console's database connection figure is not available through the API, so the page leaves it out. Neither is its memory figure, so the memory card reads the Servers row instead, and is missing when the install has none.
 
 ## Status
 
-Shows whether the ZoneMinder capture daemon is running or stopped, along with the server hostname.
+Shows whether the ZoneMinder capture daemon is running or stopped. When the install has one row in Options then Servers, the card also shows that server's hostname and which of `zmstats`, `zmaudit`, `zmtrigger` and `zmeventnotificationNg` it runs, each highlighted when on. In a multi-server cluster this card is hidden and the Servers list below shows each server instead.
 
-## Servers / Details
+## Servers
 
-In a single-server setup this card shows the server's details. In a multi-server cluster it lists every server with the same per-server figures as Options then Servers in ZoneMinder's console:
+Shown only in a multi-server cluster. It lists every server with its status, the services above, and the same per-server figures as Options then Servers in ZoneMinder's console:
 
 - **CPU load**: the load average, in red above 5.
 - **Free/total memory**: free memory, then total. Red when less than a tenth is free.
@@ -51,13 +52,7 @@ ZoneMinder updates these figures only while the server's `zmstats` runs, so a se
 
 ## Storage areas
 
-```{figure} ../_static/img/screens/server/storage.jpg
-:align: center
-:width: 344px
-:alt: One storage area listing its name, path, disk usage and event count
-
-A storage area entry
-```
+Shown when the install has more than one enabled storage area. With one, the Storage card under [Server stats](#server-stats) shows that area instead.
 
 Each enabled storage area is listed the way ZoneMinder's Options then Storage table shows it:
 
@@ -65,6 +60,8 @@ Each enabled storage area is listed the way ZoneMinder's Options then Storage ta
 - Disk usage as a percentage, then used and total space, for example `70% 69.38 GB of 97.87 GB`. Used space counts what the filesystem reserves for root (5% on ext4 by default), so a disk that holds few events can still show a few percent used. The percentage is rounded down, as in that table, so it can read one lower than the console's header bar, which rounds to the nearest.
 - The number of events stored there and the space ZoneMinder says they take, for example `132 using 1.45 GB`. ZoneMinder keeps that space as a running total rather than measuring it each time, so it can drift, even below zero. The page shows a negative total too, in MB or GB where ZoneMinder prints the raw byte count. Running `zmaudit.pl`, or turning on `ZM_RUN_AUDIT` in ZoneMinder's options, resets it to the real sum.
 - The server it belongs to (in multi-server setups)
+
+The usage line turns orange above 95% and red above 98%, as the console's header bar does.
 
 ## Account permissions
 

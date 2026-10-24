@@ -6,7 +6,6 @@ const openServer = async (page, go) => {
 export default [
   { name: 'page', open: openServer },
   { name: 'stats', open: openServer, crop: (page) => page.getByTestId('stat-load').locator('xpath=../../..') },
-  { name: 'storage', open: openServer, crop: (page) => page.getByTestId('storage-list') },
   { name: 'permissions', open: openServer, crop: (page) => page.getByTestId('account-permissions-card') },
   { name: 'zm-control', open: openServer, crop: (page) => page.getByTestId('server-zm-control-card') },
 ];
