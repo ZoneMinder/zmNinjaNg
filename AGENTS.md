@@ -27,7 +27,8 @@ tier; docs reference IDs, never copied text.
 ## Process
 
 - P1. Create or use an issue before feature or bug work, after checking the
-  out-of-scope ledger; land through an issue-linked PR whose body quotes the
+  out-of-scope ledger and any open PR for the issue (review it rather than
+  writing a second fix); land through an issue-linked PR whose body quotes the
   issue's acceptance lines. Commits reference the issue; closing keywords
   only after the user confirms. If instructed to push directly to the default branch,
   do so and verify the issue timeline. Typo-level fixes and doc
