@@ -330,3 +330,24 @@ jobs:
           ZM_USER_1: ${{ secrets.ZM_USER_1 }}
           ZM_PASSWORD_1: ${{ secrets.ZM_PASSWORD_1 }}
         run: npm run test:e2e
+
+  # The docs only built on Read the Docs, after merge, so a missing image or a
+  # broken cross-reference showed up there first. Same Python and requirements
+  # as .readthedocs.yaml; -W fails the job on any warning.
+  docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install docs requirements
+        run: pip install -r docs/requirements.txt
+
+      - name: Build docs with warnings as errors
+        run: sphinx-build -W --keep-going -b html docs docs/_build/html

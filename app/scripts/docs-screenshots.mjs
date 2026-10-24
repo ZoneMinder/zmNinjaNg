@@ -33,6 +33,17 @@ if (!doc || !DOCS_ZM_HOST || !DOCS_ZM_USER || !DOCS_ZM_PASSWORD) {
   process.exit(1);
 }
 
+// Without the proxy, login waits out its 30s timeout and the failure names
+// neither server. The proxy answers 400 on a bare /proxy, which still counts.
+for (const [url, command] of [[baseURL, 'npm run dev'], ['http://localhost:3001/proxy', 'npm run proxy']]) {
+  try {
+    await fetch(url);
+  } catch {
+    console.error(`Nothing answers at ${url} - start \`${command}\` first.`);
+    process.exit(1);
+  }
+}
+
 const VIEWPORTS = {
   phone: { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true },
   desktop: { viewport: { width: 1280, height: 800 } },

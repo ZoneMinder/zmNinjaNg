@@ -6,6 +6,13 @@ import path from 'path';
 // Load environment variables from .env file
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
+// Every scenario logs in to a real ZoneMinder. Without these, each one waits
+// out its timeout against the demo server with an empty login.
+const missingEnv = ['ZM_HOST_1', 'ZM_USER_1', 'ZM_PASSWORD_1'].filter((key) => !process.env[key]);
+if (missingEnv.length) {
+  throw new Error(`Browser e2e needs ${missingEnv.join(', ')} in app/.env (see .env.example).`);
+}
+
 const testDir = defineBddConfig({
   features: ['tests/features/**/*.feature', '!tests/features/.archive/**', '!tests/features/.wip/**'],
   steps: 'tests/steps/**/*.steps.ts',
