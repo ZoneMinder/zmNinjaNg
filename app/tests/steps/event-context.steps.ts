@@ -142,6 +142,35 @@ Then('sequence play shows the nearby events in time order, playing', async ({ pa
   sequenceTileEventId = tileIds[0];
 });
 
+When('I press the sequence play pause toggle', async ({ page }) => {
+  if (!sequenceListIds) return;
+  await page.getByTestId('event-context-sequence').getByTestId('event-context-sequence-play').click();
+});
+
+When('I close and reopen sequence play', async ({ page }) => {
+  if (!sequenceListIds) return;
+  const sequence = page.getByTestId('event-context-sequence');
+  await sequence.getByTestId('dialog-close-button').click();
+  await expect(sequence).toBeHidden({ timeout: testConfig.timeouts.transition });
+  await panel(page).getByTestId('event-context-sequence-open').click();
+  await expect(sequence).toBeVisible({ timeout: testConfig.timeouts.transition });
+});
+
+// Paused: the first tile is back on its thumbnail, not an event stream.
+Then('no sequence play tile is playing', async ({ page }) => {
+  if (!sequenceListIds) return;
+  const first = page.getByTestId('event-context-sequence').locator('[data-testid^="event-context-sequence-tile-"]').first();
+  await expect(first).toHaveAttribute('data-playing', 'false', { timeout: testConfig.timeouts.transition });
+  await expect(first.locator('img')).not.toHaveAttribute('src', /source=event/);
+});
+
+Then('the first sequence play tile is playing', async ({ page }) => {
+  if (!sequenceListIds) return;
+  const first = page.getByTestId('event-context-sequence').locator('[data-testid^="event-context-sequence-tile-"]').first();
+  await expect(first).toHaveAttribute('data-playing', 'true', { timeout: testConfig.timeouts.transition });
+  await expect(first.locator('img')).toHaveAttribute('src', /source=event/);
+});
+
 When('I pick the {int} by {int} sequence play grid', async ({ page }, n: number) => {
   if (!sequenceListIds) return;
   const sequence = page.getByTestId('event-context-sequence');
