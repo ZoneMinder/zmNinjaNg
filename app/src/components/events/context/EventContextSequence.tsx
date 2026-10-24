@@ -16,8 +16,11 @@
  *
  * Back from an event opened here reopens this dialog (the panel keeps it as
  * a history entry). It then holds playback and blinks the tile the user came
- * from, the way the Events list marks a returned-to row, until Restart
- * starts playback again.
+ * from, the way the Events list marks a returned-to row, until Play picks
+ * up from that tile or Restart starts over. Play/Pause holds playback the
+ * same way: the streams stop, Play starts the paused tile again from its
+ * beginning, and the last press is remembered on this device, so a replay
+ * paused last time opens paused.
  *
  * One tap on a tile restarts the replay from that tile; a second tap right
  * after opens its event. With the pencil pressed, dragging a tile's corner
@@ -29,33 +32,28 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Grid2x2, LayoutGrid, Pencil, RotateCcw } from 'lucide-react';
+import { Grid2x2, LayoutGrid, Pause, Pencil, Play, RotateCcw } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '../../ui/dialog';
 import { Button } from '../../ui/button';
-import { EventThumbnail } from '../EventThumbnail';
 import { GridColumnsMenu } from '../../common/GridColumnsMenu';
 import { useIsPhone } from '../../../hooks/useIsMobile';
-import { ReturnFlashArrow } from '../ReturnFlashArrow';
-import { EventZmsHoverPlayer } from '../EventThumbnailHoverPreview';
-import { HoverPreview } from '../../ui/hover-preview';
-import { TileMirror, TilePreview } from './TileMirror';
 import { useCurrentProfile, useProfileById } from '../../../hooks/useCurrentProfile';
 import { useFreshAccessToken } from '../../../hooks/useFreshAccessToken';
 import { useReturnHighlightStore } from '../../../stores/returnHighlight';
-import { useReturnFlash } from '../../../hooks/useReturnFlash';
 import { useInsomnia } from '../../../hooks/useInsomnia';
 import { useBandwidthSettings } from '../../../hooks/useBandwidthSettings';
 import { useGridTrackResize } from '../../../hooks/useGridTrackResize';
-import { useZoomPan } from '../../../hooks/useZoomPan';
+import { useDateTimeFormat } from '../../../hooks/useDateTimeFormat';
+import { SequenceTile } from './SequenceTile';
 import type { ZmsProbe } from '../../../hooks/useZmsEventProgress';
 import type { EventContextHistoryState } from '../../../stores/eventContext';
 import { resolveMinStreamingPort } from '../../../lib/monitor/multiport';
-import { buildReplayRuns, buildRowThumbnail, currentRunIndex, balancedAroundAnchor, offsetLabel } from '../../../lib/event/event-context-view';
+import { buildReplayRuns, buildRowThumbnail, currentRunIndex, balancedAroundAnchor } from '../../../lib/event/event-context-view';
 import { EVENT_CONTEXT, STORAGE_KEYS } from '../../../lib/zmninja-ng-constants';
 import { DEFAULT_HOVER_PREVIEW_PLAYBACK_RATE } from '../../../stores/settings';
 import { cn } from '../../../lib/utils';
 import type { EventAroundRow } from '../../../hooks/useEventsAround';
-import type { Event, ProfileId } from '../../../api/types';
+import type { ProfileId } from '../../../api/types';
 
 /** The grid size last picked on this device, if it is one still offered. */
 function readStoredGrid(): number {
@@ -72,6 +70,23 @@ function storeGrid(n: number) {
     localStorage.setItem(STORAGE_KEYS.eventContextReplayGrid, String(n));
   } catch {
     /* next open starts at the default */
+  }
+}
+
+/** Whether the last Play/Pause press on this device paused the replay. */
+function readStoredPaused(): boolean {
+  try {
+    return localStorage.getItem(STORAGE_KEYS.eventContextReplayPaused) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+function storePaused(paused: boolean) {
+  try {
+    localStorage.setItem(STORAGE_KEYS.eventContextReplayPaused, String(paused));
+  } catch {
+    /* next open plays */
   }
 }
 
@@ -118,7 +133,12 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
   // tiles after it follow; the ones before it are skipped.
   const [startFrom, setStartFrom] = useState<string | null>(null);
   const [run, setRun] = useState(0);
-  const [held, setHeld] = useState(Boolean(returnedFrom));
+  // Held: nothing plays until Play, a tap or Restart. Opens held after a
+  // return from an event, or when Pause was the last press on this device.
+  const [held, setHeld] = useState(() => Boolean(returnedFrom) || readStoredPaused());
+  // Where Play picks up: the tile that was playing at the pause, or the one
+  // the user came back from.
+  const resumeFromRef = useRef<string | null>(returnedFrom ?? null);
   // What the probes have reported this run, and which in-order tiles have
   // reached their start offset inside the current run.
   const [done, setDone] = useState<ReadonlySet<string>>(new Set());
@@ -140,6 +160,7 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
   }, [held, tiles, startFrom]);
   const runs = useMemo(() => buildReplayRuns(queue, rate), [queue, rate]);
   const currentRun = runs[currentRunIndex(runs, done)];
+  const running = Boolean(currentRun);
 
   // Each tile of the current run becomes due at its offset.
   useEffect(() => {
@@ -154,6 +175,18 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
     if (!open) return new Set();
     return new Set(currentRun?.filter(({ eventId }) => due.has(eventId) && !done.has(eventId)).map((c) => c.eventId));
   }, [open, currentRun, due, done]);
+
+  const togglePlay = () => {
+    storePaused(running);
+    if (running) {
+      resumeFromRef.current = tiles.find(({ event }) => playing.has(event.Id))?.event.Id ?? null;
+      setHeld(true);
+      return;
+    }
+    const from = resumeFromRef.current;
+    resumeFromRef.current = null;
+    startRun(from);
+  };
 
   const onProbe = (eventId: string, probe: ZmsProbe) => {
     setProbes((prev) => new Map(prev).set(eventId, probe));
@@ -192,8 +225,17 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
   // moves on to the first tile playing.
   const nextPreviewTile = (shown: string) =>
     done.has(shown) ? tiles.find(({ event }) => playing.has(event.Id))?.event.Id ?? shown : shown;
-  const tileImg = (eventId: string) =>
-    gridRef.current?.querySelector<HTMLImageElement>(`[data-testid="event-context-sequence-zoom-${eventId}"] img`);
+  // Only a playing tile's stream: between runs the view holds its last frame
+  // rather than drawing the low-res thumbnail the tile falls back to.
+  const tileImg = (eventId: string) => playing.has(eventId)
+    ? gridRef.current?.querySelector<HTMLImageElement>(`[data-testid="event-context-sequence-zoom-${eventId}"] img`)
+    : null;
+  const { fmtTime } = useDateTimeFormat();
+  const previewCaption = (eventId: string) => {
+    const event = tiles.find((tile) => tile.event.Id === eventId)?.event;
+    if (!event) return '';
+    return `${monitorNames.get(event.MonitorId) ?? event.MonitorId} · ${fmtTime(new Date(event.StartDateTime.replace(' ', 'T')))}`;
+  };
 
   // One tap plays the tile; a second tap on it within doubleTapMs opens it.
   const lastTapRef = useRef<{ eventId: string; at: number } | null>(null);
@@ -256,6 +298,17 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
         {/* pr-8 clears the dialog's own close button in the top corner. */}
         {/* Sticky, so the controls stay in reach while the tiles scroll. */}
         <div className="sticky top-0 z-10 flex items-center gap-1 border-b border-border/50 bg-background pb-1 pr-8">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 px-2"
+            aria-label={t(running ? 'event_detail.pause' : 'event_detail.play')}
+            title={t(running ? 'event_detail.pause' : 'event_detail.play')}
+            onClick={togglePlay}
+            data-testid="event-context-sequence-play"
+          >
+            {running ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+          </Button>
           <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={restart} data-testid="event-context-sequence-replay">
             <RotateCcw className="h-3.5 w-3.5" />
             {t('events.around.sequence_replay')}
@@ -314,7 +367,7 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
           }}
         >
           {tiles.map(({ event, offsetMs, isAnchor }, i) => {
-            const { urls, fullUrls, aspectRatio } = buildRowThumbnail(event, {
+            const { urls, aspectRatio } = buildRowThumbnail(event, {
               portalUrl: profile?.portalUrl || '',
               thumbnailChain: settings.thumbnailFallbackChain,
               token: isFresh ? accessToken ?? undefined : undefined,
@@ -328,11 +381,11 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
                 offsetMs={offsetMs}
                 isAnchor={isAnchor}
                 urls={urls}
-                fullUrls={fullUrls}
                 aspectRatio={aspectRatio}
                 preview={selectionSettings.hoverPreview.replay}
                 previewNext={nextPreviewTile}
                 previewImg={tileImg}
+                previewCaption={previewCaption}
                 resizeHandle={resizing ? (sx, sy) => handleProps(i % grid, Math.floor(i / grid), sx, sy) : undefined}
                 monitorName={monitorNames.get(event.MonitorId) ?? event.MonitorId}
                 isPlaying={playing.has(event.Id)}
@@ -350,149 +403,5 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
         </div>
       </DialogContent>
     </Dialog>
-  );
-}
-
-const RESIZE_CORNERS = [
-  { sx: -1, sy: -1, corner: 'tl' },
-  { sx: 1, sy: -1, corner: 'tr' },
-  { sx: -1, sy: 1, corner: 'bl' },
-  { sx: 1, sy: 1, corner: 'br' },
-] as const;
-
-interface SequenceTileProps {
-  event: Event;
-  offsetMs: number;
-  isAnchor: boolean;
-  urls: string[];
-  /** The same pictures at full size, for the enlarged view of a tile not playing. */
-  fullUrls: string[];
-  /** Width over height of the event's picture, for the enlarged view. */
-  aspectRatio: number;
-  /** The Replay hover preview setting is on. */
-  preview: boolean;
-  /** Which tile the enlarged view moves on to, and where a tile's picture is (TileMirror). */
-  previewNext: (shown: string) => string;
-  previewImg: (eventId: string) => HTMLImageElement | null | undefined;
-  /** Pointer props for the corner handle that moves the tile's left or right
-   *  edge (sx -1 or 1) and its top or bottom edge (sy -1 or 1); no handles
-   *  without it. */
-  /** Pencil pressed: the tile zooms and pans, and shows its corner handles. */
-  editing: boolean;
-  resizeHandle?: (sx: number, sy: number) => ReturnType<ReturnType<typeof useGridTrackResize>['handleProps']>;
-  monitorName: string;
-  isPlaying: boolean;
-  /** Keys the player, so a restart gets a fresh stream even for a tile already playing. */
-  run: number;
-  /** The tile's last stream probe; none before it plays. */
-  probe: ZmsProbe | undefined;
-  /** Time between probes. The line eases toward `probe.ahead` across it, or
-   *  across the time left when the stream ends sooner, and snaps full once done. */
-  progressStepMs: number;
-  onProbe: (probe: ZmsProbe) => void;
-  profileId: ProfileId | undefined;
-  /** Called with the click's own timestamp, in ms. */
-  onTap: (at: number) => void;
-}
-
-function SequenceTile({ event, offsetMs, isAnchor, urls, fullUrls, aspectRatio, preview, previewNext, previewImg, editing, resizeHandle, monitorName, isPlaying, run, probe, progressStepMs, onProbe, profileId, onTap }: SequenceTileProps) {
-  const { t } = useTranslation();
-  const flash = useReturnFlash(event.Id);
-  // Keys off: every tile has one of these, and arrows are window-wide.
-  const { ref: zoomRef, innerRef: zoomInnerRef } = useZoomPan({ enabled: editing, keyboard: false });
-  return (
-    <button
-      type="button"
-      onClick={(e) => onTap(e.timeStamp)}
-      aria-current={isAnchor ? 'true' : undefined}
-      aria-label={`${monitorName}, ${event.Name}. ${t('events.around.sequence_tile_hint')}`}
-      title={`${monitorName}. ${t('events.around.sequence_tile_hint')}`}
-      data-testid={`event-context-sequence-tile-${event.Id}`}
-      data-playing={isPlaying}
-      data-flash={flash}
-      className="relative flex min-h-0 min-w-0 flex-col rounded-sm border border-border/40 text-left hover:bg-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-    >
-      <div ref={zoomRef} className="relative min-h-0 w-full flex-1 overflow-hidden rounded-t-sm bg-black">
-        {/* The blinking triangle marks a playing tile, or the tile the user
-            just came back from while playback is held. */}
-        {(isPlaying || flash) && <ReturnFlashArrow className="top-1" />}
-        {/* Hover or long press enlarges the tile (TilePreview). Off with the
-            pencil, where a press pans. */}
-        <HoverPreview
-          aspectRatio={aspectRatio}
-          disabled={editing || !preview}
-          testId="event-context-sequence-preview"
-          renderPreview={() => (
-            <TilePreview
-              playing={isPlaying}
-              mirror={<TileMirror tileId={event.Id} next={previewNext} imgOf={previewImg} />}
-              still={<EventThumbnail urls={fullUrls} cacheKey={`${event.Id}-full`} alt={event.Name} className="h-full w-full bg-black" objectFit="contain" />}
-            />
-          )}
-        >
-        <div className={cn('h-full w-full transition-opacity', !isPlaying && 'opacity-60')}>
-          <div ref={zoomInnerRef} data-testid={`event-context-sequence-zoom-${event.Id}`}>
-          {isPlaying ? (
-            <EventZmsHoverPlayer
-              key={run}
-              descriptor={{ eventId: event.Id, monitorId: event.MonitorId, name: event.Name, profileId }}
-              onProbe={onProbe}
-            />
-          ) : (
-            <EventThumbnail urls={urls} cacheKey={event.Id} alt={event.Name} className="h-full w-full" objectFit="contain" />
-          )}
-          </div>
-        </div>
-        </HoverPreview>
-        <span
-          className={cn(
-            'absolute top-0.5 rounded-sm px-1 text-[10px]',
-            // Clear of the top-right handle while the handles show.
-            resizeHandle ? 'right-4 [@media(pointer:coarse)]:right-7' : 'right-0.5',
-            isAnchor ? 'bg-blue-500/80 text-white' : 'bg-black/60 text-white'
-          )}
-          title={t('events.around.offset_title')}
-        >
-          {isAnchor ? t('events.around.this_event') : offsetLabel(offsetMs)}
-        </span>
-        <div
-          role="progressbar"
-          aria-label={t('events.around.sequence_progress')}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={Math.round((probe?.fraction ?? 0) * 100)}
-          className="absolute inset-x-0 bottom-0 h-0.5 bg-white/20"
-          data-testid={`event-context-sequence-progress-${event.Id}`}
-        >
-          <div
-            className="h-full bg-sky-400 transition-[width] ease-linear"
-            style={{
-              width: `${(probe?.ahead ?? 0) * 100}%`,
-              transitionDuration: `${probe?.done ? 0 : Math.min(progressStepMs, probe?.remainingMs ?? progressStepMs)}ms`,
-            }}
-          />
-        </div>
-      </div>
-      <div className="truncate px-1 py-0.5 text-[11px] leading-tight">{monitorName}</div>
-      {/* Corner handles while the pencil is pressed, drawn as Montage's
-          edit-mode L bracket (--edit-handle), so it is clear where a drag
-          starts. Siblings of the zoom box, so a handle drag never pans. touch-none so a drag on a phone resizes instead of
-          scrolling. Pointer-only: the layout is a view preference. */}
-      {resizeHandle && RESIZE_CORNERS.map(({ sx, sy, corner }) => (
-        <span
-          key={corner}
-          aria-hidden
-          data-testid={`event-context-sequence-resize-${event.Id}-${corner}`}
-          className={cn(
-            'absolute z-10 h-4 w-4 touch-none border-[color:var(--edit-handle)] [@media(pointer:coarse)]:h-7 [@media(pointer:coarse)]:w-7',
-            sy < 0 ? 'top-0 border-t-[3px]' : 'bottom-0 border-b-[3px]',
-            sx < 0 ? 'left-0 border-l-[3px]' : 'right-0 border-r-[3px]',
-            sy < 0 ? (sx < 0 ? 'rounded-tl-sm' : 'rounded-tr-sm') : sx < 0 ? 'rounded-bl-sm' : 'rounded-br-sm',
-            sx * sy > 0 ? 'cursor-nwse-resize' : 'cursor-nesw-resize'
-          )}
-          {...resizeHandle(sx, sy)}
-        />
-      ))}
-    </button>
   );
 }

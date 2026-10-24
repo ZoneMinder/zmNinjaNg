@@ -61,17 +61,16 @@ export function buildRowThumbnail(event: Event, opts: RowThumbnailOptions) {
     event.Orientation,
     EVENT_GRID_CONSTANTS.LIST_VIEW_TARGET_SIZE
   );
-  const chain = (size: { width?: number; height?: number }) =>
-    buildThumbnailChainForEvent(event.MonitorId, [], opts.portalUrl, event.Id, opts.thumbnailChain, {
-      token: opts.token,
-      ...size,
-      minStreamingPort: opts.minStreamingPort,
-      monitorId: event.MonitorId,
-      hasAlarmFrame: eventHasAlarmFrame(event),
-      profileId: opts.profileId,
-    });
-  // fullUrls: the same pictures at the event's own size, for an enlarged view.
-  return { urls: chain({ width: tw, height: th }), fullUrls: chain({}), aspectRatio: tw / th };
+  const urls = buildThumbnailChainForEvent(event.MonitorId, [], opts.portalUrl, event.Id, opts.thumbnailChain, {
+    token: opts.token,
+    width: tw,
+    height: th,
+    minStreamingPort: opts.minStreamingPort,
+    monitorId: event.MonitorId,
+    hasAlarmFrame: eventHasAlarmFrame(event),
+    profileId: opts.profileId,
+  });
+  return { urls, aspectRatio: tw / th };
 }
 
 /** Up to `max` rows around the anchor, in time order (refs #534). Rows at

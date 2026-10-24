@@ -291,6 +291,8 @@ export const EVENT_CONTEXT = {
   /** Redraws per second of a replay tile's enlarged view, which copies the
    *  tile's own stream; matches the stream's own maxfps. */
   previewMirrorFps: 30,
+  /** How long the enlarged view slides one tile out and the next in. */
+  previewSlideMs: 300,
   /** Above this many monitor ids the request drops the MonitorId filter and
    *  asks for every camera in the window instead, because ZoneMinder's filter
    *  URLs cap out near 8KB. Nothing narrows the answer afterwards: a wider
@@ -577,6 +579,7 @@ export const STORAGE_KEYS = {
   thumbnailChainOpen: 'zmng-thumbnail-chain-open',
   /** Nearby replay mode, 'in-order' or 'all' (refs #534). */
   eventContextReplayGrid: 'zmng-event-context-replay-grid',
+  eventContextReplayPaused: 'zmng-event-context-replay-paused',
   // Prefix, completed with a settings section id (see CollapsibleSection).
   settingsSectionOpenPrefix: 'zmng-settings-section-open-',
 
