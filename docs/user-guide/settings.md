@@ -84,6 +84,7 @@ Previews enlarge a feed or event in place when you hover over it on desktop, or 
 - Assistant cards (the event cards under a Ninjii answer)
 - Live Activity tiles (off by default: the tile already streams that camera, so the preview opens a second connection for a larger copy)
 - Nearby events
+- Replay (tiles in the nearby events Replay grid; the preview copies the tile's own picture, so it opens no second connection)
 
 The **Playback speed** control (0.5x, 1x, 1.5x, 2x, 4x) sets how fast an event preview plays. Live monitor previews open a fresh stream while the preview is on screen and close it when you move away.
 

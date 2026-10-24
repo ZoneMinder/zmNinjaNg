@@ -40,6 +40,18 @@ Feature: Events around an event
     Then sequence play is back, marking the tile I opened
 
   @all
+  Scenario: Sequence play pauses from its toolbar and opens paused next time
+    When I open the around-this-event panel on the first event
+    And I choose the 60 minute window
+    And I open sequence play if there are two events
+    And I press the sequence play pause toggle
+    Then no sequence play tile is playing
+    When I close and reopen sequence play
+    Then no sequence play tile is playing
+    When I press the sequence play pause toggle
+    Then the first sequence play tile is playing
+
+  @all
   Scenario: Sequence play grid size sets the columns
     When I open the around-this-event panel on the first event
     And I choose the 60 minute window

@@ -60,6 +60,7 @@ export function HoverPreviewEditor({ value, onChange, playbackRate, onPlaybackRa
     { key: 'assistant', labelKey: 'settings.appearance.hover_preview.assistant' },
     { key: 'liveActivity', labelKey: 'settings.appearance.hover_preview.live_activity' },
     { key: 'eventContext', labelKey: 'settings.appearance.hover_preview.event_context' },
+    { key: 'replay', labelKey: 'settings.appearance.hover_preview.replay' },
   ];
 
   const searching = useSettingsSearching();
