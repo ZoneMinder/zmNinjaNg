@@ -31,6 +31,7 @@ const mockNetFetch = vi.fn();
 const mockSetCertificateVerifyProc = vi.fn();
 const mockAppendSwitch = vi.fn();
 const mockAppQuit = vi.fn();
+const mockRequestSingleInstanceLock = vi.fn().mockReturnValue(true);
 
 const mockSafeStorage = {
   isEncryptionAvailable: vi.fn().mockReturnValue(true),
@@ -55,6 +56,9 @@ function makeFakeBrowserWindow() {
     isMaximized: vi.fn().mockReturnValue(false),
     maximize: vi.fn(),
     show: vi.fn(),
+    isMinimized: vi.fn().mockReturnValue(true),
+    restore: vi.fn(),
+    focus: vi.fn(),
     getNormalBounds: vi.fn().mockReturnValue({ x: 0, y: 0, width: 1280, height: 800 }),
     loadURL: vi.fn(),
     loadFile: vi.fn(),
@@ -82,6 +86,7 @@ const fakeElectron = {
     dock: undefined,
     getPath: vi.fn().mockReturnValue('/tmp/zmninja-ng-test-userdata'),
     quit: mockAppQuit,
+    requestSingleInstanceLock: mockRequestSingleInstanceLock,
   },
   BrowserWindow: Object.assign(
     vi.fn().mockImplementation(() => makeFakeBrowserWindow()),
@@ -381,5 +386,46 @@ describe('app lifecycle wiring', () => {
     } finally {
       Object.defineProperty(process, 'platform', { value: originalPlatform });
     }
+  });
+});
+
+// A second instance on the same userData fails to open Chromium's localStorage
+// LevelDB (the first holds its lock), and Chromium then deletes and recreates
+// it, wiping every saved setting (refs #572).
+describe('single instance', () => {
+  it('brings the running window to the front when a second instance starts', () => {
+    const win = makeFakeBrowserWindow();
+    fakeElectron.BrowserWindow.getAllWindows.mockReturnValueOnce([win]);
+
+    appOnHandlers['second-instance']();
+
+    expect(win.restore).toHaveBeenCalled();
+    expect(win.focus).toHaveBeenCalled();
+  });
+
+  // macOS keeps the app running after its last window closes, so the running
+  // instance may have no window to focus.
+  it('opens a window when a second instance starts and none is open', () => {
+    const windowsBefore = browserWindowInstances.length;
+    fakeElectron.BrowserWindow.getAllWindows.mockReturnValueOnce([]);
+
+    appOnHandlers['second-instance']();
+
+    expect(browserWindowInstances.length).toBe(windowsBefore + 1);
+  });
+
+  // Last in the file: it loads main.cjs a second time, re-registering handlers.
+  it('quits without opening a window when another instance holds the lock', async () => {
+    mockRequestSingleInstanceLock.mockReturnValueOnce(false);
+    mockAppQuit.mockClear();
+    const windowsBefore = browserWindowInstances.length;
+    delete (require.cache as Record<string, unknown>)[require.resolve('../main.cjs')];
+
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require('../main.cjs');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(mockAppQuit).toHaveBeenCalled();
+    expect(browserWindowInstances.length).toBe(windowsBefore);
   });
 });
