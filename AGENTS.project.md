@@ -153,7 +153,8 @@ Per commit, run what the change touches; `npm run gates` before push or PR. Bloc
 and `app/.quality-baseline.json` lower with `npm run lint:ratchet -- --update`
 and `node scripts/quality-ratchet.mjs --update`. CI also runs
 `scripts/proven-red.mjs` (P2), `npm run test:mutation`, `npm run test:scripts`,
-and `pr-acceptance` (PR body needs `## Acceptance` content, and `## Spec` on a
+the `docs` build (`sphinx-build -W -b html docs <out>`; run it before pushing
+doc changes), and `pr-acceptance` (PR body needs `## Acceptance` content, and `## Spec` on a
 `feat`). State completed checks in handoff.
 
 ## Playbooks
