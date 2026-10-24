@@ -242,7 +242,23 @@ app.on('certificate-error', (event, _webContents, _url, _error, _cert, callback)
   // else: do NOT preventDefault -> Chromium rejects the invalid cert (default).
 });
 
+// One instance per userData. A second one cannot open Chromium's localStorage
+// database while the first holds its lock, and Chromium then deletes and
+// recreates it, wiping every saved profile and setting (refs #572).
+const hasInstanceLock = app.requestSingleInstanceLock();
+if (!hasInstanceLock) app.quit();
+
+app.on('second-instance', () => {
+  const [win] = BrowserWindow.getAllWindows();
+  if (!win) return;
+  if (win.isMinimized()) win.restore();
+  win.focus();
+});
+
 app.whenReady().then(() => {
+  // A second instance is quitting; opening a window would touch storage.
+  if (!hasInstanceLock) return;
+
   // Trust self-signed certs for main-process net requests too. The
   // certificate-error handler above only covers renderer loads; net.fetch (used
   // by the http:request bridge) is verified via the session, so gate it on the
