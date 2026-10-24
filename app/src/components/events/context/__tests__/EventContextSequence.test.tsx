@@ -520,6 +520,88 @@ describe('EventContextSequence', () => {
     expect(playingIds()).toEqual(['a']);
   });
 
+  it('enlarges a playing tile on hover by drawing its own stream, without opening another', () => {
+    const drawImage = vi.fn();
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({ drawImage } as never);
+    vi.spyOn(HTMLImageElement.prototype, 'naturalWidth', 'get').mockReturnValue(1920);
+    vi.spyOn(HTMLImageElement.prototype, 'naturalHeight', 'get').mockReturnValue(1080);
+    renderGrid();
+    act(() => vi.advanceTimersByTime(0));
+    const stream = screen.getByTestId('event-context-sequence-tile-a').querySelector('img')!;
+
+    fireEvent.mouseEnter(stream);
+    act(() => vi.advanceTimersByTime(1_000));
+    const preview = screen.getByTestId('event-context-sequence-preview');
+    expect(preview.querySelector('img')).toBeNull();
+    expect(drawImage).toHaveBeenCalledWith(stream, 0, 0);
+    // Full stream resolution, so the enlarged view is not an upscaled tile.
+    expect(preview.querySelector('canvas')).toHaveProperty('width', 1920);
+    vi.restoreAllMocks();
+  });
+
+  it('moves an open preview on to the next tile when its own tile finishes', async () => {
+    // The mirror redraws on animation frames, so those run on the fake clock too.
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date', 'performance', 'requestAnimationFrame', 'cancelAnimationFrame'] });
+    const drawImage = vi.fn();
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({ drawImage } as never);
+    vi.spyOn(HTMLImageElement.prototype, 'naturalWidth', 'get').mockReturnValue(1920);
+    vi.spyOn(HTMLImageElement.prototype, 'naturalHeight', 'get').mockReturnValue(1080);
+    renderGrid();
+    act(() => vi.advanceTimersByTime(0));
+    fireEvent.mouseEnter(screen.getByTestId('event-context-sequence-tile-a').querySelector('img')!);
+    act(() => vi.advanceTimersByTime(1_000));
+
+    await finish('a');
+    act(() => vi.advanceTimersByTime(1_000));
+    expect(playingIds()).toEqual(['b']);
+    // A few frames after b starts.
+    act(() => vi.advanceTimersByTime(200));
+    const streamB = screen.getByTestId('event-context-sequence-tile-b').querySelector('img');
+    expect(drawImage.mock.lastCall?.[0]).toBe(streamB);
+    vi.restoreAllMocks();
+  });
+
+  it('shows a tile that is not playing as one full-size still, not a stream', () => {
+    renderGrid();
+    act(() => vi.advanceTimersByTime(0));
+    expect(playingIds()).toEqual(['a']);
+    fireEvent.mouseEnter(screen.getByTestId('event-context-sequence-tile-c').querySelector('img')!);
+    act(() => vi.advanceTimersByTime(1_000));
+    // Through the dev image proxy, which carries the ZM URL as `url`.
+    const proxied = new URL(screen.getByTestId('event-context-sequence-preview').querySelector('img')!.src);
+    const src = new URL(proxied.searchParams.get('url') ?? proxied.href);
+    expect(src.searchParams.get('view')).toBe('image');
+    expect(src.searchParams.get('eid')).toBe('c');
+    expect(src.searchParams.get('width')).toBeNull();
+  });
+
+  it('does not preview when the Replay hover preview setting is off', () => {
+    seedProfiles([P], { settings: { p1: { hoverPreview: { replay: false } as never } } });
+    renderGrid();
+    act(() => vi.advanceTimersByTime(0));
+    fireEvent.mouseEnter(screen.getByTestId('event-context-sequence-tile-a').querySelector('img')!);
+    act(() => vi.advanceTimersByTime(1_000));
+    expect(screen.queryByTestId('event-context-sequence-preview')).toBeNull();
+  });
+
+  it('does not preview while the pencil is pressed, and keeps the stream across the toggle', () => {
+    renderGrid();
+    act(() => vi.advanceTimersByTime(0));
+    const stream = connkeyOf('a');
+    const hover = () => {
+      fireEvent.mouseEnter(screen.getByTestId('event-context-sequence-tile-a').querySelector('img')!);
+      act(() => vi.advanceTimersByTime(1_000));
+    };
+    hover();
+    expect(screen.getByTestId('event-context-sequence-preview').firstElementChild?.tagName).toBe('CANVAS');
+    fireEvent.mouseLeave(screen.getByTestId('event-context-sequence-tile-a').querySelector('img')!);
+
+    fireEvent.click(screen.getByTestId('event-context-sequence-resize-toggle'));
+    expect(connkeyOf('a')).toBe(stream);
+    hover();
+    expect(screen.queryByTestId('event-context-sequence-preview')).toBeNull();
+  });
+
   it('stops every stream when the dialog closes', async () => {
     const { rerender } = renderGrid();
     act(() => vi.advanceTimersByTime(0));

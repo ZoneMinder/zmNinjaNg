@@ -288,6 +288,9 @@ export const EVENT_CONTEXT = {
    *  one tap plays it (refs #534). Timed by hand, not `dblclick`, which touch
    *  WebViews do not fire reliably. */
   doubleTapMs: 350,
+  /** Redraws per second of a replay tile's enlarged view, which copies the
+   *  tile's own stream; matches the stream's own maxfps. */
+  previewMirrorFps: 30,
   /** Above this many monitor ids the request drops the MonitorId filter and
    *  asks for every camera in the window instead, because ZoneMinder's filter
    *  URLs cap out near 8KB. Nothing narrows the answer afterwards: a wider

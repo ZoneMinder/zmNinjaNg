@@ -14,6 +14,7 @@ import {
   LIVE_ACTIVITY,
   MONTAGE_GRID,
   NOTIFICATIONS_SERVICE,
+  STORAGE_KEYS,
 } from '../../lib/zmninja-ng-constants';
 import { ALL_PROFILES_ID } from '../../api/types';
 
@@ -236,6 +237,19 @@ describe('settings migration v0 -> v1', () => {
       profileSettings: Record<string, ProfileSettings>;
     };
     expect(migrated.profileSettings['profile-e'].hoverPreview.eventContext).toBe(true);
+  });
+
+  // A profile stored at v12, before the Replay surface existed, gets it on.
+  // zustand migrates only below SETTINGS_VERSION, so this goes through a real
+  // rehydrate: a fill without a version bump never reaches that profile.
+  it('turns the Replay hover preview on for a profile stored at v12', async () => {
+    localStorage.setItem(STORAGE_KEYS.settingsStore, JSON.stringify({
+      state: { profileSettings: { 'profile-r': { hoverPreview: { eventContext: true } } } },
+      version: 12,
+    }));
+    await useSettingsStore.persist.rehydrate();
+    expect(useSettingsStore.getState().profileSettings['profile-r'].hoverPreview.replay).toBe(true);
+    localStorage.removeItem(STORAGE_KEYS.settingsStore);
   });
 
   it('leaves a profile that never opened the context panel without an eventContext', () => {

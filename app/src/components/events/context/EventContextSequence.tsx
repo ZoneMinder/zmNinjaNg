@@ -37,6 +37,8 @@ import { GridColumnsMenu } from '../../common/GridColumnsMenu';
 import { useIsPhone } from '../../../hooks/useIsMobile';
 import { ReturnFlashArrow } from '../ReturnFlashArrow';
 import { EventZmsHoverPlayer } from '../EventThumbnailHoverPreview';
+import { HoverPreview } from '../../ui/hover-preview';
+import { TileMirror, TilePreview } from './TileMirror';
 import { useCurrentProfile, useProfileById } from '../../../hooks/useCurrentProfile';
 import { useFreshAccessToken } from '../../../hooks/useFreshAccessToken';
 import { useReturnHighlightStore } from '../../../stores/returnHighlight';
@@ -172,7 +174,10 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
   useEffect(() => {
     const started = tiles.find(({ event }) => playing.has(event.Id) && !shownRef.current.has(event.Id));
     shownRef.current = playing;
-    if (started) scrollToTile(started.event.Id, 'nearest');
+    // Not under an open preview: on a computer, any scroll closes it.
+    if (started && !document.querySelector('[data-testid="event-context-sequence-preview"]')) {
+      scrollToTile(started.event.Id, 'nearest');
+    }
   }, [playing, tiles]);
 
   // On return, bring the tile the user came from into view, once its row is in.
@@ -182,6 +187,13 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
     returnScrolledRef.current = true;
     scrollToTile(returnedFrom, 'center');
   }, [returnedFrom, tiles]);
+
+  // An open preview follows the replay: once the tile it shows is done, it
+  // moves on to the first tile playing.
+  const nextPreviewTile = (shown: string) =>
+    done.has(shown) ? tiles.find(({ event }) => playing.has(event.Id))?.event.Id ?? shown : shown;
+  const tileImg = (eventId: string) =>
+    gridRef.current?.querySelector<HTMLImageElement>(`[data-testid="event-context-sequence-zoom-${eventId}"] img`);
 
   // One tap plays the tile; a second tap on it within doubleTapMs opens it.
   const lastTapRef = useRef<{ eventId: string; at: number } | null>(null);
@@ -302,7 +314,7 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
           }}
         >
           {tiles.map(({ event, offsetMs, isAnchor }, i) => {
-            const { urls } = buildRowThumbnail(event, {
+            const { urls, fullUrls, aspectRatio } = buildRowThumbnail(event, {
               portalUrl: profile?.portalUrl || '',
               thumbnailChain: settings.thumbnailFallbackChain,
               token: isFresh ? accessToken ?? undefined : undefined,
@@ -316,6 +328,11 @@ export function EventContextSequence({ open, onOpenChange, rows, profileId, moni
                 offsetMs={offsetMs}
                 isAnchor={isAnchor}
                 urls={urls}
+                fullUrls={fullUrls}
+                aspectRatio={aspectRatio}
+                preview={selectionSettings.hoverPreview.replay}
+                previewNext={nextPreviewTile}
+                previewImg={tileImg}
                 resizeHandle={resizing ? (sx, sy) => handleProps(i % grid, Math.floor(i / grid), sx, sy) : undefined}
                 monitorName={monitorNames.get(event.MonitorId) ?? event.MonitorId}
                 isPlaying={playing.has(event.Id)}
@@ -348,6 +365,15 @@ interface SequenceTileProps {
   offsetMs: number;
   isAnchor: boolean;
   urls: string[];
+  /** The same pictures at full size, for the enlarged view of a tile not playing. */
+  fullUrls: string[];
+  /** Width over height of the event's picture, for the enlarged view. */
+  aspectRatio: number;
+  /** The Replay hover preview setting is on. */
+  preview: boolean;
+  /** Which tile the enlarged view moves on to, and where a tile's picture is (TileMirror). */
+  previewNext: (shown: string) => string;
+  previewImg: (eventId: string) => HTMLImageElement | null | undefined;
   /** Pointer props for the corner handle that moves the tile's left or right
    *  edge (sx -1 or 1) and its top or bottom edge (sy -1 or 1); no handles
    *  without it. */
@@ -369,7 +395,7 @@ interface SequenceTileProps {
   onTap: (at: number) => void;
 }
 
-function SequenceTile({ event, offsetMs, isAnchor, urls, editing, resizeHandle, monitorName, isPlaying, run, probe, progressStepMs, onProbe, profileId, onTap }: SequenceTileProps) {
+function SequenceTile({ event, offsetMs, isAnchor, urls, fullUrls, aspectRatio, preview, previewNext, previewImg, editing, resizeHandle, monitorName, isPlaying, run, probe, progressStepMs, onProbe, profileId, onTap }: SequenceTileProps) {
   const { t } = useTranslation();
   const flash = useReturnFlash(event.Id);
   // Keys off: every tile has one of these, and arrows are window-wide.
@@ -390,6 +416,20 @@ function SequenceTile({ event, offsetMs, isAnchor, urls, editing, resizeHandle, 
         {/* The blinking triangle marks a playing tile, or the tile the user
             just came back from while playback is held. */}
         {(isPlaying || flash) && <ReturnFlashArrow className="top-1" />}
+        {/* Hover or long press enlarges the tile (TilePreview). Off with the
+            pencil, where a press pans. */}
+        <HoverPreview
+          aspectRatio={aspectRatio}
+          disabled={editing || !preview}
+          testId="event-context-sequence-preview"
+          renderPreview={() => (
+            <TilePreview
+              playing={isPlaying}
+              mirror={<TileMirror tileId={event.Id} next={previewNext} imgOf={previewImg} />}
+              still={<EventThumbnail urls={fullUrls} cacheKey={`${event.Id}-full`} alt={event.Name} className="h-full w-full bg-black" objectFit="contain" />}
+            />
+          )}
+        >
         <div className={cn('h-full w-full transition-opacity', !isPlaying && 'opacity-60')}>
           <div ref={zoomInnerRef} data-testid={`event-context-sequence-zoom-${event.Id}`}>
           {isPlaying ? (
@@ -403,6 +443,7 @@ function SequenceTile({ event, offsetMs, isAnchor, urls, editing, resizeHandle, 
           )}
           </div>
         </div>
+        </HoverPreview>
         <span
           className={cn(
             'absolute top-0.5 rounded-sm px-1 text-[10px]',

@@ -228,6 +228,8 @@ Events that overlap in time play together, each starting at the moment its event
 
 Tapping a tile continues the replay from that tile: it starts playing at once and the tiles after it follow, while the ones before it are skipped. **Restart** starts again from the first tile. Double tapping a tile opens that event. Going back from it returns to the replay with playback paused, and the triangle blinks on the tile you opened.
 
+To see a tile bigger without changing the layout, hover over it on a computer, or press and hold it on a phone. On a playing tile, the enlarged view shows the same frame the tile is showing and follows the replay: when that tile finishes, it moves on to the next tile that starts playing. On a tile that isn't playing, it shows the event's picture at full size. On a phone, tap anywhere to close it. This is off while the pencil is on.
+
 When a busy window holds more events than the list can show, the list keeps an equal number before and after your event, the closest on each side.
 
 The window and camera choice you last picked is remembered per profile and used the next time you open the panel.

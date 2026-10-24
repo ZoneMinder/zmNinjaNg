@@ -692,7 +692,8 @@
         "playback_speed": "Velocità di riproduzione",
         "playback_speed_desc": "Velocità delle anteprime evento al passaggio o con pressione prolungata.",
         "live_activity": "Riquadri attività live",
-        "event_context": "Eventi vicini"
+        "event_context": "Eventi vicini",
+        "replay": "Riproduci"
       }
     },
     "monitors_per_page": "Monitor per pagina",

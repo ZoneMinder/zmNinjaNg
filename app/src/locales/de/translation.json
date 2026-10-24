@@ -692,7 +692,8 @@
         "playback_speed": "Geschwindigkeit",
         "playback_speed_desc": "Tempo der Ereignis-Vorschau bei Hover/Druck.",
         "live_activity": "Live-Aktivität-Kacheln",
-        "event_context": "Ereignisse in der Nähe"
+        "event_context": "Ereignisse in der Nähe",
+        "replay": "Wiedergabe"
       }
     },
     "monitors_per_page": "Monitore pro Seite",

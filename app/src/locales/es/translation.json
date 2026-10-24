@@ -692,7 +692,8 @@
         "playback_speed": "Velocidad",
         "playback_speed_desc": "Velocidad de previsualización de eventos.",
         "live_activity": "Mosaicos de Actividad en vivo",
-        "event_context": "Eventos cercanos"
+        "event_context": "Eventos cercanos",
+        "replay": "Reproducir"
       }
     },
     "monitors_per_page": "Monitores por página",
