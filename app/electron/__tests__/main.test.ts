@@ -403,6 +403,17 @@ describe('single instance', () => {
     expect(win.focus).toHaveBeenCalled();
   });
 
+  // macOS keeps the app running after its last window closes, so the running
+  // instance may have no window to focus.
+  it('opens a window when a second instance starts and none is open', () => {
+    const windowsBefore = browserWindowInstances.length;
+    fakeElectron.BrowserWindow.getAllWindows.mockReturnValueOnce([]);
+
+    appOnHandlers['second-instance']();
+
+    expect(browserWindowInstances.length).toBe(windowsBefore + 1);
+  });
+
   // Last in the file: it loads main.cjs a second time, re-registering handlers.
   it('quits without opening a window when another instance holds the lock', async () => {
     mockRequestSingleInstanceLock.mockReturnValueOnce(false);

@@ -249,8 +249,12 @@ const hasInstanceLock = app.requestSingleInstanceLock();
 if (!hasInstanceLock) app.quit();
 
 app.on('second-instance', () => {
+  // macOS keeps the app running with no window after the last one closes.
   const [win] = BrowserWindow.getAllWindows();
-  if (!win) return;
+  if (!win) {
+    createWindow();
+    return;
+  }
   if (win.isMinimized()) win.restore();
   win.focus();
 });
