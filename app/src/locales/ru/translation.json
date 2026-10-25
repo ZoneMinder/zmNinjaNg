@@ -708,7 +708,8 @@
         "playback_speed": "Скорость воспроизведения",
         "playback_speed_desc": "Скорость предпросмотра событий при наведении/долгом нажатии.",
         "live_activity": "Плитки Live Activity",
-        "event_context": "События рядом"
+        "event_context": "События рядом",
+        "replay": "Воспроизвести"
       }
     },
     "monitors_per_page": "Мониторов на странице",

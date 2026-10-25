@@ -692,7 +692,8 @@
         "playback_speed": "سرعت پخش",
         "playback_speed_desc": "سرعت برای پیش‌نمایش هاور/فشار طولانی رویداد.",
         "live_activity": "کاشی‌های فعالیت زنده",
-        "event_context": "رویدادهای نزدیک"
+        "event_context": "رویدادهای نزدیک",
+        "replay": "بازپخش"
       }
     },
     "monitors_per_page": "مانیتور در هر صفحه",

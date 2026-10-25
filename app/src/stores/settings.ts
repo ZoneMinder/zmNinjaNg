@@ -70,6 +70,8 @@ export interface HoverPreviewSettings {
   liveActivity: boolean;
   /** Rows in the "around this event" panel (refs #494). */
   eventContext: boolean;
+  /** Tiles in the panel's Replay grid; mirrors the tile's own picture. */
+  replay: boolean;
 }
 
 export const DEFAULT_HOVER_PREVIEW: HoverPreviewSettings = {
@@ -86,6 +88,7 @@ export const DEFAULT_HOVER_PREVIEW: HoverPreviewSettings = {
   // what is on screen. Worth having on a wall of small tiles, not by default.
   liveActivity: false,
   eventContext: true,
+  replay: true,
 };
 
 /** ZMS rate parameter (percentage). 100 = 1x real time. */
@@ -687,7 +690,7 @@ export function mergeProfileSettings(raw: Partial<ProfileSettings> | undefined):
  * number, so a change added without a bump never reaches anyone who already
  * ran the app.
  */
-export const SETTINGS_VERSION = 12;
+export const SETTINGS_VERSION = 13;
 
 /**
  * Migrate persisted settings:

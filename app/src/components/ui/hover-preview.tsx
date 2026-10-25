@@ -107,6 +107,9 @@ export interface HoverPreviewProps {
   testId?: string;
   /** Extra className applied to the outer trigger wrapper. */
   className?: string;
+  /** No hover or long press opens it. A prop rather than unwrapping, so the
+   *  children stay mounted when it toggles. */
+  disabled?: boolean;
 }
 
 export function HoverPreview({
@@ -116,6 +119,7 @@ export function HoverPreview({
   hoverDelayMs = UI_INTERACTIONS.hoverDelayMs,
   testId,
   className = 'w-full h-full',
+  disabled = false,
 }: HoverPreviewProps) {
   const anchorRef = useRef<HTMLDivElement | null>(null);
   const timerRef = useRef<number | null>(null);
@@ -162,7 +166,7 @@ export function HoverPreview({
   };
 
   const handleEnter = () => {
-    if (!Platform.isDesktopOrWeb) return;
+    if (!Platform.isDesktopOrWeb || disabled) return;
     clearTimer();
     timerRef.current = window.setTimeout(openFromAnchor, hoverDelayMs);
   };
@@ -173,7 +177,7 @@ export function HoverPreview({
   };
 
   const handlePointerDown = (e: RPointerEvent<HTMLDivElement>) => {
-    if (Platform.isDesktopOrWeb) return;
+    if (Platform.isDesktopOrWeb || disabled) return;
     if (e.pointerType !== 'touch' && e.pointerType !== 'pen') return;
     clearTimer();
     pressStartRef.current = { x: e.clientX, y: e.clientY, id: e.pointerId };
