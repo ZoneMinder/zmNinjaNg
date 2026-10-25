@@ -26,7 +26,7 @@
 - No new dependency on any platform.
 - P2: every unit test is proven red (`node scripts/proven-red.mjs <base> <head>`). Native parser tests are proven red by running them before the parser exists.
 - Commit per task, conventional commits, `refs #156` in the body. Closing keywords only after the maintainer confirms.
-- Device e2e is manual; agents never run it. Task 9 lists what the maintainer checks.
+- Device e2e is manual; agents never run it. Task 10 lists what the maintainer checks.
 
 ## Review Focus
 
@@ -349,7 +349,56 @@ Any `Log.*` near the URL or the exception carries `// log-safe:` and logs only t
 
 ---
 
-### Task 8: Docs and playbook facts
+### Task 8: Streaming by default where the host lifts the limit
+
+**Files:**
+- Modify: `app/src/lib/monitor/view-mode-recommendation.ts`
+- Modify: `app/src/services/profile-bootstrap.ts:284-285`, `app/src/components/settings/LiveStreamingSection.tsx:34-36,72`
+- Modify: `app/src/locales/{de,en,es,fa,fr,it,ru,zh}/translation.json` (new key `settings.view_mode_reason_no_host_limit`, beside the three existing reason keys)
+- Modify: `docs/user-guide/settings.md` (the "A new profile picks its Streaming Mode" list gains the host case; done here, not in Task 9, so the behavior and its doc land together)
+- Test: `app/src/lib/monitor/__tests__/view-mode-recommendation.test.ts` (extend the existing file if there is one, else create)
+
+**Interfaces:**
+- Produces:
+  ```ts
+  export type ViewModeReason = 'few-monitors' | 'multi-port' | 'no-host-limit' | 'many-monitors';
+  export function recommendViewMode(
+    monitorCount: number | null,
+    minStreamingPort: number | undefined,
+    hostLiftsLimit: boolean,          // Platform.isNative || Platform.isElectron at both call sites
+  ): ViewModeRecommendation;
+  ```
+  Order of checks: few monitors, multi-port, host lifts limit, else many monitors. English copy for the new reason: "Recommended: Streaming. This app reads live feeds natively, so the limit on simultaneous live feeds does not apply." Other locales translate it; keep each under the 320px rule the existing reason lines meet.
+
+- [ ] **Step 1: Write the failing tests**
+
+```ts
+it('recommends streaming with reason no-host-limit when the host lifts the limit and the count is large', () => {
+  expect(recommendViewMode(40, undefined, true)).toEqual({ mode: 'streaming', reason: 'no-host-limit' });
+});
+it('still recommends snapshot on a plain web host past the limit', () => {
+  expect(recommendViewMode(40, undefined, false)).toEqual({ mode: 'snapshot', reason: 'many-monitors' });
+});
+it('multi-port wins over the host reason, few monitors wins over both', () => {
+  expect(recommendViewMode(40, 30000, true).reason).toBe('multi-port');
+  expect(recommendViewMode(3, undefined, true).reason).toBe('few-monitors');
+});
+it('an unknown count on a lifting host recommends streaming', () => {
+  expect(recommendViewMode(null, undefined, true).mode).toBe('streaming');
+});
+```
+
+- [ ] **Step 2: Run `npx vitest run src/lib/monitor`, expect FAIL (arity / reason type)**
+
+- [ ] **Step 3: Implement; pass `Platform.isNative || Platform.isElectron` from both call sites; add the reason key to the Settings hint map and all eight locales; update the settings.md list**
+
+- [ ] **Step 4: Run `npx vitest run src/lib/monitor src/components/settings src/locales src/pages/__tests__/Settings.test.tsx`, expect PASS**
+
+- [ ] **Step 5: Commit** `feat(settings): recommend Streaming where the app reads feeds natively`
+
+---
+
+### Task 9: Docs and playbook facts
 
 **Files:**
 - Modify: `docs/user-guide/settings.md` (the "Connection limits by platform" table and the note under it: Android and iOS rows read "Read natively by the app, not through the webview" / "No"; the note keeps only the web-browser case)
@@ -366,7 +415,7 @@ Any `Log.*` near the URL or the exception carries `// log-safe:` and logs only t
 
 ---
 
-### Task 9: Gates, device checklist, PR
+### Task 10: Gates, device checklist, PR
 
 - [ ] **Step 1: `npm run gates` from `app/`, all green; `node scripts/proven-red.mjs main HEAD` from the repo root, every changed test red by assertion**
 

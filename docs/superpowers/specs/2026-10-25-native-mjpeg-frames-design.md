@@ -42,10 +42,13 @@ Alternatives considered and dropped:
 - The web build (browser tab) and Electron. Electron already raises Chromium's
   per-host limit to 32; the web build stays at six.
 - Snapshot mode. It is one JPEG per request already and works today.
-- Changing `recommendViewMode` (the initial Streaming/Snapshot pick for a new
-  profile). With the limit gone on mobile it could mirror desktop and default to
-  Streaming, but that trades battery and bandwidth on a phone and more `zms`
-  processes on the server. Revisit after device numbers, as a separate change.
+- Removing the Streaming/Snapshot setting. The web build keeps the six-stream
+  limit, and Snapshot stays the low-bandwidth, low-CPU option everywhere. What
+  changes is the default: `recommendViewMode` learns whether the host lifts the
+  limit (iOS and Android through this transport, Electron through its raised
+  Chromium cap) and recommends Streaming there whatever the monitor count, with
+  its own reason line in Settings. Today it ignores the platform, so Electron
+  is told Snapshot past five cameras too.
 - Event playback (`ZmsEventPlayer`) and the hover preview. Both are one stream
   at a time.
 
