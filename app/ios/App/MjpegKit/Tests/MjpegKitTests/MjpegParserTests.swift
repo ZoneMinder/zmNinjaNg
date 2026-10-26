@@ -75,9 +75,12 @@ final class MjpegParserTests: XCTestCase {
     }
 
     func testOverlongHeaderBlockResyncsOnNextBoundary() {
-        let junk = String(repeating: "X-Junk: aaaaaaaaaaaaaaaa\n", count: 400) // ~10 KB, bare LF, no blank line
+        // ~10 KB of bare-LF header lines, no blank line. The first line is a decoy length:
+        // without the cap it would merge with the next part's headers and cut frame 1 to 5 bytes.
+        let junk = "Content-Length: 5\n" + String(repeating: "X-Junk: aaaaaaaaaaaaaaaa\n", count: 400)
         var data = Data("--\(boundary)\r\n\(junk)".utf8)
-        data.append(part(frame(1), headers: "Content-Length: \(frame(1).count)"))
+        data.append(part(frame(1), headers: "Content-Type: image/jpeg"))
+        data.append(Data("--\(boundary)\r\n".utf8)) // closes the length-less frame
         XCTAssertEqual(parse(data), [frame(1)])
         XCTAssertEqual(parse(data, chunk: 64), [frame(1)])
     }
