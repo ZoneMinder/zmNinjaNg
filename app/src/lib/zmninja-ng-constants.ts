@@ -102,6 +102,10 @@ export const ZM_INTEGRATION = {
   // stops answering would hold its last request open and never try again.
   snapshotInFlightCeilingMs: 30000,
 
+  // How long a native MJPEG stream may go without a new frame before the
+  // plugin treats it as stalled and the tile reconnects.
+  nativeFrameStallMs: 30000,
+
   // Grace delay before a scheduled CMD_QUIT fires. Lets React StrictMode's
   // dev double-mount cancel the quit instead of killing a stream the
   // surviving mount is still using. See lib/zm/zms-quit.ts.
