@@ -10,6 +10,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.After;
 import org.junit.Test;
 
@@ -26,16 +27,24 @@ public class FrameStoreTest {
         pool.shutdownNow();
     }
 
-    /** Parks a waiter on a second thread; returns once that thread is inside awaitNext's wait. */
+    /**
+     * Parks a waiter on a second thread and returns once that thread is inside
+     * awaitNext's timed wait (Thread state TIMED_WAITING), so callers can rely on it
+     * being parked. Fails after 2 s if the thread never gets there.
+     */
     private Future<byte[]> park(FrameStore store, String id, long deadlineMs) throws Exception {
-        CountDownLatch started = new CountDownLatch(1);
+        AtomicReference<Thread> waiter = new AtomicReference<>();
         Future<byte[]> f = pool.submit(() -> {
-            started.countDown();
+            waiter.set(Thread.currentThread());
             return store.awaitNext(id, deadlineMs);
         });
-        assertTrue(started.await(1, TimeUnit.SECONDS));
-        Thread.sleep(100); // let the thread reach the wait
-        return f;
+        long giveUp = System.nanoTime() + 2_000_000_000L;
+        while (true) {
+            Thread t = waiter.get();
+            if (t != null && t.getState() == Thread.State.TIMED_WAITING) return f;
+            assertTrue("waiter never parked", System.nanoTime() < giveUp);
+            Thread.sleep(1);
+        }
     }
 
     @Test
