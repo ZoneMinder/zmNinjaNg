@@ -211,8 +211,8 @@ How a live MJPEG feed reaches the screen differs by platform, and that decides w
 | Platform | How live feeds load | ~6 simultaneous live streams limit? |
 |----------|---------------------|-------------------------------------|
 | Web browser | Loaded directly from ZoneMinder by the browser | Yes, about 6 per server |
-| Android | Read natively by the app, not through the webview | No |
-| iOS / iPadOS | Read natively by the app, not through the webview | No |
+| Android | Streaming mode: read natively by the app, not through the webview. Snapshot mode: loaded by the webview | No in Streaming mode, yes in Snapshot mode |
+| iOS / iPadOS | Streaming mode: read natively by the app, not through the webview. Snapshot mode: loaded by the webview | No in Streaming mode, yes in Snapshot mode |
 | Desktop (Windows, macOS, Linux) | Loaded by the app's browser engine, with the per-server limit raised | Raised to 32 by default; **Max connections per host (desktop)** changes it |
 
 :::{note}

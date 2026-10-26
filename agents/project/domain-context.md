@@ -143,8 +143,9 @@ matching reality, fixing it is a protocol change like any rule edit.
   code over `zmframe://`, so the webview opens no ZM connection; Snapshot mode
   there, and the web build, still load through the webview and keep the cap.
   Electron raises it (default 32, setting 6-256). Measured identically in
-  WKWebView and Chromium: of 74 `<img>` pointed at one host, exactly 6 reached the server and the other 68 sat in the
-  queue with neither a `load` nor an `error`. Snapshot mode is not immune,
+  WKWebView and Chromium: of 74 `<img>` pointed at one host, exactly 6 reached
+  the server and the other 68 sat in the queue with neither a `load` nor an
+  `error`. Snapshot mode is not immune,
   because reassigning a pending `<img src>` cancels that load silently - no
   `error` fires - so a refresh tick that reruns every tile cancels and requeues
   work that was about to finish. With 74 tiles, a 3s interval and a 1.2s server,
