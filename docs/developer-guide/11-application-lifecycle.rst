@@ -93,7 +93,8 @@ self-signed profile), and every bucket write copies ``DEFAULT_SETTINGS`` in, so
 ``viewModeChosen`` alongside ``viewMode``; from then on the mode belongs to the
 user, so a later bootstrap leaves it alone even if the server has grown since. The step honors the profile's
 ``forceDisableMultiPort`` override the same way Settings does, and when the
-monitor count cannot be fetched and multi-port is off it writes nothing, so the
+monitor count cannot be fetched, multi-port is off and the host does not lift
+the limit it writes nothing, so the
 merge default applies until the next bootstrap can decide. The rule itself is
 ``recommendViewMode`` (``lib/monitor/view-mode-recommendation.ts``): five or
 fewer monitors, multi-port streaming at any count, or a host that lifts the

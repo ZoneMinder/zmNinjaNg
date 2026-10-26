@@ -98,5 +98,6 @@ describe('bootstrapViewMode', () => {
     vi.mocked(getMonitors).mockRejectedValue(new Error('Network error'));
     await bootstrapViewMode(profile, null);
     expect(storedViewMode()).toBe('streaming');
+    expect(useSettingsStore.getState().profileSettings[id]?.viewModeChosen).toBe(true);
   });
 });
