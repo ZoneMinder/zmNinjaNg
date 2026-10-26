@@ -75,9 +75,11 @@ interface UseMonitorStreamReturn {
    * Call from the `<img onError>` handler. Schedules a backoff reconnect that
    * releases the errored connkey (CMD_QUIT) before minting a new one. Caps at
    * mjpegReconnectMaxAttempts unless insomnia is on; releases the connkey when
-   * it gives up.
+   * it gives up. Returns false when the error is ignored because it belongs to
+   * a native stream that has already been replaced, so the caller leaves the
+   * element alone instead of hiding or unmounting it.
    */
-  reportStreamError: () => void;
+  reportStreamError: () => boolean;
   /**
    * Call from the `<img onLoad>` handler. Resets the backoff counter so a later
    * independent drop starts fresh. A stream that never loads never resets, so
@@ -410,9 +412,10 @@ export function useMonitorStream({
   // deliberately holding and quit the connkey it just minted. A genuine stall
   // 404s against a streamId that is still registered, so it still gets
   // through, and so does an open that never produced a stream (imageSrc '').
-  const reportStreamError = () => {
-    if (frameMode && imageSrc !== '' && zmFrameStreamId(imageSrc) !== frames.streamId) return;
+  const reportStreamError = (): boolean => {
+    if (frameMode && imageSrc !== '' && zmFrameStreamId(imageSrc) !== frames.streamId) return false;
     scheduleReconnect();
+    return true;
   };
 
   const regenerateConnection = () => {
