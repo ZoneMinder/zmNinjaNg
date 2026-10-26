@@ -64,7 +64,8 @@ interface UseMonitorStreamReturn {
   streamUrl: string;
   /**
    * The value to bind to the `<img src>`. Equal to streamUrl once a connkey
-   * has been minted; empty string before that.
+   * has been minted, or, where native holds the stream, the zmframe URL of the
+   * frame to fetch next; empty string before either of those exists.
    */
   imageSrc: string;
   imgRef: React.RefObject<HTMLImageElement | null>;
@@ -403,6 +404,17 @@ export function useMonitorStream({
     }
   };
 
+  // Closing a native stream completes the frame request the element already
+  // parked, with a 404, so a planned restart fires `error` for a stream that
+  // is already gone. Acting on it would withdraw the frame the restart is
+  // deliberately holding and quit the connkey it just minted. A genuine stall
+  // 404s against a streamId that is still registered, so it still gets
+  // through, and so does an open that never produced a stream (imageSrc '').
+  const reportStreamError = () => {
+    if (frameMode && imageSrc !== '' && zmFrameStreamId(imageSrc) !== frames.streamId) return;
+    scheduleReconnect();
+  };
+
   const regenerateConnection = () => {
     log.monitor(`Manually regenerating connection for monitor ${monitorId}`, LogLevel.WARN);
     reconnectAttemptRef.current = 0;
@@ -481,7 +493,7 @@ export function useMonitorStream({
     loadedSrc !== '' &&
     (holdFrameForRestart ||
       (frameMode
-        ? zmFrameStreamId(loadedSrc) === frames.streamId
+        ? frames.streamId !== null && zmFrameStreamId(loadedSrc) === frames.streamId
         : effectiveViewMode === 'snapshot' || loadedSrc === imageSrc));
 
   return {
@@ -489,7 +501,7 @@ export function useMonitorStream({
     imageSrc,
     imgRef,
     regenerateConnection,
-    reportStreamError: scheduleReconnect,
+    reportStreamError,
     reportStreamLoad,
     hasFrame,
   };

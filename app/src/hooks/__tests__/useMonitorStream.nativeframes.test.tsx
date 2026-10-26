@@ -301,6 +301,38 @@ describe('useMonitorStream: native frame transport', () => {
     expect(view.result.current.hasFrame).toBe(true);
   });
 
+  // Closing a native stream completes the frame request the element already
+  // parked, with a 404, so the <img> fires `error` in the middle of a planned
+  // restart. That error belongs to the stream that just went away: acting on
+  // it would blink the tile and quit the connkey the restart had just minted.
+  it('ignores a stream error for the stream a planned restart just closed', async () => {
+    vi.useFakeTimers();
+    const second = deferred<{ streamId: string }>();
+    plugin.open.mockResolvedValueOnce({ streamId: 's1' }).mockReturnValueOnce(second.promise);
+    const view = renderHook(
+      ({ scale }: { scale: number }) =>
+        useMonitorStream({ monitorId: '1', streamOptions: { scale } }),
+      { initialProps: { scale: 50 } },
+    );
+    await vi.waitFor(() => expect(view.result.current.imageSrc).toBe('zmframe://frames/s1/0'));
+    reportLoadOf(view, 'zmframe://frames/s1/0');
+    const held = view.result.current.imageSrc;
+
+    view.rerender({ scale: 100 });
+    await vi.waitFor(() => expect(plugin.close).toHaveBeenCalledWith({ streamId: 's1' }));
+    const keysBefore = regenerateConnKey.mock.calls.length;
+
+    act(() => view.result.current.reportStreamError());
+
+    expect(view.result.current.hasFrame).toBe(true);
+    expect(view.result.current.imageSrc).toBe(held);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(ZM_INTEGRATION.mjpegEarlyRetryDelayMs + 100);
+    });
+    expect(regenerateConnKey.mock.calls.length).toBe(keysBefore);
+    expect(view.result.current.hasFrame).toBe(true);
+  });
+
   // The end of the hold is where #352 takes over from #478: loadedSrc still
   // names s1, so nothing but the stream match can tell that the picture on
   // screen belongs to a stream native has already closed.
