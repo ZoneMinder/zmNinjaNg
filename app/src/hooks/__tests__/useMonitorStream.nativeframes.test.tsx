@@ -107,6 +107,12 @@ describe('useMonitorStream: native frame transport', () => {
   let nextConnKey = 100;
   let regenerateConnKey = vi.fn(() => (nextConnKey += 1));
 
+  function deferred<T>() {
+    let resolve!: (v: T) => void;
+    const promise = new Promise<T>((r) => (resolve = r));
+    return { promise, resolve };
+  }
+
   beforeEach(() => {
     platform.isNative = true;
     nextConnKey = 100;
@@ -163,7 +169,7 @@ describe('useMonitorStream: native frame transport', () => {
 
   /** Stands in for the `<img>` reporting which URL it actually loaded. */
   function reportLoadOf(
-    view: Awaited<ReturnType<typeof renderNative>>,
+    view: { result: { current: ReturnType<typeof useMonitorStream> } },
     currentSrc: string,
   ) {
     // A real element: the stream lifecycle teardown calls removeAttribute on
@@ -258,6 +264,92 @@ describe('useMonitorStream: native frame transport', () => {
       () => expect(regenerateConnKey.mock.calls.length).toBeGreaterThan(keysBefore),
       { timeout: ZM_INTEGRATION.mjpegEarlyRetryDelayMs + 2000 },
     );
+  });
+
+  // Zooming in re-requests the stream at full size. The frame on screen came
+  // off a healthy stream and is still worth looking at, so the tile holds it
+  // rather than blinking to the placeholder once per zoom (refs #478). The
+  // <img> keeps its src throughout, so nothing is re-requested of the stream
+  // native has already closed.
+  it('holds the painted frame across a scale change until the new stream loads', async () => {
+    const second = deferred<{ streamId: string }>();
+    plugin.open.mockResolvedValueOnce({ streamId: 's1' }).mockReturnValueOnce(second.promise);
+    const view = renderHook(
+      ({ scale }: { scale: number }) =>
+        useMonitorStream({ monitorId: '1', streamOptions: { scale } }),
+      { initialProps: { scale: 50 } },
+    );
+    await waitFor(() => expect(view.result.current.imageSrc).toBe('zmframe://frames/s1/0'));
+    reportLoadOf(view, 'zmframe://frames/s1/0');
+    const held = view.result.current.imageSrc;
+
+    view.rerender({ scale: 100 });
+    await waitFor(() => expect(plugin.close).toHaveBeenCalledWith({ streamId: 's1' }));
+
+    expect(view.result.current.imageSrc).toBe(held);
+    expect(view.result.current.hasFrame).toBe(true);
+
+    // The replacement opens, so the element starts fetching its first frame.
+    // The old picture stays up for that too - the same courtesy the web path
+    // grants while the new src decodes.
+    await act(async () => second.resolve({ streamId: 's2' }));
+    await waitFor(() => expect(view.result.current.imageSrc).toBe('zmframe://frames/s2/0'));
+    expect(view.result.current.hasFrame).toBe(true);
+
+    reportLoadOf(view, 'zmframe://frames/s2/0');
+
+    expect(view.result.current.hasFrame).toBe(true);
+  });
+
+  // The end of the hold is where #352 takes over from #478: loadedSrc still
+  // names s1, so nothing but the stream match can tell that the picture on
+  // screen belongs to a stream native has already closed.
+  it('does not restore a frame off the old stream when the hold expires', async () => {
+    vi.useFakeTimers();
+    const second = deferred<{ streamId: string }>();
+    plugin.open.mockResolvedValueOnce({ streamId: 's1' }).mockReturnValueOnce(second.promise);
+    const view = renderHook(
+      ({ scale }: { scale: number }) =>
+        useMonitorStream({ monitorId: '1', streamOptions: { scale } }),
+      { initialProps: { scale: 50 } },
+    );
+    await vi.waitFor(() => expect(view.result.current.imageSrc).toBe('zmframe://frames/s1/0'));
+    reportLoadOf(view, 'zmframe://frames/s1/0');
+
+    view.rerender({ scale: 100 });
+    await vi.waitFor(() => expect(plugin.close).toHaveBeenCalledWith({ streamId: 's1' }));
+    await act(async () => second.resolve({ streamId: 's2' }));
+    await vi.waitFor(() => expect(view.result.current.imageSrc).toBe('zmframe://frames/s2/0'));
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(ZM_INTEGRATION.plannedRestartHoldMs + 100);
+    });
+
+    expect(view.result.current.hasFrame).toBe(false);
+  });
+
+  // The hold is a courtesy, not a promise: a restart that produces nothing
+  // must stop borrowing the old picture.
+  it('gives up the held frame when the replacement stream never opens', async () => {
+    vi.useFakeTimers();
+    plugin.open.mockResolvedValueOnce({ streamId: 's1' }).mockReturnValueOnce(new Promise(() => {}));
+    const view = renderHook(
+      ({ scale }: { scale: number }) =>
+        useMonitorStream({ monitorId: '1', streamOptions: { scale } }),
+      { initialProps: { scale: 50 } },
+    );
+    await vi.waitFor(() => expect(view.result.current.imageSrc).toBe('zmframe://frames/s1/0'));
+    reportLoadOf(view, 'zmframe://frames/s1/0');
+
+    view.rerender({ scale: 100 });
+    await vi.waitFor(() => expect(plugin.close).toHaveBeenCalledWith({ streamId: 's1' }));
+    expect(view.result.current.hasFrame).toBe(true);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(ZM_INTEGRATION.plannedRestartHoldMs + 100);
+    });
+
+    expect(view.result.current.hasFrame).toBe(false);
   });
 
   it('recovers through the reconnect backoff when the native open fails', async () => {
