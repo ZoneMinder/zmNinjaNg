@@ -1,5 +1,6 @@
 import UIKit
 import Capacitor
+import WebKit
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -73,6 +74,15 @@ class ViewController: CAPBridgeViewController {
         bridge?.registerPluginInstance(SafeAreaPlugin())
         bridge?.registerPluginInstance(LlamaPlugin())
         bridge?.registerPluginInstance(AppleIntelligencePlugin())
+        bridge?.registerPluginInstance(ZmStreamPlugin())
+    }
+
+    // A WKWebView only takes scheme handlers from the configuration it is built
+    // with, so zmframe:// has to be registered here and not from the plugin.
+    override func webViewConfiguration(for instanceConfiguration: InstanceConfiguration) -> WKWebViewConfiguration {
+        let configuration = super.webViewConfiguration(for: instanceConfiguration)
+        configuration.setURLSchemeHandler(ZmFrameSchemeHandler(), forURLScheme: ZmFrameSchemeHandler.scheme)
+        return configuration
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {

@@ -34,6 +34,9 @@
 		DC55AA0100000000000F0001 /* SSLTrustPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC55AA0100000000000F0002 /* SSLTrustPlugin.swift */; };
 		DC55AA0100000000000F0003 /* SafeAreaPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC55AA0100000000000F0004 /* SafeAreaPlugin.swift */; };
 		DC55AA0100000000000F0005 /* X509CertInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC55AA0100000000000F0006 /* X509CertInfo.swift */; };
+		DC56AA0100000000000F0001 /* MjpegReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC56AA0100000000000F0002 /* MjpegReader.swift */; };
+		DC56AA0100000000000F0003 /* ZmFrameSchemeHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC56AA0100000000000F0004 /* ZmFrameSchemeHandler.swift */; };
+		DC56AA0100000000000F0005 /* ZmStreamPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC56AA0100000000000F0006 /* ZmStreamPlugin.swift */; };
 		EB48616D03B3D36B2C775C19 /* LlamaBridge.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 73E54F1D458DE00BFE506404 /* LlamaBridge.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		FABFBAA8DC68BA28166F60A6 /* LlamaEngineBridging.swift in Sources */ = {isa = PBXBuildFile; fileRef = F157104D33B31424FDFCB439 /* LlamaEngineBridging.swift */; };
 /* End PBXBuildFile section */
@@ -120,6 +123,9 @@
 		DC55AA0100000000000F0002 /* SSLTrustPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSLTrustPlugin.swift; sourceTree = "<group>"; };
 		DC55AA0100000000000F0004 /* SafeAreaPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeAreaPlugin.swift; sourceTree = "<group>"; };
 		DC55AA0100000000000F0006 /* X509CertInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = X509CertInfo.swift; sourceTree = "<group>"; };
+		DC56AA0100000000000F0002 /* MjpegReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MjpegReader.swift; sourceTree = "<group>"; };
+		DC56AA0100000000000F0004 /* ZmFrameSchemeHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZmFrameSchemeHandler.swift; sourceTree = "<group>"; };
+		DC56AA0100000000000F0006 /* ZmStreamPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZmStreamPlugin.swift; sourceTree = "<group>"; };
 		DCEC04202EE7528400FEFD4D /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
 		DD9E269869C2E60B8123C68F /* LlamaEngine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LlamaEngine.swift; sourceTree = "<group>"; };
 		F157104D33B31424FDFCB439 /* LlamaEngineBridging.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LlamaEngineBridging.swift; sourceTree = "<group>"; };
@@ -213,6 +219,7 @@
 				DC12AA0200000000000F0002 /* AppleIntelligencePlugin.swift */,
 				DC55AA0100000000000F0004 /* SafeAreaPlugin.swift */,
 				DC55AA0100000000000F0006 /* X509CertInfo.swift */,
+				DC56AA0100000000000F0010 /* ZmStream */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
 				504EC30E1FED79650016851F /* Assets.xcassets */,
 				504EC3101FED79650016851F /* LaunchScreen.storyboard */,
@@ -255,6 +262,16 @@
 				342B76BE0A8DFBD3577B40B4 /* Foundation.framework */,
 			);
 			name = iOS;
+			sourceTree = "<group>";
+		};
+		DC56AA0100000000000F0010 /* ZmStream */ = {
+			isa = PBXGroup;
+			children = (
+				DC56AA0100000000000F0002 /* MjpegReader.swift */,
+				DC56AA0100000000000F0004 /* ZmFrameSchemeHandler.swift */,
+				DC56AA0100000000000F0006 /* ZmStreamPlugin.swift */,
+			);
+			path = ZmStream;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -498,6 +515,9 @@
 				DC12AA0200000000000F0001 /* AppleIntelligencePlugin.swift in Sources */,
 				DC55AA0100000000000F0003 /* SafeAreaPlugin.swift in Sources */,
 				DC55AA0100000000000F0005 /* X509CertInfo.swift in Sources */,
+				DC56AA0100000000000F0001 /* MjpegReader.swift in Sources */,
+				DC56AA0100000000000F0003 /* ZmFrameSchemeHandler.swift in Sources */,
+				DC56AA0100000000000F0005 /* ZmStreamPlugin.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
