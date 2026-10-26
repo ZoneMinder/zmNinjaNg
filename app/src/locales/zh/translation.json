@@ -588,6 +588,7 @@
     "recommended": "推荐",
     "view_mode_reason_few_monitors": "推荐：流式传输。此服务器有 {{monitorCount}} 个监视器，数量足够少，可同时保持所有实时画面。",
     "view_mode_reason_multi_port": "推荐：流式传输。此服务器启用了多端口流式传输，因此不受同时实时画面数量的限制。",
+    "view_mode_reason_no_host_limit": "推荐：流式传输。此应用以原生方式读取实时画面，因此不受同时实时画面数量的限制。",
     "view_mode_reason_many_monitors": "推荐：快照。{{monitorCount}} 个监视器且未启用多端口流式传输，超过了服务器同时保持的约六路实时画面。",
     "streaming_method": "流媒体方式",
     "streaming_method_desc": "选择监控的流媒体协议",

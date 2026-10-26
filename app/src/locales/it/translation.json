@@ -588,6 +588,7 @@
     "recommended": "Consigliato",
     "view_mode_reason_few_monitors": "Consigliato: Streaming. Questo server ha {{monitorCount}} monitor, abbastanza pochi da mantenere aperti contemporaneamente tutti i flussi live.",
     "view_mode_reason_multi_port": "Consigliato: Streaming. Questo server usa lo streaming multiporta, quindi il limite dei flussi live simultanei non si applica.",
+    "view_mode_reason_no_host_limit": "Consigliato: Streaming. Questa app legge i flussi live in modo nativo, quindi il limite dei flussi simultanei non si applica.",
     "view_mode_reason_many_monitors": "Consigliato: Istantanea. {{monitorCount}} monitor senza streaming multiporta superano i circa sei flussi live che un server mantiene aperti contemporaneamente.",
     "streaming_method": "Metodo di streaming",
     "streaming_method_desc": "Scegli il protocollo di streaming per i monitor",

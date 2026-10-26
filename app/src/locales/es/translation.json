@@ -588,6 +588,7 @@
     "recommended": "Recomendado",
     "view_mode_reason_few_monitors": "Recomendado: Streaming. Este servidor tiene {{monitorCount}} monitores, pocos suficientes para mantener abiertas todas las emisiones en vivo.",
     "view_mode_reason_multi_port": "Recomendado: Streaming. Este servidor usa streaming multipuerto, así que el límite de emisiones en vivo simultáneas no se aplica.",
+    "view_mode_reason_no_host_limit": "Recomendado: Streaming. Esta app lee las emisiones en vivo de forma nativa, así que el límite de emisiones simultáneas no se aplica.",
     "view_mode_reason_many_monitors": "Recomendado: Instantánea. {{monitorCount}} monitores sin streaming multipuerto superan las seis emisiones en vivo que un servidor mantiene abiertas a la vez.",
     "streaming_method": "Método de Transmisión",
     "streaming_method_desc": "Elegir protocolo de transmisión para monitores",

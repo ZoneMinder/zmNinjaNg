@@ -96,8 +96,11 @@ user, so a later bootstrap leaves it alone even if the server has grown since. T
 monitor count cannot be fetched and multi-port is off it writes nothing, so the
 merge default applies until the next bootstrap can decide. The rule itself is
 ``recommendViewMode`` (``lib/monitor/view-mode-recommendation.ts``): five or
-fewer monitors, or multi-port streaming at any count, means streaming; anything
-else means snapshot. Settings shows the same call's answer as a hint under the
+fewer monitors, multi-port streaming at any count, or a host that lifts the
+connection limit (``Platform.isNative || Platform.isElectron``, passed in as the
+third argument) means streaming; anything else means snapshot. When the host
+lifts the limit, bootstrap decides even if the monitor count could not be
+fetched. Settings shows the same call's answer as a hint under the
 Streaming Mode row, which is why the rule lives in a pure function rather than
 inside the bootstrap step.
 
