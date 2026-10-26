@@ -19,6 +19,7 @@
 		965852A61D22D4549CDBF54F /* LlamaKit in Frameworks */ = {isa = PBXBuildFile; productRef = DC11AA0200000000000F0011 /* LlamaKit */; };
 		A1942267085C1CCEEE2FE5D1 /* LlamaEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD9E269869C2E60B8123C68F /* LlamaEngine.swift */; };
 		A40D2CC61BD3521AA0A42DD5 /* LlamaBridgeInterface.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 48F2C718FA0568148344BD49 /* LlamaBridgeInterface.framework */; };
+		DC11AA0200000000000F0021 /* MjpegKit in Frameworks */ = {isa = PBXBuildFile; productRef = DC11AA0200000000000F0020 /* MjpegKit */; };
 		A88DB358838FDF0A668FC00E /* CapApp-SPM in Frameworks */ = {isa = PBXBuildFile; productRef = C711DAF4018D41AEA77227D3 /* CapApp-SPM */; };
 		A8CD5F29FD25ED7F87430BD7 /* LlamaBridgeInterface.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 48F2C718FA0568148344BD49 /* LlamaBridgeInterface.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		B937075629299B29F0C42BD9 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 342B76BE0A8DFBD3577B40B4 /* Foundation.framework */; };
@@ -140,6 +141,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A88DB358838FDF0A668FC00E /* CapApp-SPM in Frameworks */,
+				DC11AA0200000000000F0021 /* MjpegKit in Frameworks */,
 				A40D2CC61BD3521AA0A42DD5 /* LlamaBridgeInterface.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -318,6 +320,7 @@
 			name = App;
 			packageProductDependencies = (
 				C711DAF4018D41AEA77227D3 /* CapApp-SPM */,
+				DC11AA0200000000000F0020 /* MjpegKit */,
 			);
 			productName = App;
 			productReference = 504EC3041FED79650016851F /* App.app */;
@@ -390,6 +393,7 @@
 			packageReferences = (
 				0FD04928F6DE90341B42FEC5 /* XCLocalSwiftPackageReference "CapApp-SPM" */,
 				DC11AA0200000000000F0010 /* XCLocalSwiftPackageReference "LlamaKit" */,
+				DC11AA0200000000000F0022 /* XCLocalSwiftPackageReference "MjpegKit" */,
 			);
 			productRefGroup = 504EC3051FED79650016851F /* Products */;
 			projectDirPath = "";
@@ -954,6 +958,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = LlamaKit;
 		};
+		DC11AA0200000000000F0022 /* XCLocalSwiftPackageReference "MjpegKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = MjpegKit;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -966,6 +974,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = DC11AA0200000000000F0010 /* XCLocalSwiftPackageReference "LlamaKit" */;
 			productName = LlamaKit;
+		};
+		DC11AA0200000000000F0020 /* MjpegKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DC11AA0200000000000F0022 /* XCLocalSwiftPackageReference "MjpegKit" */;
+			productName = MjpegKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
