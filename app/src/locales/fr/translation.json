@@ -588,6 +588,7 @@
     "recommended": "Recommandé",
     "view_mode_reason_few_monitors": "Recommandé : Streaming. Ce serveur a {{monitorCount}} moniteurs, assez peu pour garder tous les flux en direct ouverts en même temps.",
     "view_mode_reason_multi_port": "Recommandé : Streaming. Ce serveur utilise le streaming multi-port, la limite de flux en direct simultanés ne s'applique donc pas.",
+    "view_mode_reason_no_host_limit": "Recommandé : Streaming. Cette appli lit les flux en direct nativement, la limite de flux simultanés ne s'applique donc pas.",
     "view_mode_reason_many_monitors": "Recommandé : Instantané. {{monitorCount}} moniteurs sans streaming multi-port dépassent la sixaine de flux en direct qu'un serveur garde ouverts à la fois.",
     "streaming_method": "Méthode de Diffusion",
     "streaming_method_desc": "Choisir le protocole de diffusion pour les moniteurs",
@@ -698,6 +699,9 @@
     },
     "monitors_per_page": "Moniteurs par page",
     "monitors_per_page_desc": "Utile avec beaucoup de moniteurs (plus de 30) quand le serveur n'a pas de diffusion multi-port. 0 désactive la pagination.",
+    "desktop_connections": "Connexions max. par hôte (bureau)",
+    "desktop_connections_desc": "Chaque vue en direct ouverte garde une connexion, et l'appli de bureau limite les connexions par serveur à ce nombre (de 6 à 256). Augmentez-le si une grande Mosaïque se fige. Prend effet après le redémarrage de l'appli.",
+    "desktop_connections_restart": "Enregistré. Redémarrez l'appli pour l'appliquer.",
     "search": {
       "placeholder": "Rechercher dans les réglages",
       "no_results": "Aucun réglage ne correspond"

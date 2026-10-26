@@ -588,6 +588,7 @@
     "recommended": "推荐",
     "view_mode_reason_few_monitors": "推荐：流式传输。此服务器有 {{monitorCount}} 个监视器，数量足够少，可同时保持所有实时画面。",
     "view_mode_reason_multi_port": "推荐：流式传输。此服务器启用了多端口流式传输，因此不受同时实时画面数量的限制。",
+    "view_mode_reason_no_host_limit": "推荐：流式传输。此应用以原生方式读取实时画面，因此不受同时实时画面数量的限制。",
     "view_mode_reason_many_monitors": "推荐：快照。{{monitorCount}} 个监视器且未启用多端口流式传输，超过了服务器同时保持的约六路实时画面。",
     "streaming_method": "流媒体方式",
     "streaming_method_desc": "选择监控的流媒体协议",
@@ -698,6 +699,9 @@
     },
     "monitors_per_page": "每页监视器数量",
     "monitors_per_page_desc": "监视器很多（超过 30 个）且服务器未启用多端口流时有用。填 0 关闭分页。",
+    "desktop_connections": "每主机最大连接数（桌面版）",
+    "desktop_connections_desc": "每个打开的实时画面占用一个连接，桌面版会把每台服务器的连接数限制为此值（6 到 256）。大型监控墙卡住时可调高。重启应用后生效。",
+    "desktop_connections_restart": "已保存。重启应用后生效。",
     "search": {
       "placeholder": "搜索设置",
       "no_results": "没有匹配的设置"

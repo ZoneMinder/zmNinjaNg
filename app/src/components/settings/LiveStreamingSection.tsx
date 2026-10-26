@@ -18,12 +18,14 @@ import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
 import { CollapsibleSection, SettingsCard, SettingsRow, RowLabel, SettingsSubCard } from './SettingsLayout';
 import { MonitorsPerPageRow } from './MonitorsPerPageRow';
+import { DesktopConnectionsRow } from './DesktopConnectionsRow';
 import { AdvancedStreamingFold } from './AdvancedStreamingFold';
 import { AllServersStreamingSection } from './AllServersStreamingSection';
 import { AllServersPerformanceSection } from './AllServersPerformanceSection';
 import { getMonitors } from '../../api/monitors';
 import { getSession } from '../../services/sessions';
 import { queryKeys } from '../../lib/query/query-keys';
+import { Platform } from '../../lib/platform';
 import { resolveMinStreamingPort } from '../../lib/monitor/multiport';
 import { recommendViewMode } from '../../lib/monitor/view-mode-recommendation';
 import type { Profile } from '../../api/types';
@@ -33,6 +35,7 @@ import type { ProfileSettings } from '../../stores/settings';
 const VIEW_MODE_REASON_KEYS = {
   'few-monitors': 'settings.view_mode_reason_few_monitors',
   'multi-port': 'settings.view_mode_reason_multi_port',
+  'no-host-limit': 'settings.view_mode_reason_no_host_limit',
   'many-monitors': 'settings.view_mode_reason_many_monitors',
 } as const;
 
@@ -72,6 +75,7 @@ export function LiveStreamingSection({
   const recommendation = recommendViewMode(
     monitorData ? monitorData.monitors.length : null,
     resolveMinStreamingPort(serverProfile?.minStreamingPort, serverSettings.forceDisableMultiPort),
+    Platform.isNative || Platform.isElectron,
   );
 
   return (
@@ -110,6 +114,8 @@ export function LiveStreamingSection({
               data-testid="settings-live-fullscreen-switch"
             />
           </SettingsRow>
+
+          <DesktopConnectionsRow />
 
           <SettingsSubCard name={serverProfile?.name ?? ''} testId="settings-server-subcard">
             {/* Streaming Mode, with its reason line: one card row, so search and

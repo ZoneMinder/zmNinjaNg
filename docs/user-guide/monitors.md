@@ -42,8 +42,10 @@ The live preview that opens when you hover a card on desktop
 
 ### Paging a long list
 
-A browser opens only six connections to one server, so on a long list most
-cards queue behind the six at the top and stay blank while they wait.
+In the web app a browser opens only six connections to one server, so on a long
+list most cards queue behind the six at the top and stay blank while they wait.
+On iOS and Android in Snapshot mode the same limit applies. Every live card
+also costs CPU, bandwidth, and a `zms` process on the server.
 **Monitors per page** in {doc}`settings` shows a fixed number of monitors at a
 time, with arrows in the toolbar to step through the rest; the cards on other
 pages are not built, so nothing competes with the ones in front of you. It

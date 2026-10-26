@@ -141,6 +141,7 @@ The Live Streaming section
 | **Monitors per page** | How many monitors the Montage and the Monitors screen show at once, with arrows to step through the pages (0 turns paging off, the default; presets 6/12/24). Useful with many monitors (over 30) when the server has no multi-port streaming. See [Paging a long list](montage.md#paging-a-long-list). |
 | **Skip offline monitors** | Monitors whose capture or function is set to None are left out of the grid, the montage, and live-view swiping. |
 | **Open live view in fullscreen** | Every monitor's detail page opens maximized. For one monitor only, use **Open in fullscreen** in that monitor's Settings dialog instead. |
+| **Max connections per host (desktop)** | Desktop app only. A browser engine opens about six connections per server, so a Montage of many live feeds stalls past the first few. This raises the cap (6 to 256, default 32) and applies after you restart the app. |
 
 The server rows under Live Streaming set how that server sends live video:
 
@@ -186,11 +187,12 @@ A new profile picks its Streaming Mode from the server it just connected to:
 
 - **5 or fewer monitors**: **Streaming**. A browser or app webview keeps only about 6 connections open to one server, so up to 5 live feeds fit with one connection left for the app's other requests.
 - **Multi-port streaming configured** (`ZM_MIN_STREAMING_PORT`): **Streaming**, whatever the monitor count. Each camera streams on its own port, so the per-server connection limit no longer applies.
-- **6 or more monitors and no multi-port streaming**: **Snapshot**. Streaming that many feeds would stall after the first few; snapshot mode fetches a still on an interval instead of holding a connection, so every tile keeps updating.
+- **The desktop, iOS and Android apps**: **Streaming**, whatever the monitor count. The desktop app raises the per-server connection limit, and the phone and tablet apps read live feeds natively instead of through the webview, so the limit does not apply.
+- **6 or more monitors, no multi-port streaming, and the web app**: **Snapshot**. Streaming that many feeds would stall after the first few; snapshot mode fetches a still on an interval instead of holding a connection, so every tile keeps updating.
 
 Snapshot mode needs a decoded image waiting on the server. For a monitor whose *Decoding* is *On demand*, ZoneMinder stops decoding about ten seconds after the last viewer, so the app asks such monitors for their stills in a way that counts as watching and keeps them decoding. That request is heavier on the server, and on a large montage of *On demand* cameras it makes tiles fill slowly. Monitors set to *Always*, *KeyFrames* or *KeyFrames + On demand* always have a recent picture decoded, so they get the light request; with the two keyframe settings the still advances one keyframe at a time. That request only exists in ZoneMinder 1.37.61 and later. On older servers a monitor set to *On demand* decoding freezes its snapshot tile on one frame: set it to *Decoding: Always*, or use Streaming mode for it.
 
-The count is the monitors the app shows for that server: deleted and hidden monitors are left out, disabled ones still count because they still get a tile. If the app cannot list the monitors on first connect, the mode stays at Snapshot until a later connect can decide. A profile with *Force disable multi-port streaming* on (Live Streaming, under Advanced streaming) is treated as if the server had none.
+The count is the monitors the app shows for that server: deleted and hidden monitors are left out, disabled ones still count because they still get a tile. If the web app cannot list the monitors on first connect, the mode stays at Snapshot until a later connect can decide; the desktop, iOS and Android apps choose Streaming even then. A profile with *Force disable multi-port streaming* on (Live Streaming, under Advanced streaming) is treated as if the server had none.
 
 The row shows which mode is recommended for the server and a line explaining why. The recommendation is only the starting value: changing the toggle overrides it for that profile, and no later connection changes it back.
 
@@ -209,12 +211,12 @@ How a live MJPEG feed reaches the screen differs by platform, and that decides w
 | Platform | How live feeds load | ~6 simultaneous live streams limit? |
 |----------|---------------------|-------------------------------------|
 | Web browser | Loaded directly from ZoneMinder by the browser | Yes, about 6 per server |
-| Android | Loaded directly through the app WebView | Yes, about 6 per server |
-| iOS / iPadOS | Loaded directly through the app WebView | Yes, about 6 per server |
-| Desktop (Windows, macOS, Linux) | Read natively by the app, not through the webview | No limit |
+| Android | Streaming mode: read natively by the app, not through the webview. Snapshot mode: loaded by the webview | No in Streaming mode, yes in Snapshot mode |
+| iOS / iPadOS | Streaming mode: read natively by the app, not through the webview. Snapshot mode: loaded by the webview | No in Streaming mode, yes in Snapshot mode |
+| Desktop (Windows, macOS, Linux) | Loaded by the app's browser engine, with the per-server limit raised | Raised to 32 by default; **Max connections per host (desktop)** changes it |
 
 :::{note}
-On **iOS, Android, and the web app**, a ZoneMinder server keeps only about 6 live streams open at a time, so a montage with more than ~6 live tiles stalls after the first few. To show more than 6 live feeds at once, either keep **Snapshot** mode (which fetches a still on an interval instead of holding a connection) or enable multi-port streaming on the server by setting `ZM_MIN_STREAMING_PORT`. That spreads each camera across a different port, so the limit no longer applies. On **desktop** the app reads feeds natively, so this limit never applies. See [Multi-Server](#multi-server).
+Only the **web app** is held to about 6 live streams per server. A montage with more than ~6 live tiles stalls after the first few there. To show more, either keep **Snapshot** mode (which fetches a still on an interval instead of holding a connection) or enable multi-port streaming on the server by setting `ZM_MIN_STREAMING_PORT`, which spreads each camera across a different port. On **iOS and Android** in Streaming mode the app holds each feed itself and hands the screen one picture at a time, so the browser limit does not apply (Snapshot mode still loads through the webview and is subject to it). On **desktop** the app raises the limit to 32 connections per server by default (see **Max connections per host (desktop)** above). See [Multi-Server](#multi-server).
 :::
 
 #### Where Streaming Mode applies

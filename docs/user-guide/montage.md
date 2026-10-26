@@ -124,9 +124,9 @@ Go2RTC streams in the montage are muted by default. Tap the speaker icon on a ti
 
 ## Performance
 
-On phones, tablets, and the web app, the webview holds only about 6 live connections open to one server, so a grid full of *Streaming* tiles stalls after the first few. Switch *Streaming Mode* to *Snapshot* in {doc}`settings` so each tile refreshes on an interval rather than holding an open stream. This trades motion smoothness for lower bandwidth and CPU. The desktop app reads each feed natively and is not subject to that limit, so it streams many cameras at once and defaults to *Streaming*. Go2RTC tiles continue to stream regardless and are unaffected by the setting.
+In the web app, the browser holds only about 6 live connections open to one server, so a grid full of *Streaming* tiles stalls after the first few. Switch *Streaming Mode* to *Snapshot* in {doc}`settings` so each tile refreshes on an interval rather than holding an open stream. This trades motion smoothness for lower bandwidth and CPU. The iOS and Android apps read each feed themselves, and the desktop app raises the limit (32 connections per server by default), so none of them hit it and all three default to *Streaming*. Go2RTC tiles continue to stream regardless and are unaffected by the setting.
 
-For a per-platform breakdown of where the ~6-stream limit applies, see {ref}`Connection limits by platform <connection-limits-by-platform>`. On **iOS, Android, or the web**, to keep more than about 6 live tiles streaming at once, enable multi-port streaming on the ZoneMinder server by setting `ZM_MIN_STREAMING_PORT`.
+For a per-platform breakdown of where the ~6-stream limit applies, see {ref}`Connection limits by platform <connection-limits-by-platform>`. In the **web app**, to keep more than about 6 live tiles streaming at once, enable multi-port streaming on the ZoneMinder server by setting `ZM_MIN_STREAMING_PORT`.
 
 :::{tip}
 If you have many cameras, use **Low bandwidth mode** in Settings to reduce data usage. You can also filter to show only the cameras you need, or use saved layouts to switch between different subsets.
@@ -135,9 +135,11 @@ If you have many cameras, use **Low bandwidth mode** in Settings to reduce data 
 ### Paging a long list
 
 With more than a handful of cameras the montage asks the server for every feed
-at once, and a browser only opens six connections to one server. The rest queue
-behind those six, so on a large montage most tiles sit empty and the ones you
-are looking at fill slowly.
+at once. Every live tile costs CPU on your device, bandwidth, and a `zms`
+process on the ZoneMinder server, and those add up on a large montage. In the web
+app there is a second cost: a browser only opens six connections to one
+server, so the rest queue behind those six and most tiles sit empty while the
+ones you are looking at fill slowly.
 
 **Monitors per page** in {doc}`settings` splits the grid into pages instead:
 set it to 12 and the montage shows twelve tiles with arrows in the toolbar to

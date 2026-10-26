@@ -620,6 +620,11 @@ export function LiveMonitorPlayer({
   }, [onLoad, mjpegStream, showMjpegImg]);
 
   const handleMjpegError = useCallback(() => {
+    // Native answers the frame request the element had parked with a 404 as
+    // soon as it closes a stream, so a planned restart errors for a stream
+    // that is already gone while the hook holds the frame painted off it.
+    // Hiding or unmounting here would put that blink straight back. refs #478
+    if (!mjpegStream.reportStreamError()) return;
     // Log so an occlusion-induced drop is visible. The <img> onError is
     // otherwise silent, which made this look like "0 logs". refs #150
     log.videoPlayer('MJPEG stream error', LogLevel.WARN, { monitorId: monitor.Id });
@@ -631,11 +636,10 @@ export function LiveMonitorPlayer({
     // the React commit below still does the real state change.
     const img = mjpegStream.imgRef.current;
     if (img) img.style.visibility = 'hidden';
+    // The reconnect the call above scheduled releases the errored connkey
+    // before minting a new one, so a dropped feed recovers without a manual
+    // Retry. refs #187
     setMjpegError(true);
-    // Schedule an auto-reconnect with backoff. This releases the errored
-    // connkey before minting a new one, so a dropped feed recovers without a
-    // manual Retry. refs #187
-    mjpegStream.reportStreamError();
   }, [monitor.Id, mjpegStream]);
 
   // Sync media ref for snapshot capture
@@ -796,6 +800,10 @@ export function LiveMonitorPlayer({
           }
           data-testid="video-player-mjpeg"
           src={mjpegStream.imageSrc}
+          // In native frame mode src is a zmframe:// URL nothing outside the
+          // webview can fetch, so the snapshot download reads the real stream
+          // URL from here (services/download.ts).
+          data-stream-url={mjpegStream.streamUrl}
           // Empty: a failing load with alt text makes WebKit draw its glyph
           // beside the text, and nothing describes a live feed in words. The
           // surrounding tile carries the monitor name.

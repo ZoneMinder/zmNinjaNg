@@ -588,6 +588,7 @@
     "recommended": "Empfohlen",
     "view_mode_reason_few_monitors": "Empfohlen: Streaming. Dieser Server hat {{monitorCount}} Monitore, wenige genug, um alle Livebilder gleichzeitig offen zu halten.",
     "view_mode_reason_multi_port": "Empfohlen: Streaming. Dieser Server nutzt Multi-Port-Streaming, daher gilt das Limit gleichzeitiger Livebilder nicht.",
+    "view_mode_reason_no_host_limit": "Empfohlen: Streaming. Diese App liest Livebilder nativ, daher gilt das Limit gleichzeitiger Livebilder nicht.",
     "view_mode_reason_many_monitors": "Empfohlen: Schnappschuss. {{monitorCount}} Monitore ohne Multi-Port-Streaming liegen über den etwa sechs Livebildern, die ein Server gleichzeitig offen hält.",
     "streaming_method": "Streaming-Methode",
     "streaming_method_desc": "Wählen Sie das Streaming-Protokoll für Monitore",
@@ -698,6 +699,9 @@
     },
     "monitors_per_page": "Monitore pro Seite",
     "monitors_per_page_desc": "Nützlich bei vielen Monitoren (über 30), wenn der Server kein Multi-Port-Streaming hat. 0 schaltet das Blättern ab.",
+    "desktop_connections": "Max. Verbindungen pro Host (Desktop)",
+    "desktop_connections_desc": "Jede offene Live-Ansicht belegt eine Verbindung, die Desktop-App begrenzt die Verbindungen pro Server auf diese Zahl (6 bis 256). Erhöhen Sie sie, wenn eine große Montage hängt. Wirkt erst nach einem Neustart der App.",
+    "desktop_connections_restart": "Gespeichert. Starten Sie die App neu, um die Änderung zu übernehmen.",
     "search": {
       "placeholder": "Einstellungen durchsuchen",
       "no_results": "Keine passenden Einstellungen"

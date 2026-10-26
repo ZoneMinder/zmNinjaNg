@@ -32,7 +32,7 @@ let mockMjpegReturn: {
   imageSrc: string;
   imgRef: { current: HTMLImageElement | null };
   regenerateConnection: () => void;
-  reportStreamError: () => void;
+  reportStreamError: () => boolean;
   reportStreamLoad: () => void;
   hasFrame: boolean;
 };
@@ -126,7 +126,7 @@ describe('LiveMonitorPlayer MJPEG recovery', () => {
       imageSrc: 'https://t/stream?connkey=1',
       imgRef: { current: null },
       regenerateConnection: vi.fn(),
-      reportStreamError: vi.fn(),
+      reportStreamError: vi.fn(() => true),
       reportStreamLoad: vi.fn(),
       hasFrame: true,
     };
@@ -190,6 +190,32 @@ describe('LiveMonitorPlayer MJPEG recovery', () => {
     expect(mockMjpegReturn.reportStreamError).toHaveBeenCalledTimes(1);
   });
 
+  // On iOS and Android the frames come from native, which answers the frame
+  // request the element had parked with a 404 the moment a planned restart
+  // closes the stream. So the <img> errors for a stream that is already gone,
+  // while the hook is deliberately holding the frame it painted off it. The
+  // hook says it did not accept the error; latching here would unmount the
+  // element and put back the zoom blink the hold exists to remove. refs #478
+  it('keeps the MJPEG <img> mounted and visible for an error the hook rejects', () => {
+    mockMjpegReturn = {
+      ...mockMjpegReturn,
+      imageSrc: 'zmframe://frames/s1/4',
+      reportStreamError: vi.fn(() => false),
+    };
+    render(withQuery(<LiveMonitorPlayer monitor={monitor} profile={profile} />));
+    const img = screen.getByTestId('video-player-mjpeg');
+
+    fireEvent.error(img);
+
+    // getByTestId throws if the latch unmounted it, and the src proves the
+    // element still points at the frame it is holding.
+    expect(screen.getByTestId('video-player-mjpeg')).toHaveAttribute(
+      'src',
+      'zmframe://frames/s1/4',
+    );
+    expect(img.style.visibility).not.toBe('hidden');
+  });
+
   // refs #313: the browser paints its broken-image glyph as soon as the load
   // fails, and React's error event is default priority, so the commit that
   // unmounts the <img> lands a frame or more later. On Live Activity the exit
@@ -239,7 +265,7 @@ describe('LiveMonitorPlayer waiting vs failed', () => {
       imageSrc: 'https://t/stream?connkey=1',
       imgRef: { current: null },
       regenerateConnection: vi.fn(),
-      reportStreamError: vi.fn(),
+      reportStreamError: vi.fn(() => true),
       reportStreamLoad: vi.fn(),
       hasFrame: false,
     };
@@ -261,7 +287,7 @@ describe('LiveMonitorPlayer waiting vs failed', () => {
       imageSrc: 'https://t/stream?connkey=1',
       imgRef: { current: null },
       regenerateConnection: vi.fn(),
-      reportStreamError: vi.fn(),
+      reportStreamError: vi.fn(() => true),
       reportStreamLoad: vi.fn(),
       hasFrame: false,
     };
@@ -302,7 +328,7 @@ describe('LiveMonitorPlayer Go2RTC failure cache scoping', () => {
       imageSrc: 'https://t/stream?connkey=1',
       imgRef: { current: null },
       regenerateConnection: vi.fn(),
-      reportStreamError: vi.fn(),
+      reportStreamError: vi.fn(() => true),
       reportStreamLoad: vi.fn(),
       hasFrame: true,
     };
@@ -383,7 +409,7 @@ describe('LiveMonitorPlayer reduced stream tuning', () => {
       imageSrc: 'https://t/stream?connkey=1',
       imgRef: { current: null },
       regenerateConnection: vi.fn(),
-      reportStreamError: vi.fn(),
+      reportStreamError: vi.fn(() => true),
       reportStreamLoad: vi.fn(),
       hasFrame: true,
     };
@@ -450,7 +476,7 @@ describe('LiveMonitorPlayer paused tiles', () => {
       imageSrc: 'https://t/stream?connkey=1',
       imgRef: { current: null },
       regenerateConnection: vi.fn(),
-      reportStreamError: vi.fn(),
+      reportStreamError: vi.fn(() => true),
       reportStreamLoad: vi.fn(),
       hasFrame: true,
     };
@@ -509,7 +535,7 @@ describe('LiveMonitorPlayer paused WebRTC frames', () => {
       imageSrc: '',
       imgRef: { current: null },
       regenerateConnection: vi.fn(),
-      reportStreamError: vi.fn(),
+      reportStreamError: vi.fn(() => true),
       reportStreamLoad: vi.fn(),
       hasFrame: true,
     };
@@ -587,7 +613,7 @@ describe('LiveMonitorPlayer without streaming permission', () => {
       imageSrc: 'https://t/stream?connkey=1',
       imgRef: { current: null },
       regenerateConnection: vi.fn(),
-      reportStreamError: vi.fn(),
+      reportStreamError: vi.fn(() => true),
       reportStreamLoad: vi.fn(),
       hasFrame: true,
     };
@@ -653,7 +679,7 @@ describe('LiveMonitorPlayer MJPEG frame gating', () => {
       imageSrc: 'https://t/stream?connkey=1',
       imgRef: { current: null },
       regenerateConnection: vi.fn(),
-      reportStreamError: vi.fn(),
+      reportStreamError: vi.fn(() => true),
       reportStreamLoad: vi.fn(),
       hasFrame: false,
     };

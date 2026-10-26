@@ -588,6 +588,7 @@
     "recommended": "Recommended",
     "view_mode_reason_few_monitors": "Recommended: Streaming. This server has {{monitorCount}} monitors, few enough to keep every live feed open at once.",
     "view_mode_reason_multi_port": "Recommended: Streaming. This server has multi-port streaming, so the limit on simultaneous live feeds does not apply.",
+    "view_mode_reason_no_host_limit": "Recommended: Streaming. This app reads live feeds natively, so the limit on simultaneous live feeds does not apply.",
     "view_mode_reason_many_monitors": "Recommended: Snapshot. {{monitorCount}} monitors without multi-port streaming is past the roughly six live feeds a server keeps open at a time.",
     "streaming_method": "Streaming Method",
     "streaming_method_desc": "Choose streaming protocol for monitors",
@@ -698,6 +699,9 @@
     },
     "monitors_per_page": "Monitors per page",
     "monitors_per_page_desc": "Useful with many monitors (over 30) when the server has no multi-port streaming. 0 turns paging off.",
+    "desktop_connections": "Max connections per host (desktop)",
+    "desktop_connections_desc": "Live views hold one connection per feed open, and the desktop app caps connections per server at this number (6 to 256). Raise it if a large Montage stalls. Takes effect after you restart the app.",
+    "desktop_connections_restart": "Saved. Restart the app to apply it.",
     "search": {
       "placeholder": "Search settings",
       "no_results": "No settings match"

@@ -116,6 +116,18 @@ Electron bridges the request over IPC (``electron/preload.cjs``) to the main
 process, which performs it with Electron's ``net`` module, again avoiding
 renderer CORS.
 
+The same preload file exposes a bridge for the desktop per-host connection
+limit, ``window.electronConnections`` with ``get()`` and ``set(value)``.
+Chromium reads its ``max-connections-per-host`` switch once, before any window
+exists, so the value cannot live in the renderer's ``localStorage``. The main
+process keeps it in ``desktop-connections.json`` under the user data folder and
+reads that file synchronously at startup. ``set`` rejects a non-integer,
+clamps anything else to 6 through 256 (``ZM_INTEGRATION.desktopConnections``
+mirrors the bounds), writes the file, and resolves with the value it stored.
+The new value applies on the next launch. The only caller is
+``components/settings/DesktopConnectionsRow.tsx``, which reads the bridge only
+when ``Platform.isElectron`` is true.
+
 Self-signed certificate handling is not part of this module, because the
 adapters differ in how they surface TLS errors. On mobile a native plugin
 owns it (see SSL trust); on Electron and web the user must add the CA to the

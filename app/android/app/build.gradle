@@ -64,6 +64,12 @@ android {
             }
         }
     }
+    testOptions {
+        // android.util.Log is a stub in a JVM unit test and throws "not mocked"
+        // unless default values are returned. MjpegReader logs a refused or ended
+        // stream, and its tests drive both paths.
+        unitTests.returnDefaultValues = true
+    }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
