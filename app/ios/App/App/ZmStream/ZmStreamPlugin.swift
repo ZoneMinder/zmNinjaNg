@@ -62,6 +62,12 @@ public class ZmStreamPlugin: CAPPlugin, CAPBridgedPlugin {
             call.reject("url is required")
             return
         }
+        // The bridge is a trust boundary: without this the webview could point a
+        // reader at file:// or any other scheme the URL parser accepts.
+        guard let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https" else {
+            call.reject("url must be http or https")
+            return
+        }
         let stallTimeoutMs = call.getInt("stallTimeoutMs") ?? Self.defaultStallTimeoutMs
         let id = ZmStreamRegistry.shared.nextId()
         FrameStore.shared.register(id)
