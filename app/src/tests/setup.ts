@@ -235,6 +235,7 @@ vi.mock('../plugins/zm-stream', async () => {
     ZmStream: {
       open: vi.fn().mockResolvedValue({ streamId: 'mock-stream' }),
       close: vi.fn().mockResolvedValue(undefined),
+      closeAll: vi.fn().mockResolvedValue(undefined),
     },
   };
 });

@@ -8,4 +8,6 @@ export class ZmStreamWeb extends WebPlugin implements ZmStreamPlugin {
   }
 
   async close(_options: ZmStreamHandle): Promise<void> {}
+
+  async closeAll(): Promise<void> {}
 }

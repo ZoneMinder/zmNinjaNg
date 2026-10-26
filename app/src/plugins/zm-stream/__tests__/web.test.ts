@@ -23,3 +23,9 @@ describe('zm-stream', () => {
       .resolves.toEqual({ streamId: 'mock-stream' });
   });
 });
+
+describe('zm-stream web closeAll', () => {
+  it('resolves: there is nothing to reclaim off native', async () => {
+    await expect(new ZmStreamWeb().closeAll()).resolves.toBeUndefined();
+  });
+});
