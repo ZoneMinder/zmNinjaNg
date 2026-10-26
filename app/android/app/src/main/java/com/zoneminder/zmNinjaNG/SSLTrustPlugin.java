@@ -3,16 +3,14 @@ package com.zoneminder.zmNinjaNG;
 import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Bundle;
-import android.webkit.SslErrorHandler;
-import android.webkit.WebView;
 
-import com.getcapacitor.BridgeWebViewClient;
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
+import com.zoneminder.zmNinjaNG.stream.ZmFrameWebViewClient;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -47,13 +45,21 @@ import android.net.http.SslCertificate;
 @CapacitorPlugin(name = "SSLTrust")
 public class SSLTrustPlugin extends Plugin {
 
-    private boolean enabled = false;
+    /**
+     * The loaded plugin, so the WebView client can ask about a certificate without
+     * holding a reference to it. One bridge means one instance; it is written once in
+     * load() and never cleared.
+     */
+    private static volatile SSLTrustPlugin loaded;
+
+    private volatile boolean enabled = false;
     private volatile Map<String, String> trustedFingerprints = new HashMap<>();
     private SSLSocketFactory originalSslSocketFactory;
     private HostnameVerifier originalHostnameVerifier;
 
     @Override
     public void load() {
+        loaded = this;
         // Save originals so we can restore them on disable
         originalSslSocketFactory = HttpsURLConnection.getDefaultSSLSocketFactory();
         originalHostnameVerifier = HttpsURLConnection.getDefaultHostnameVerifier();
@@ -318,59 +324,62 @@ public class SSLTrustPlugin extends Plugin {
     }
 
     /**
-     * Replace the WebView client with one that validates SSL certificates
-     * against the trusted fingerprint for the connection's host. This covers
-     * <img src="https://...">, MJPEG streams, and WSS connections in the WebView.
+     * Whether the WebView may proceed past an SSL error: self-signed trust is on and
+     * the certificate matches the pinned fingerprint for its host, or that host has
+     * no fingerprint yet, which is the TOFU case the dialog needs. Called by
+     * {@link ZmFrameWebViewClient#onReceivedSslError}, which owns the WebView client
+     * so that the zmframe:// interception cannot be swapped away.
      */
-    private void installWebViewSslHandler() {
-        getActivity().runOnUiThread(() -> {
-            try {
-                WebView webView = getBridge().getWebView();
-                webView.setWebViewClient(new BridgeWebViewClient(getBridge()) {
-                    @Override
-                    public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
-                        if (!enabled) {
-                            handler.cancel();
-                            return;
-                        }
-                        String host = Uri.parse(error.getUrl()).getHost();
-                        String fp = (host != null) ? trustedFingerprints.get(normalizeHost(host)) : null;
-                        if (fp == null || fp.isEmpty()) {
-                            // No fingerprint stored for this host yet — allow so the
-                            // app can fetch the cert and show the TOFU dialog
-                            handler.proceed();
-                            return;
-                        }
-                        // Validate the certificate fingerprint
-                        try {
-                            X509Certificate cert = extractX509(error.getCertificate());
-                            if (cert != null) {
-                                String actual = sha256Fingerprint(cert);
-                                if (actual.equals(fp)) {
-                                    handler.proceed();
-                                    return;
-                                }
-                            }
-                        } catch (Exception e) {
-                            // Fall through to cancel
-                        }
-                        handler.cancel();
-                    }
-                });
-            } catch (Exception e) {
-                // Ignore
+    public static boolean isWebViewCertTrusted(SslError error) {
+        SSLTrustPlugin plugin = loaded;
+        // The live flag, not the client's constructor flag: disable() clears this
+        // before it swaps the client back, so the window in between still cancels.
+        if (plugin == null || !plugin.enabled || error == null) return false;
+
+        String host = Uri.parse(error.getUrl()).getHost();
+        String fp = (host != null) ? plugin.trustedFingerprints.get(normalizeHost(host)) : null;
+        if (fp == null || fp.isEmpty()) {
+            // No fingerprint stored for this host yet — allow so the
+            // app can fetch the cert and show the TOFU dialog
+            return true;
+        }
+        // Validate the certificate fingerprint
+        try {
+            X509Certificate cert = extractX509(error.getCertificate());
+            if (cert != null) {
+                return sha256Fingerprint(cert).equals(fp);
             }
-        });
+        } catch (Exception e) {
+            // Fall through to reject
+        }
+        return false;
     }
 
     /**
-     * Restore the default WebView client (strict SSL).
+     * Install the WebView client that validates SSL certificates against the trusted
+     * fingerprint for the connection's host. This covers <img src="https://...">,
+     * MJPEG streams, and WSS connections in the WebView.
+     */
+    private void installWebViewSslHandler() {
+        setWebViewClient(true);
+    }
+
+    /**
+     * Restore strict SSL (the WebView's own validation decides).
      */
     private void restoreWebViewSslHandler() {
+        setWebViewClient(false);
+    }
+
+    /**
+     * Both paths build a ZmFrameWebViewClient, never a bare BridgeWebViewClient: it
+     * is the only client that serves zmframe://, and a toggle that installed anything
+     * else would leave every native MJPEG tile with no frames.
+     */
+    private void setWebViewClient(boolean trustSelfSigned) {
         getActivity().runOnUiThread(() -> {
             try {
-                WebView webView = getBridge().getWebView();
-                webView.setWebViewClient(new BridgeWebViewClient(getBridge()));
+                getBridge().setWebViewClient(new ZmFrameWebViewClient(getBridge(), trustSelfSigned));
             } catch (Exception e) {
                 // Ignore
             }
