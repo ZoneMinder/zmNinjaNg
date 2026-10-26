@@ -59,6 +59,17 @@ describe('DesktopConnectionsRow', () => {
     );
   });
 
+  it('rounds a fractional entry to an integer before writing', async () => {
+    set.mockResolvedValue(64);
+    render(<DesktopConnectionsRow />);
+    await waitFor(() => expect(box().value).toBe('48'));
+
+    fireEvent.change(box(), { target: { value: '63.6' } });
+    fireEvent.blur(box());
+
+    await waitFor(() => expect(set).toHaveBeenCalledWith(64));
+  });
+
   it('shows the clamped value when main clamps it', async () => {
     set.mockResolvedValue(256);
     render(<DesktopConnectionsRow />);

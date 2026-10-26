@@ -432,9 +432,9 @@ describe('per-host connection limit (refs #156)', () => {
   const { min, max, default: def } = ZM_INTEGRATION.desktopConnections;
   const mainPath = require.resolve('../main.cjs');
 
-  // Re-runs main.cjs with the settings file replaced by `file`: a string is
-  // its contents, an Error is thrown from readFileSync. Other reads pass through.
-  function bootWith(file: string | Error) {
+  // Runs fn with the settings file replaced by `file`: a string is its
+  // contents, an Error is thrown from readFileSync. Other reads pass through.
+  function withFile<T>(file: string | Error, fn: () => T): T {
     const real = fs.readFileSync;
     const spy = vi.spyOn(fs, 'readFileSync').mockImplementation(((p: unknown, ...rest: unknown[]) => {
       if (String(p).endsWith('desktop-connections.json')) {
@@ -443,14 +443,19 @@ describe('per-host connection limit (refs #156)', () => {
       }
       return (real as (...a: unknown[]) => unknown)(p, ...rest);
     }) as typeof fs.readFileSync);
-    mockAppendSwitch.mockClear();
-    delete (require.cache as Record<string, unknown>)[mainPath];
     try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      require('../main.cjs');
+      return fn();
     } finally {
       spy.mockRestore();
     }
+  }
+
+  // Re-runs main.cjs against that file and returns the switch value it applied.
+  function bootWith(file: string | Error) {
+    mockAppendSwitch.mockClear();
+    delete (require.cache as Record<string, unknown>)[mainPath];
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    withFile(file, () => require('../main.cjs'));
     return mockAppendSwitch.mock.calls.find((c) => c[0] === 'max-connections-per-host')?.[1];
   }
 
@@ -471,9 +476,11 @@ describe('per-host connection limit (refs #156)', () => {
   });
 
   it('the get handler returns the stored, clamped value', async () => {
-    bootWith('{"maxConnectionsPerHost":5000}');
-    // bootWith restored readFileSync, so the handler sees the real (absent) file.
-    expect(await ipcHandlers['app:max-connections-get'](null)).toBe(def);
+    bootWith('');
+    const read = (file: string) => withFile(file, () => ipcHandlers['app:max-connections-get'](null));
+    expect(await read('{"maxConnectionsPerHost":5000}')).toBe(max);
+    expect(await read('{"maxConnectionsPerHost":96}')).toBe(96);
+    expect(await read('not json')).toBe(def);
   });
 
   it('the set handler rejects a non-integer and stores a clamped integer', async () => {
@@ -488,6 +495,9 @@ describe('per-host connection limit (refs #156)', () => {
       await expect(ipcHandlers['app:max-connections-set'](null, 2)).resolves.toBe(min);
       expect(JSON.parse(String(write.mock.calls[0][1]))).toEqual({ maxConnectionsPerHost: max });
       expect(String(write.mock.calls[0][0])).toMatch(/desktop-connections\.json$/);
+      // What the setter wrote is what the next boot reads back.
+      expect(bootWith(String(write.mock.calls[0][1]))).toBe(String(max));
+      expect(bootWith(String(write.mock.calls[1][1]))).toBe(String(min));
     } finally {
       write.mockRestore();
     }

@@ -51,7 +51,8 @@ export function DesktopConnectionsRow() {
   if (!bridge) return null;
 
   const commit = async () => {
-    const value = Number(draft);
+    // Main rejects non-integers; round so a typed 1.5 is not a dead end.
+    const value = Math.round(Number(draft));
     if (draft.trim() === '' || value === stored) {
       setDraft(stored === null ? '' : String(stored));
       return;
