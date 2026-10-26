@@ -80,10 +80,12 @@ public final class FrameStore {
     public synchronized byte[] awaitNext(String id, long deadlineMs) throws InterruptedException {
         Slot slot = slots.get(id);
         if (slot == null || slot.dead) return null;
-        if (slot.frame != null) return take(slot);
 
+        // Bump before the fast path: a parked waiter whose frame this call takes
+        // must wake and see it was replaced, not keep waiting on an empty slot.
         long ticket = ++slot.waiterTicket;
-        notifyAll(); // wake the waiter this one replaces
+        notifyAll();
+        if (slot.frame != null) return take(slot);
         long end = System.nanoTime() + deadlineMs * 1_000_000L;
         while (true) {
             // Order matters: a replaced or removed waiter must never take a frame

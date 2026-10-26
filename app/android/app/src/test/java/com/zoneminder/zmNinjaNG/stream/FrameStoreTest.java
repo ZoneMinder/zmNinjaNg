@@ -153,4 +153,21 @@ public class FrameStoreTest {
         assertFalse(old.isCancelled());
         assertArrayEquals(A, store.awaitNext("1", LONG));
     }
+
+    @Test
+    public void waiterWhoseFrameIsTakenByANewerCallerReturnsNull() throws Exception {
+        FrameStore store = new FrameStore();
+        store.register("1");
+        Future<byte[]> w1 = park(store, "1", LONG);
+
+        // Holding the monitor keeps W1 from running between publish and the second call,
+        // so the interleaving is forced: W1 is notified, then W2 takes the frame first.
+        byte[] taken;
+        synchronized (store) {
+            store.publish("1", A);
+            taken = store.awaitNext("1", LONG);
+        }
+        assertArrayEquals(A, taken);
+        assertNull(w1.get(1, TimeUnit.SECONDS));
+    }
 }
