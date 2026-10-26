@@ -699,6 +699,9 @@
     },
     "monitors_per_page": "Monitores por página",
     "monitors_per_page_desc": "Útil con muchos monitores (más de 30) cuando el servidor no tiene streaming multipuerto. 0 desactiva las páginas.",
+    "desktop_connections": "Máx. conexiones por host (escritorio)",
+    "desktop_connections_desc": "Cada vista en vivo abierta usa una conexión, y la app de escritorio limita las conexiones por servidor a este número (de 6 a 256). Súbelo si un Montaje grande se queda parado. Se aplica al reiniciar la app.",
+    "desktop_connections_restart": "Guardado. Reinicia la app para aplicarlo.",
     "search": {
       "placeholder": "Buscar ajustes",
       "no_results": "Ningún ajuste coincide"

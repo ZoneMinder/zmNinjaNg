@@ -64,6 +64,12 @@ export const DEFAULT_QUERY_STALE_TIME_MS = 15000;
 export const SERVER_STATS_WINDOW_MINUTES = 10;
 
 export const ZM_INTEGRATION = {
+  // Desktop (Electron) per-host connection limit. 256 is Chromium's whole
+  // per-profile socket pool, so a larger per-host value cannot be honoured.
+  // electron/main.cjs keeps its own copy (it is CommonJS and cannot import
+  // this file); main.test.ts pins the two together.
+  desktopConnections: { min: 6, max: 256, default: 32 },
+
   // HTTP timeouts for ZM API calls
   httpTimeout: 10000, // 10 seconds - standard API calls
   largeHttpTimeout: 30000, // 30 seconds - large responses (events, etc.)

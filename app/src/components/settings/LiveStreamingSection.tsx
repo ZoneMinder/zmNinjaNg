@@ -18,6 +18,7 @@ import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
 import { CollapsibleSection, SettingsCard, SettingsRow, RowLabel, SettingsSubCard } from './SettingsLayout';
 import { MonitorsPerPageRow } from './MonitorsPerPageRow';
+import { DesktopConnectionsRow } from './DesktopConnectionsRow';
 import { AdvancedStreamingFold } from './AdvancedStreamingFold';
 import { AllServersStreamingSection } from './AllServersStreamingSection';
 import { AllServersPerformanceSection } from './AllServersPerformanceSection';
@@ -113,6 +114,8 @@ export function LiveStreamingSection({
               data-testid="settings-live-fullscreen-switch"
             />
           </SettingsRow>
+
+          <DesktopConnectionsRow />
 
           <SettingsSubCard name={serverProfile?.name ?? ''} testId="settings-server-subcard">
             {/* Streaming Mode, with its reason line: one card row, so search and

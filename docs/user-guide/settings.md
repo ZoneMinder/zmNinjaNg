@@ -141,6 +141,7 @@ The Live Streaming section
 | **Monitors per page** | How many monitors the Montage and the Monitors screen show at once, with arrows to step through the pages (0 turns paging off, the default; presets 6/12/24). Useful with many monitors (over 30) when the server has no multi-port streaming. See [Paging a long list](montage.md#paging-a-long-list). |
 | **Skip offline monitors** | Monitors whose capture or function is set to None are left out of the grid, the montage, and live-view swiping. |
 | **Open live view in fullscreen** | Every monitor's detail page opens maximized. For one monitor only, use **Open in fullscreen** in that monitor's Settings dialog instead. |
+| **Max connections per host (desktop)** | Desktop app only. A browser engine opens about six connections per server, so a Montage of many live feeds stalls past the first few. This raises the cap (6 to 256, default 32) and applies after you restart the app. |
 
 The server rows under Live Streaming set how that server sends live video:
 

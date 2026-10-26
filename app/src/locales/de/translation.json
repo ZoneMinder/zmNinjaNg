@@ -699,6 +699,9 @@
     },
     "monitors_per_page": "Monitore pro Seite",
     "monitors_per_page_desc": "Nützlich bei vielen Monitoren (über 30), wenn der Server kein Multi-Port-Streaming hat. 0 schaltet das Blättern ab.",
+    "desktop_connections": "Max. Verbindungen pro Host (Desktop)",
+    "desktop_connections_desc": "Jede offene Live-Ansicht belegt eine Verbindung, die Desktop-App begrenzt die Verbindungen pro Server auf diese Zahl (6 bis 256). Erhöhen Sie sie, wenn eine große Montage hängt. Wirkt erst nach einem Neustart der App.",
+    "desktop_connections_restart": "Gespeichert. Starten Sie die App neu, um die Änderung zu übernehmen.",
     "search": {
       "placeholder": "Einstellungen durchsuchen",
       "no_results": "Keine passenden Einstellungen"

@@ -21,6 +21,8 @@
  * AGENTS.md rule 27 (native/Electron changes need a manual device pass).
  */
 import { describe, it, expect, vi, beforeAll } from 'vitest';
+import fs from 'node:fs';
+import { ZM_INTEGRATION } from '../../src/lib/zmninja-ng-constants';
 
 type Handler = (event: unknown, ...args: unknown[]) => unknown;
 
@@ -357,10 +359,6 @@ describe('secure:available / secure:encrypt / secure:decrypt', () => {
 });
 
 describe('app lifecycle wiring', () => {
-  it('sets the max-connections-per-host command line switch before startup', () => {
-    expect(mockAppendSwitch).toHaveBeenCalledWith('max-connections-per-host', '32');
-  });
-
   it('creates a BrowserWindow once whenReady resolves', () => {
     expect(browserWindowInstances.length).toBeGreaterThanOrEqual(1);
   });
@@ -427,5 +425,71 @@ describe('single instance', () => {
 
     expect(mockAppQuit).toHaveBeenCalled();
     expect(browserWindowInstances.length).toBe(windowsBefore);
+  });
+});
+
+describe('per-host connection limit (refs #156)', () => {
+  const { min, max, default: def } = ZM_INTEGRATION.desktopConnections;
+  const mainPath = require.resolve('../main.cjs');
+
+  // Re-runs main.cjs with the settings file replaced by `file`: a string is
+  // its contents, an Error is thrown from readFileSync. Other reads pass through.
+  function bootWith(file: string | Error) {
+    const real = fs.readFileSync;
+    const spy = vi.spyOn(fs, 'readFileSync').mockImplementation(((p: unknown, ...rest: unknown[]) => {
+      if (String(p).endsWith('desktop-connections.json')) {
+        if (file instanceof Error) throw file;
+        return file;
+      }
+      return (real as (...a: unknown[]) => unknown)(p, ...rest);
+    }) as typeof fs.readFileSync);
+    mockAppendSwitch.mockClear();
+    delete (require.cache as Record<string, unknown>)[mainPath];
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require('../main.cjs');
+    } finally {
+      spy.mockRestore();
+    }
+    return mockAppendSwitch.mock.calls.find((c) => c[0] === 'max-connections-per-host')?.[1];
+  }
+
+  it('reads the stored connection limit and applies it as the switch', () => {
+    expect(bootWith('{"maxConnectionsPerHost":96}')).toBe('96');
+  });
+
+  it('falls back to the default when the file is missing, empty, or not an object of integers', () => {
+    const enoent = Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
+    for (const file of [enoent, new Error('EISDIR'), '', 'not json', 'null', '[]', '{"maxConnectionsPerHost":"64"}', '{"maxConnectionsPerHost":1.5}']) {
+      expect(bootWith(file)).toBe(String(def));
+    }
+  });
+
+  it('clamps a stored value outside the bounds', () => {
+    expect(bootWith('{"maxConnectionsPerHost":5000}')).toBe(String(max));
+    expect(bootWith('{"maxConnectionsPerHost":1}')).toBe(String(min));
+  });
+
+  it('the get handler returns the stored, clamped value', async () => {
+    bootWith('{"maxConnectionsPerHost":5000}');
+    // bootWith restored readFileSync, so the handler sees the real (absent) file.
+    expect(await ipcHandlers['app:max-connections-get'](null)).toBe(def);
+  });
+
+  it('the set handler rejects a non-integer and stores a clamped integer', async () => {
+    bootWith('');
+    const write = vi.spyOn(fs, 'writeFileSync').mockImplementation(() => undefined);
+    try {
+      for (const bad of ['x', 1.5, NaN, Infinity, null, undefined]) {
+        await expect(ipcHandlers['app:max-connections-set'](null, bad)).rejects.toThrow();
+      }
+      expect(write).not.toHaveBeenCalled();
+      await expect(ipcHandlers['app:max-connections-set'](null, 9999)).resolves.toBe(max);
+      await expect(ipcHandlers['app:max-connections-set'](null, 2)).resolves.toBe(min);
+      expect(JSON.parse(String(write.mock.calls[0][1]))).toEqual({ maxConnectionsPerHost: max });
+      expect(String(write.mock.calls[0][0])).toMatch(/desktop-connections\.json$/);
+    } finally {
+      write.mockRestore();
+    }
   });
 });
