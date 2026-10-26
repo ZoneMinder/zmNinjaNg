@@ -136,7 +136,7 @@ If you have many cameras, use **Low bandwidth mode** in Settings to reduce data 
 
 With more than a handful of cameras the montage asks the server for every feed
 at once. Every live tile costs CPU on your device, bandwidth, and a `zms`
-process on the ZoneMinder server, and those add up on a large wall. In the web
+process on the ZoneMinder server, and those add up on a large montage. In the web
 app there is a second cost: a browser only opens six connections to one
 server, so the rest queue behind those six and most tiles sit empty while the
 ones you are looking at fill slowly.

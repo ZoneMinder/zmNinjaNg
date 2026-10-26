@@ -223,9 +223,10 @@ the Mac, and the app links the package the way it links `LlamaKit`.
   Input: the stream URL (or `''`) and `enabled`. It
   imports the plugin dynamically behind the platform check (Native contract),
   opens on a new URL, closes the previous stream first, closes on unmount, and
-  exposes `{ frameSrc, advance, resetKey }`: `frameSrc` is the `zmframe://`
-  URL with the current `n`, `advance` bumps `n` (called from `load`), and
-  `resetKey` changes when a new `streamId` opens so the caller can clear
+  exposes `{ frameSrc, advance, streamId }`: `frameSrc` is the `zmframe://`
+  URL with the current `n`, `advance(img)` bumps `n` (called from `load`, and
+  ignored when the element's `currentSrc` names another stream), and
+  `streamId` changes when a new stream opens so the caller can clear
   `loadedSrc`.
 - `useMonitorStream`: in streaming mode on native, `imageSrc` comes from
   `useNativeMjpegFrames` instead of `streamUrl`; `reportStreamLoad` also calls
