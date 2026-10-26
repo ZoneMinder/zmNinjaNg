@@ -475,7 +475,7 @@ loads ``nph-zms`` directly through the runtime's network stack (Chromium on web
 and Electron, the Android WebView, WKWebView on iOS and iPadOS), and that
 runtime manages frame memory. The browser per-origin connection cap (~6 /
 origin) applies to those loads. Electron raises it (32 by default, a desktop
-setting), and On the web build, Snapshot mode and multi-port streaming ease it.
+setting). On the web build, Snapshot mode and multi-port streaming ease it.
 
 On iOS and Android in Streaming mode the webview never opens the connection.
 ``useNativeMjpegFrames`` calls ``ZmStream.open``, native code reads the
