@@ -13,6 +13,9 @@ public final class MjpegParser {
     /// Larger Content-Length values are treated as missing, so one bad header can't stall the stream.
     private static let maxFrameBytes = 16 * 1024 * 1024
 
+    /// A header block longer than this is junk (bare-LF endings, no blank line); resync on the next boundary.
+    private static let maxHeaderBytes = 8 * 1024
+
     private let marker: [UInt8]
     private var buffer: [UInt8] = []
     private var state = State.scanToBoundary
@@ -45,10 +48,13 @@ public final class MjpegParser {
             return true
 
         case .headers:
-            guard let end = find([13, 10, 13, 10]) else { return false }
+            guard let end = find([13, 10, 13, 10]), end <= Self.maxHeaderBytes else {
+                if buffer.count > Self.maxHeaderBytes { state = .scanToBoundary; return true }
+                return false
+            }
             let head = String(decoding: buffer[..<end], as: UTF8.self)
             buffer.removeFirst(end + 4)
-            if let length = Self.contentLength(in: head), length <= Self.maxFrameBytes {
+            if let length = Self.contentLength(in: head), length >= 0, length <= Self.maxFrameBytes {
                 state = .body(remaining: length)
             } else {
                 state = .bodyUntilBoundary
@@ -63,7 +69,10 @@ public final class MjpegParser {
             return true
 
         case .bodyUntilBoundary:
-            guard let at = find([13, 10] + marker) else { return false }
+            guard let at = find([13, 10] + marker) else {
+                if buffer.count > Self.maxFrameBytes { state = .scanToBoundary; return true }
+                return false
+            }
             onFrame?(Data(buffer[..<at]))
             buffer.removeFirst(at + 2)
             state = .scanToBoundary

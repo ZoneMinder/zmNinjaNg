@@ -59,4 +59,26 @@ final class MjpegParserTests: XCTestCase {
         let frames = parse(data)
         XCTAssertEqual(frames, [frame(0, size: 100).prefix(10), frame(1)].map { Data($0) })
     }
+
+    private func part(_ f: Data, headers: String) -> Data {
+        var d = Data("--\(boundary)\r\n\(headers)\r\n\r\n".utf8)
+        d.append(f)
+        d.append(Data("\r\n".utf8))
+        return d
+    }
+
+    func testNegativeContentLengthFallsBackToBoundaryScan() {
+        var data = part(frame(0), headers: "Content-Type: image/jpeg\r\nContent-Length: -5")
+        data.append(part(frame(1), headers: "Content-Length: \(frame(1).count)"))
+        XCTAssertEqual(parse(data), [frame(0), frame(1)])
+        XCTAssertEqual(parse(data, chunk: 7), [frame(0), frame(1)])
+    }
+
+    func testOverlongHeaderBlockResyncsOnNextBoundary() {
+        let junk = String(repeating: "X-Junk: aaaaaaaaaaaaaaaa\n", count: 400) // ~10 KB, bare LF, no blank line
+        var data = Data("--\(boundary)\r\n\(junk)".utf8)
+        data.append(part(frame(1), headers: "Content-Length: \(frame(1).count)"))
+        XCTAssertEqual(parse(data), [frame(1)])
+        XCTAssertEqual(parse(data, chunk: 64), [frame(1)])
+    }
 }
