@@ -228,7 +228,7 @@ vi.mock('../src/plugins/safe-area', () => ({
 }));
 
 // Mock ZmStream plugin (keep the real URL helpers)
-vi.mock('../src/plugins/zm-stream', async () => {
+vi.mock('../plugins/zm-stream', async () => {
   const actual = await vi.importActual<typeof import('../plugins/zm-stream')>('../plugins/zm-stream');
   return {
     ...actual,
