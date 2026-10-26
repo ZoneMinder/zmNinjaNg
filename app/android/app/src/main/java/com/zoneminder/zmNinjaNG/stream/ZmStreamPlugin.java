@@ -29,9 +29,9 @@ public class ZmStreamPlugin extends Plugin {
             call.reject("url must be http or https");
             return;
         }
-        Integer requested = call.getInt("stallTimeoutMs", DEFAULT_STALL_TIMEOUT_MS);
-        // A null or nonsense value would otherwise become the socket read timeout.
-        int stallTimeoutMs = (requested == null || requested <= 0) ? DEFAULT_STALL_TIMEOUT_MS : requested;
+        int requested = call.getInt("stallTimeoutMs", DEFAULT_STALL_TIMEOUT_MS);
+        // A nonsense value would otherwise become the socket read timeout.
+        int stallTimeoutMs = (requested <= 0) ? DEFAULT_STALL_TIMEOUT_MS : requested;
         String id = ZmStreamRegistry.shared().nextId();
         FrameStore.shared().register(id);
         MjpegReader reader = new MjpegReader(id, url, stallTimeoutMs);

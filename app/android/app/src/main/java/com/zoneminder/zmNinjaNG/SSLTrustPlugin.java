@@ -65,6 +65,14 @@ public class SSLTrustPlugin extends Plugin {
         originalHostnameVerifier = HttpsURLConnection.getDefaultHostnameVerifier();
     }
 
+    @Override
+    protected void handleOnDestroy() {
+        super.handleOnDestroy();
+        // The static reference reaches the Bridge, the WebView and the Activity
+        // through this plugin, so it does not outlive them.
+        if (loaded == this) loaded = null;
+    }
+
     @PluginMethod
     public void enable(PluginCall call) {
         this.enabled = true;
