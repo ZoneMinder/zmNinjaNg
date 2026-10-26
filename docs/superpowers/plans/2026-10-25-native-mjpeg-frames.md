@@ -26,7 +26,7 @@
 - No new dependency on any platform.
 - P2: every unit test is proven red (`node scripts/proven-red.mjs <base> <head>`). Native parser tests are proven red by running them before the parser exists.
 - Commit per task, conventional commits, `refs #156` in the body. Closing keywords only after the maintainer confirms.
-- Device e2e is manual; agents never run it. Task 10 lists what the maintainer checks.
+- Device e2e is manual; agents never run it. Task 11 lists what the maintainer checks.
 
 ## Review Focus
 
@@ -398,10 +398,79 @@ it('an unknown count on a lifting host recommends streaming', () => {
 
 ---
 
-### Task 9: Docs and playbook facts
+### Task 9: Desktop connection limit as a setting
 
 **Files:**
-- Modify: `docs/user-guide/settings.md` (the "Connection limits by platform" table and the note under it: Android and iOS rows read "Read natively by the app, not through the webview" / "No"; the note keeps only the web-browser case)
+- Modify: `app/electron/main.cjs:13-17` (read the value before `app.whenReady()`), plus two new `ipcMain.handle` blocks beside `app:user-data-path`
+- Modify: `app/electron/preload.cjs` (expose `electronConnections`)
+- Create: `app/src/components/settings/DesktopConnectionsRow.tsx`
+- Modify: `app/src/components/settings/LiveStreamingSection.tsx` (render the row as a direct child of the Live Streaming `SettingsCard`, not inside `AdvancedStreamingFold`)
+- Modify: `app/src/locales/{de,en,es,fa,fr,it,ru,zh}/translation.json`
+- Modify: `app/src/lib/zmninja-ng-constants.ts` (the bounds and default)
+- Test: `app/electron/__tests__/main.test.ts` (extend; it already asserts the hardcoded switch at line 360), `app/src/components/settings/__tests__/DesktopConnectionsRow.test.tsx`
+
+**Interfaces:**
+- Consumes: nothing from earlier tasks. Independent of the native transport; it is the desktop half of the same limit.
+- Produces:
+  ```ts
+  // zmninja-ng-constants.ts, in ZM_INTEGRATION
+  desktopConnections: { min: 6, max: 256, default: 32 }
+  // preload.cjs
+  window.electronConnections = {
+    get(): Promise<number>,
+    set(value: number): Promise<number>,   // resolves with the clamped value actually stored
+  }
+  ```
+  Storage: `<userData>/desktop-connections.json`, shape `{ "maxConnectionsPerHost": 32 }`. Chromium reads the switch once at startup, so the renderer's localStorage cannot carry this; main reads the file with `fs.readFileSync` before `app.whenReady()` and a change takes effect on the next launch. The UI says so.
+
+**Why 256 is the ceiling:** Chromium's whole socket pool is 256 per profile, so a per-host value above it cannot be honored. The maintainer asked for more than 32; a number box answers that without another round of hardcoding.
+
+- [ ] **Step 1: Write the failing main-process tests**
+
+```ts
+it('reads the stored connection limit and applies it as the switch', ...)
+  // readFileSync -> '{"maxConnectionsPerHost":96}'; expect appendSwitch('max-connections-per-host','96')
+it('falls back to the default when the file is missing or unparseable', ...)
+  // readFileSync throws, then returns 'not json' -> appendSwitch(..., '32') both times
+it('clamps a stored value outside the bounds', ...)
+  // 5000 -> '256'; 1 -> '6'
+it('the set handler rejects a non-integer and stores a clamped integer', ...)
+  // handler('x') rejects; handler(9999) resolves 256 and writes that to the file
+```
+
+- [ ] **Step 2: Run `npx vitest run electron/__tests__/main.test.ts`, expect FAIL**
+
+- [ ] **Step 3: Implement in `main.cjs`: `readMaxConnectionsPerHost()` (readFileSync in a try/catch, clamp, default), the `appendSwitch` call using it, and handlers `app:max-connections-get` / `app:max-connections-set`. The set handler validates at the IPC trust boundary (I2/I1): a non-integer or non-finite value rejects, anything else clamps into range before it is written. Expose both in `preload.cjs`.**
+
+Replace the existing hardcoded assertion at `main.test.ts:361` rather than leaving two tests on the same switch.
+
+- [ ] **Step 4: Run the main tests, expect PASS**
+
+- [ ] **Step 5: Write the failing row test**
+
+```tsx
+it('reads the current value on mount and shows it', ...)
+it('writes the value the user types and shows the restart note', ...)
+  // expect(set).toHaveBeenCalledWith(64); the note text comes from the locale key
+it('shows the clamped value when main clamps it', ...)
+  // set resolves 256 for an input of 9999 -> the box shows 256
+it('renders nothing when the app is not Electron', ...)
+```
+
+- [ ] **Step 6: Run `npx vitest run src/components/settings/__tests__/DesktopConnectionsRow.test.tsx`, expect FAIL**
+
+- [ ] **Step 7: Implement `DesktopConnectionsRow` (returns null unless `Platform.isElectron`; a number input with min/max from the constant, `data-testid="settings-desktop-connections"`, label and description from new locale keys in all eight languages, description names the restart). Render it in `LiveStreamingSection`.**
+
+- [ ] **Step 8: Run `npx vitest run src/components/settings src/pages/__tests__/Settings.test.tsx src/locales`, expect PASS**
+
+- [ ] **Step 9: Commit** `feat(desktop): make the per-host connection limit a setting`
+
+---
+
+### Task 10: Docs and playbook facts
+
+**Files:**
+- Modify: `docs/user-guide/settings.md` (the "Connection limits by platform" table and the note under it: Android and iOS rows read "Read natively by the app, not through the webview" / "No"; the note keeps only the web-browser case; document the desktop connection-limit setting from Task 9, including that it takes effect on restart)
 - Modify: `docs/user-guide/montage.md` (the paragraph at "On phones, tablets, and the web app" and the one after it: the limit now applies to the web app only)
 - Modify: `docs/developer-guide/call-flows.rst` Flow 2 (one paragraph and one sequence-diagram hop: on iOS/Android `useMonitorStream` calls `useNativeMjpegFrames`, which opens `ZmStream`, and the `<img>` loads `zmframe://` frames)
 - Modify: `agents/project/domain-context.md` (the six-connections bullet: add that on iOS and Android the native frame path lifts it; the bound remains on the web build)
@@ -415,7 +484,7 @@ it('an unknown count on a lifting host recommends streaming', () => {
 
 ---
 
-### Task 10: Gates, device checklist, PR
+### Task 11: Gates, device checklist, PR
 
 - [ ] **Step 1: `npm run gates` from `app/`, all green; `node scripts/proven-red.mjs main HEAD` from the repo root, every changed test red by assertion**
 
