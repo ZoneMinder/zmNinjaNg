@@ -119,6 +119,24 @@ final class FrameStoreTests: XCTestCase {
         XCTAssertNil(completed(capture))
     }
 
+    func testRemoveAllDropsEverySlotAndCompletesTheirWaiters() {
+        let store = FrameStore()
+        store.register("1")
+        store.register("2")
+        let (first, _) = park(store, "1")
+        let (second, _) = park(store, "2")
+
+        // The webview went away, so every stream is reclaimed at once.
+        store.removeAll()
+        XCTAssertNil(completed(first))
+        XCTAssertNil(completed(second))
+
+        // Both slots are gone, so a later request is an unknown stream.
+        store.publish("1", frame: frameA)
+        let (afterRemoveAll, _) = park(store, "1")
+        XCTAssertNil(completed(afterRemoveAll))
+    }
+
     func testCancelledWaiterIsNeverCompleted() {
         let store = FrameStore()
         store.register("1")

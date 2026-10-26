@@ -69,6 +69,18 @@ public final class FrameStore {
         }
     }
 
+    /// Reclaims every stream. The webview that was reading these frames is gone -
+    /// a reload, a remount, a crash - so nothing will ever ask for them again.
+    public func removeAll() {
+        queue.async {
+            let slots = self.slots
+            self.slots = [:]
+            for slot in slots.values {
+                self.completeWaiter(of: slot, with: nil)
+            }
+        }
+    }
+
     /// Calls `completion` on the store's queue with the next undelivered frame,
     /// nil for a dead, unknown or timed-out stream. Replaces any earlier waiter
     /// for `id`, completing that one with nil.

@@ -43,6 +43,14 @@ final class ZmStreamRegistry {
         defer { lock.unlock() }
         return streams.removeValue(forKey: id)?.reader
     }
+
+    func removeAllReaders() -> [MjpegReader] {
+        lock.lock()
+        defer { lock.unlock() }
+        let readers = streams.values.map { $0.reader }
+        streams = [:]
+        return readers
+    }
 }
 
 @objc(ZmStreamPlugin)
@@ -52,6 +60,7 @@ public class ZmStreamPlugin: CAPPlugin, CAPBridgedPlugin {
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "open", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "close", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "closeAll", returnType: CAPPluginReturnPromise),
     ]
 
     /// Only used if a caller omits stallTimeoutMs; the JS side always sends one.
@@ -86,6 +95,19 @@ public class ZmStreamPlugin: CAPPlugin, CAPBridgedPlugin {
         // parked; then the store, which completes whatever is parked already.
         ZmStreamRegistry.shared.removeReader(id)?.cancel()
         FrameStore.shared.remove(id)
+        call.resolve()
+    }
+
+    /// Reclaims every stream. The JS side calls this when its page goes away and
+    /// again when the stream module initialises, which is the half that matters:
+    /// a hard reload or a crash runs no teardown handler, so without a reclaim at
+    /// startup the readers of the previous page would keep parsing frames into
+    /// slots nobody reads, one per tile, per reload.
+    @objc func closeAll(_ call: CAPPluginCall) {
+        for reader in ZmStreamRegistry.shared.removeAllReaders() {
+            reader.cancel()
+        }
+        FrameStore.shared.removeAll()
         call.resolve()
     }
 }
