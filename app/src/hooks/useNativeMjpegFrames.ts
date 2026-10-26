@@ -63,8 +63,10 @@ export function useNativeMjpegFrames(streamUrl: string, active: boolean): Native
 
   useEffect(() => {
     if (!enabled) return;
-    window.addEventListener('pagehide', closeAllNow);
-    return () => window.removeEventListener('pagehide', closeAllNow);
+    // A closure per tile: a shared reference would be one listener, and the first unmount would remove it for all.
+    const onHide = () => closeAllNow();
+    window.addEventListener('pagehide', onHide);
+    return () => window.removeEventListener('pagehide', onHide);
   }, [enabled]);
 
   useEffect(() => {

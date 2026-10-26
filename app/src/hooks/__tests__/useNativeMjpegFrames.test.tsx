@@ -197,6 +197,18 @@ describe('useNativeMjpegFrames', () => {
     await waitFor(() => expect(plugin.closeAll).toHaveBeenCalledTimes(2));
   });
 
+  it('keeps the pagehide reclaim while another tile is still mounted', async () => {
+    const a = renderHook(() => useNativeMjpegFrames(URL_A, true));
+    const b = renderHook(() => useNativeMjpegFrames(URL_B, true));
+    await waitFor(() => expect(plugin.open).toHaveBeenCalledTimes(2));
+    a.unmount();
+    expect(plugin.closeAll).toHaveBeenCalledTimes(1);
+
+    window.dispatchEvent(new Event('pagehide'));
+    await waitFor(() => expect(plugin.closeAll).toHaveBeenCalledTimes(2));
+    b.unmount();
+  });
+
   it('stops listening for pagehide after unmount', async () => {
     const { result, unmount } = renderHook(() => useNativeMjpegFrames(URL_A, true));
     await waitFor(() => expect(result.current.streamId).toBe('s1'));
