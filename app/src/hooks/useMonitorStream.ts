@@ -20,10 +20,12 @@ import { useViewPrefs } from './useViewPrefs';
 import { useBandwidthSettings } from './useBandwidthSettings';
 import { useStreamLifecycle } from './useStreamLifecycle';
 import { useAnalysisFrames } from './useAnalysisFrames';
+import { useNativeMjpegFrames } from './useNativeMjpegFrames';
 import { useFreshAccessToken } from './useFreshAccessToken';
 import { useServerUrls } from './useServerUrls';
 import { useVisibilityResume } from './useVisibilityResume';
 import { useAuthStore, useAuthSlice } from '../stores/auth';
+import { Platform } from '../lib/platform';
 import { log, LogLevel } from '../lib/logger';
 import { planReconnect } from '../lib/monitor/reconnect-backoff';
 import { ZM_INTEGRATION } from '../lib/zmninja-ng-constants';
@@ -307,17 +309,32 @@ export function useMonitorStream({
     })
     : '';
 
-  // The `<img>` points straight at streamUrl. We mirror it into imageSrc so the
-  // consumer binds to a single field; reconnect logic below depends on the
+  // A webview allows six connections per host, so a montage of MJPEG tiles
+  // starves. On native the stream is held by native code and served a frame at
+  // a time over zmframe://, and the <img> chains frames from the load handler
+  // below. Snapshot mode, the web build and Electron keep streamUrl. refs #156
+  const frameMode = Platform.isNative && effectiveViewMode === 'streaming' && enabled;
+  const scheduleReconnectRef = useRef<() => void>(() => {});
+  const frames = useNativeMjpegFrames(streamUrl, frameMode, () => scheduleReconnectRef.current());
+  const nextImageSrc = frameMode ? frames.frameSrc : streamUrl;
+
+  // The `<img>` points straight at the URL above. We mirror it into imageSrc so
+  // the consumer binds to a single field; reconnect logic below depends on the
   // <img>'s native onError handler which the consuming player wires up.
   useEffect(() => {
-    setImageSrc(streamUrl);
+    setImageSrc(nextImageSrc);
     // A new src is a new request in flight; an empty one is nothing loading.
-    pendingSinceRef.current = streamUrl ? Date.now() : 0;
+    pendingSinceRef.current = nextImageSrc ? Date.now() : 0;
+    // From the first URL this stream had to try, not its first frame: the
+    // backoff's opening window measures how long it has been trying.
     if (streamUrl && streamStartedAtRef.current === 0) {
       streamStartedAtRef.current = Date.now();
     }
-  }, [streamUrl]);
+  }, [nextImageSrc, streamUrl]);
+
+  // A frame decoded off a replaced native stream is not a frame off this one,
+  // and the src alone can no longer tell them apart. refs #352
+  useEffect(() => setLoadedSrc(''), [frames.streamId]);
 
   // MJPEG reconnect on stream error. Wired to the consumer's <img onError> via
   // reportStreamError below. Backoff doubles from mjpegReconnectBaseDelayMs up
@@ -356,14 +373,25 @@ export function useMonitorStream({
       forceRegenerate({ killPrevious: true });
     }, plan.delayMs);
   };
+  useEffect(() => {
+    scheduleReconnectRef.current = scheduleReconnect;
+  });
 
   // Reset the backoff counter (and cancel any pending reconnect) once a frame
   // loads, so a later independent drop starts a fresh backoff. A frame is also
   // the first proof that this connection's zms command socket exists, which is
   // when a remembered analysis setting can be applied to it.
   const reportStreamLoad = () => {
+    let loaded = imageSrc;
+    if (frameMode) {
+      // A load off a stream that has already been replaced proves nothing
+      // about this one, so it neither counts as a frame nor resets the backoff.
+      const img = imgRef.current;
+      if (!img || !frames.advance(img)) return;
+      loaded = img.currentSrc;
+    }
     analysisFrames.applyOnStreamLoad();
-    setLoadedSrc(imageSrc);
+    setLoadedSrc(loaded);
     pendingSinceRef.current = 0;
     setHoldFrameForRestart(false);
     reconnectAttemptRef.current = 0;
@@ -442,10 +470,14 @@ export function useMonitorStream({
   // the browser holds it until the new one decodes. An error reconnect never
   // holds - scheduleReconnect clears loadedSrc precisely because what the
   // element is showing is no longer a frame off a working connection.
+  //
+  // Frame mode is the third: the src changes on every frame, so matching it
+  // would blink the tile constantly. The effect above withdraws the frame when
+  // the stream behind it is replaced, which is what the match protected.
   const hasFrame =
     imageSrc !== '' &&
     loadedSrc !== '' &&
-    (effectiveViewMode === 'snapshot' || holdFrameForRestart || loadedSrc === imageSrc);
+    (frameMode || effectiveViewMode === 'snapshot' || holdFrameForRestart || loadedSrc === imageSrc);
 
   return {
     streamUrl,

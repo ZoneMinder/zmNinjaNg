@@ -7,7 +7,7 @@
  * one. `n` only defeats the image cache; native decides which frame comes back.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Platform } from '../lib/platform';
 import { log, LogLevel } from '../lib/logger';
 import { ZM_INTEGRATION } from '../lib/zmninja-ng-constants';
@@ -57,9 +57,23 @@ function closeAllNow(): void {
     .catch((error) => log.monitor('closing native streams failed', LogLevel.WARN, { error }));
 }
 
-export function useNativeMjpegFrames(streamUrl: string, active: boolean): NativeMjpegFrames {
+/**
+ * @param onOpenFailed Called when native refuses the stream. The `<img>` src
+ * is still '' at that point, so no `error` fires and the caller's reconnect
+ * would never run.
+ */
+export function useNativeMjpegFrames(
+  streamUrl: string,
+  active: boolean,
+  onOpenFailed?: () => void
+): NativeMjpegFrames {
   const [state, setState] = useState<FrameState>(NO_STREAM);
   const enabled = active && Platform.isNative;
+  // Mirrored so a caller's inline closure does not re-run the open effect.
+  const onOpenFailedRef = useRef(onOpenFailed);
+  useEffect(() => {
+    onOpenFailedRef.current = onOpenFailed;
+  });
 
   useEffect(() => {
     if (!enabled) return;
@@ -94,7 +108,10 @@ export function useNativeMjpegFrames(streamUrl: string, active: boolean): Native
       }
       openedId = streamId;
       setState({ streamId, n: 0 });
-    })().catch((error) => log.monitor('opening native stream failed', LogLevel.WARN, { error }));
+    })().catch((error) => {
+      log.monitor('opening native stream failed', LogLevel.WARN, { error });
+      if (!cancelled) onOpenFailedRef.current?.();
+    });
 
     return () => {
       cancelled = true;
