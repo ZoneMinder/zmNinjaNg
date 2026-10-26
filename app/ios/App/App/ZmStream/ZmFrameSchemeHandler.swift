@@ -50,7 +50,13 @@ final class ZmFrameSchemeHandler: NSObject, WKURLSchemeHandler {
     }
 
     private func respond(_ task: WKURLSchemeTask, status: Int, body: Data?) {
-        guard let url = task.request.url else { return }
+        // Every exit has to end the task. One that gets neither didFinish nor
+        // didFailWithError leaves the <img> waiting with no error event, which
+        // stops its chain of requests for good.
+        guard let url = task.request.url else {
+            task.didFailWithError(URLError(.badServerResponse))
+            return
+        }
         var headers = [
             "Content-Length": String(body?.count ?? 0),
             "Cache-Control": "no-store",
@@ -63,7 +69,10 @@ final class ZmFrameSchemeHandler: NSObject, WKURLSchemeHandler {
             statusCode: status,
             httpVersion: "HTTP/1.1",
             headerFields: headers
-        ) else { return }
+        ) else {
+            task.didFailWithError(URLError(.badServerResponse))
+            return
+        }
 
         task.didReceive(response)
         if let body = body, !body.isEmpty {
