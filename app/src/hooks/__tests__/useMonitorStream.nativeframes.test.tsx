@@ -171,10 +171,12 @@ describe('useMonitorStream: native frame transport', () => {
   function reportLoadOf(
     view: { result: { current: ReturnType<typeof useMonitorStream> } },
     currentSrc: string,
+    src: string = currentSrc,
   ) {
     // A real element: the stream lifecycle teardown calls removeAttribute on
     // whatever the ref holds. jsdom never populates currentSrc, so define it.
     const img = document.createElement('img');
+    img.src = src;
     Object.defineProperty(img, 'currentSrc', { value: currentSrc, configurable: true });
     act(() => {
       view.result.current.imgRef.current = img;
@@ -211,6 +213,18 @@ describe('useMonitorStream: native frame transport', () => {
     reportLoadOf(view, 'zmframe://frames/s1/0');
 
     expect(view.result.current.hasFrame).toBe(true);
+  });
+
+  it('a load with no currentSrc still counts, off the src attribute', async () => {
+    const view = await renderNative();
+
+    // A webview that does not report currentSrc for a custom scheme would
+    // otherwise freeze the tile on the placeholder: advance refuses the load,
+    // reportStreamLoad returns before setLoadedSrc, and nothing logs or errors.
+    reportLoadOf(view, '', 'zmframe://frames/s1/0');
+
+    expect(view.result.current.hasFrame).toBe(true);
+    expect(view.result.current.imageSrc).toBe('zmframe://frames/s1/1');
   });
 
   it('hasFrame stays true across frame advances', async () => {

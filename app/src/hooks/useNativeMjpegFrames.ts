@@ -16,7 +16,7 @@ import { zmFrameStreamId, zmFrameUrl } from '../plugins/zm-stream';
 export interface NativeMjpegFrames {
   /** zmframe URL for the current streamId and n, or '' before open resolves / when inactive. */
   frameSrc: string;
-  /** Call from the <img> load handler with the element; ignored when its currentSrc names another stream. Returns true when accepted. */
+  /** Call from the <img> load handler with the element; ignored when the frame it loaded names another stream. Returns true when accepted. */
   advance(img: HTMLImageElement | null): boolean;
   /** The current streamId or null. Changes whenever a new stream opens. */
   streamId: string | null;
@@ -49,6 +49,18 @@ function reclaimOnce(): Promise<void> {
 /** Test seam: forget that this page already reclaimed. */
 export function resetNativeReclaimForTests(): void {
   reclaimed = null;
+}
+
+/**
+ * The frame URL an element actually loaded. zmframe is not a special scheme,
+ * so a webview is free to leave `currentSrc` empty for it; the attribute still
+ * names the frame. Without the fallback a platform that does would refuse
+ * every advance, and the tile would sit on the placeholder with no error, no
+ * backoff and no log. The guard is weaker only in the fallback case: during
+ * the narrow stale-load window `src` already names the new stream.
+ */
+export function loadedFrameSrc(img: HTMLImageElement | null): string {
+  return img?.currentSrc || img?.src || '';
 }
 
 function closeAllNow(): void {
@@ -125,7 +137,7 @@ export function useNativeMjpegFrames(
 
   const advance = useCallback(
     (img: HTMLImageElement | null): boolean => {
-      if (!streamId || zmFrameStreamId(img?.currentSrc ?? '') !== streamId) return false;
+      if (!streamId || zmFrameStreamId(loadedFrameSrc(img)) !== streamId) return false;
       setState((s) => (s.streamId === streamId ? { streamId, n: s.n + 1 } : s));
       return true;
     },

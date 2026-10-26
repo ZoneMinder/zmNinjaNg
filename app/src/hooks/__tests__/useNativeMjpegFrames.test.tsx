@@ -86,6 +86,24 @@ describe('useNativeMjpegFrames', () => {
     expect(accepted).toBe(false);
   });
 
+  it('advance falls back to the src attribute when currentSrc is empty', async () => {
+    const { result } = renderHook(() => useNativeMjpegFrames(URL_A, true));
+    await waitFor(() => expect(result.current.streamId).toBe('s1'));
+
+    // zmframe is not a special scheme, and neither WKWebView nor Chromium is
+    // under any obligation to report currentSrc for one. Empty there must not
+    // stop the chain: the attribute still names the frame that loaded.
+    let accepted = false;
+    act(() => {
+      accepted = result.current.advance({
+        currentSrc: '',
+        src: 'zmframe://frames/s1/0',
+      } as HTMLImageElement);
+    });
+    expect(accepted).toBe(true);
+    expect(result.current.frameSrc).toBe('zmframe://frames/s1/1');
+  });
+
   it('a new url closes the previous stream before exposing the new one', async () => {
     plugin.open
       .mockResolvedValueOnce({ streamId: 's1' })

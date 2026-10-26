@@ -20,7 +20,7 @@ import { useViewPrefs } from './useViewPrefs';
 import { useBandwidthSettings } from './useBandwidthSettings';
 import { useStreamLifecycle } from './useStreamLifecycle';
 import { useAnalysisFrames } from './useAnalysisFrames';
-import { useNativeMjpegFrames } from './useNativeMjpegFrames';
+import { loadedFrameSrc, useNativeMjpegFrames } from './useNativeMjpegFrames';
 import { useFreshAccessToken } from './useFreshAccessToken';
 import { useServerUrls } from './useServerUrls';
 import { useVisibilityResume } from './useVisibilityResume';
@@ -393,7 +393,7 @@ export function useMonitorStream({
       // about this one, so it neither counts as a frame nor resets the backoff.
       const img = imgRef.current;
       if (!img || !frames.advance(img)) return;
-      loaded = img.currentSrc;
+      loaded = loadedFrameSrc(img);
     }
     analysisFrames.applyOnStreamLoad();
     setLoadedSrc(loaded);
