@@ -800,6 +800,10 @@ export function LiveMonitorPlayer({
           }
           data-testid="video-player-mjpeg"
           src={mjpegStream.imageSrc}
+          // In native frame mode src is a zmframe:// URL nothing outside the
+          // webview can fetch, so the snapshot download reads the real stream
+          // URL from here (services/download.ts).
+          data-stream-url={mjpegStream.streamUrl}
           // Empty: a failing load with alt text makes WebKit draw its glyph
           // beside the text, and nothing describes a live feed in words. The
           // surrounding tile carries the monitor name.

@@ -328,7 +328,13 @@ export async function downloadSnapshotFromElement(
       if (imageUrl.startsWith('data:')) {
         await downloadSnapshot(imageUrl, monitorName);
       } else {
-        await downloadFile(convertToSnapshotUrl(imageUrl), filename);
+        // Native Streaming mode points src at zmframe://frames/<id>/<n>, which
+        // only the webview's own scheme handler can fetch. LiveMonitorPlayer
+        // keeps the real nph-zms URL on the element for this path.
+        const fetchable = /^https?:/.test(imageUrl)
+          ? imageUrl
+          : element.dataset.streamUrl || imageUrl;
+        await downloadFile(convertToSnapshotUrl(fetchable), filename);
       }
     }
   } catch (error) {
