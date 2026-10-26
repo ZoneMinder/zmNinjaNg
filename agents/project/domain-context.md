@@ -139,7 +139,9 @@ matching reality, fixing it is a protocol change like any rule edit.
   browser draws beside that glyph, so keep it empty (#352).
 - A browser allows six concurrent connections per host over HTTP/1.1, and
   `ZM_MIN_STREAMING_PORT` is the only thing that spreads streams across more
-  than one pool. Measured identically in WKWebView and Chromium: of 74 `<img>`
+  than one pool. That holds for the web build only: iOS and Android serve
+  frames from native code over `zmframe://` so the webview opens no ZM
+  connection, and Electron raises the cap (default 32, setting 6-256). Measured identically in WKWebView and Chromium: of 74 `<img>`
   pointed at one host, exactly 6 reached the server and the other 68 sat in the
   queue with neither a `load` nor an `error`. Snapshot mode is not immune,
   because reassigning a pending `<img src>` cancels that load silently - no

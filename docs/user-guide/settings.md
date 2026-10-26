@@ -211,12 +211,12 @@ How a live MJPEG feed reaches the screen differs by platform, and that decides w
 | Platform | How live feeds load | ~6 simultaneous live streams limit? |
 |----------|---------------------|-------------------------------------|
 | Web browser | Loaded directly from ZoneMinder by the browser | Yes, about 6 per server |
-| Android | Loaded directly through the app WebView | Yes, about 6 per server |
-| iOS / iPadOS | Loaded directly through the app WebView | Yes, about 6 per server |
-| Desktop (Windows, macOS, Linux) | Read natively by the app, not through the webview | No limit |
+| Android | Read natively by the app, not through the webview | No |
+| iOS / iPadOS | Read natively by the app, not through the webview | No |
+| Desktop (Windows, macOS, Linux) | Loaded by the app's browser engine, with the per-server limit raised | Raised to 32 by default; **Max connections per host (desktop)** changes it |
 
 :::{note}
-On **iOS, Android, and the web app**, a ZoneMinder server keeps only about 6 live streams open at a time, so a montage with more than ~6 live tiles stalls after the first few. To show more than 6 live feeds at once, either keep **Snapshot** mode (which fetches a still on an interval instead of holding a connection) or enable multi-port streaming on the server by setting `ZM_MIN_STREAMING_PORT`. That spreads each camera across a different port, so the limit no longer applies. On **desktop** the app reads feeds natively, so this limit never applies. See [Multi-Server](#multi-server).
+Only the **web app** is held to about 6 live streams per server. A montage with more than ~6 live tiles stalls after the first few there. To show more, either keep **Snapshot** mode (which fetches a still on an interval instead of holding a connection) or enable multi-port streaming on the server by setting `ZM_MIN_STREAMING_PORT`, which spreads each camera across a different port. On **iOS and Android** the app holds each feed itself and hands the screen one picture at a time, so the browser limit never comes into play. On **desktop** the app raises the limit to 32 connections per server by default (see **Max connections per host (desktop)** above). See [Multi-Server](#multi-server).
 :::
 
 #### Where Streaming Mode applies

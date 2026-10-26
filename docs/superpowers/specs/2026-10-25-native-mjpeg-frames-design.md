@@ -87,8 +87,11 @@ Content-Length: 23417
 4. The scheme handler (`WKURLSchemeHandler` on iOS, `shouldInterceptRequest` on
    Android) looks up the stream. If the slot holds a frame newer than the last
    one delivered for this stream, it answers at once: `200`, `Content-Type:
-   image/jpeg`, `Content-Length`, `Cache-Control: no-store`. Otherwise it parks
-   the request and the reader completes it when the next frame lands.
+   image/jpeg`, `Cache-Control: no-store`, and on iOS `Content-Length`. On
+   Android a `WebResourceResponse` needs its `InputStream` before the frame
+   exists, so the response has no `Content-Length` and the body ends at EOF.
+   Otherwise the handler parks the request and the reader completes it when the
+   next frame lands.
 5. On `load` the hook bumps `n`, the `<img>` requests again, and the loop runs
    at the stream's own frame rate. Scheme loads do not sit in the per-host pool,
    so 24 parked requests cost nothing.

@@ -236,6 +236,7 @@ collide on the server and never leak a zombie process when they go away.
        participant Stream as useMonitorStream
        participant Life as useStreamLifecycle
        participant Store as Monitor store
+       participant Native as ZmStream (native)
        participant ZM as ZoneMinder (nph-zms)
 
        Page->>ZM: GET /monitors.json
@@ -243,8 +244,16 @@ collide on the server and never leak a zombie process when they go away.
        Tile->>Stream: useMonitorStream (mjpeg)
        Stream->>Life: useStreamLifecycle
        Life->>Store: regenerateConnKey, get a unique key
-       Stream->>ZM: img src = nph-zms?connkey=K
-       ZM-->>Tile: MJPEG frames
+       alt web, desktop, or snapshot
+           Stream->>ZM: img src = nph-zms?connkey=K
+           ZM-->>Tile: MJPEG frames
+       else iOS or Android, streaming
+           Stream->>Native: ZmStream.open(nph-zms URL)
+           Native->>ZM: GET nph-zms?connkey=K
+           ZM-->>Native: multipart MJPEG
+           Tile->>Native: img src = zmframe://frames/id/n
+           Native-->>Tile: one JPEG per request
+       end
        Note over Tile,ZM: on img error: backoff, CMD_QUIT old key, mint new key
        Tile->>ZM: CMD_QUIT on unmount or profile switch
 
@@ -312,10 +321,29 @@ collide on the server and never leak a zombie process when they go away.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/api/monitors.ts>`__
    · → :doc:`07-api-and-data-fetching`
 
+#. **Hand the URL to native code (iOS and Android, streaming mode).** A webview
+   opens about six connections per host, so 24 live tiles would stall after the
+   first few. ``useMonitorStream`` therefore passes the ``nph-zms`` URL to
+   ``useNativeMjpegFrames``, which calls ``ZmStream.open`` (the Capacitor
+   plugin in ``plugins/zm-stream``). Native code opens the connection itself,
+   splits the multipart body into single JPEGs, and keeps only the newest one
+   per stream. The hook returns ``frameSrc``, a
+   ``zmframe://frames/<streamId>/<n>`` URL, and the ``<img>`` loads it through a
+   custom URL scheme handler. A request for a frame native has not received yet
+   waits until it arrives. On each ``load`` the hook bumps ``n`` so the next
+   request is a new URL (``n`` only defeats the image cache; native decides
+   which frame comes back). The webview never connects to ZoneMinder, so its
+   per-host pool bounds nothing. Changing the URL, or unmounting, calls
+   ``ZmStream.close``, which ends the native request and so the ``nph-zms``
+   connection. Snapshot mode, the web build, and Electron skip this step.
+   `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/hooks/useNativeMjpegFrames.ts>`__
+   · → :doc:`16-platform-surfaces`
+
 #. **The browser opens the feed.** ``LiveMonitorPlayer`` binds
-   ``<img src={imageSrc} onLoad onError>``. The browser itself opens the
-   multipart MJPEG connection through the ``<img>``; the connkey lives right in
-   the ``src``. A good frame calls ``reportStreamLoad``, which zeroes the
+   ``<img src={imageSrc} onLoad onError>``. On the web and desktop the browser
+   itself opens the multipart MJPEG connection through the ``<img>``, and the
+   connkey lives right in the ``src``; on iOS and Android in streaming mode the
+   ``src`` is the ``zmframe://`` URL from the previous step. A good frame calls ``reportStreamLoad``, which zeroes the
    reconnect backoff and records which ``src`` produced it. That record is what
    ``hasFrame`` compares against, and the player keeps the ``<img>``
    ``visibility: hidden`` until it agrees, so the VideoOff placeholder covers the
