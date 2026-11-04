@@ -11,6 +11,7 @@
 
 import { useRef, useState, type RefObject } from 'react';
 import { useDrag } from '@use-gesture/react';
+import { Platform } from '../lib/platform';
 
 interface UsePullToRefreshOptions {
   /** The scroll container to watch. Owned by the caller, as in useEventMontageGrid. */
@@ -76,7 +77,10 @@ export function usePullToRefresh({
     },
     {
       axis: 'y',
-      filterTaps: true,
+      // On touch the browser already drops the click after a drag, and a mouse
+      // click sends no touch events, so filterTaps would eat every mouse click
+      // (iOS app on a Mac, refs #582). Keep it for pointer-driven desktop.
+      filterTaps: !Platform.hasTouchEvents,
       pointer: { touch: true },
     }
   );
