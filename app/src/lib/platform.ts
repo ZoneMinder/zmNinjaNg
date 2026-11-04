@@ -49,6 +49,15 @@ export const Platform = {
   },
 
   /**
+   * True if the browser exposes touch events. iOS WebKit does, even when the
+   * iOS app runs on a Mac and is driven by a mouse. Same check @use-gesture
+   * uses to pick touch over pointer events.
+   */
+  get hasTouchEvents() {
+    return typeof window !== 'undefined' && 'ontouchstart' in window;
+  },
+
+  /**
    * True if running in a regular web browser (not Capacitor, not Electron).
    */
   get isWeb() {

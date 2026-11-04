@@ -11,6 +11,7 @@
 
 import { useState, useRef } from 'react';
 import { useDrag } from '@use-gesture/react';
+import { Platform } from '../lib/platform';
 
 interface UseSwipeNavigationOptions {
   onSwipeLeft?: () => void;
@@ -62,7 +63,9 @@ export function useSwipeNavigation({
     },
     {
       axis: 'x',
-      filterTaps: true,
+      // See usePullToRefresh: filterTaps eats mouse clicks when touch events
+      // exist (refs #582).
+      filterTaps: !Platform.hasTouchEvents,
       pointer: { touch: true },
     }
   );
