@@ -241,6 +241,16 @@ matching reality, fixing it is a protocol change like any rule edit.
   most landscape taps. Fixed by `lib/tap-jitter-guard.ts` (iOS only, stops
   in-slop moves at window capture). Diagnose dropped taps by logging
   `touchmove` count and `defaultPrevented` per tap, not by position (#534).
+- The iOS build also runs on Apple Silicon Macs ("Designed for iPad"), and
+  iPads take trackpads: `Capacitor.isNativePlatform()` and
+  `'ontouchstart' in window` are true while input is a mouse. Mouse
+  clicks there send no touch events, so a touch-only path must never be
+  the only way a click lands. `@use-gesture` with
+  `pointer: { touch: true }` plus `filterTaps` ate every click in the
+  container (#582); `filterTaps` stays off when touch events exist
+  (`Platform.hasTouchEvents`). Reproduce from Xcode with the "My Mac
+  (Designed for iPad)" destination; Safari Web Inspector attaches to
+  debug builds. Gate: `app/src/hooks/__tests__/gesture-click-through.test.tsx`.
 - On-device WebLLM crashes iOS WKWebView (about 2GB jetsam limit). It is
   gated off on iOS; remote Ollama is the supported path there.
 - Google Play's native debug-symbols warning for Android builds is inherent
