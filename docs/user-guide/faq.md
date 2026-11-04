@@ -25,7 +25,7 @@ Then restart zmNinjaNg. This applies to both the AppImage and `.deb` builds.
 
 ### iOS/Android: login works but live view and thumbnails stay blank
 
-On a self-signed HTTPS server, API calls succeed (they go through the native HTTP layer, which accepts the cert) but live MJPEG and event thumbnails load in the WebView, which only accepts the cert once its fingerprint is pinned. If the fingerprint was never pinned (for example the trust dialog was dismissed during setup), the API works while every image fails silently.
+On a self-signed HTTPS server, API calls succeed (they go through the native HTTP layer, which accepts the cert) but event thumbnails (and live MJPEG in Snapshot mode) load in the WebView, which only accepts the cert once its fingerprint is pinned. Live view in Streaming mode loads through the app's native reader, which checks the same pinned fingerprint. If the fingerprint was never pinned (for example the trust dialog was dismissed during setup), the API works while every image fails silently.
 
 When this state is detected the app shows a **Certificate not trusted** banner at the top. Tap **Verify**, then accept the certificate in the dialog. That pins the fingerprint, and live view and thumbnails load. You can also re-pin from Settings > Network.
 

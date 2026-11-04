@@ -20,6 +20,8 @@ vi.mock('../../lib/logger', () => ({
   LogLevel: { DEBUG: 0, INFO: 1, WARN: 2, ERROR: 3, NONE: 4 },
 }));
 vi.mock('../../api/monitors', () => ({ getMonitors: vi.fn() }));
+const platform = vi.hoisted(() => ({ isNative: false, isElectron: false }));
+vi.mock('../../lib/platform', () => ({ Platform: platform }));
 vi.mock('../sessions', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../sessions')>()),
   getSession: () => ({ client: {} }) as never,
@@ -39,6 +41,8 @@ describe('bootstrapViewMode', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useSettingsStore.setState({ profileSettings: {} });
+    platform.isNative = false;
+    platform.isElectron = false;
   });
 
   it('starts a fresh profile in the recommended mode and marks it chosen', async () => {
@@ -80,5 +84,20 @@ describe('bootstrapViewMode', () => {
     vi.mocked(getMonitors).mockRejectedValue(new Error('Network error'));
     await bootstrapViewMode(profile, 31000);
     expect(storedViewMode()).toBe('streaming');
+  });
+
+  it('picks streaming for a large server on a native host', async () => {
+    platform.isNative = true;
+    monitorCount(40);
+    await bootstrapViewMode(profile, null);
+    expect(storedViewMode()).toBe('streaming');
+  });
+
+  it('picks streaming on a desktop host even when the count fails', async () => {
+    platform.isElectron = true;
+    vi.mocked(getMonitors).mockRejectedValue(new Error('Network error'));
+    await bootstrapViewMode(profile, null);
+    expect(storedViewMode()).toBe('streaming');
+    expect(useSettingsStore.getState().profileSettings[id]?.viewModeChosen).toBe(true);
   });
 });

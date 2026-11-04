@@ -8,13 +8,38 @@
 
 const { app, BrowserWindow, Menu, nativeImage, net, ipcMain, session, shell, safeStorage, screen } = require('electron');
 const path = require('node:path');
+const fs = require('node:fs');
 const { isBoundsVisible, loadWindowState, saveWindowState } = require('./window-state.cjs');
 
 // Lift Chromium's default 6-connection-per-origin cap so Montage views with
 // many MJPEG tiles aren't bottlenecked. Each MJPEG stream holds an HTTP/1.1
 // connection open for as long as the tile is on screen; 6 monitors saturates
 // the pool and starves the rest of the app. Must be set before app.whenReady().
-app.commandLine.appendSwitch('max-connections-per-host', '32');
+//
+// Chromium reads the switch once at startup, before any window exists, so the
+// value cannot come from the renderer's localStorage. It lives in a small JSON
+// file in userData that this process reads synchronously at boot; a change made
+// in Settings applies on the next launch. Bounds mirror ZM_INTEGRATION.desktopConnections
+// in src/lib/zmninja-ng-constants.ts (main.test.ts pins them together). 256 is
+// Chromium's whole per-profile socket pool.
+const CONNECTIONS_MIN = 6;
+const CONNECTIONS_MAX = 256;
+const CONNECTIONS_DEFAULT = 32;
+const connectionsFile = () => path.join(app.getPath('userData'), 'desktop-connections.json');
+const clampConnections = (n) => Math.min(CONNECTIONS_MAX, Math.max(CONNECTIONS_MIN, n));
+
+// Never throws: a crash here means the app will not start at all. A missing,
+// empty, unparseable, or wrongly typed file all fall back to the default.
+function readMaxConnectionsPerHost() {
+  try {
+    const value = JSON.parse(fs.readFileSync(connectionsFile(), 'utf8'))?.maxConnectionsPerHost;
+    return Number.isInteger(value) ? clampConnections(value) : CONNECTIONS_DEFAULT;
+  } catch {
+    return CONNECTIONS_DEFAULT;
+  }
+}
+
+app.commandLine.appendSwitch('max-connections-per-host', String(readMaxConnectionsPerHost()));
 
 // Whether to trust self-signed/invalid TLS certificates. Secure default: reject
 // until the renderer enables it during bootstrap, gated on the per-profile
@@ -121,6 +146,19 @@ ipcMain.handle('secure:decrypt', (_event, base64) => {
 // electron/preload.cjs's `electronPaths.getUserDataPath` for the on-device
 // assistant's storage-info display (src/lib/assistant/model-storage.ts).
 ipcMain.handle('app:user-data-path', () => app.getPath('userData'));
+
+// Connection limit bridge (electron/preload.cjs `electronConnections`). The
+// setter is an IPC trust boundary: a non-integer rejects, anything else is
+// clamped and the stored value is returned so the UI shows what was kept.
+ipcMain.handle('app:max-connections-get', () => readMaxConnectionsPerHost());
+ipcMain.handle('app:max-connections-set', async (_event, value) => {
+  if (!Number.isInteger(value)) {
+    throw new TypeError('maxConnectionsPerHost must be an integer');
+  }
+  const stored = clampConnections(value);
+  fs.writeFileSync(connectionsFile(), JSON.stringify({ maxConnectionsPerHost: stored }));
+  return stored;
+});
 
 // App icon so the desktop shell shows the zmNinjaNg logo instead of the
 // default Electron logo (window, taskbar, and macOS dock).

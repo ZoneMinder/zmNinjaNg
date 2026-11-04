@@ -25,3 +25,10 @@ contextBridge.exposeInMainWorld('electronSecure', {
 contextBridge.exposeInMainWorld('electronPaths', {
   getUserDataPath: () => ipcRenderer.invoke('app:user-data-path'),
 });
+
+// Per-host connection limit. Chromium reads it at startup, so a set() applies
+// on the next launch; it resolves with the clamped value actually stored.
+contextBridge.exposeInMainWorld('electronConnections', {
+  get: () => ipcRenderer.invoke('app:max-connections-get'),
+  set: (value) => ipcRenderer.invoke('app:max-connections-set', value),
+});

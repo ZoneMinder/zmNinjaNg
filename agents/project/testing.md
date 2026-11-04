@@ -76,6 +76,7 @@ Read before tests, UI work, navigation work, or platform checks.
   asks, reading `app/.e2e-full-pass` (the date `npm run test:e2e:full` writes
   after a full passing run) to say when the whole suite last passed here.
 - Android, iPhone, and iPad suites are manual Appium screenshot checks.
+- `unitTests.returnDefaultValues = true` is set globally in `app/android/app/build.gradle`: every un-mocked Android framework call returns 0, null, or false, so an Android unit test can pass vacuously. Assert on values the code under test produced.
 - Native OS flows such as PiP, biometrics, push, downloads, sharing, and lifecycle require device verification.
 - UI work considers Electron, iOS, Android, portrait, and landscape. Record unavailable manual checks in handoff.
 

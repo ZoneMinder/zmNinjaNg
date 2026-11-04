@@ -10,6 +10,8 @@ import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
+import com.zoneminder.zmNinjaNG.stream.ZmFrameWebViewClient;
+import com.zoneminder.zmNinjaNG.stream.ZmStreamPlugin;
 
 public class MainActivity extends BridgeActivity {
 
@@ -20,7 +22,14 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(TvDetectorPlugin.class);
         registerPlugin(WindowThemePlugin.class);
         registerPlugin(GeminiNanoPlugin.class);
+        registerPlugin(ZmStreamPlugin.class);
         super.onCreate(savedInstanceState);
+
+        // Every webview client the app installs is a ZmFrameWebViewClient, so the
+        // zmframe:// interception survives SSLTrustPlugin swapping the client when
+        // self-signed trust is toggled. Without the interception, native MJPEG
+        // frames never reach a tile.
+        getBridge().setWebViewClient(new ZmFrameWebViewClient(getBridge(), false));
 
         if (isTVDevice()) {
             // Inject JS global before web content loads so the web layer

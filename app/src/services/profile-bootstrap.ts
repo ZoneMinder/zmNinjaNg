@@ -10,6 +10,7 @@ import { getServerTimeZone } from '../api/time';
 import { fetchGo2RTCPath, fetchZmsPath, getVersion } from '../api/auth';
 import { getSession } from './sessions';
 import { log, LogLevel } from '../lib/logger';
+import { Platform } from '../lib/platform';
 
 export interface BootstrapContext {
   getDecryptedPassword: (profileId: string) => Promise<string | undefined>;
@@ -276,13 +277,14 @@ export async function bootstrapViewMode(
     const { resolveMinStreamingPort } = await import('../lib/monitor/multiport');
     const effectivePort = resolveMinStreamingPort(minStreamingPort, bucket?.forceDisableMultiPort);
 
-    if (monitorCount === null && effectivePort === undefined) {
+    const hostLiftsLimit = Platform.isNative || Platform.isElectron;
+    if (monitorCount === null && effectivePort === undefined && !hostLiftsLimit) {
       log.profileService('Streaming Mode left undecided until the monitor count is known', LogLevel.INFO);
       return;
     }
 
     const { recommendViewMode } = await import('../lib/monitor/view-mode-recommendation');
-    const { mode, reason } = recommendViewMode(monitorCount, effectivePort);
+    const { mode, reason } = recommendViewMode(monitorCount, effectivePort, hostLiftsLimit);
 
     log.profileService('New profile: choosing Streaming Mode', LogLevel.INFO, {
       mode,
