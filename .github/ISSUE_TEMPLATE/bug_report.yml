@@ -103,10 +103,32 @@ body:
       required: true
 
   - type: textarea
+    id: app-logs
+    attributes:
+      label: App logs
+      description: |
+        Set the log level to DEBUG in **Settings > General**, reproduce the bug, then attach the logs.
+
+        - **iOS / Android**: open the **Logs** page from the menu, tap **Share**, and attach the `zmninja-ng-*.log` file. See [Sharing logs for support](https://zmninjang.readthedocs.io/en/latest/user-guide/logs.html#sharing-logs-for-support).
+        - **Desktop**: open the **Logs** page, tap **Open**, and attach the `zmninja-ng.log` file. If the bug shows an error, also paste the developer console output. See [How do I open the developer console on the desktop app?](https://zmninjang.readthedocs.io/en/latest/user-guide/faq.html#how-do-i-open-the-developer-console-on-the-desktop-app).
+        - **Web browser**: open the browser's developer console and paste its output.
+    validations:
+      required: true
+
+  - type: textarea
+    id: es-logs
+    attributes:
+      label: Event Server debug logs
+      description: |
+        Required if the bug involves the Event Server (push notifications, alarms, object detection). Follow [How to debug issues](https://zmeventnotificationng.readthedocs.io/en/latest/guides/hooks_faq.html#how-to-debug-issues) and paste the debug logs from the time of the bug. Leave blank if the ES is not involved.
+    validations:
+      required: false
+
+  - type: textarea
     id: screenshots
     attributes:
-      label: Screenshots / logs
-      description: Drag and drop screenshots, or paste relevant log output.
+      label: Screenshots
+      description: Drag and drop screenshots.
     validations:
       required: false
 
