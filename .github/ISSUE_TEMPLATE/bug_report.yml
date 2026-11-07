@@ -43,7 +43,7 @@ body:
   - type: input
     id: device
     attributes:
-      label: Device
+      label: Device (optional)
       description: e.g. iPhone 15 Pro, Pixel 7, MacBook Pro M2
     validations:
       required: false
@@ -59,7 +59,7 @@ body:
   - type: input
     id: es-version
     attributes:
-      label: Event Server (ES) version
+      label: Event Server (ES) version (optional)
       description: |
         `/usr/bin/zmeventnotification.pl --version` — leave blank if not installed.
     validations:
@@ -68,7 +68,7 @@ body:
   - type: input
     id: zm-detect-version
     attributes:
-      label: zm_detect version
+      label: zm_detect version (optional)
       description: |
         `/var/lib/zmeventnotification/bin/zm_detect.py --version` — leave blank if not installed.
     validations:
@@ -78,7 +78,10 @@ body:
     id: bug-description
     attributes:
       label: Describe the bug
-      description: A clear description of what the bug is.
+      description: |
+        A clear description of what the bug is.
+
+        If you think the Event Server is part of the problem (push notifications, alarms, object detection), add its debug logs here too. See [How to debug issues](https://zmeventnotificationng.readthedocs.io/en/latest/guides/hooks_faq.html#how-to-debug-issues).
     validations:
       required: true
 
@@ -105,7 +108,7 @@ body:
   - type: textarea
     id: app-logs
     attributes:
-      label: App logs
+      label: App logs (optional)
       description: |
         Set the log level to DEBUG in **Settings > General**, reproduce the bug, then attach the logs.
 
@@ -113,21 +116,12 @@ body:
         - **Desktop**: open the **Logs** page, tap **Open**, and attach the `zmninja-ng.log` file. If the bug shows an error, also paste the developer console output. See [How do I open the developer console on the desktop app?](https://zmninjang.readthedocs.io/en/latest/user-guide/faq.html#how-do-i-open-the-developer-console-on-the-desktop-app).
         - **Web browser**: open the browser's developer console and paste its output.
     validations:
-      required: true
-
-  - type: textarea
-    id: es-logs
-    attributes:
-      label: Event Server debug logs
-      description: |
-        Required if the bug involves the Event Server (push notifications, alarms, object detection). Follow [How to debug issues](https://zmeventnotificationng.readthedocs.io/en/latest/guides/hooks_faq.html#how-to-debug-issues) and paste the debug logs from the time of the bug. Leave blank if the ES is not involved.
-    validations:
       required: false
 
   - type: textarea
     id: screenshots
     attributes:
-      label: Screenshots
+      label: Screenshots (optional)
       description: Drag and drop screenshots.
     validations:
       required: false
@@ -135,6 +129,6 @@ body:
   - type: textarea
     id: additional
     attributes:
-      label: Additional context
+      label: Additional context (optional)
     validations:
       required: false
