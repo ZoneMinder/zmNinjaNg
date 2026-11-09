@@ -2623,7 +2623,10 @@ thrash ``nph-zms`` on the server, not just the display.
    ``useQueries`` with one ``getAlarmStatus(monitorId)`` query per id, keyed
    by ``queryKeys.monitorAlarmStatus``, the same per-id fanout
    ``useMonitorNewEvents`` uses because ZoneMinder's alarm endpoint only
-   accepts a single monitor. Every requested id gets an entry in the
+   accepts a single monitor. On a multi-server cluster each query goes to the
+   API host of that monitor's ``ServerId``, since ZoneMinder runs ``zmu`` on
+   whichever host gets the call and only the monitor's own server has its
+   memory map. Every requested id gets an entry in the
    returned map even before its query resolves: a missing key reads
    downstream as "no longer watched", which would drop a monitor before its
    dwell window ever ran. The map is built in the ``combine`` option so the

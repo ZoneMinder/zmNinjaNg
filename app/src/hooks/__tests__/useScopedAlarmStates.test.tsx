@@ -11,6 +11,7 @@ import { useScopedAlarmStates } from '../useAlarmStates';
 import { getAlarmStatus } from '../../api/monitors';
 import { seedProfiles, resetProfileFixture, fakeApiClient, asProfileId } from '../../tests/profile-fixture';
 import { installApiClient, resetFakeStoreGates } from '../../tests/fake-store-gates';
+import { clearAllServerMaps, setServerMap } from '../../lib/zm/server-resolver';
 
 const mockStatus = vi.mocked(getAlarmStatus);
 
@@ -33,6 +34,38 @@ describe('useScopedAlarmStates', () => {
   afterEach(() => {
     resetProfileFixture();
     resetFakeStoreGates();
+    clearAllServerMaps();
+  });
+
+  it("resolves a pair's server from its OWNING profile's map", async () => {
+    // Both profiles use ServerId 1 for different hosts, so reading the wrong
+    // profile's map would send the poll to the other cluster.
+    const urls = (apiBaseUrl: string) => new Map([['1', { recordingUrl: '', portalPath: '', apiBaseUrl }]]);
+    setServerMap(urls('http://a-server1/zm/api'), p1);
+    setServerMap(urls('http://b-server1/zm/api'), p2);
+    mockStatus.mockResolvedValue({ status: 0 });
+
+    renderHook(
+      () =>
+        useScopedAlarmStates(
+          [
+            { profileId: p1, monitorId: '3', serverId: '1' },
+            { profileId: p2, monitorId: '3', serverId: '1' },
+            { profileId: p2, monitorId: '4', serverId: null },
+          ],
+          { enabled: true, pollIntervalMs: 5000 }
+        ),
+      { wrapper }
+    );
+
+    await waitFor(() => {
+      expect(mockStatus).toHaveBeenCalledTimes(3);
+    });
+    expect(mockStatus.mock.calls.map((c) => [c[1], c[2]])).toEqual([
+      ['3', 'http://a-server1/zm/api'],
+      ['3', 'http://b-server1/zm/api'],
+      ['4', undefined],
+    ]);
   });
 
   it('fans out one request per pair via the OWNING profile session, keyed composite', async () => {
@@ -51,8 +84,8 @@ describe('useScopedAlarmStates', () => {
       () =>
         useScopedAlarmStates(
           [
-            { profileId: p1, monitorId: '3' },
-            { profileId: p2, monitorId: '3' },
+            { profileId: p1, monitorId: '3', serverId: null },
+            { profileId: p2, monitorId: '3', serverId: null },
           ],
           { enabled: true, pollIntervalMs: 5000 }
         ),
@@ -73,7 +106,7 @@ describe('useScopedAlarmStates', () => {
 
     const { result, rerender } = renderHook(
       ({ enabled }: { enabled: boolean }) =>
-        useScopedAlarmStates([{ profileId: p1, monitorId: '3' }], { enabled, pollIntervalMs: 5000 }),
+        useScopedAlarmStates([{ profileId: p1, monitorId: '3', serverId: null }], { enabled, pollIntervalMs: 5000 }),
       { wrapper, initialProps: { enabled: false } }
     );
 
@@ -97,7 +130,7 @@ describe('useScopedAlarmStates', () => {
     });
 
     const { result } = renderHook(
-      () => useScopedAlarmStates([{ profileId: p1, monitorId: '3' }], { enabled: true, pollIntervalMs: 20 }),
+      () => useScopedAlarmStates([{ profileId: p1, monitorId: '3', serverId: null }], { enabled: true, pollIntervalMs: 20 }),
       { wrapper }
     );
 
@@ -116,7 +149,7 @@ describe('useScopedAlarmStates', () => {
     mockStatus.mockResolvedValue({ status: 0 });
 
     const { result, rerender } = renderHook(
-      () => useScopedAlarmStates([{ profileId: p1, monitorId: '3' }], { enabled: true, pollIntervalMs: 5000 }),
+      () => useScopedAlarmStates([{ profileId: p1, monitorId: '3', serverId: null }], { enabled: true, pollIntervalMs: 5000 }),
       { wrapper }
     );
 

@@ -5,10 +5,11 @@ import type { ToolContext } from '../types';
 import { asProfileId } from '../../../api/types';
 import { ASSISTANT } from '../../zmninja-ng-constants';
 import { getEvents } from '../../../api/events';
-import { getMonitor, getMonitors } from '../../../api/monitors';
+import { getAlarmStatus, getMonitor, getMonitors } from '../../../api/monitors';
 import { getStorages, getServers } from '../../../api/server';
 import { DEFAULT_THUMBNAIL_FALLBACK_CHAIN } from '../../../stores/settings';
 import { log } from '../../logger';
+import { clearAllServerMaps, setServerMap } from '../../zm/server-resolver';
 import { seedProfiles, resetProfileFixture } from '../../../tests/profile-fixture';
 import { resetFakeStoreGates } from '../../../tests/fake-store-gates';
 import { getSession } from '../../../services/sessions';
@@ -160,6 +161,7 @@ beforeEach(() => {
 afterEach(() => {
   resetProfileFixture();
   resetFakeStoreGates();
+  clearAllServerMaps();
 });
 
 describe('read-only tools', () => {
@@ -510,6 +512,19 @@ describe('read-only tools', () => {
     expect(r.display![0]).toMatchObject({ kind: 'monitor', id: '1', navigatePath: '/monitors/1' });
     expect(r.display![0].imageUrls).toBeUndefined();
     expect(r.output).not.toContain('http');
+  });
+
+  it("get_monitor reads alarm status from the monitor's own server", async () => {
+    setServerMap(new Map([['2', { recordingUrl: '', portalPath: '', apiBaseUrl: 'http://server2/zm/api' }]]), asProfileId('p1'));
+    vi.mocked(getMonitor).mockResolvedValueOnce({
+      Monitor: { ...mockMonitor, ServerId: '2' },
+      Monitor_Status: mockMonitorStatus,
+    } as never);
+
+    const r = await getToolByName('get_monitor')!.execute({ monitorId: '1' }, ctx());
+
+    expect(r.isError).toBeFalsy();
+    expect(vi.mocked(getAlarmStatus)).toHaveBeenCalledWith(expect.anything(), '1', 'http://server2/zm/api');
   });
 
   it('get_monitor merges monitor detail with alarm status', async () => {

@@ -12,6 +12,7 @@ vi.mock('../../logger', () => ({
 import {
   buildServerMap,
   resolveMonitorUrls,
+  getApiUrlForMonitor,
   getPortalUrlForMonitor,
   getPortalUrlForEvent,
   setServerMap,
@@ -243,6 +244,24 @@ describe('resolveMonitorUrls', () => {
     expect(result.apiBaseUrl).toBe(defaults.apiUrl);
     expect(result.apiBaseUrl).not.toContain(':0');
     expect(result.apiBaseUrl).not.toContain('server.localdomain');
+  });
+});
+
+describe('getApiUrlForMonitor', () => {
+  beforeEach(() => {
+    setServerMap(buildServerMap(testServers), profileA);
+  });
+
+  afterEach(() => {
+    clearAllServerMaps();
+  });
+
+  it("returns the API URL of the monitor's server", () => {
+    expect(getApiUrlForMonitor('1', profileA)).toBe(buildServerMap(testServers).get('1')!.apiBaseUrl);
+  });
+
+  it.each([[null], [undefined], ['0'], ['999']])('returns undefined for server %s', (serverId) => {
+    expect(getApiUrlForMonitor(serverId, profileA)).toBeUndefined();
   });
 });
 

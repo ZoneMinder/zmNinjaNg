@@ -17,6 +17,7 @@ import { getCurrentSession, getSession } from '../services/sessions';
 import { queryKeys } from '../lib/query/query-keys';
 import { staggeredRefetchInterval } from '../lib/query/stagger-interval';
 import { monitorCacheKey } from '../stores/monitors';
+import { getApiUrlForMonitor } from '../lib/zm/server-resolver';
 import { parseAlarmState, type MonitorAlarmState } from '../lib/monitor/alarm-state';
 import { useCurrentProfile } from './useCurrentProfile';
 import { useAuthSlice } from '../stores/auth';
@@ -29,9 +30,15 @@ interface UseAlarmStatesOptions {
   pollIntervalMs: number;
 }
 
+/** A monitor to poll, with the ServerId that decides which host answers. */
+export interface AlarmMonitorRef {
+  monitorId: string;
+  serverId: string | null | undefined;
+}
+
 interface UseAlarmStatesReturn {
   /**
-   * Total over `monitorIds`: every id passed in gets an entry, even before
+   * Total over `monitors`: every id passed in gets an entry, even before
    * its query has ever resolved. The downstream dwell reducer reads a
    * missing key as "the caller stopped watching this monitor" and drops it
    * without waiting out the dwell window, so a transiently-loading or
@@ -48,7 +55,7 @@ interface UseAlarmStatesReturn {
 }
 
 export function useAlarmStates(
-  monitorIds: string[],
+  monitors: AlarmMonitorRef[],
   { enabled, pollIntervalMs }: UseAlarmStatesOptions
 ): UseAlarmStatesReturn {
   const { currentProfile } = useCurrentProfile();
@@ -56,9 +63,9 @@ export function useAlarmStates(
   const profileId = currentProfile?.id;
 
   return useQueries({
-    queries: monitorIds.map((monitorId) => ({
+    queries: monitors.map(({ monitorId, serverId }) => ({
       queryKey: queryKeys.monitorAlarmStatus(profileId, monitorId),
-      queryFn: () => getAlarmStatus(getCurrentSession().client, monitorId),
+      queryFn: () => getAlarmStatus(getCurrentSession().client, monitorId, getApiUrlForMonitor(serverId, profileId)),
       enabled: enabled && !!profileId && isAuthenticated,
       refetchInterval: pollIntervalMs,
       // The page is only mounted while visible, so background refetching would
@@ -99,7 +106,7 @@ export function useAlarmStates(
           // `data` across a failed refetch, so this holds steady instead. A
           // monitor that has never succeeded has no `data` and parses to
           // `unknown`, which keeps the map total.
-          states[monitorIds[i]] = parseAlarmState(result.data);
+          states[monitors[i].monitorId] = parseAlarmState(result.data);
           if (result.error && !error) error = result.error as Error;
         });
       }
@@ -114,9 +121,8 @@ export function useAlarmStates(
  * profile's own session, regardless of which profile is globally selected.
  * Mirrors ScopedMonitorRef in useMonitorNewEvents.ts.
  */
-export interface ScopedAlarmRef {
+export interface ScopedAlarmRef extends AlarmMonitorRef {
   profileId: ProfileId;
-  monitorId: string;
 }
 
 interface UseScopedAlarmStatesReturn {
@@ -156,9 +162,9 @@ export function useScopedAlarmStates(
   { enabled, pollIntervalMs }: UseAlarmStatesOptions
 ): UseScopedAlarmStatesReturn {
   return useQueries({
-    queries: pairs.map(({ profileId, monitorId }, i) => ({
+    queries: pairs.map(({ profileId, monitorId, serverId }, i) => ({
       queryKey: queryKeys.monitorAlarmStatus(profileId, monitorId),
-      queryFn: () => getAlarmStatus(getSession(profileId).client, monitorId),
+      queryFn: () => getAlarmStatus(getSession(profileId).client, monitorId, getApiUrlForMonitor(serverId, profileId)),
       enabled,
       // Desynchronizes the per-(profile, monitor) refetch bursts, same
       // rationale as useScopedMonitors/useScopedMonitorNewEvents.

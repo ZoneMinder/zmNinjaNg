@@ -9,6 +9,7 @@ matching reality, fixing it is a protocol change like any rule edit.
 
 ## ZoneMinder API
 
+- `/monitors/alarm/id:N/command:*` runs `zmu` on the host that gets the call, and `zmu` needs `/dev/shm/zm.mmap.N`, which only exists on monitor N's own server. On a multi-server cluster, send it to `getApiUrlForMonitor(ServerId, profileId)`; the wrong host logs `Can't connect to capture daemon` in ZM and returns `{status:"false",code:255}` with HTTP 200 (refs #585).
 - Events index filters: `Id IN (...)` works; the `Id:csv` form does not.
   `Tags.Id` accepts a single value only and cannot combine with `Id IN`.
   Repeating `MonitorId` params ORs them. Filter URLs cap out near 8KB;

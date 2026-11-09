@@ -14,6 +14,7 @@ import type { Storage } from '../../api/server';
 import { getVersion } from '../../api/auth';
 import { getGroups } from '../../api/groups';
 import { getSession } from '../../services/sessions';
+import { getApiUrlForMonitor } from '../zm/server-resolver';
 import { getTags, getEventTags, extractUniqueTags } from '../../api/tags';
 import type { MonitorData, ProfileId } from '../../api/types';
 import { ASSISTANT } from '../zmninja-ng-constants';
@@ -133,7 +134,8 @@ const getMonitorTool: ToolDefinition = {
     safeExecute('get_monitor', async () => {
       const client = getSession(ctx.profileId).client;
       const monitorId = await resolveMonitorArg(client, ctx.profileId, input.monitorId);
-      const [monitor, alarm] = await Promise.all([getMonitor(client, monitorId), getAlarmStatus(client, monitorId)]);
+      const monitor = await getMonitor(client, monitorId);
+      const alarm = await getAlarmStatus(client, monitorId, getApiUrlForMonitor(monitor.Monitor.ServerId, ctx.profileId));
       return {
         output: JSON.stringify({
           ...mapMonitor(monitor),

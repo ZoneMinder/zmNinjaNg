@@ -11,8 +11,12 @@ import { useAlarmStates } from '../useAlarmStates';
 import { getAlarmStatus } from '../../api/monitors';
 import { seedProfiles, resetProfileFixture } from '../../tests/profile-fixture';
 import { resetFakeStoreGates } from '../../tests/fake-store-gates';
+import { clearAllServerMaps, setServerMap } from '../../lib/zm/server-resolver';
+import { asProfileId } from '../../api/types';
 
 const mockStatus = vi.mocked(getAlarmStatus);
+
+const refs = (...ids: string[]) => ids.map((monitorId) => ({ monitorId, serverId: null }));
 
 function wrapper({ children }: { children: ReactNode }) {
   const client = new QueryClient({
@@ -30,6 +34,37 @@ describe('useAlarmStates', () => {
   afterEach(() => {
     resetProfileFixture();
     resetFakeStoreGates();
+    clearAllServerMaps();
+  });
+
+  it('polls each monitor on the API host of its own server', async () => {
+    setServerMap(
+      new Map([['2', { recordingUrl: '', portalPath: '', apiBaseUrl: 'http://server2/zm/api' }]]),
+      asProfileId('p1')
+    );
+    mockStatus.mockResolvedValue({ status: 0 });
+
+    renderHook(
+      () =>
+        useAlarmStates(
+          [
+            { monitorId: '1', serverId: '2' }, // the mapped server
+            { monitorId: '3', serverId: '9' }, // not in the map
+            { monitorId: '4', serverId: null }, // no server assigned
+          ],
+          { enabled: true, pollIntervalMs: 5000 }
+        ),
+      { wrapper }
+    );
+
+    await waitFor(() => {
+      expect(mockStatus).toHaveBeenCalledTimes(3);
+    });
+    expect(mockStatus.mock.calls.map((c) => [c[1], c[2]])).toEqual([
+      ['1', 'http://server2/zm/api'],
+      ['3', undefined],
+      ['4', undefined],
+    ]);
   });
 
   it('returns a parsed state per monitor', async () => {
@@ -38,7 +73,7 @@ describe('useAlarmStates', () => {
     );
 
     const { result } = renderHook(
-      () => useAlarmStates(['1', '2'], { enabled: true, pollIntervalMs: 5000 }),
+      () => useAlarmStates(refs('1', '2'), { enabled: true, pollIntervalMs: 5000 }),
       { wrapper }
     );
 
@@ -51,7 +86,7 @@ describe('useAlarmStates', () => {
     mockStatus.mockResolvedValue({ status: 0 });
 
     renderHook(
-      () => useAlarmStates(['1', '2', '3'], { enabled: true, pollIntervalMs: 5000 }),
+      () => useAlarmStates(refs('1', '2', '3'), { enabled: true, pollIntervalMs: 5000 }),
       { wrapper }
     );
 
@@ -65,7 +100,7 @@ describe('useAlarmStates', () => {
     mockStatus.mockResolvedValue({ status: 0 });
 
     const { result } = renderHook(
-      () => useAlarmStates(['1'], { enabled: false, pollIntervalMs: 5000 }),
+      () => useAlarmStates(refs('1'), { enabled: false, pollIntervalMs: 5000 }),
       { wrapper }
     );
 
@@ -83,7 +118,7 @@ describe('useAlarmStates', () => {
     });
 
     const { result } = renderHook(
-      () => useAlarmStates(['1', '2'], { enabled: true, pollIntervalMs: 5000 }),
+      () => useAlarmStates(refs('1', '2'), { enabled: true, pollIntervalMs: 5000 }),
       { wrapper }
     );
 
@@ -106,7 +141,7 @@ describe('useAlarmStates', () => {
     });
 
     const { result } = renderHook(
-      () => useAlarmStates(['1', '2'], { enabled: true, pollIntervalMs: 5000 }),
+      () => useAlarmStates(refs('1', '2'), { enabled: true, pollIntervalMs: 5000 }),
       { wrapper }
     );
 
@@ -135,7 +170,7 @@ describe('useAlarmStates', () => {
     );
 
     const { result, rerender } = renderHook(
-      () => useAlarmStates(['1', '2'], { enabled: true, pollIntervalMs: 5000 }),
+      () => useAlarmStates(refs('1', '2'), { enabled: true, pollIntervalMs: 5000 }),
       { wrapper }
     );
 
@@ -165,7 +200,7 @@ describe('useAlarmStates', () => {
     });
 
     const { result } = renderHook(
-      () => useAlarmStates(['1'], { enabled: true, pollIntervalMs: 20 }),
+      () => useAlarmStates(refs('1'), { enabled: true, pollIntervalMs: 20 }),
       { wrapper }
     );
 

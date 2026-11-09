@@ -198,6 +198,20 @@ export function resolveMonitorUrls(
 }
 
 /**
+ * API base URL of a monitor's own server, for endpoints that act on that
+ * monitor's shared memory (ZoneMinder runs zmu on whichever host gets the call,
+ * and the memory map only exists on the monitor's server). Undefined means use
+ * the session's own API URL.
+ */
+export function getApiUrlForMonitor(
+  serverId: string | null | undefined,
+  profileId?: ProfileId | null,
+): string | undefined {
+  if (!serverId || serverId === '0') return undefined;
+  return getServerMap(profileId).get(serverId)?.apiBaseUrl;
+}
+
+/**
  * Get portal base URL for a monitor's server.
  * Uses profileId's server map (defaults to the current profile). Returns the
  * portal path with /index.php stripped. Falls back to profilePortalUrl when
