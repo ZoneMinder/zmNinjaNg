@@ -68,12 +68,12 @@ const serverMapFetchesInFlight = new Set<ProfileId>();
  * profile is already running; errors are swallowed - the empty-map fallback
  * already handles that case (refs #337 I3).
  */
-function bootstrapServerMapFor(session: ServerSession): void {
+function bootstrapServerMapFor(session: ServerSession, profileApiUrl: string): void {
   const { profileId, client } = session;
   if (getServerMap(profileId).size > 0 || serverMapFetchesInFlight.has(profileId)) return;
   serverMapFetchesInFlight.add(profileId);
   getServers(client)
-    .then((servers) => setServerMap(buildServerMap(servers), profileId))
+    .then((servers) => setServerMap(buildServerMap(servers, profileApiUrl), profileId))
     .catch((error) => {
       log.profileService('Failed to bootstrap server map for session', LogLevel.WARN, { profileId, error });
     })
@@ -114,7 +114,7 @@ export function getSession(profileId: ProfileId): ServerSession {
   sessions.set(profileId, session);
   markSessionActive(profileId);
   log.profileService('Session created', LogLevel.DEBUG, { profileId });
-  bootstrapServerMapFor(session);
+  bootstrapServerMapFor(session, profile.apiUrl);
   return session;
 }
 

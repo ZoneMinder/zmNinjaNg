@@ -34,6 +34,7 @@ async function flush(): Promise<void> {
 vi.mock('../../lib/logger', () => ({
   log: {
     profileService: vi.fn(),
+    http: vi.fn(),
   },
   LogLevel: {
     DEBUG: 0,
@@ -210,6 +211,15 @@ describe('sessions', () => {
       await flush();
 
       expect(getServers).not.toHaveBeenCalled();
+    });
+
+    it("gives the map the profile's address, so a blank-port server can be routed (refs #585)", async () => {
+      const blankPort = (Id: string, Hostname: string) => ({ Id, Name: Id, Hostname, Port: 0 });
+      vi.mocked(getServers).mockResolvedValueOnce([blankPort('1', 'api.example'), blankPort('2', 'other.example')] as never);
+
+      getSession(aId);
+
+      await vi.waitFor(() => expect([...getServerMap(aId).keys()]).toEqual(['2']));
     });
 
     it('leaves the server map empty without throwing when the fetch fails', async () => {

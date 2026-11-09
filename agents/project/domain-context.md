@@ -364,7 +364,10 @@ contract. Remaining code-path facts:
   ES-connected profile).
 - Multi-server ZM installs route streams at Servers-table hosts that can
   differ from the profile's own URLs; per-profile server maps populate at
-  bootstrap and fall back to profile base URLs when empty. This is also
+  bootstrap and fall back to profile base URLs when empty. A blank `Port` is
+  normal on these installs and reaches `buildServerMap` as 0 (`z.coerce`
+  turns null into 0); ZoneMinder itself then uses the request's port (refs
+  #585). This is also
   why native TLS trust is deliberately global once any profile enables
   self-signed (maintainer decision recorded in the all-profiles spec).
 - i18next reserves `{{count}}` for pluralization; interpolating a
