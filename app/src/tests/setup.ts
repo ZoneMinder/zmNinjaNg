@@ -227,6 +227,19 @@ vi.mock('../src/plugins/safe-area', () => ({
   },
 }));
 
+// Mock ZmStream plugin (keep the real URL helpers)
+vi.mock('../plugins/zm-stream', async () => {
+  const actual = await vi.importActual<typeof import('../plugins/zm-stream')>('../plugins/zm-stream');
+  return {
+    ...actual,
+    ZmStream: {
+      open: vi.fn().mockResolvedValue({ streamId: 'mock-stream' }),
+      close: vi.fn().mockResolvedValue(undefined),
+      closeAll: vi.fn().mockResolvedValue(undefined),
+    },
+  };
+});
+
 // Mock @capawesome/capacitor-badge for app icon badge
 vi.mock('@capawesome/capacitor-badge', () => ({
   Badge: {

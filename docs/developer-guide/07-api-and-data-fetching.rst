@@ -470,13 +470,24 @@ buster changes.
 Per-platform transport
 ^^^^^^^^^^^^^^^^^^^^^^
 
-Every platform fetches MJPEG feeds the same way: the ``<img>`` element loads
-``nph-zms`` directly through the WebView or browser's network stack, and frame
-memory is managed by that runtime (Chromium on web and Electron, the Android
-WebView, WKWebView on iOS and iPadOS). There is no per-platform decoding path
-and no JavaScript in the frame loop. The default view mode is Snapshot on all
-four. The browser per-origin connection cap (~6 / origin) applies everywhere,
-mitigated by Snapshot mode and multi-port streaming.
+On web and Electron, and in Snapshot mode everywhere, the ``<img>`` element
+loads ``nph-zms`` directly through the runtime's network stack (Chromium on web
+and Electron, the Android WebView, WKWebView on iOS and iPadOS), and that
+runtime manages frame memory. The browser per-origin connection cap (~6 /
+origin) applies to those loads. Electron raises it (32 by default, a desktop
+setting). On the web build, Snapshot mode and multi-port streaming ease it.
+
+On iOS and Android in Streaming mode the webview never opens the connection.
+``useNativeMjpegFrames`` calls ``ZmStream.open``, native code reads the
+``nph-zms`` stream and splits it into JPEGs, and the ``<img>`` loads one frame
+at a time from ``zmframe://frames/<streamId>/<n>``. The hook bumps ``n`` from
+the ``load`` handler, so a small piece of JavaScript is in the frame loop on
+those platforms. Flow 2 in :doc:`call-flows` walks it through.
+
+The default view mode comes from ``recommendViewMode``: Streaming where the
+host lifts the connection limit (desktop, iOS, Android) whatever the monitor
+count. Elsewhere it is Streaming for a small server or one with multi-port
+streaming, and Snapshot otherwise.
 
 Go2RTC-enabled monitors take a different path on every platform: native
 WebRTC/MSE/HLS into a ``<video>`` element, always continuous and

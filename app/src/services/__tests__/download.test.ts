@@ -386,6 +386,39 @@ describe('downloadSnapshotFromElement', () => {
         expect(anchor?.href).toBe('data:image/jpeg;base64,YYYY');
     });
 
+    it('downloads the nph-zms URL when the src is a native frame URL', async () => {
+        // Native Streaming mode holds the stream outside the webview and serves
+        // one frame at a time from zmframe://, which no downloader can fetch.
+        // The player keeps the real stream URL on the element for this path.
+        // Which URL is picked is platform-independent, so this runs the web
+        // handler like the test below it.
+        const { httpRequest } = await import('../../lib/http');
+        vi.mocked(httpRequest).mockResolvedValueOnce({
+            status: 200,
+            data: new Blob(['x']),
+            headers: {},
+            statusText: 'OK',
+        });
+        const img = document.createElement('img');
+        img.src = 'zmframe://frames/7/3';
+        img.dataset.streamUrl = 'http://zm.example.com/cgi-bin/nph-zms?monitor=1&mode=jpeg&connkey=99';
+
+        await downloadSnapshotFromElement(img, 'Front Door');
+
+        expect(httpRequest).toHaveBeenCalledWith(
+            expect.stringContaining('nph-zms'),
+            expect.objectContaining({ method: 'GET', responseType: 'blob' })
+        );
+        expect(httpRequest).toHaveBeenCalledWith(
+            expect.stringContaining('mode=single'),
+            expect.anything()
+        );
+        expect(httpRequest).not.toHaveBeenCalledWith(
+            expect.stringContaining('zmframe'),
+            expect.anything()
+        );
+    });
+
     it('fetches a remote image element src through downloadFile', async () => {
         const { httpRequest } = await import('../../lib/http');
         vi.mocked(httpRequest).mockResolvedValueOnce({

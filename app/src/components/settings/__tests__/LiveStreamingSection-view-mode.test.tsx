@@ -21,6 +21,7 @@ import type { Profile } from '../../../api/types';
 import { getMonitors } from '../../../api/monitors';
 import { seedProfiles, resetProfileFixture, makeProfile } from '../../../tests/profile-fixture';
 import { resetFakeStoreGates } from '../../../tests/fake-store-gates';
+import { Platform } from '../../../lib/platform';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -70,6 +71,7 @@ describe('LiveStreamingSection Streaming Mode recommendation', () => {
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
     resetProfileFixture();
     resetFakeStoreGates();
   });
@@ -97,6 +99,14 @@ describe('LiveStreamingSection Streaming Mode recommendation', () => {
     );
     expect(screen.getByTestId('settings-view-mode-recommended-snapshot')).toBeInTheDocument();
     expect(screen.queryByTestId('settings-view-mode-recommended-streaming')).toBeNull();
+  });
+
+  it('explains streaming for a big server when the host lifts the limit', async () => {
+    vi.spyOn(Platform, 'isNative', 'get').mockReturnValue(true);
+    const reason = await renderSection(20);
+    expect(reason.textContent).toBe(
+      'settings.view_mode_reason_no_host_limit:{"monitorCount":20}'
+    );
   });
 
   it('writes the open-live-view-in-fullscreen switch (refs #462, #463)', () => {

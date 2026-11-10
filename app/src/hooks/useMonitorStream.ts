@@ -20,10 +20,13 @@ import { useViewPrefs } from './useViewPrefs';
 import { useBandwidthSettings } from './useBandwidthSettings';
 import { useStreamLifecycle } from './useStreamLifecycle';
 import { useAnalysisFrames } from './useAnalysisFrames';
+import { loadedFrameSrc, useNativeMjpegFrames } from './useNativeMjpegFrames';
 import { useFreshAccessToken } from './useFreshAccessToken';
 import { useServerUrls } from './useServerUrls';
 import { useVisibilityResume } from './useVisibilityResume';
 import { useAuthStore, useAuthSlice } from '../stores/auth';
+import { Platform } from '../lib/platform';
+import { zmFrameStreamId } from '../plugins/zm-stream';
 import { log, LogLevel } from '../lib/logger';
 import { planReconnect } from '../lib/monitor/reconnect-backoff';
 import { ZM_INTEGRATION } from '../lib/zmninja-ng-constants';
@@ -61,7 +64,8 @@ interface UseMonitorStreamReturn {
   streamUrl: string;
   /**
    * The value to bind to the `<img src>`. Equal to streamUrl once a connkey
-   * has been minted; empty string before that.
+   * has been minted, or, where native holds the stream, the zmframe URL of the
+   * frame to fetch next; empty string before either of those exists.
    */
   imageSrc: string;
   imgRef: React.RefObject<HTMLImageElement | null>;
@@ -71,9 +75,11 @@ interface UseMonitorStreamReturn {
    * Call from the `<img onError>` handler. Schedules a backoff reconnect that
    * releases the errored connkey (CMD_QUIT) before minting a new one. Caps at
    * mjpegReconnectMaxAttempts unless insomnia is on; releases the connkey when
-   * it gives up.
+   * it gives up. Returns false when the error is ignored because it belongs to
+   * a native stream that has already been replaced, so the caller leaves the
+   * element alone instead of hiding or unmounting it.
    */
-  reportStreamError: () => void;
+  reportStreamError: () => boolean;
   /**
    * Call from the `<img onLoad>` handler. Resets the backoff counter so a later
    * independent drop starts fresh. A stream that never loads never resets, so
@@ -307,17 +313,33 @@ export function useMonitorStream({
     })
     : '';
 
-  // The `<img>` points straight at streamUrl. We mirror it into imageSrc so the
-  // consumer binds to a single field; reconnect logic below depends on the
+  // A webview allows six connections per host, so a montage of MJPEG tiles
+  // starves. On native the stream is held by native code and served a frame at
+  // a time over zmframe://, and the <img> chains frames from the load handler
+  // below. Snapshot mode, the web build and Electron keep streamUrl. refs #156
+  const frameMode = Platform.isNative && effectiveViewMode === 'streaming' && enabled;
+  const scheduleReconnectRef = useRef<() => void>(() => {});
+  const frames = useNativeMjpegFrames(streamUrl, frameMode, () => scheduleReconnectRef.current());
+  const nextImageSrc = frameMode ? frames.frameSrc : streamUrl;
+  // A planned restart closes the native stream before its replacement opens,
+  // so frameSrc is empty for that gap. Leaving the src alone keeps the painted
+  // frame and re-requests nothing; the hold's own expiry bounds it (refs #478).
+  const holdingNativeFrame = frameMode && holdFrameForRestart && frames.frameSrc === '';
+
+  // The `<img>` points straight at the URL above. We mirror it into imageSrc so
+  // the consumer binds to a single field; reconnect logic below depends on the
   // <img>'s native onError handler which the consuming player wires up.
   useEffect(() => {
-    setImageSrc(streamUrl);
+    if (holdingNativeFrame) return;
+    setImageSrc(nextImageSrc);
     // A new src is a new request in flight; an empty one is nothing loading.
-    pendingSinceRef.current = streamUrl ? Date.now() : 0;
+    pendingSinceRef.current = nextImageSrc ? Date.now() : 0;
+    // From the first URL this stream had to try, not its first frame: the
+    // backoff's opening window measures how long it has been trying.
     if (streamUrl && streamStartedAtRef.current === 0) {
       streamStartedAtRef.current = Date.now();
     }
-  }, [streamUrl]);
+  }, [nextImageSrc, streamUrl, holdingNativeFrame]);
 
   // MJPEG reconnect on stream error. Wired to the consumer's <img onError> via
   // reportStreamError below. Backoff doubles from mjpegReconnectBaseDelayMs up
@@ -356,14 +378,25 @@ export function useMonitorStream({
       forceRegenerate({ killPrevious: true });
     }, plan.delayMs);
   };
+  useEffect(() => {
+    scheduleReconnectRef.current = scheduleReconnect;
+  });
 
   // Reset the backoff counter (and cancel any pending reconnect) once a frame
   // loads, so a later independent drop starts a fresh backoff. A frame is also
   // the first proof that this connection's zms command socket exists, which is
   // when a remembered analysis setting can be applied to it.
   const reportStreamLoad = () => {
+    let loaded = imageSrc;
+    if (frameMode) {
+      // A load off a stream that has already been replaced proves nothing
+      // about this one, so it neither counts as a frame nor resets the backoff.
+      const img = imgRef.current;
+      if (!img || !frames.advance(img)) return;
+      loaded = loadedFrameSrc(img);
+    }
     analysisFrames.applyOnStreamLoad();
-    setLoadedSrc(imageSrc);
+    setLoadedSrc(loaded);
     pendingSinceRef.current = 0;
     setHoldFrameForRestart(false);
     reconnectAttemptRef.current = 0;
@@ -371,6 +404,18 @@ export function useMonitorStream({
       clearTimeout(reconnectTimerRef.current);
       reconnectTimerRef.current = null;
     }
+  };
+
+  // Closing a native stream completes the frame request the element already
+  // parked, with a 404, so a planned restart fires `error` for a stream that
+  // is already gone. Acting on it would withdraw the frame the restart is
+  // deliberately holding and quit the connkey it just minted. A genuine stall
+  // 404s against a streamId that is still registered, so it still gets
+  // through, and so does an open that never produced a stream (imageSrc '').
+  const reportStreamError = (): boolean => {
+    if (frameMode && imageSrc !== '' && zmFrameStreamId(imageSrc) !== frames.streamId) return false;
+    scheduleReconnect();
+    return true;
   };
 
   const regenerateConnection = () => {
@@ -442,17 +487,24 @@ export function useMonitorStream({
   // the browser holds it until the new one decodes. An error reconnect never
   // holds - scheduleReconnect clears loadedSrc precisely because what the
   // element is showing is no longer a frame off a working connection.
+  //
+  // Frame mode matches the stream instead of the src, because the src changes
+  // on every frame. A frame off a stream native has already closed is exactly
+  // what must not read as live, so the test is derived, not latched. refs #352
   const hasFrame =
     imageSrc !== '' &&
     loadedSrc !== '' &&
-    (effectiveViewMode === 'snapshot' || holdFrameForRestart || loadedSrc === imageSrc);
+    (holdFrameForRestart ||
+      (frameMode
+        ? frames.streamId !== null && zmFrameStreamId(loadedSrc) === frames.streamId
+        : effectiveViewMode === 'snapshot' || loadedSrc === imageSrc));
 
   return {
     streamUrl,
     imageSrc,
     imgRef,
     regenerateConnection,
-    reportStreamError: scheduleReconnect,
+    reportStreamError,
     reportStreamLoad,
     hasFrame,
   };
