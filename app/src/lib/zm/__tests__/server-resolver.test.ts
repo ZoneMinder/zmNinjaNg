@@ -12,6 +12,7 @@ vi.mock('../../logger', () => ({
 import {
   buildServerMap,
   resolveMonitorUrls,
+  getApiUrlForMonitor,
   getPortalUrlForMonitor,
   getPortalUrlForEvent,
   setServerMap,
@@ -21,10 +22,13 @@ import {
   registerServerResolverGate,
 } from '../server-resolver';
 import type { Server } from '../../../api/server';
+import { getServers } from '../../../api/server';
 import { asProfileId } from '../../../api/types';
 
 const profileA = asProfileId('profile-a');
 const profileB = asProfileId('profile-b');
+/** A profile address that matches no Hostname in these fixtures. */
+const UNMATCHED_API_URL = 'https://profile.example.net/zm/api';
 
 function makeServer(overrides: Partial<Server> & { Id: string; Name: string }): Server {
   return {
@@ -82,7 +86,7 @@ const defaults = {
 
 describe('buildServerMap', () => {
   it('builds map from server list with correct URLs', () => {
-    const map = buildServerMap(testServers);
+    const map = buildServerMap(testServers, UNMATCHED_API_URL);
 
     expect(map.size).toBe(3);
 
@@ -103,13 +107,13 @@ describe('buildServerMap', () => {
   });
 
   it('returns empty map for empty list', () => {
-    const map = buildServerMap([]);
+    const map = buildServerMap([], UNMATCHED_API_URL);
     expect(map.size).toBe(0);
   });
 
   it('skips servers missing Hostname', () => {
     const noHost = makeServer({ Id: '99', Name: 'nohost' });
-    const map = buildServerMap([noHost, pseudoServer]);
+    const map = buildServerMap([noHost, pseudoServer], UNMATCHED_API_URL);
     expect(map.size).toBe(1);
     expect(map.has('99')).toBe(false);
     expect(map.has('1')).toBe(true);
@@ -121,7 +125,7 @@ describe('buildServerMap', () => {
       Name: 'minimal',
       Hostname: 'minimal.example.com',
     });
-    const map = buildServerMap([minimal]);
+    const map = buildServerMap([minimal], UNMATCHED_API_URL);
     const entry = map.get('10')!;
     expect(entry.recordingUrl).toBe('https://minimal.example.com:443/cgi-bin/nph-zms');
     expect(entry.portalPath).toBe('https://minimal.example.com:443/index.php');
@@ -135,7 +139,7 @@ describe('buildServerMap', () => {
       Hostname: 'real.example.com',
       Port: 0,
     });
-    const map = buildServerMap([portZero, pseudoServer]);
+    const map = buildServerMap([portZero, pseudoServer], UNMATCHED_API_URL);
     expect(map.has('50')).toBe(false);
     expect(map.has('1')).toBe(true);
   });
@@ -147,7 +151,7 @@ describe('buildServerMap', () => {
       Hostname: 'real.example.com',
       Port: -1 as unknown as number,
     });
-    const map = buildServerMap([negativePort]);
+    const map = buildServerMap([negativePort], UNMATCHED_API_URL);
     expect(map.has('51')).toBe(false);
   });
 
@@ -158,7 +162,7 @@ describe('buildServerMap', () => {
       Hostname: 'server.localdomain',
       Port: 443,
     });
-    const map = buildServerMap([placeholder]);
+    const map = buildServerMap([placeholder], UNMATCHED_API_URL);
     expect(map.has('52')).toBe(false);
   });
 
@@ -169,7 +173,7 @@ describe('buildServerMap', () => {
       Hostname: 'localhost',
       Port: 443,
     });
-    const map = buildServerMap([placeholder]);
+    const map = buildServerMap([placeholder], UNMATCHED_API_URL);
     expect(map.has('53')).toBe(false);
   });
 
@@ -181,7 +185,7 @@ describe('buildServerMap', () => {
       Port: 0,
       PathToApi: '/zm/api',
     });
-    const map = buildServerMap([zmDefault]);
+    const map = buildServerMap([zmDefault], UNMATCHED_API_URL);
     expect(map.size).toBe(0);
   });
 });
@@ -190,7 +194,7 @@ describe('resolveMonitorUrls', () => {
   let serverMap: ReturnType<typeof buildServerMap>;
 
   beforeEach(() => {
-    serverMap = buildServerMap(testServers);
+    serverMap = buildServerMap(testServers, UNMATCHED_API_URL);
   });
 
   it('resolves URLs for monitor with matching ServerId', () => {
@@ -236,7 +240,7 @@ describe('resolveMonitorUrls', () => {
         Port: 0,
         PathToApi: '/zm/api',
       }),
-    ]);
+    ], UNMATCHED_API_URL);
     const result = resolveMonitorUrls('1', mapWithPlaceholder, defaults);
     expect(result.isMultiServer).toBe(false);
     expect(result.recordingUrl).toBe(defaults.cgiUrl);
@@ -246,9 +250,107 @@ describe('resolveMonitorUrls', () => {
   });
 });
 
+describe('buildServerMap with a blank Port', () => {
+  const zmsAt = (host: string) => `http://${host}/zm/cgi-bin/nph-zms`;
+  /** Two servers as ZoneMinder sends them when Port was never filled in. */
+  const parseCluster = async (first: object = {}, second: object = {}) => {
+    const row = (Id: number, Hostname: string, extra: object) => ({
+      Server: {
+        Id, Name: `zm${Id}`, Protocol: 'http', Hostname, Port: null,
+        PathToIndex: '/zm/index.php', PathToZMS: '/zm/cgi-bin/nph-zms', PathToApi: '/zm/api',
+        ...extra,
+      },
+    });
+    const data = { servers: [row(1, 'zm-a.test', first), row(2, 'zm-b.test', second)] };
+    return getServers({ get: async () => ({ data }) } as never);
+  };
+
+  it("routes the other server and leaves the profile's own server on the profile's URL", async () => {
+    const map = buildServerMap(await parseCluster(), 'http://zm-a.test/zm/api');
+    expect(map.has('1')).toBe(false);
+    expect(map.get('2')).toEqual({
+      recordingUrl: zmsAt('zm-b.test'),
+      portalPath: 'http://zm-b.test/zm/index.php',
+      apiBaseUrl: 'http://zm-b.test/zm/api',
+    });
+    expect(
+      resolveMonitorUrls('1', map, {
+        cgiUrl: zmsAt('zm-a.test'),
+        portalUrl: 'http://zm-a.test/zm',
+        apiUrl: 'http://zm-a.test/zm/api',
+      }).apiBaseUrl
+    ).toBe('http://zm-a.test/zm/api');
+  });
+
+  it('works from either server of the cluster', async () => {
+    const map = buildServerMap(await parseCluster(), 'http://zm-b.test/zm/api');
+    expect([...map.keys()]).toEqual(['1']);
+    expect(map.get('1')!.recordingUrl).toBe(zmsAt('zm-a.test'));
+  });
+
+  it('routes nothing when the profile address matches no server', async () => {
+    const map = buildServerMap(await parseCluster(), 'https://cameras.example.net/zm/api');
+    expect(map.size).toBe(0);
+  });
+
+  it('routes nothing on a one-server install', () => {
+    const only = makeServer({ Id: '1', Name: 'zm', Hostname: 'zm-a.test', Port: 0 });
+    expect(buildServerMap([only], 'http://zm-a.test/zm/api').size).toBe(0);
+  });
+
+  it("uses the profile's port for the other server", async () => {
+    const map = buildServerMap(await parseCluster(), 'http://zm-a.test:8080/zm/api');
+    expect(map.get('2')!.apiBaseUrl).toBe('http://zm-b.test:8080/zm/api');
+  });
+
+  it("does not carry the profile's port over to a different protocol", async () => {
+    const map = buildServerMap(await parseCluster({}, { Protocol: 'https' }), 'http://zm-a.test:8080/zm/api');
+    expect(map.get('2')!.apiBaseUrl).toBe('https://zm-b.test/zm/api');
+  });
+
+  it("uses the profile's protocol when the server has none", async () => {
+    const map = buildServerMap(await parseCluster({}, { Protocol: null }), 'https://zm-a.test/zm/api');
+    expect(map.get('2')!.apiBaseUrl).toBe('https://zm-b.test/zm/api');
+  });
+
+  it('keeps a port written into the Hostname', async () => {
+    const map = buildServerMap(await parseCluster({}, { Hostname: 'zm-b.test:8443' }), 'http://zm-a.test:8080/zm/api');
+    expect(map.get('2')!.apiBaseUrl).toBe('http://zm-b.test:8443/zm/api');
+  });
+
+  it('still skips a placeholder row', async () => {
+    const map = buildServerMap(await parseCluster({}, { Hostname: 'server.localdomain' }), 'http://zm-a.test/zm/api');
+    expect(map.size).toBe(0);
+  });
+
+  it('leaves a server with a filled-in Port routed as before, even when it is the profile address', async () => {
+    const map = buildServerMap(await parseCluster({ Port: 8000 }, { Port: 8001 }), 'http://zm-a.test:8000/zm/api');
+    expect(map.get('1')!.apiBaseUrl).toBe('http://zm-a.test:8000/zm/api');
+    expect(map.get('2')!.apiBaseUrl).toBe('http://zm-b.test:8001/zm/api');
+  });
+});
+
+describe('getApiUrlForMonitor', () => {
+  beforeEach(() => {
+    setServerMap(buildServerMap(testServers, UNMATCHED_API_URL), profileA);
+  });
+
+  afterEach(() => {
+    clearAllServerMaps();
+  });
+
+  it("returns the API URL of the monitor's server", () => {
+    expect(getApiUrlForMonitor('1', profileA)).toBe(buildServerMap(testServers, UNMATCHED_API_URL).get('1')!.apiBaseUrl);
+  });
+
+  it.each([[null], [undefined], ['0'], ['999']])('returns undefined for server %s', (serverId) => {
+    expect(getApiUrlForMonitor(serverId, profileA)).toBeUndefined();
+  });
+});
+
 describe('getPortalUrlForMonitor', () => {
   beforeEach(() => {
-    const map = buildServerMap(testServers);
+    const map = buildServerMap(testServers, UNMATCHED_API_URL);
     setServerMap(map, profileA);
   });
 
@@ -269,7 +371,7 @@ describe('getPortalUrlForMonitor', () => {
 
 describe('getPortalUrlForEvent', () => {
   beforeEach(() => {
-    const map = buildServerMap(testServers);
+    const map = buildServerMap(testServers, UNMATCHED_API_URL);
     setServerMap(map, profileA);
   });
 
@@ -302,10 +404,10 @@ describe('per-profile server map isolation (refs #337)', () => {
   it('resolves each profile against its own map, never the other profile\'s host', () => {
     const mapA = buildServerMap([
       makeServer({ Id: '1', Name: 'a-server', Hostname: 'a.example.com', Port: 443 }),
-    ]);
+    ], UNMATCHED_API_URL);
     const mapB = buildServerMap([
       makeServer({ Id: '1', Name: 'b-server', Hostname: 'b.example.com', Port: 443 }),
-    ]);
+    ], UNMATCHED_API_URL);
     setServerMap(mapA, profileA);
     setServerMap(mapB, profileB);
 
@@ -320,8 +422,8 @@ describe('per-profile server map isolation (refs #337)', () => {
   });
 
   it('clearing one profile\'s map leaves the other profile\'s map intact', () => {
-    setServerMap(buildServerMap(testServers), profileA);
-    setServerMap(buildServerMap(testServers), profileB);
+    setServerMap(buildServerMap(testServers, UNMATCHED_API_URL), profileA);
+    setServerMap(buildServerMap(testServers, UNMATCHED_API_URL), profileB);
 
     clearServerMap(profileA);
 
@@ -331,7 +433,7 @@ describe('per-profile server map isolation (refs #337)', () => {
 
   it('falls back to the gate-resolved current profile when profileId is omitted', () => {
     registerServerResolverGate({ getCurrentProfileId: () => profileB });
-    setServerMap(buildServerMap(testServers), profileB);
+    setServerMap(buildServerMap(testServers, UNMATCHED_API_URL), profileB);
 
     expect(getServerMap().size).toBe(testServers.length);
 

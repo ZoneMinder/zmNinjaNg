@@ -12,6 +12,7 @@ import { useNotificationStore } from '../../stores/notifications';
 import { useAuthStore } from '../../stores/auth';
 import { seedProfiles, resetProfileFixture, makeProfile } from '../../tests/profile-fixture';
 import { resetFakeStoreGates } from '../../tests/fake-store-gates';
+import { clearAllServerMaps, setServerMap } from '../../lib/zm/server-resolver';
 
 vi.mock('../../api/store-gates', () => import('../../tests/fake-store-gates'));
 vi.mock('../../lib/security/secureStorage', () => import('../../tests/fake-secure-storage'));
@@ -194,6 +195,21 @@ describe('LiveActivity', () => {
     resetFakeStoreGates();
     useNotificationStore.setState({ profileEvents: {} });
     localStorage.clear();
+    clearAllServerMaps();
+  });
+
+  it("polls a monitor on its own server's API host", async () => {
+    mockMonitors.mockResolvedValue({
+      monitors: [{ Monitor: { Id: '3', Name: 'Front Door', ServerId: '2' } }],
+    } as never);
+    mockStatus.mockResolvedValue({ status: 0 } as never);
+    setServerMap(new Map([['2', { recordingUrl: '', portalPath: '', apiBaseUrl: 'http://server2/zm/api' }]]));
+
+    render(<LiveActivity />, { wrapper });
+
+    await waitFor(() => {
+      expect(mockStatus).toHaveBeenCalledWith(expect.anything(), '3', 'http://server2/zm/api');
+    });
   });
 
   it('shows only the alarming monitor, named without its id', async () => {

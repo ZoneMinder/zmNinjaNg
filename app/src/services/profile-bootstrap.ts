@@ -314,7 +314,7 @@ export async function bootstrapServerMap(profile: Profile): Promise<void> {
       return;
     }
 
-    const serverMap = buildServerMap(servers);
+    const serverMap = buildServerMap(servers, profile.apiUrl);
     setServerMap(serverMap, profile.id);
 
     log.profileService('Multi-server map initialized', LogLevel.INFO, {

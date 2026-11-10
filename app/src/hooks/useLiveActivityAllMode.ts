@@ -126,7 +126,7 @@ export function useLiveActivityAllMode(
       const ignored = mergeProfileSettings(profileSettingsMap[profileId]).liveActivityIgnoredMonitorIds;
       if (ignored.includes(item.Monitor.Id)) continue;
       const list = byProfile.get(profileId) ?? [];
-      list.push({ profileId, monitorId: item.Monitor.Id });
+      list.push({ profileId, monitorId: item.Monitor.Id, serverId: item.Monitor.ServerId });
       byProfile.set(profileId, list);
     }
     return Array.from(byProfile.values());

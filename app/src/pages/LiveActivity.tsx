@@ -91,11 +91,11 @@ export default function LiveActivity() {
   // other. Servers before the 1.37 removal of TAPE report TAPE while
   // recording, which isAlarmingState already rejects. Skipping these monitors
   // only hid real alarms.
-  const watchedIds = useMemo(() => {
+  const watchedMonitors = useMemo(() => {
     const ignored = new Set(settings.liveActivityIgnoredMonitorIds);
     return (data?.monitors ?? [])
       .filter(({ Monitor }) => !ignored.has(Monitor.Id))
-      .map(({ Monitor }) => Monitor.Id);
+      .map(({ Monitor }) => ({ monitorId: Monitor.Id, serverId: Monitor.ServerId }));
   }, [data?.monitors, settings.liveActivityIgnoredMonitorIds]);
 
   const pollIntervalMs = resolvePollIntervalMs(
@@ -108,10 +108,10 @@ export default function LiveActivity() {
   // off while mounted): useAlarmStates reports an empty `states` map while
   // disabled, and feeding that into reduceActiveMonitors below would drop
   // every resident monitor instantly with no dwell window, the exact tile
-  // churn the dwell window exists to prevent (refs #313). watchedIds is
+  // churn the dwell window exists to prevent (refs #313). watchedMonitors is
   // already empty in All mode (the query above is disabled there), so this
   // is a no-op fanout rather than a second gate.
-  const { states, isLoading: alarmsLoading, error: alarmError } = useAlarmStates(watchedIds, {
+  const { states, isLoading: alarmsLoading, error: alarmError } = useAlarmStates(watchedMonitors, {
     enabled: true,
     pollIntervalMs,
   });
@@ -333,7 +333,7 @@ export default function LiveActivity() {
     }));
   }, [isAllMode, allMode.profilesById, allMode.monitorsByProfile]);
 
-  const watchedCount = isAllMode ? allMode.watchedCount : watchedIds.length;
+  const watchedCount = isAllMode ? allMode.watchedCount : watchedMonitors.length;
   const error = isAllMode
     ? (allMode.profileErrors[0]?.error ?? allMode.alarmError)
     : (monitorsError ?? alarmError);

@@ -373,7 +373,7 @@ branch.
 
    import { buildServerMap, setServerMap, resolveMonitorUrls } from '../lib/zm/server-resolver';
 
-   const serverMap = buildServerMap(servers);   // from /servers.json
+   const serverMap = buildServerMap(servers, profile.apiUrl);   // from /servers.json
    setServerMap(serverMap);                     // during bootstrap
 
    const urls = resolveMonitorUrls(monitor.ServerId, serverMap, {

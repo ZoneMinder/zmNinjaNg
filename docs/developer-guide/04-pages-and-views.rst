@@ -703,7 +703,10 @@ belongs to this page.
 The pipeline, in the order it runs:
 
 - ``useAlarmStates`` (``src/hooks/useAlarmStates.ts``) fans out one query per
-  watched monitor id, keyed by ``queryKeys.monitorAlarmStatus``, polling at an
+  watched monitor, keyed by ``queryKeys.monitorAlarmStatus``. Each poll goes to
+  the API host of the monitor's ``ServerId`` (``getApiUrlForMonitor``), because
+  ZoneMinder answers it by running ``zmu`` on the host that received it and the
+  monitor's memory map only exists on its own server. It polls at an
   interval from ``resolvePollIntervalMs(bandwidthMode,
   settings.liveActivityPollSeconds, 'alarmStatusInterval')``, the per-page poll
   setting folded against the bandwidth-mode floor.
@@ -750,7 +753,7 @@ The pipeline, in the order it runs:
 .. code:: tsx
 
    // src/pages/LiveActivity.tsx, trimmed
-   const { states } = useAlarmStates(watchedIds, { enabled: true, pollIntervalMs });
+   const { states } = useAlarmStates(watchedMonitors, { enabled: true, pollIntervalMs });
    const hintedStates = useMemo(
      () => applyLiveAlarmHints(states, hintedMonitorIds),
      [states, hintedMonitorIds]

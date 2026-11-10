@@ -119,6 +119,21 @@ describe('useLiveActivityAllMode guardrails', () => {
     expect(new Set((pairs as { profileId: string }[]).map((p) => p.profileId)).size).toBe(2);
   });
 
+  it("carries each monitor's ServerId into its alarm poll", () => {
+    const onServer2 = scopedMonitor('profile-a', '1');
+    scopedMonitorsSpy.mockReturnValue({
+      monitors: [{ ...onServer2, item: { ...onServer2.item, Monitor: { ...onServer2.item.Monitor, ServerId: '2' } } }],
+      errors: [],
+      isLoading: false,
+      refetchProfile: vi.fn(),
+    });
+
+    renderHook(() => useLiveActivityAllMode(true, 30_000, 30_000, emptyActive));
+
+    const [pairs] = scopedAlarmStatesSpy.mock.calls.at(-1)!;
+    expect(pairs).toEqual([{ profileId: 'profile-a', monitorId: '1', serverId: '2' }]);
+  });
+
   it('still computes the floored value in single mode, but useScopedAlarmStates is disabled so it never polls', () => {
     // The guardrail math runs regardless (it's a cheap Math.max), but `enabled`
     // is what actually gates the fanout: single mode's own pollIntervalMs

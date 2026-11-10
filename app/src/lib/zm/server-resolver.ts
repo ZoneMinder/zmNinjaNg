@@ -10,6 +10,7 @@
 import type { Server } from '../../api/server';
 import type { ProfileId } from '../../api/types';
 import { log, LogLevel } from '../logger';
+import { zmThisServerId } from './server-stats';
 
 // ========== Types ==========
 
@@ -110,9 +111,9 @@ export function clearAllServerMaps(): void {
 
 // ZoneMinder installs often have a default/placeholder row in the Servers
 // table that was never populated: typically Hostname=server.localdomain
-// or localhost and Port=0. Treating those rows as valid routes breaks
-// monitors whose ServerId points at them, because the resolver then
-// overrides the user's working profile URL with the placeholder.
+// or localhost. Treating those rows as valid routes breaks monitors whose
+// ServerId points at them, because the resolver then overrides the user's
+// working profile URL with the placeholder.
 const PLACEHOLDER_HOSTNAMES = new Set(['localhost', 'server.localdomain']);
 
 function isPlaceholderRow(server: Server): boolean {
@@ -120,26 +121,51 @@ function isPlaceholderRow(server: Server): boolean {
   const host = server.Hostname.toLowerCase();
   if (PLACEHOLDER_HOSTNAMES.has(host)) return true;
   if (host.endsWith('.localdomain')) return true;
-  if (server.Port != null && Number(server.Port) <= 0) return true;
+  if (server.Port != null && Number(server.Port) < 0) return true;
   return false;
+}
+
+/** A blank Port means ZoneMinder uses the port of the current request, so the
+ *  profile's port stands in, unless the server speaks another protocol. */
+function blankPortBase(server: Server, profileApiUrl: string): string {
+  const profileUrl = new URL(profileApiUrl);
+  const protocol = server.Protocol || profileUrl.protocol.replace(':', '');
+  const sharesPort =
+    profileUrl.port && `${protocol}:` === profileUrl.protocol && !server.Hostname?.includes(':');
+  return `${protocol}://${server.Hostname}${sharesPort ? `:${profileUrl.port}` : ''}`;
 }
 
 /**
  * Build a map of ServerId to constructed URLs from a list of servers.
- * Rows with missing/placeholder Hostname or non-positive Port are skipped
- * so the resolver falls back to the user's configured profile URLs.
+ * Rows with a missing/placeholder Hostname or a negative Port are skipped so
+ * the resolver falls back to the user's configured profile URLs.
+ *
+ * A row with a blank Port (the schema coerces a null Port to 0) is only routed
+ * when the profile's address identifies its own server, and then only for the
+ * other servers. A monitor on another server can't stream through the profile's
+ * URL, since only its own server has its memory map, so routing it can't take
+ * away a working live view. A monitor on the profile's own server keeps the URL
+ * the user configured. With no match (a public URL over LAN hostnames, say)
+ * nothing is routed.
  */
-export function buildServerMap(servers: Server[]): ServerUrlMap {
+export function buildServerMap(servers: Server[], profileApiUrl: string): ServerUrlMap {
   const map: ServerUrlMap = new Map();
+  const thisServerId = zmThisServerId(servers, profileApiUrl);
 
   for (const server of servers) {
     if (isPlaceholderRow(server)) {
       continue;
     }
 
-    const protocol = server.Protocol || 'https';
-    const port = server.Port ?? 443;
-    const base = `${protocol}://${server.Hostname}:${port}`;
+    const portIsBlank = server.Port === 0;
+    if (portIsBlank && (thisServerId === '0' || server.Id === thisServerId)) {
+      log.http(`Not routing server ${server.Name} (${server.Id}): blank Port`, LogLevel.DEBUG, { thisServerId });
+      continue;
+    }
+
+    const base = portIsBlank
+      ? blankPortBase(server, profileApiUrl)
+      : `${server.Protocol || 'https'}://${server.Hostname}:${server.Port ?? 443}`;
 
     const urls: ServerUrls = {
       recordingUrl: base + (server.PathToZMS || '/cgi-bin/nph-zms'),
@@ -195,6 +221,20 @@ export function resolveMonitorUrls(
     ...urls,
     isMultiServer: true,
   };
+}
+
+/**
+ * API base URL of a monitor's own server, for endpoints that act on that
+ * monitor's shared memory (ZoneMinder runs zmu on whichever host gets the call,
+ * and the memory map only exists on the monitor's server). Undefined means use
+ * the session's own API URL.
+ */
+export function getApiUrlForMonitor(
+  serverId: string | null | undefined,
+  profileId?: ProfileId | null,
+): string | undefined {
+  if (!serverId || serverId === '0') return undefined;
+  return getServerMap(profileId).get(serverId)?.apiBaseUrl;
 }
 
 /**

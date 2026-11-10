@@ -123,7 +123,9 @@ After authentication, the bootstrap process calls
 
 1. Fetches ``/servers.json`` from the ZoneMinder API
 2. Builds a ServerId-to-URLs map via ``buildServerMap()`` from
-   ``lib/zm/server-resolver.ts``
+   ``lib/zm/server-resolver.ts``. A server with a blank ``Port`` is only mapped
+   when the profile's address matches another server's ``Hostname``, so
+   monitors on the profile's own server keep the URL the user configured
 3. Stores the map in the module-level cache via ``setServerMap()``
 4. The cache is cleared on profile switch
 

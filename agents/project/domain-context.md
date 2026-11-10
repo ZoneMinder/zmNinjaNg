@@ -9,6 +9,7 @@ matching reality, fixing it is a protocol change like any rule edit.
 
 ## ZoneMinder API
 
+- `/monitors/alarm/id:N/command:*` runs `zmu` on the host that gets the call, and `zmu` needs `/dev/shm/zm.mmap.N`, which only exists on monitor N's own server. On a multi-server cluster, send it to `getApiUrlForMonitor(ServerId, profileId)`; the wrong host logs `Can't connect to capture daemon` in ZM and returns `{status:"false",code:255}` with HTTP 200 (refs #585).
 - Events index filters: `Id IN (...)` works; the `Id:csv` form does not.
   `Tags.Id` accepts a single value only and cannot combine with `Id IN`.
   Repeating `MonitorId` params ORs them. Filter URLs cap out near 8KB;
@@ -363,7 +364,10 @@ contract. Remaining code-path facts:
   ES-connected profile).
 - Multi-server ZM installs route streams at Servers-table hosts that can
   differ from the profile's own URLs; per-profile server maps populate at
-  bootstrap and fall back to profile base URLs when empty. This is also
+  bootstrap and fall back to profile base URLs when empty. A blank `Port` is
+  normal on these installs and reaches `buildServerMap` as 0 (`z.coerce`
+  turns null into 0); ZoneMinder itself then uses the request's port (refs
+  #585). This is also
   why native TLS trust is deliberately global once any profile enables
   self-signed (maintainer decision recorded in the all-profiles spec).
 - i18next reserves `{{count}}` for pluralization; interpolating a
