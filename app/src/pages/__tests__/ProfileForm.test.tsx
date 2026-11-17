@@ -55,6 +55,13 @@ describe('ProfileForm add-server', () => {
     resetFakeStoreGates();
   });
 
+  // The background glow hangs off the right edge, and the page scrolls, so
+  // the glow made it swipe sideways unless clipped (refs #587).
+  it('clips the background glow so the page does not scroll sideways', () => {
+    render(<ProfileForm />);
+    expect(screen.getByTestId('setup-background').className).toContain('overflow-hidden');
+  });
+
   it('logs in once, saves the profile, and moves on without a pause', async () => {
     const user = userEvent.setup();
     render(<ProfileForm />);

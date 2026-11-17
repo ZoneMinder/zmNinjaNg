@@ -368,10 +368,12 @@ export default function ProfileForm() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background relative overflow-y-auto p-4" data-tv-region="setup-screen">
-      {/* Background Effects */}
-      <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:20px_20px]" />
-      <div className="absolute -top-40 -right-40 w-96 h-96 bg-primary/20 rounded-full blur-3xl opacity-50 animate-pulse" />
-      <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-secondary/20 rounded-full blur-3xl opacity-50" />
+      {/* Background Effects - clipped so the glows past the edge don't make the page scroll sideways (refs #587) */}
+      <div className="absolute inset-0 overflow-hidden" data-testid="setup-background">
+        <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:20px_20px]" />
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-primary/20 rounded-full blur-3xl opacity-50 animate-pulse" />
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-secondary/20 rounded-full blur-3xl opacity-50" />
+      </div>
 
       <Card className="w-full max-w-md mx-auto my-auto border-border/50 shadow-2xl backdrop-blur-xl bg-card/80 z-10">
         <CardHeader className="text-center pb-8">
