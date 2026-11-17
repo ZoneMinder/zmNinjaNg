@@ -367,7 +367,7 @@ export default function ProfileForm() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background relative overflow-y-auto p-4" data-tv-region="setup-screen">
+    <div className="h-dvh flex flex-col bg-background relative overflow-y-auto p-4" data-tv-region="setup-screen">
       {/* Background Effects - clipped so the glows past the edge don't make the page scroll sideways (refs #587) */}
       <div className="absolute inset-0 overflow-hidden" data-testid="setup-background">
         <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:20px_20px]" />
