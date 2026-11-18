@@ -8,6 +8,12 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { asProfileId } from '../../api/types';
 
 const countryCode = vi.fn();
+const logged = vi.hoisted(() => [] as string[]);
+
+vi.mock('../../lib/logger', async (orig) => {
+  const real = await orig<typeof import('../../lib/logger')>();
+  return { ...real, log: { ...real.log, assistant: (message: string) => logged.push(message) } };
+});
 
 vi.mock('../../lib/platform', () => ({ Platform: { isNative: true, isIOS: true } }));
 vi.mock('../../plugins/storefront', () => ({ Storefront: { getCountryCode: () => countryCode() } }));
@@ -43,6 +49,7 @@ async function enabledOn(storefront: string | null) {
 describe('assistant on the China mainland storefront', () => {
   beforeEach(() => {
     countryCode.mockReset();
+    logged.length = 0;
   });
 
   it('is off on the China storefront even when turned on', async () => {
@@ -51,6 +58,15 @@ describe('assistant on the China mainland storefront', () => {
 
   it('stays on for other storefronts', async () => {
     expect(await enabledOn('USA')).toBe(true);
+  });
+
+  it('logs Yes or No for the storefront check', async () => {
+    await enabledOn('CHN');
+    await enabledOn('USA');
+    expect(logged).toEqual([
+      'Assistant allowed on this App Store storefront (CHN): No',
+      'Assistant allowed on this App Store storefront (USA): Yes',
+    ]);
   });
 
   it('stays on when there is no storefront (no App Store account)', async () => {

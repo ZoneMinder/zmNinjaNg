@@ -14,14 +14,19 @@
 import { useEffect, useState } from 'react';
 import { Platform } from '../lib/platform';
 import { ASSISTANT_BLOCKED_STOREFRONTS } from '../lib/zmninja-ng-constants';
+import { log, LogLevel } from '../lib/logger';
 
 let lookup: Promise<boolean> | undefined;
 
 function lookUpAllowed(): Promise<boolean> {
   lookup ??= import('../plugins/storefront')
     .then(({ Storefront }) => Storefront.getCountryCode())
-    .then(({ countryCode }) => !countryCode || !ASSISTANT_BLOCKED_STOREFRONTS.includes(countryCode))
-    .catch(() => true);
+    .then(({ countryCode }) => ({ storefront: countryCode ?? 'none', allowed: !countryCode || !ASSISTANT_BLOCKED_STOREFRONTS.includes(countryCode) }))
+    .catch(() => ({ storefront: 'lookup failed', allowed: true }))
+    .then(({ storefront, allowed }) => {
+      log.assistant(`Assistant allowed on this App Store storefront (${storefront}): ${allowed ? 'Yes' : 'No'}`, LogLevel.DEBUG);
+      return allowed;
+    });
   return lookup;
 }
 
