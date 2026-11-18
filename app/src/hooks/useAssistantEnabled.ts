@@ -16,6 +16,9 @@
  * to a member that has no assistant configuration would open the panel against
  * an unconfigured backend.
  *
+ * Off on App Store storefronts where the assistant is not allowed (see
+ * useAssistantAllowedHere).
+ *
  * Selector discipline (see useProfileScope): the raw settings map is the
  * subscription, and the per-profile merge happens in useMemo. Merging inside
  * the selector would mint objects on every call and loop the render.
@@ -24,6 +27,7 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useProfileScope } from './useProfileScope';
+import { useAssistantAllowedHere } from './useAssistantAllowedHere';
 import { useSettingsStore, mergeProfileSettings } from '../stores/settings';
 import type { ProfileId } from '../api/types';
 
@@ -32,11 +36,12 @@ export function useAssistantEnabled(): { enabled: boolean; profileId: ProfileId 
   const profileSettings = useSettingsStore(useShallow((state) => state.profileSettings));
 
   const profiles = scope?.profiles;
+  const allowedHere = useAssistantAllowedHere() === true;
 
   return useMemo(() => {
     const configured = profiles?.find(
       (p) => mergeProfileSettings(profileSettings?.[p.id]).assistantEnabled
     );
-    return { enabled: Boolean(configured), profileId: configured?.id ?? profiles?.[0]?.id };
-  }, [profiles, profileSettings]);
+    return { enabled: allowedHere && Boolean(configured), profileId: configured?.id ?? profiles?.[0]?.id };
+  }, [profiles, profileSettings, allowedHere]);
 }

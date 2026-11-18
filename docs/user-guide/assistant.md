@@ -6,6 +6,8 @@ Ninjii answers questions about your cameras and events. It is read-only: it cann
 
 Go to **Settings > Ninjii** and turn on **Enable Ninjii**.
 
+Ninjii is not available on an iPhone or iPad whose App Store account is set to China mainland. The Ninjii section does not appear in Settings there. China requires a government filing for every AI chatbot, and zmNinjaNg does not have one.
+
 ```{figure} ../_static/img/screens/assistant/settings.jpg
 :align: center
 :width: 360px

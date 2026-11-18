@@ -219,6 +219,10 @@ vi.mock('../plugins/apple-intelligence', () => ({
   },
 }));
 
+vi.mock('../plugins/storefront', () => ({
+  Storefront: { getCountryCode: vi.fn().mockResolvedValue({ countryCode: null }) },
+}));
+
 // Mock SafeArea plugin
 vi.mock('../src/plugins/safe-area', () => ({
   SafeArea: {

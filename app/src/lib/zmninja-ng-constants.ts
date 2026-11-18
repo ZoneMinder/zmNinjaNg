@@ -1536,3 +1536,7 @@ export const ALL_MODE_PERFORMANCE = {
   minIdleMinutes: 0,
   maxIdleMinutes: 120,
 } as const;
+
+// App Store storefronts where the assistant is off. China mainland requires a
+// filed and approved model for any AI chatbot, and the app has none (refs #587).
+export const ASSISTANT_BLOCKED_STOREFRONTS: readonly string[] = ['CHN'];
