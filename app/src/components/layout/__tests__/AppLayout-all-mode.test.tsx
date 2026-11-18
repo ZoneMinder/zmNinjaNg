@@ -110,6 +110,18 @@ describe('AppLayout in All Servers mode', () => {
     expect(allBucket().sidebarWidth).toBe(60);
   });
 
+  // A tap that reveals hidden content only counts as hover in WebKit, so a
+  // handle shown on sidebar hover ate the first tap on every menu item on
+  // touch screens (refs #587). Only screens with real hover may hide it.
+  it('hides the sidebar handle until hover only where hover exists', () => {
+    renderLayout();
+
+    const classes = screen.getByTestId('sidebar-toggle').className.split(' ');
+
+    expect(classes).not.toContain('opacity-0');
+    expect(classes).toContain('[@media(hover:hover)]:opacity-0');
+  });
+
   it('persists the mobile montage toolbar toggle into the ALL bucket', () => {
     useSettingsStore.getState().updateProfileSettings(ALL_PROFILES_ID, {
       montageShowToolbar: true,

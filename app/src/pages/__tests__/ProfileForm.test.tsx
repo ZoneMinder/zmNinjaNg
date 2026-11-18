@@ -55,6 +55,22 @@ describe('ProfileForm add-server', () => {
     resetFakeStoreGates();
   });
 
+  // The background glow hangs off the right edge, and the page scrolls, so
+  // the glow made it swipe sideways unless clipped (refs #587).
+  it('clips the background glow so the page does not scroll sideways', () => {
+    render(<ProfileForm />);
+    expect(screen.getByTestId('setup-background').className).toContain('overflow-hidden');
+  });
+
+  // A min-height root grows to fit the form, so nothing scrolls and iOS has
+  // nothing to move when the keyboard covers a field (refs #587).
+  it('scrolls inside a screen-high page so iOS can lift a field above the keyboard', () => {
+    render(<ProfileForm />);
+    const page = screen.getByTestId('setup-background').parentElement!;
+    expect(page.className).toMatch(/\bh-dvh\b/);
+    expect(page.className).not.toContain('min-h-screen');
+  });
+
   it('logs in once, saves the profile, and moves on without a pause', async () => {
     const user = userEvent.setup();
     render(<ProfileForm />);

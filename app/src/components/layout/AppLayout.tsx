@@ -228,9 +228,11 @@ export default function AppLayout() {
       >
         <SidebarContent isCollapsed={isCollapsed} />
 
-        {/* Toggle Button */}
+        {/* Toggle Button. Hidden until hover only on screens that can hover:
+            on touch, WebKit treats a tap that reveals it as hover and drops
+            that tap's click on the menu item underneath (refs #587). */}
         <div
-          className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-5 h-10 bg-primary hover:bg-primary/90 rounded-full flex items-center justify-center cursor-pointer shadow-lg z-50 transition-all duration-200 ${isTvMode ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+          className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-5 h-10 bg-primary hover:bg-primary/90 rounded-full flex items-center justify-center cursor-pointer shadow-lg z-50 transition-all duration-200 ${isTvMode ? 'opacity-100' : '[@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100'}`}
           onClick={toggleSidebar}
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSidebar(); } }}
           tabIndex={0}
