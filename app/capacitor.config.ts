@@ -41,6 +41,12 @@ const config: CapacitorConfig = {
       showSpinner: false,
       fadeOutDuration: 200,
     },
+    // iOS otherwise keeps the webview full height under the keyboard and
+    // scrolls the page, so `dvh` never shrinks and dialogs slide under it
+    // (refs #587). Native resize shrinks the webview itself.
+    Keyboard: {
+      resize: 'native',
+    },
     FirebaseMessaging: {
       presentationOptions: ['alert', 'badge', 'sound'],
     },
