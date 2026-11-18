@@ -25,12 +25,14 @@ import { LiveStreamingSection } from '../components/settings/LiveStreamingSectio
 import { EventsPlaybackSection } from '../components/settings/EventsPlaybackSection';
 import { NetworkSection } from '../components/settings/NetworkSection';
 import { AssistantSection } from '../components/settings/AssistantSection';
+import { useAssistantAllowedHere } from '../hooks/useAssistantAllowedHere';
 import { MoreSettingsSection } from '../components/settings/MoreSettingsSection';
 import { SettingsAggregateContext, SettingsSearchContext, useSettingsFilter } from '../components/settings/settings-search';
 import type { ProfileSettings } from '../stores/settings';
 
 export default function Settings() {
   const { t } = useTranslation();
+  const assistantAllowedHere = useAssistantAllowedHere() === true;
   const { currentProfile, settings, isAllMode } = useCurrentProfile();
   const updateSettings = useSettingsStore((state) => state.updateProfileSettings);
 
@@ -187,12 +189,14 @@ export default function Settings() {
             serverSettings={serverScopedSettings}
             updateSettings={updateSettings}
           />
-          <AssistantSection
-            settings={serverScopedSettings}
-            update={updateServerScoped}
-            currentProfile={serverScopedProfile}
-            updateSettings={updateSettings}
-          />
+          {assistantAllowedHere && (
+            <AssistantSection
+              settings={serverScopedSettings}
+              update={updateServerScoped}
+              currentProfile={serverScopedProfile}
+              updateSettings={updateSettings}
+            />
+          )}
           <MoreSettingsSection />
         </div>
       </SettingsAggregateContext.Provider>

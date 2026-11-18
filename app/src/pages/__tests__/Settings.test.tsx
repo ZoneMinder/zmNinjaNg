@@ -22,6 +22,9 @@ vi.mock('../../lib/security/secureStorage', async () => {
   const fake = await import('../../tests/fake-secure-storage');
   return { ...fake, hasSecureValue: async (key: string) => (await fake.getSecureValue(key)) !== null };
 });
+const storefront = vi.hoisted(() => ({ allowed: true as boolean | undefined }));
+vi.mock('../../hooks/useAssistantAllowedHere', () => ({ useAssistantAllowedHere: () => storefront.allowed }));
+
 vi.mock('../../api/monitors', () => ({ getMonitors: vi.fn(async () => ({ monitors: [] })) }));
 
 const changeLanguage = vi.fn();
@@ -110,6 +113,7 @@ describe('Settings Page', () => {
     vi.mocked(getMonitors).mockResolvedValue({ monitors: [] } as never);
     // Section and fold open state persists; start every test from the defaults.
     localStorage.clear();
+    storefront.allowed = true;
   });
 
   afterEach(() => {
@@ -166,6 +170,14 @@ describe('Settings Page', () => {
       'settings-section-assistant',
       'settings-section-more',
     ]);
+  });
+
+  // China mainland needs a filed model for an AI chatbot; the app has none (refs #587).
+  it('leaves out the Assistant section where the storefront does not allow it', () => {
+    storefront.allowed = false;
+    renderSettings();
+    expect(screen.queryByTestId('settings-section-assistant')).toBeNull();
+    expect(screen.getByTestId('settings-section-network')).toBeTruthy();
   });
 
   // With one profile the server's name says nothing the page does not, so the
