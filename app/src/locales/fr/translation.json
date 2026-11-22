@@ -1274,6 +1274,7 @@
     "live_activity": "Activité en direct"
   },
   "developer_notice": {
+    "star_github": "Mettre une étoile sur GitHub",
     "page_title": "Avis du développeur",
     "page_subtitle": "Annonces du développeur. Cliquez sur un avis pour le marquer comme lu.",
     "unread": "Non lu",

@@ -194,10 +194,19 @@ describe('grid/list view parity (refs #494)', () => {
   });
 
   it('offers a working download control in both views for a videoed event', async () => {
+    // The rejected request falls back to a direct link that download.ts
+    // removes on a timer; wait that out so it can't fire after jsdom is gone.
+    const linkClick = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    const waitForFallbackCleanup = async (clicks: number) => {
+      await waitFor(() => expect(linkClick).toHaveBeenCalledTimes(clicks));
+      await waitFor(() => expect(document.querySelector('a[download]')).toBeNull());
+    };
+
     const card = renderCard();
     fireEvent.click(screen.getByTestId('event-download-button'));
     await waitFor(() => expect(httpRequest).toHaveBeenCalledTimes(1));
     expect(decodeURIComponent(vi.mocked(httpRequest).mock.calls[0][0] as string)).toContain('eid=701');
+    await waitForFallbackCleanup(1);
     unmount(card);
 
     vi.mocked(httpRequest).mockClear();
@@ -206,7 +215,9 @@ describe('grid/list view parity (refs #494)', () => {
     fireEvent.click(screen.getByTestId('event-download-button'));
     await waitFor(() => expect(httpRequest).toHaveBeenCalledTimes(1));
     expect(decodeURIComponent(vi.mocked(httpRequest).mock.calls[0][0] as string)).toContain('eid=701');
+    await waitForFallbackCleanup(2);
     unmount(tile);
+    linkClick.mockRestore();
   });
 
   it('highlights both views the same way when the event is queued for deletion', () => {

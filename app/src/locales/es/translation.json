@@ -1274,6 +1274,7 @@
     "live_activity": "Actividad en vivo"
   },
   "developer_notice": {
+    "star_github": "Dar una estrella en GitHub",
     "page_title": "Aviso del desarrollador",
     "page_subtitle": "Anuncios del desarrollador. Haz clic en un aviso para marcarlo como leído.",
     "unread": "No leído",

@@ -49,7 +49,7 @@ The General section
 | **TV mode** | Larger touch targets and D-pad/remote navigation for TV and set-top devices. See [TV mode](#tv-mode). |
 | **Scroll hint** | Shows a small down arrow in the bottom-right corner when a page has more content below the screen, so a page that looks finished but isn't still says so. It goes away as soon as you scroll. On by default. Montage never shows it, since it has its own scroll controls. |
 | **Kiosk PIN** | Set, change, or clear the PIN that locks kiosk mode. See [Kiosk PIN](#kiosk-pin). |
-| **Show developer notices** | Shows maintainer announcements in the app. Each notice shows its date, and a release notice also shows the app version it covers. |
+| **Show developer notices** | Shows maintainer announcements in the app. Each notice shows its date, and a release notice also shows the app version it covers. The notices page also has a **Star on GitHub** button that opens the app's GitHub repo. |
 | **Log level** | DEBUG, INFO, WARN, or ERROR. The lowest level of entry the app records. Changing it also clears every component level below it. This is the same setting as the level picker on the Logs page. See {doc}`logs`. |
 | **Component Logs** | Folded by default. Its summary shows the log level and how many components are set differently. Open it to give one component its own level (DEBUG, INFO, WARN, ERROR, or NONE). **Reset** puts every component back on the log level. |
 | **Disable Log Redaction** | Shows passwords and tokens in logs instead of scrubbing them. An orange warning shows while it is on. Turn it off when you are done. See [What gets redacted](logs.md#what-gets-redacted). |

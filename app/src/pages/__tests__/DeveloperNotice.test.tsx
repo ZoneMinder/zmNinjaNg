@@ -44,4 +44,17 @@ describe('DeveloperNotice page', () => {
     expect(await screen.findByTestId('developer-notice-meta-release-2.7.0')).toHaveTextContent(/^v0\.0\.1 · Oct \d/);
     expect(screen.getByTestId('developer-notice-meta-welcome')).toHaveTextContent(/^May \d/);
   });
+
+  it('links the Star on GitHub button to the repo, opening outside the app', async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <DeveloperNotice />
+      </QueryClientProvider>,
+    );
+    const star = screen.getByTestId('developer-notice-star-github');
+    expect(star).toHaveAttribute('href', 'https://github.com/ZoneMinder/zmNinjaNg');
+    expect(star).toHaveAttribute('target', '_blank');
+    expect(star).toHaveTextContent('developer_notice.star_github');
+  });
 });

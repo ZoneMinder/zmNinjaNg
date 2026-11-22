@@ -633,6 +633,9 @@ export const DEVELOPER_NOTICES = {
   // Public raw URL of the notice feed (GitHub serves with ~5min CDN TTL)
   feedUrl: 'https://raw.githubusercontent.com/ZoneMinder/zmNinjaNg/main/docs/notices.json',
 
+  // The app's GitHub repo, opened by the Star on GitHub button on the notices page.
+  repoUrl: 'https://github.com/ZoneMinder/zmNinjaNg',
+
   // Background refetch interval. React Query handles the actual polling.
   // Notices change rarely, so poll once per day.
   pollIntervalMs: 24 * 60 * 60 * 1000,

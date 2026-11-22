@@ -1274,6 +1274,7 @@
     "live_activity": "Live Activity"
   },
   "developer_notice": {
+    "star_github": "Star on GitHub",
     "page_title": "Developer Notice",
     "page_subtitle": "Announcements from the developer. Click a notice to mark it read.",
     "unread": "Unread",

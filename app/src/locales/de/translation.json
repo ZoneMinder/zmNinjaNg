@@ -1274,6 +1274,7 @@
     "live_activity": "Live-Aktivität"
   },
   "developer_notice": {
+    "star_github": "Stern auf GitHub geben",
     "page_title": "Entwicklerhinweise",
     "page_subtitle": "Mitteilungen vom Entwickler. Hinweis anklicken, um ihn als gelesen zu markieren.",
     "unread": "Ungelesen",

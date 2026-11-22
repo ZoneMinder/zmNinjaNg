@@ -171,7 +171,7 @@ Then('the first sequence play tile is playing', async ({ page }) => {
   await expect(first.locator('img')).toHaveAttribute('src', /source=event/);
 });
 
-When('I pick the {int} by {int} sequence play grid', async ({ page }, n: number) => {
+When('I pick the {int} by {int} sequence play grid', async ({ page }, n: number, _cols: number) => {
   if (!sequenceListIds) return;
   const sequence = page.getByTestId('event-context-sequence');
   await sequence.getByTestId('event-context-sequence-grid').click();

@@ -29,3 +29,8 @@ Feature: Delete developer notices
     Then the developer notices sidebar entry should be hidden
     When I turn on developer notices in settings
     Then the developer notices sidebar entry should be visible
+
+  @web
+  Scenario: Star on GitHub opens the app's repo in a new tab
+    When I tap the Star on GitHub button
+    Then a new tab should open on the app's GitHub repo

@@ -84,3 +84,22 @@ Then('the developer notices sidebar entry should be hidden', async ({ page }) =>
 Then('the developer notices sidebar entry should be visible', async ({ page }) => {
   await expect(page.getByTestId('nav-item-developer-notice').first()).toBeVisible();
 });
+
+// The tab the Star on GitHub button opened, checked by the next step.
+let starTabUrl = '';
+
+When('I tap the Star on GitHub button', async ({ page }) => {
+  // Answer the repo request locally so the test doesn't depend on github.com.
+  await page.context().route('https://github.com/**', (route) => route.fulfill({ body: 'ok' }));
+  const [tab] = await Promise.all([
+    page.context().waitForEvent('page'),
+    page.getByTestId('developer-notice-star-github').click(),
+  ]);
+  await tab.waitForLoadState('domcontentloaded');
+  starTabUrl = tab.url();
+  await tab.close();
+});
+
+Then("a new tab should open on the app's GitHub repo", async () => {
+  expect(starTabUrl).toBe('https://github.com/ZoneMinder/zmNinjaNg');
+});

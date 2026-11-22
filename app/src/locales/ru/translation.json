@@ -1302,6 +1302,7 @@
     "live_activity": "Live Activity"
   },
   "developer_notice": {
+    "star_github": "Поставить звезду на GitHub",
     "page_title": "Уведомление разработчика",
     "page_subtitle": "Объявления от разработчика. Нажмите на уведомление, чтобы отметить его прочитанным.",
     "unread": "Непрочитанное",
