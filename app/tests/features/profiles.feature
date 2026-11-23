@@ -41,6 +41,13 @@ Feature: Profile Management
     And the dialog close button should be within the viewport
 
   @web
+  Scenario: A dialog stays inside the safe area when system bars take part of the screen
+    Given the viewport is phone landscape size with safe-area insets on the top and right
+    When I open the edit dialog for the first profile
+    Then I should see the profile edit dialog
+    And the profile edit dialog should sit inside the safe area
+
+  @web
   Scenario: A confirmation dialog stays reachable on a screen shorter than it is
     Given the viewport is shorter than a dialog
     When I open the delete all profiles dialog
