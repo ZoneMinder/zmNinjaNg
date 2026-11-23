@@ -4,7 +4,7 @@ import type { Locator } from '@playwright/test';
 import { testConfig } from '../helpers/config';
 import { log } from '../../src/lib/logger';
 
-const { When, Then } = createBdd();
+const { Given, When, Then } = createBdd();
 
 let updatedProfileName = '';
 let newProfileName = '';
@@ -237,6 +237,36 @@ Then('the dialog close button should be within the viewport', async ({ page }) =
   const close = page.getByTestId('profile-edit-dialog').getByTestId('dialog-close-button');
   await expect(close).toBeVisible();
   expect(await isWithinViewport(close)).toBe(true);
+});
+
+// iPhone Duo in landscape reports its clock and wifi area as a right inset
+// (top 0, right 84). The insets here are larger than that and narrow the
+// screen enough that a 500px dialog centred on the full width overlaps the
+// right one. iOS sets them inline on the root the same way (refs #595).
+const SAFE_AREA = { top: 40, right: 150, bottom: 20, left: 0 };
+
+Given('the viewport is phone landscape size with safe-area insets on the top and right', async ({ page }) => {
+  await page.setViewportSize({ width: 600, height: 375 });
+  await page.evaluate((insets) => {
+    for (const [side, px] of Object.entries(insets)) {
+      document.documentElement.style.setProperty(`--sai-${side}`, `${px}px`);
+    }
+  }, SAFE_AREA);
+});
+
+Then('the profile edit dialog should sit inside the safe area', async ({ page }) => {
+  const box = await page.getByTestId('profile-edit-dialog').boundingBox();
+  const close = await page
+    .getByTestId('profile-edit-dialog')
+    .getByTestId('dialog-close-button')
+    .boundingBox();
+  const viewport = page.viewportSize();
+  if (!box || !close || !viewport) throw new Error('E2E: dialog or viewport not measurable');
+  expect(box.x).toBeGreaterThanOrEqual(SAFE_AREA.left);
+  expect(box.y).toBeGreaterThanOrEqual(SAFE_AREA.top);
+  expect(box.x + box.width).toBeLessThanOrEqual(viewport.width - SAFE_AREA.right);
+  expect(box.y + box.height).toBeLessThanOrEqual(viewport.height - SAFE_AREA.bottom);
+  expect(close.x + close.width).toBeLessThanOrEqual(viewport.width - SAFE_AREA.right);
 });
 
 // AlertDialog is a separate component from Dialog and needs its own height cap

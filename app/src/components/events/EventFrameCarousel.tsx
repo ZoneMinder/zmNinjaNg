@@ -162,7 +162,7 @@ function EventFrameViewer({
   return (
     <Dialog open onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-[95vw] w-full p-2 bg-black border-0"
+        className="max-w-[95vw] p-2 bg-black border-0"
         data-testid="event-frame-viewer"
         // The frame itself is the content; the title names it, so Radix's
         // description slot has nothing to add.

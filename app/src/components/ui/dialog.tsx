@@ -50,7 +50,10 @@ const DialogContent = React.forwardRef<
           // taking its own Save and Cancel buttons with it, worst on a phone
           // held sideways. Cap the height here and scroll the body below, so
           // no dialog has to remember to do it for itself (refs #322).
-          "fixed left-[50%] top-[50%] z-50 flex max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col gap-4 translate-x-[-50%] translate-y-[-50%] border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
+          // The box is sized to and centred on the safe area, not the whole
+          // screen: a phone held sideways can report its clock as a right
+          // inset, and a wide dialog put its close button under it (refs #595).
+          "fixed left-[calc(50%+(var(--sai-left,0px)-var(--sai-right,0px))/2)] top-[calc(50%+(var(--sai-top,0px)-var(--sai-bottom,0px))/2)] z-50 flex max-h-[calc(100dvh-2rem-var(--sai-top,0px)-var(--sai-bottom,0px))] w-[calc(100%-var(--sai-left,0px)-var(--sai-right,0px))] max-w-lg flex-col gap-4 translate-x-[-50%] translate-y-[-50%] border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
           className
         )}
         {...props}
