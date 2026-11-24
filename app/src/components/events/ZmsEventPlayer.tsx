@@ -223,12 +223,26 @@ export function ZmsEventPlayer({
     return positions;
   }, [alarmFrameId, maxScoreFrameId, totalFrames]);
 
+  // Everything a stream URL is pinned to. Token and freshness are deliberately
+  // absent: an open MJPEG response keeps running on its own token, so a
+  // refresh must not rebuild the src and restart playback at startFrame.
+  const streamIdentity = useMemo(
+    () => JSON.stringify({ portalUrl, apiUrl, eventId, connKey, minStreamingPort, monitorId }),
+    [portalUrl, apiUrl, eventId, connKey, minStreamingPort, monitorId],
+  );
+  const pinnedStreamRef = useRef<{ identity: string; url: string } | null>(null);
+
   // Build ZMS stream URL. Starts at the persisted speed (read from a ref so a
   // mid-event speed change does not recompute the URL); later speed changes go
-  // through CMD_VARPLAY so the img src never changes after mount.
+  // through CMD_VARPLAY so the img src never changes after mount. The first
+  // URL for a stream identity is pinned: a token refresh (and the brief
+  // not-fresh window before it lands) only gates that first build, because
+  // swapping the src restarts the open stream from its start frame.
   const zmsUrl = useMemo(() => {
+    const pinned = pinnedStreamRef.current;
+    if (pinned?.identity === streamIdentity) return pinned.url;
     if (!isAccessTokenFresh || deferStart) return '';
-    return getEventZmsUrl(portalUrl, eventId, {
+    const url = getEventZmsUrl(portalUrl, eventId, {
       token,
       apiUrl,
       frame: startFrameRef.current,
@@ -239,7 +253,9 @@ export function ZmsEventPlayer({
       minStreamingPort,
       monitorId,
     });
-  }, [portalUrl, apiUrl, eventId, connKey, token, minStreamingPort, monitorId, isAccessTokenFresh, deferStart]);
+    pinnedStreamRef.current = { identity: streamIdentity, url };
+    return url;
+  }, [streamIdentity, portalUrl, apiUrl, eventId, connKey, token, minStreamingPort, monitorId, isAccessTokenFresh, deferStart]);
 
   // The stream itself is an <img> load, so it never appears in the HTTP log the
   // way commands and status queries do: without this line a stream that never

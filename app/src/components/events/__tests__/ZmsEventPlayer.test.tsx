@@ -632,3 +632,64 @@ describe('ZmsEventPlayer token freshness', () => {
     expect(screen.queryByAltText('event_detail.event_playback')).toBeNull();
   });
 });
+
+/**
+ * A token refresh changes `token` and briefly makes `isAccessTokenFresh`
+ * false. Rebuilding the stream URL from that swaps the <img> src (and blanks
+ * it in the not-fresh window), which restarts the MJPEG response at
+ * startFrame on the same connkey: playback jumps back to the beginning
+ * mid-viewing. An already-open stream does not need the new token, so its URL
+ * stays pinned until the stream identity itself (event, connkey, server)
+ * changes.
+ */
+describe('ZmsEventPlayer stream URL pinning', () => {
+  const pinnedPlayer = (props: { eventId?: string; token?: string }) => (
+    <ZmsEventPlayer
+      portalUrl="https://zm.test"
+      eventId={props.eventId ?? '42'}
+      profileId={asProfileId('p-owner')}
+      token={props.token ?? 'tok-a'}
+      totalFrames={100}
+      alarmFrames={0}
+      eventLength={10}
+    />
+  );
+
+  it('keeps the open stream URL through a token refresh, and rebuilds for a new event', () => {
+    const freshness = vi
+      .spyOn(freshTokenModule, 'useFreshAccessToken')
+      .mockReturnValue({ token: 'access-a', isFresh: true });
+    try {
+      const { rerender } = render(pinnedPlayer({ token: 'tok-a' }));
+      const img = getStreamImg();
+      const src = img.src;
+      const streamConnkey = connkeyOf(src);
+      expect(new URL(src).searchParams.get('token')).toBe('tok-a');
+      expect(new URL(src).searchParams.get('frame')).toBe('1');
+
+      // A refresh lands mid-viewing: the token prop changes while the old
+      // stream keeps running on its connkey.
+      freshness.mockReturnValue({ token: 'access-b', isFresh: true });
+      rerender(pinnedPlayer({ token: 'tok-b' }));
+      expect(getStreamImg()).toBe(img);
+      expect(getStreamImg().src).toBe(src);
+
+      // The transient not-fresh window before the new token is accepted must
+      // leave the open stream alone too: no empty URL, no unmount.
+      freshness.mockReturnValue({ token: null, isFresh: false });
+      rerender(pinnedPlayer({ token: 'tok-b' }));
+      expect(getStreamImg()).toBe(img);
+      expect(getStreamImg().src).toBe(src);
+      expect(connkeyOf(getStreamImg().src)).toBe(streamConnkey);
+      expect(new URL(getStreamImg().src).searchParams.get('frame')).toBe('1');
+
+      // A different event is a different stream: it still gets a new URL.
+      freshness.mockReturnValue({ token: 'access-b', isFresh: true });
+      rerender(pinnedPlayer({ eventId: '43', token: 'tok-b' }));
+      expect(getStreamImg().src).not.toBe(src);
+      expect(new URL(getStreamImg().src).searchParams.get('event')).toBe('43');
+    } finally {
+      freshness.mockRestore();
+    }
+  });
+});
