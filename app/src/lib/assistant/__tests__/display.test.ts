@@ -6,9 +6,11 @@
  * model cannot conjure a card, and a directive that selects nothing falls
  * back to every card rather than hiding the answer's evidence.
  */
-import { describe, it, expect } from 'vitest';
-import { extractShowDirective, filterDisplayByShow } from '../display';
-import type { DisplayEntity } from '../types';
+import { describe, it, expect, afterEach } from 'vitest';
+import { buildEventDisplayEntity, extractShowDirective, filterDisplayByShow } from '../display';
+import { asProfileId, type MonitorData } from '../../../api/types';
+import { clearAllServerMaps, registerServerResolverGate, setServerMap } from '../../zm/server-resolver';
+import type { DisplayEntity, ToolContext } from '../types';
 
 const event = (id: string): DisplayEntity => ({ kind: 'event', id, title: id, navigatePath: `/events/${id}` });
 const monitor = (id: string): DisplayEntity => ({ kind: 'monitor', id, title: id, navigatePath: `/monitors/${id}` });
@@ -78,5 +80,50 @@ describe('extractShowDirective bracket tolerance', () => {
   it('reads ids wrapped in brackets like bare ids', () => {
     const { show } = extractShowDirective('answer\nSHOW: events=[342702,342701] monitors=[1,4]');
     expect(show).toEqual({ events: ['342702', '342701'], monitors: ['1', '4'] });
+  });
+});
+
+/**
+ * refs #597: in a group turn every server's tools build cards while some other
+ * profile is selected, so the event's server must come from the tool's own
+ * profile, never from the resolver gate's current profile.
+ */
+describe('buildEventDisplayEntity server resolution (refs #597)', () => {
+  const profileA = asProfileId('profile-a');
+  const profileB = asProfileId('profile-b');
+
+  afterEach(() => {
+    registerServerResolverGate({ getCurrentProfileId: () => null });
+    clearAllServerMaps();
+  });
+
+  it("builds the thumbnail on the tool's own profile's server while another is current", () => {
+    setServerMap(
+      new Map([['server-1', { recordingUrl: '', portalPath: 'https://a-server.example/index.php', apiBaseUrl: '' }]]),
+      profileA,
+    );
+    setServerMap(
+      new Map([['server-1', { recordingUrl: '', portalPath: 'https://b-server.example/index.php', apiBaseUrl: '' }]]),
+      profileB,
+    );
+    registerServerResolverGate({ getCurrentProfileId: () => profileB });
+
+    const monitors = [{ Monitor: { Id: '1', Name: 'Front Door', ServerId: 'server-1' } }] as unknown as MonitorData[];
+    const card = buildEventDisplayEntity(
+      { Id: '400', MonitorId: '1', StartDateTime: '2026-11-24 10:00:00', Notes: '', Cause: 'Motion', AlarmFrames: '0' },
+      'Front Door',
+      monitors,
+      {
+        profileId: profileA,
+        portalUrl: 'https://a-portal.example/zm',
+        accessToken: 'tok-a',
+        thumbnailFallbackChain: [{ type: 'snapshot', enabled: true }],
+      } as unknown as ToolContext,
+    );
+
+    // The dev build wraps image URLs in the image proxy, so check the decoded target.
+    const url = decodeURIComponent(card.imageUrls?.[0] ?? '');
+    expect(url).toContain('https://a-server.example/');
+    expect(url).not.toContain('b-server.example');
   });
 });
