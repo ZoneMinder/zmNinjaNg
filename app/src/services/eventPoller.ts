@@ -252,7 +252,12 @@ class EventPollerService {
         const cause = event.Event.Cause || 'Motion';
 
         const eventPortalUrl = portalUrl
-          ? getPortalUrlForEvent(String(event.Event.MonitorId), this.monitorData, portalUrl)
+          ? getPortalUrlForEvent(
+              String(event.Event.MonitorId),
+              this.monitorData,
+              portalUrl,
+              asProfileId(this.profileId),
+            )
           : undefined;
         const imageUrl = eventPortalUrl && accessToken
           ? getEventImageUrl(eventPortalUrl, String(eventId), 'snapshot', {
