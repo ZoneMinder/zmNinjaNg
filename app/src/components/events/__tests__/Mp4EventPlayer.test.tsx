@@ -10,6 +10,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { act, render } from '@testing-library/react';
 import { Mp4EventPlayer } from '../Mp4EventPlayer';
+import { log } from '../../../lib/logger';
 
 const h = vi.hoisted(() => {
   const state = {
@@ -203,5 +204,26 @@ describe('Mp4EventPlayer src refresh', () => {
 
     expect(h.player.currentTime()).toBe(0);
     expect(h.play).not.toHaveBeenCalled();
+  });
+
+  it('logs a refused resume instead of leaving the play() rejection unhandled', async () => {
+    const logSpy = vi.spyOn(log, 'videoPlayer');
+    const { rerender } = render(<Mp4EventPlayer src={tokenSrc('old')} />);
+    act(() => {
+      h.player.currentTime(42);
+      h.player.paused(false);
+    });
+
+    const refusal = new Error('NotAllowedError');
+    h.play.mockImplementationOnce(() => Promise.reject(refusal));
+    rerender(<Mp4EventPlayer src={tokenSrc('new')} />);
+    await act(async () => h.player.emit('loadedmetadata'));
+
+    expect(logSpy).toHaveBeenCalledWith(
+      'Resume after token refresh failed',
+      expect.anything(),
+      { error: refusal },
+    );
+    logSpy.mockRestore();
   });
 });

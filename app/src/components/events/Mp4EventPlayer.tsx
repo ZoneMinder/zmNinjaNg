@@ -382,7 +382,7 @@ export function Mp4EventPlayer({
           if (player.isDisposed() || pendingRestoreRef.current !== restore) return;
           pendingRestoreRef.current = null;
           player.currentTime(restore.time);
-          if (restore.wasPaused) player.pause(); else player.play();
+          if (restore.wasPaused) player.pause(); else Promise.resolve(player.play()).catch((error: unknown) => log.videoPlayer('Resume after token refresh failed', LogLevel.DEBUG, { error }));
         });
         player.src([{ src, type }]);
       }
