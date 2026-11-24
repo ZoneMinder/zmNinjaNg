@@ -1,5 +1,14 @@
 [
   {
+    "id": "release-2.9.0",
+    "title": "zmNinjaNg 2.8.2: fixes for v3 servers and multi-server setups",
+    "body": "- The Nearby Events Replay grid now responds when you hover over it\n- Pages taller than the screen now show a cue that there is more content below\n- Added a Star on GitHub button to the Developer Notice page\n- Dialogs now stay inside the screen's safe area, so the frame viewer's close button is no longer hidden in landscape\n- Fixed crashes on iPhone Duo\n- With multiple servers, alarm checks and live streams now go to the server each monitor belongs to\n- Fixed clicking events in the list view when the iOS app runs on an Apple Silicon Mac\n- Fixed v3 server profiles that failed every request after login\n- Setup can now find zm-api (v3) servers\n- Live tiles on v3 servers now follow Snapshot mode and pause\n- On desktop, opening a second copy of the app no longer erases saved settings\n- The Server page no longer shows the same figures twice in its tiles and cards\n\n[Full changelog](https://github.com/ZoneMinder/zmNinjaNg/releases/tag/zmNinjaNg-2.9.0)",
+    "publishedAt": "2026-11-24T09:35:10.925Z",
+    "severity": "info",
+    "link": "https://github.com/ZoneMinder/zmNinjaNg/releases/tag/zmNinjaNg-2.9.0",
+    "minAppVersion": "2.9.0"
+  },
+  {
     "id": "release-2.8.0",
     "title": "zmNinjaNg 2.7.0: event refresh, camera controls, fixes",
     "body": "- The Events page now refreshes when you open it, and there is a new option to refresh events\n- Event details now show the event's date and length\n- The app version now appears in the sidebar and in notices\n- Monitors now show camera power and reset controls\n- Improved hovering over the Nearby Events replay grid\n- Viewing Nearby events no longer starts the next event when \"Continue\" is enabled\n- The event filter is now cleared when you view a monitor's events\n- Live view no longer opens in fullscreen in landscape mode when that option is turned off\n\n[Full changelog](https://github.com/ZoneMinder/zmNinjaNg/releases/tag/zmNinjaNg-2.8.0)",
