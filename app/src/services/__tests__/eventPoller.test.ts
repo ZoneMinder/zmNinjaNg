@@ -8,7 +8,7 @@ const {
   mockGetMonitors,
 } = vi.hoisted(() => ({
   mockGetEvents: vi.fn(),
-  mockGetEventImageUrl: vi.fn(() => 'http://example.com/snap.jpg'),
+  mockGetEventImageUrl: vi.fn((_baseUrl: string, ..._rest: unknown[]) => 'http://example.com/snap.jpg'),
   mockGetMonitors: vi.fn(),
 }));
 
@@ -45,6 +45,12 @@ import {
   stopEventPoller,
   subscribeEventPollers,
 } from '../eventPoller';
+import { asProfileId } from '../../api/types';
+import {
+  clearAllServerMaps,
+  registerServerResolverGate,
+  setServerMap,
+} from '../../lib/zm/server-resolver';
 
 // --- Helpers ---
 
@@ -405,5 +411,68 @@ describe('observable running state', () => {
   it('reports nothing running for a profile that never started - no phantom entry', () => {
     expect(isEventPollerRunning('never-polled')).toBe(false);
     stopEventPoller('never-polled');
+  });
+});
+
+/**
+ * refs #597: since #337 every profile runs its own poller, so an event's server has to be
+ * resolved against the poller's profile. Before the fix the lookup omitted the
+ * profile id and fell back to the resolver gate's current profile, so while
+ * profile B was selected, profile A's poller built A's event URL on B's server
+ * and attached A's access token to it.
+ */
+describe('per-profile server resolution (refs #597)', () => {
+  const profileA = asProfileId('profile-a');
+  const profileB = asProfileId('profile-b');
+
+  let deps: ReturnType<typeof makeDeps>;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.clearAllMocks();
+    clearAllServerMaps();
+
+    deps = makeDeps();
+    deps.getPortalUrl.mockReturnValue('https://a-portal.example/zm');
+    mockGetMonitors.mockResolvedValue({
+      monitors: [{ Monitor: { Id: '1', Name: 'Front Door', ServerId: 'server-1' } }],
+    });
+    mockGetEvents.mockResolvedValue({ events: [] });
+
+    // Both profiles map the same ServerId, to different hosts.
+    setServerMap(
+      new Map([['server-1', { recordingUrl: '', portalPath: 'https://a-server.example/index.php', apiBaseUrl: '' }]]),
+      profileA,
+    );
+    setServerMap(
+      new Map([['server-1', { recordingUrl: '', portalPath: 'https://b-server.example/index.php', apiBaseUrl: '' }]]),
+      profileB,
+    );
+    // The UI is showing profile B while profile A keeps polling.
+    registerServerResolverGate({ getCurrentProfileId: () => profileB });
+  });
+
+  afterEach(() => {
+    stopEventPoller('profile-a');
+    registerServerResolverGate({ getCurrentProfileId: () => null });
+    clearAllServerMaps();
+    vi.useRealTimers();
+  });
+
+  it("builds profile A's snapshot URL from A's server map while B is current", async () => {
+    const poller = getEventPoller('profile-a');
+    await poller.start('profile-a', deps);
+
+    mockGetEvents.mockResolvedValueOnce({ events: [makeEvent(400, '1')] });
+    mockGetEventImageUrl.mockImplementationOnce(
+      (baseUrl: string) => `${baseUrl}/snapshot.jpg`,
+    );
+
+    await vi.advanceTimersByTimeAsync(30_000);
+
+    expect(deps.onEvent).toHaveBeenCalledTimes(1);
+    const event = deps.onEvent.mock.calls[0][0];
+    expect(event.ImageUrl).toMatch(/^https:\/\/a-server\.example\//);
+    expect(event.ImageUrl).not.toContain('b-server.example');
   });
 });

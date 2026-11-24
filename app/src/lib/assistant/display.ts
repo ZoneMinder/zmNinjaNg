@@ -39,7 +39,7 @@ export function buildEventDisplayEntity(
 
   let imageUrls: string[] = [];
   if (ctx.portalUrl) {
-    const eventPortalUrl = getPortalUrlForEvent(e.MonitorId, monitors, ctx.portalUrl);
+    const eventPortalUrl = getPortalUrlForEvent(e.MonitorId, monitors, ctx.portalUrl, ctx.profileId);
     imageUrls = buildThumbnailChain(eventPortalUrl, e.Id, ctx.thumbnailFallbackChain, {
       token: ctx.accessToken ?? undefined,
       minStreamingPort: ctx.minStreamingPort,
