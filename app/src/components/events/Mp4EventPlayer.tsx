@@ -21,6 +21,21 @@ import { usePip } from '../../contexts/PipContext';
 import { Pip } from '../../plugins/pip';
 import { useCapacitorListener } from '../../hooks/useCapacitorListener';
 
+/** Query parameters that change on a token refresh without changing the video. */
+const AUTH_QUERY_PARAMS = ['token', 'auth'];
+
+/**
+ * The URL with authentication query parameters removed, so a refreshed token
+ * compares equal to the URL it replaced.
+ */
+function sourceIdentity(src: string): string {
+  try {
+    const url = new URL(src, window.location.href);
+    AUTH_QUERY_PARAMS.forEach((param) => url.searchParams.delete(param));
+    return url.href;
+  } catch { return src; }
+}
+
 interface Mp4EventPlayerProps {
   /** The source URL of the video stream */
   src: string;
@@ -139,6 +154,10 @@ export function Mp4EventPlayer({
   // do not (e.g. a react-query refetch).
   const playerReadyRef = useRef(false);
   const lastMarkerSigRef = useRef<string | null>(null);
+
+  // Playback state to restore when a refreshed token swaps the source URL for
+  // the same video. Null means the next source is a different video.
+  const pendingRestoreRef = useRef<{ time: number; wasPaused: boolean } | null>(null);
 
   // Stable click handler wired in at plugin init time. Reads the latest
   // callback and markers from refs so it never goes stale and never forces a
@@ -352,6 +371,19 @@ export function Mp4EventPlayer({
       // which would otherwise reset playback state on iOS WKWebView.
       const currentSrc = player.currentSrc();
       if (currentSrc !== src) {
+        // A token refresh rebuilds the URL for the same video. player.src()
+        // restarts at zero, so carry the position and play state across and
+        // restore them once the replacement has metadata. A different video
+        // (any other part of the URL changed) starts from the beginning.
+        const restore = currentSrc && sourceIdentity(currentSrc) === sourceIdentity(src)
+          ? { time: player.currentTime() ?? 0, wasPaused: !!player.paused() } : null;
+        pendingRestoreRef.current = restore;
+        if (restore) player.one('loadedmetadata', () => {
+          if (player.isDisposed() || pendingRestoreRef.current !== restore) return;
+          pendingRestoreRef.current = null;
+          player.currentTime(restore.time);
+          if (restore.wasPaused) player.pause(); else Promise.resolve(player.play()).catch((error: unknown) => log.videoPlayer('Resume after token refresh failed', LogLevel.DEBUG, { error }));
+        });
         player.src([{ src, type }]);
       }
     }
