@@ -1,5 +1,33 @@
 # Changelog
 
+## [zmNinjaNg-2.9.0](https://github.com/ZoneMinder/zmNinjaNg/tree/zmNinjaNg-2.9.0) (2026-11-24)
+
+[Full Changelog](https://github.com/ZoneMinder/zmNinjaNg/compare/zmNinjaNg-2.8.0...zmNinjaNg-2.9.0)
+
+**Implemented enhancements:**
+
+- Enhancement: Nearby Events Replay grid hover [\#551](https://github.com/ZoneMinder/zmNinjaNg/issues/551)
+
+**Fixed bugs:**
+
+- Dialogs ignore safe-area insets; frame viewer close button hidden in landscape [\#595](https://github.com/ZoneMinder/zmNinjaNg/issues/595)
+- Crashes on iPhone Duo [\#587](https://github.com/ZoneMinder/zmNinjaNg/issues/587)
+- Multi-server: alarm polls and streams go to the profile's host instead of the monitor's server [\#585](https://github.com/ZoneMinder/zmNinjaNg/issues/585)
+- iOS app installed on Apple Silicon: MacOS cannot click on event in list view [\#582](https://github.com/ZoneMinder/zmNinjaNg/issues/582)
+- v3 profile can fail every request with 404 after login [\#580](https://github.com/ZoneMinder/zmNinjaNg/issues/580)
+- Setup can't discover a zm-api \(v3\) server [\#579](https://github.com/ZoneMinder/zmNinjaNg/issues/579)
+- v3 live tiles ignore Snapshot mode and pause [\#578](https://github.com/ZoneMinder/zmNinjaNg/issues/578)
+- Electron: a second instance wipes saved settings [\#572](https://github.com/ZoneMinder/zmNinjaNg/issues/572)
+- Server page repeats figures between its tiles and cards [\#570](https://github.com/ZoneMinder/zmNinjaNg/issues/570)
+
+**Closed issues:**
+
+- Add a Star on GitHub button to the Developer Notice page [\#593](https://github.com/ZoneMinder/zmNinjaNg/issues/593)
+- Turn Ninjii off on the China mainland App Store [\#589](https://github.com/ZoneMinder/zmNinjaNg/issues/589)
+- zmNinjaNG not showing live images [\#584](https://github.com/ZoneMinder/zmNinjaNg/issues/584)
+- Dev tooling: fail fast on missing servers and credentials, and gate the docs build [\#574](https://github.com/ZoneMinder/zmNinjaNg/issues/574)
+- Show a cue when a page has more content below the screen [\#566](https://github.com/ZoneMinder/zmNinjaNg/issues/566)
+
 ## [zmNinjaNg-2.8.0](https://github.com/ZoneMinder/zmNinjaNg/tree/zmNinjaNg-2.8.0) (2026-10-18)
 
 [Full Changelog](https://github.com/ZoneMinder/zmNinjaNg/compare/zmNinjaNg-2.7.0...zmNinjaNg-2.8.0)
@@ -21,7 +49,6 @@
 - test\(e2e\): steps after a monitor card click act on the outgoing Monitors page [\#559](https://github.com/ZoneMinder/zmNinjaNg/issues/559)
 - chore\(ci\): lint PR bodies for slop-mop's mechanical tells [\#557](https://github.com/ZoneMinder/zmNinjaNg/issues/557)
 - In landscape mode, Live view opens in fullscreen with option disabled [\#552](https://github.com/ZoneMinder/zmNinjaNg/issues/552)
-- Enhancement: Nearby Events Replay grid hover [\#551](https://github.com/ZoneMinder/zmNinjaNg/issues/551)
 
 ## [zmNinjaNg-2.7.0](https://github.com/ZoneMinder/zmNinjaNg/tree/zmNinjaNg-2.7.0) (2026-10-04)
 
@@ -381,7 +408,6 @@
 - ci: build Electron only \(disable Tauri steps\); flip naming \(tauri \_t, electron plain\) [\#165](https://github.com/ZoneMinder/zmNinjaNg/issues/165)
 - feat: montage live streaming — MJPEG-first, longer MSE timeout, staggered starts [\#161](https://github.com/ZoneMinder/zmNinjaNg/issues/161)
 - feat: Per-profile monitor exclusion [\#159](https://github.com/ZoneMinder/zmNinjaNg/issues/159)
-- feat: native MJPEG transport for iOS and Android live views [\#156](https://github.com/ZoneMinder/zmNinjaNg/issues/156)
 
 **Fixed bugs:**
 
