@@ -1126,7 +1126,6 @@
     "cgi_url_guessed": "服务器未报告流路径，因此此 URL 是推测值。如果实时画面一直空白，请检查它。",
     "stream_ok": "流正常",
     "stream_failed": "流 {{status}}",
-    "stream_guessed": "流路径为推测",
     "switch_profile": "切换配置",
     "switching": "切换中...",
     "switched_to": "已切换至 {{name}}",

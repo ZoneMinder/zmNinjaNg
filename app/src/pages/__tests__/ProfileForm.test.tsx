@@ -110,7 +110,8 @@ describe('ProfileForm add-server', () => {
     await user.click(screen.getByTestId('connect-button'));
 
     await waitFor(() => expect(navigateSpy).toHaveBeenCalledWith('/monitors'));
-    expect(toast.warning).toHaveBeenCalledWith('setup.cgi_url_guessed');
+    // Long enough to read a URL; a few seconds was missed (refs #603).
+    expect(toast.warning).toHaveBeenCalledWith('setup.cgi_url_guessed', { duration: 15_000, closeButton: true });
     // Kept on the profile, so the edit dialog can still say so later.
     expect(useProfileStore.getState().profiles[0]?.cgiUrlGuessed).toBe(true);
   });

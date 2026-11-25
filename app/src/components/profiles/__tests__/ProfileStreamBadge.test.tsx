@@ -5,7 +5,7 @@
  * probe's own request is faked at lib/http, the HTTP boundary.
  */
 import { describe, expect, it, vi, afterEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 vi.mock('../../../api/store-gates', () => import('../../../tests/fake-store-gates'));
@@ -65,11 +65,13 @@ describe('ProfileStreamBadge', () => {
     expect(badge.className).toContain('bg-destructive');
   });
 
-  it('says the path is guessed when the probe cannot tell', async () => {
+  // A guessed path is not a state of its own: it works or it doesn't.
+  it('shows nothing for a guessed path when the probe cannot tell', async () => {
     httpGet.mockRejectedValue(new Error('Network Error'));
     renderBadge({ cgiUrlGuessed: true });
-    const badge = await screen.findByTestId('profile-stream-badge-guessed');
-    expect(badge).toHaveTextContent('profiles.stream_guessed');
+    await waitFor(() => expect(httpGet).toHaveBeenCalled());
+    await new Promise((r) => setTimeout(r, 50));
+    expect(screen.queryByTestId(/profile-stream-badge/)).not.toBeInTheDocument();
   });
 
   it('does not probe a disabled profile', async () => {

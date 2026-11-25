@@ -1126,7 +1126,6 @@
     "cgi_url_guessed": "Der Server hat keinen Stream-Pfad gemeldet, diese URL ist also geraten. Bleibt die Live-Ansicht leer, prüfe sie.",
     "stream_ok": "Stream OK",
     "stream_failed": "Stream {{status}}",
-    "stream_guessed": "Stream-Pfad geraten",
     "switch_profile": "Profil wechseln",
     "switching": "Wechsle...",
     "switched_to": "Gewechselt zu {{name}}",

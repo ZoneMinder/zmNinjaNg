@@ -65,6 +65,8 @@ export const ZMS_PROBE = {
   staleTimeMs: 5 * 60_000,
   scale: 10,
   timeoutMs: 10_000,
+  /** How long setup's "stream path is a guess" toast stays up; it carries a URL to read. */
+  guessedToastMs: 15_000,
 } as const;
 
 /**

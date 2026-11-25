@@ -6,6 +6,7 @@
  * Shows welcome messaging when this is the user's first profile.
  */
 
+import { ZMS_PROBE } from '../lib/zmninja-ng-constants';
 import { useState, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button, HintButton } from '../components/ui/button';
@@ -346,7 +347,9 @@ export default function ProfileForm() {
       // was one more second on every first connect.
       // A toast, not a hint by the CGI field: that field is hidden while
       // discovery runs and the form navigates away on success.
-      if (cgiUrlGuessed) toast.warning(t('setup.cgi_url_guessed', { cgiUrl }));
+      if (cgiUrlGuessed) {
+        toast.warning(t('setup.cgi_url_guessed', { cgiUrl }), { duration: ZMS_PROBE.guessedToastMs, closeButton: true });
+      }
       navigate(returnTo);
     } catch (err: unknown) {
       // The failed/cancelled attempt may have landed real tokens under this

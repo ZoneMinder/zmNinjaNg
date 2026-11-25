@@ -1126,7 +1126,6 @@
     "cgi_url_guessed": "Il server non ha indicato il percorso dello stream, quindi questo URL è un'ipotesi. Se la vista live resta vuota, controllalo.",
     "stream_ok": "Stream OK",
     "stream_failed": "Stream {{status}}",
-    "stream_guessed": "Percorso stream ipotizzato",
     "switch_profile": "Cambia profilo",
     "switching": "Cambio in corso...",
     "switched_to": "Passato a {{name}}",

@@ -95,7 +95,7 @@ Each profile card keeps its portal, API, and streaming addresses behind
 **Details**. They are set once and only matter when something is wrong,
 so the card leads with the name, the badges, and the buttons instead.
 
-A stream badge on each enabled profile says whether its live stream path works. The app asks the server's streaming URL for one frame, at most once every five minutes while the Profiles screen is open. **Stream OK** (green) means a frame came back. A red badge such as **Stream 404** means the server refused, so fix the **Streaming URL** with **Edit**. **Stream path guessed** (amber) means the server didn't report the path at setup and the check couldn't reach it. A profile with no badge hasn't answered yet.
+A stream badge on each enabled profile says whether its live stream path works. The app asks the server's streaming URL for one frame, at most once every five minutes while the Profiles screen is open. **Stream OK** (green) means a frame came back. A red badge such as **Stream 404** means the server refused, so fix the **Streaming URL** with **Edit**. A profile with no badge hasn't answered yet, or the check couldn't reach the server.
 
 ## Disabling a Profile
 
