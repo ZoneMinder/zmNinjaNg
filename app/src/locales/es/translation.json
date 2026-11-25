@@ -166,7 +166,8 @@
     "no_monitor_permission": "Esta cuenta no tiene permisos de monitores.",
     "page_previous": "Página anterior",
     "page_next": "Página siguiente",
-    "page_position": "{{page}} / {{pages}}"
+    "page_position": "{{page}} / {{pages}}",
+    "zms_probe_failed": "La vista en vivo no se reproduce: la ruta del stream {{path}} respondió {{status}}. Revisa «URL de Transmisión» en el perfil."
   },
   "events": {
     "thumbnail_labels": "Etiquetas en miniaturas",
@@ -701,7 +702,12 @@
     "search": {
       "placeholder": "Buscar ajustes",
       "no_results": "Ningún ajuste coincide"
-    }
+    },
+    "zms_probe_label": "Ruta del stream",
+    "zms_probe_ok": "{{url}} responde",
+    "zms_probe_failed": "Stream fallido ({{status}}): {{url}}",
+    "zms_probe_unknown": "No se pudo comprobar {{url}}",
+    "zms_probe_checking": "Comprobando {{url}}…"
   },
   "ssl": {
     "trust_dialog_title": "Certificado no confiable",

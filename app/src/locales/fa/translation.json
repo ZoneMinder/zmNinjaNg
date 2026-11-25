@@ -166,7 +166,8 @@
     "no_monitor_permission": "این حساب مجوز مانیتور ندارد.",
     "page_previous": "صفحه قبل",
     "page_next": "صفحه بعد",
-    "page_position": "{{page}} / {{pages}}"
+    "page_position": "{{page}} / {{pages}}",
+    "zms_probe_failed": "نمای زنده پخش نمی‌شود: مسیر استریم {{path}} پاسخ {{status}} داد. «آدرس استریم» را در پروفایل بررسی کنید."
   },
   "events": {
     "thumbnail_labels": "نمایش برچسب روی تصاویر کوچک",
@@ -701,7 +702,12 @@
     "search": {
       "placeholder": "جستجوی تنظیمات",
       "no_results": "هیچ تنظیمی مطابقت ندارد"
-    }
+    },
+    "zms_probe_label": "مسیر استریم",
+    "zms_probe_ok": "{{url}} پاسخ می‌دهد",
+    "zms_probe_failed": "استریم ناموفق ({{status}}): {{url}}",
+    "zms_probe_unknown": "بررسی {{url}} ممکن نشد",
+    "zms_probe_checking": "در حال بررسی {{url}}…"
   },
   "ssl": {
     "trust_dialog_title": "گواهی غیرقابل‌اعتماد",

@@ -166,7 +166,8 @@
     "no_monitor_permission": "This account has no monitor permissions.",
     "page_previous": "Previous page",
     "page_next": "Next page",
-    "page_position": "{{page}} / {{pages}}"
+    "page_position": "{{page}} / {{pages}}",
+    "zms_probe_failed": "Live view can't play: the stream path {{path}} answered {{status}}. Check the \"Streaming URL\" in the profile."
   },
   "events": {
     "thumbnail_labels": "Show labels on thumbnails",
@@ -701,7 +702,12 @@
     "search": {
       "placeholder": "Search settings",
       "no_results": "No settings match"
-    }
+    },
+    "zms_probe_label": "Stream path",
+    "zms_probe_ok": "{{url}} answers",
+    "zms_probe_failed": "Stream failed ({{status}}): {{url}}",
+    "zms_probe_unknown": "Couldn't check {{url}}",
+    "zms_probe_checking": "Checking {{url}}…"
   },
   "ssl": {
     "trust_dialog_title": "Untrusted Certificate",

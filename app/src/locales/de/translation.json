@@ -166,7 +166,8 @@
     "no_monitor_permission": "Dieses Konto hat keine Monitor-Berechtigungen.",
     "page_previous": "Vorherige Seite",
     "page_next": "Nächste Seite",
-    "page_position": "{{page}} / {{pages}}"
+    "page_position": "{{page}} / {{pages}}",
+    "zms_probe_failed": "Live-Ansicht kann nicht abspielen: Der Stream-Pfad {{path}} antwortete {{status}}. Prüfe «Streaming URL» im Profil."
   },
   "events": {
     "thumbnail_labels": "Beschriftung auf Vorschaubildern",
@@ -701,7 +702,12 @@
     "search": {
       "placeholder": "Einstellungen durchsuchen",
       "no_results": "Keine passenden Einstellungen"
-    }
+    },
+    "zms_probe_label": "Stream-Pfad",
+    "zms_probe_ok": "{{url}} antwortet",
+    "zms_probe_failed": "Stream fehlgeschlagen ({{status}}): {{url}}",
+    "zms_probe_unknown": "{{url}} konnte nicht geprüft werden",
+    "zms_probe_checking": "Prüfe {{url}}…"
   },
   "ssl": {
     "trust_dialog_title": "Nicht vertrauenswürdiges Zertifikat",

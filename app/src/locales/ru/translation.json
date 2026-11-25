@@ -170,7 +170,8 @@
     "no_monitor_permission": "У этой учётной записи нет прав на мониторы.",
     "page_previous": "Предыдущая страница",
     "page_next": "Следующая страница",
-    "page_position": "{{page}} / {{pages}}"
+    "page_position": "{{page}} / {{pages}}",
+    "zms_probe_failed": "Живое видео не воспроизводится: путь потока {{path}} ответил {{status}}. Проверьте «URL потока» в профиле."
   },
   "events": {
     "thumbnail_labels": "Подписи на миниатюрах",
@@ -717,7 +718,12 @@
     "search": {
       "placeholder": "Поиск настроек",
       "no_results": "Нет подходящих настроек"
-    }
+    },
+    "zms_probe_label": "Путь потока",
+    "zms_probe_ok": "{{url}} отвечает",
+    "zms_probe_failed": "Ошибка потока ({{status}}): {{url}}",
+    "zms_probe_unknown": "Не удалось проверить {{url}}",
+    "zms_probe_checking": "Проверка {{url}}…"
   },
   "ssl": {
     "trust_dialog_title": "Недоверенный сертификат",

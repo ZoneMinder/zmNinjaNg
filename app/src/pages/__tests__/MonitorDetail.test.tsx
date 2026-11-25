@@ -16,6 +16,8 @@ import { useSettingsStore } from '../../stores/settings';
 import { resetFakeStoreGates } from '../../tests/fake-store-gates';
 
 vi.mock('../../api/store-gates', () => import('../../tests/fake-store-gates'));
+// The stream path banner (refs #603) has its own test; this page test has no QueryClient.
+vi.mock('../../components/monitors/ZmsProbeBanner', () => ({ ZmsProbeBanner: () => null }));
 vi.mock('../../lib/security/secureStorage', () => import('../../tests/fake-secure-storage'));
 
 // The real session registry (backed by the seeded profile store and

@@ -32,6 +32,8 @@ vi.mock('react-i18next', () => ({
 }));
 
 vi.mock('../../../api/monitors', () => ({ getMonitors: vi.fn() }));
+// The stream path row (refs #603) probes nph-zms; keep it off the network.
+vi.mock('../../../lib/http', () => ({ httpGet: vi.fn(() => new Promise(() => {})) }));
 
 function profile(minStreamingPort?: number): Profile {
   return makeProfile('p1', { name: 'Test', minStreamingPort });
@@ -44,7 +46,7 @@ async function renderSection(
 ) {
   seedProfiles([profile(minStreamingPort)]);
   vi.mocked(getMonitors).mockResolvedValue({
-    monitors: Array.from({ length: monitorCount }, (_, i) => ({ id: String(i + 1) })),
+    monitors: Array.from({ length: monitorCount }, (_, i) => ({ Monitor: { Id: String(i + 1), ServerId: null } })),
   } as never);
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(

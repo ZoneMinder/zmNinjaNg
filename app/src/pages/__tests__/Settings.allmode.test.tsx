@@ -17,6 +17,8 @@ vi.mock('../../api/store-gates', () => import('../../tests/fake-store-gates'));
 vi.mock('../../lib/security/secureStorage', () => import('../../tests/fake-secure-storage'));
 
 vi.mock('../../api/monitors', () => ({ getMonitors: vi.fn() }));
+// The stream path row (refs #603) probes nph-zms; keep it off the network.
+vi.mock('../../lib/http', () => ({ httpGet: vi.fn(() => new Promise(() => {})) }));
 
 // Interpolation values are appended so a test can assert which aggregate a
 // section named, not just which key it used.
@@ -98,7 +100,7 @@ describe('Settings page - All mode two-tier picker (refs #337)', () => {
 
   it('Streaming Mode reason follows the picked server, not the aggregate (refs #385)', async () => {
     vi.mocked(getMonitors).mockImplementation(async (_client, profileId) => ({
-      monitors: Array.from({ length: profileId === profileA.id ? 3 : 20 }, (_, i) => ({ id: String(i + 1) })),
+      monitors: Array.from({ length: profileId === profileA.id ? 3 : 20 }, (_, i) => ({ Monitor: { Id: String(i + 1), ServerId: null } })),
     }) as never);
     render(<Settings />, { wrapper: queryWrapper });
 

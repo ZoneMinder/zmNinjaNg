@@ -166,7 +166,8 @@
     "no_monitor_permission": "此账户没有监视器权限。",
     "page_previous": "上一页",
     "page_next": "下一页",
-    "page_position": "{{page}} / {{pages}}"
+    "page_position": "{{page}} / {{pages}}",
+    "zms_probe_failed": "实时画面无法播放：流路径 {{path}} 返回 {{status}}。请检查配置文件中的「流媒体 URL」。"
   },
   "events": {
     "thumbnail_labels": "在缩略图上显示标签",
@@ -701,7 +702,12 @@
     "search": {
       "placeholder": "搜索设置",
       "no_results": "没有匹配的设置"
-    }
+    },
+    "zms_probe_label": "流路径",
+    "zms_probe_ok": "{{url}} 有响应",
+    "zms_probe_failed": "流失败（{{status}}）：{{url}}",
+    "zms_probe_unknown": "无法检查 {{url}}",
+    "zms_probe_checking": "正在检查 {{url}}…"
   },
   "ssl": {
     "trust_dialog_title": "不受信任的证书",

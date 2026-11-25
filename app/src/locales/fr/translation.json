@@ -166,7 +166,8 @@
     "no_monitor_permission": "Ce compte n'a aucune permission sur les moniteurs.",
     "page_previous": "Page précédente",
     "page_next": "Page suivante",
-    "page_position": "{{page}} / {{pages}}"
+    "page_position": "{{page}} / {{pages}}",
+    "zms_probe_failed": "La vue en direct ne peut pas jouer : le chemin du flux {{path}} a répondu {{status}}. Vérifiez «URL de diffusion» dans le profil."
   },
   "events": {
     "thumbnail_labels": "Libellés sur les vignettes",
@@ -701,7 +702,12 @@
     "search": {
       "placeholder": "Rechercher dans les réglages",
       "no_results": "Aucun réglage ne correspond"
-    }
+    },
+    "zms_probe_label": "Chemin du flux",
+    "zms_probe_ok": "{{url}} répond",
+    "zms_probe_failed": "Échec du flux ({{status}}) : {{url}}",
+    "zms_probe_unknown": "Impossible de vérifier {{url}}",
+    "zms_probe_checking": "Vérification de {{url}}…"
   },
   "ssl": {
     "trust_dialog_title": "Certificat non fiable",
