@@ -21,6 +21,7 @@ import { MonitorsPerPageRow } from './MonitorsPerPageRow';
 import { AdvancedStreamingFold } from './AdvancedStreamingFold';
 import { AllServersStreamingSection } from './AllServersStreamingSection';
 import { AllServersPerformanceSection } from './AllServersPerformanceSection';
+import { ZmsProbeRow } from './ZmsProbeRow';
 import { getMonitors } from '../../api/monitors';
 import { getSession } from '../../services/sessions';
 import { queryKeys } from '../../lib/query/query-keys';
@@ -273,6 +274,9 @@ export function LiveStreamingSection({
                 </div>
               </div>
             </div>
+
+            {/* Whether this server's nph-zms URL answers a frame (refs #603) */}
+            {serverProfile && <ZmsProbeRow profileId={serverProfile.id} />}
 
             <AdvancedStreamingFold settings={serverSettings} update={updateServer} />
           </SettingsSubCard>

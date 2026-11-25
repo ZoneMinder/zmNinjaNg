@@ -8,6 +8,16 @@ import { useSettingsStore } from '../../stores/settings';
 import { seedProfiles, resetProfileFixture, asProfileId } from '../../tests/profile-fixture';
 import { resetFakeStoreGates } from '../../tests/fake-store-gates';
 
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+// The cards' stream badge runs a query (refs #603).
+const renderProfiles = () =>
+  render(
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <Profiles />
+    </QueryClientProvider>,
+  );
+
 vi.mock('../../api/store-gates', () => import('../../tests/fake-store-gates'));
 vi.mock('../../lib/security/secureStorage', () => import('../../tests/fake-secure-storage'));
 
@@ -76,7 +86,7 @@ describe('Profiles Page', () => {
   it('renders profile list and active indicator', () => {
     seedProfiles([HOME], { current: 'p1' });
 
-    render(<Profiles />);
+    renderProfiles();
 
     // One seeded profile, so the list holds exactly one card.
     const cards = within(screen.getByTestId('profile-list')).getAllByTestId('profile-card');
@@ -94,7 +104,7 @@ describe('Profiles Page', () => {
   it('renders no All Servers card, whatever the enabled profile count', () => {
     seedProfiles([HOME, OFFICE], { current: 'p1' });
 
-    render(<Profiles />);
+    renderProfiles();
 
     expect(screen.getByTestId('profile-new-group-button')).toHaveTextContent('profiles.new_group');
     expect(screen.queryByTestId('profile-card-all')).not.toBeInTheDocument();
@@ -106,7 +116,7 @@ describe('Profiles Page', () => {
     const user = userEvent.setup();
     seedProfiles([HOME, OFFICE], { current: 'p1' });
 
-    render(<Profiles />);
+    renderProfiles();
     await user.click(screen.getByTestId('profile-actions-menu-p2'));
     await user.click(await screen.findByTestId('profile-disable-toggle-p2'));
 
@@ -116,7 +126,7 @@ describe('Profiles Page', () => {
   it('shows a muted card and Disabled badge for a disabled profile, hiding its switch button', () => {
     seedProfiles([HOME, { ...OFFICE, disabled: true }], { current: 'p1' });
 
-    render(<Profiles />);
+    renderProfiles();
 
     expect(screen.getByTestId('profile-disabled-badge')).toHaveTextContent('profiles.disabled');
     expect(screen.queryByTestId('profile-switch-button-p2')).not.toBeInTheDocument();
@@ -132,7 +142,7 @@ describe('Profiles Page', () => {
     const { toast: sonnerToast } = await import('sonner');
     seedProfiles([HOME, OFFICE], { current: 'p1' });
 
-    render(<Profiles />);
+    renderProfiles();
     await user.click(screen.getByTestId('profile-actions-menu-p1'));
     await user.click(await screen.findByTestId('profile-disable-toggle-p1'));
 
@@ -151,7 +161,7 @@ describe('Profiles Page', () => {
     });
 
     it('names the group and counts its members', () => {
-      render(<Profiles />);
+      renderProfiles();
 
       const card = screen.getByTestId(`profile-card-virtual-${GROUP.id}`);
       expect(card).toHaveTextContent('Backyard');
@@ -159,7 +169,7 @@ describe('Profiles Page', () => {
     });
 
     it('renders group cards after every profile card', () => {
-      render(<Profiles />);
+      renderProfiles();
 
       const cards = screen.getAllByTestId(/^profile-card(-virtual-.+)?$/);
       expect(cards.at(-1)).toBe(screen.getByTestId(`profile-card-virtual-${GROUP.id}`));
@@ -168,7 +178,7 @@ describe('Profiles Page', () => {
     it('marks the group card active while that group is current', () => {
       useProfileStore.setState({ currentProfileId: GROUP.id });
 
-      render(<Profiles />);
+      renderProfiles();
 
       const card = screen.getByTestId(`profile-card-virtual-${GROUP.id}`);
       expect(card.querySelector('[data-testid="profile-active-indicator"]')).not.toBeNull();
@@ -177,7 +187,7 @@ describe('Profiles Page', () => {
     it('switches to the group id from its switch button', async () => {
       const user = userEvent.setup();
 
-      render(<Profiles />);
+      renderProfiles();
       await user.click(screen.getByTestId(`profile-virtual-switch-${GROUP.id}`));
 
       await waitFor(() => expect(useProfileStore.getState().currentProfileId).toBe(GROUP.id));
@@ -190,7 +200,7 @@ describe('Profiles Page', () => {
       const user = userEvent.setup();
       useSettingsStore.getState().updateProfileSettings(GROUP.id, { lastRoute: '/events' });
 
-      render(<Profiles />);
+      renderProfiles();
       await user.click(screen.getByTestId(`profile-virtual-switch-${GROUP.id}`));
 
       await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/events'));
@@ -199,19 +209,19 @@ describe('Profiles Page', () => {
     // With one selectable server there is nothing to group.
     it('offers the New Virtual Profile Group action only with 2+ enabled profiles', () => {
       seedProfiles([HOME, { ...OFFICE, disabled: true }], { current: 'p1' });
-      const { unmount } = render(<Profiles />);
+      const { unmount } = renderProfiles();
       expect(screen.queryByTestId('profile-new-group-button')).not.toBeInTheDocument();
       unmount();
 
       seedProfiles([HOME, OFFICE], { current: 'p1' });
-      render(<Profiles />);
+      renderProfiles();
       expect(screen.getByTestId('profile-new-group-button')).toHaveTextContent('profiles.new_group');
     });
 
     it('opens the dialog in edit mode from the group card', async () => {
       const user = userEvent.setup();
 
-      render(<Profiles />);
+      renderProfiles();
       await user.click(screen.getByTestId(`profile-actions-menu-virtual-${GROUP.id}`));
       await user.click(await screen.findByTestId(`profile-edit-button-virtual-${GROUP.id}`));
 
@@ -226,7 +236,7 @@ describe('Profiles Page', () => {
     it('opens the dialog in create mode from the New Virtual Profile Group action', async () => {
       const user = userEvent.setup();
 
-      render(<Profiles />);
+      renderProfiles();
       await user.click(screen.getByTestId('profile-new-group-button'));
 
       expect(screen.getByTestId('virtual-profile-dialog')).toHaveTextContent(
@@ -239,7 +249,7 @@ describe('Profiles Page', () => {
     it('confirms the delete, promises the servers survive, then deletes only the group', async () => {
       const user = userEvent.setup();
 
-      render(<Profiles />);
+      renderProfiles();
       await user.click(screen.getByTestId(`profile-actions-menu-virtual-${GROUP.id}`));
       await user.click(await screen.findByTestId(`profile-delete-button-virtual-${GROUP.id}`));
 
@@ -261,7 +271,7 @@ describe('Profiles Page', () => {
       seedProfiles([HOME, { ...OFFICE, disabled: true }], { current: 'p1' });
       useProfileStore.setState({ virtualProfiles: [GROUP] });
 
-      render(<Profiles />);
+      renderProfiles();
       const card = screen.getByTestId(`profile-card-virtual-${GROUP.id}`);
       await user.click(card);
 
@@ -278,7 +288,7 @@ describe('Profiles Page', () => {
       const user = userEvent.setup();
       const { toast: sonnerToast } = await import('sonner');
 
-      render(<Profiles />);
+      renderProfiles();
       await user.click(screen.getByTestId(`profile-actions-menu-virtual-${GROUP.id}`));
       await user.click(await screen.findByTestId(`profile-delete-button-virtual-${GROUP.id}`));
       // Simulate the group having already been removed (e.g. another tab)

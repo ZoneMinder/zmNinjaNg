@@ -150,6 +150,7 @@ The server rows under Live Streaming set how that server sends live video:
 | **Refresh Interval** | Shown only in Snapshot mode. How often to refresh the still image (1 to 30 seconds, default 3; presets 1/3/5). |
 | **Stream FPS** | Maximum frame rate for live MJPEG streams (1 to 30 fps, default 10; presets 5/10/15/30). Lower values reduce bandwidth and CPU. |
 | **Stream Scale** | Server-side scaling applied to MJPEG frames before they are sent (10 to 100%, default 50; presets 25/50/75/100). Lower values reduce bandwidth. |
+| **Stream path** | Whether this server's live stream address answers. See [Stream path check](#stream-path-check). |
 | **Advanced streaming** | Folded by default. Holds the five rows below. |
 | **Enable WebRTC/HLS/MSE** | When on, the app tries WebRTC, MSE, and HLS through go2rtc for each monitor and falls back to MJPEG. When off, all monitors on this server use MJPEG. |
 | **Streaming Protocols** | WebRTC, MSE, and HLS, tried in parallel when go2rtc is configured. The first protocol to produce video wins. |
@@ -166,6 +167,18 @@ Advanced streaming folded open
 ```
 
 With one profile selected, switching **Bandwidth Mode** (under Network) resets Stream FPS, Stream Scale, and Refresh Interval to that mode's defaults.
+
+### Stream path check
+
+Live feeds come from ZoneMinder's `nph-zms`, at the profile's **Streaming URL**. If that address is wrong, or the server refuses the login token, every feed just looks offline. So the app asks `nph-zms` for one still frame, once per address, and the **Stream path** row reports what came back:
+
+- Green with a check mark: the server sent a picture, so the address and the login both work.
+- Red, with the HTTP status and the address: the server refused. A 404 usually means the Streaming URL points at the wrong place (some installs use `/cgi-bin-zm/nph-zms` instead of `/cgi-bin/nph-zms`). A 403 means the server turned the login away.
+- Grey: still checking, or the app couldn't reach the server at all. Grey is never treated as a failure.
+
+A profile with several ZoneMinder servers (multi-server) gets one line per server. A pass doesn't mean every camera is recording, only that live video can get through. The result is kept for five minutes. After you change the Streaming URL in the profile, the next screen checks the new address.
+
+When the check fails, Monitors, Montage, and the monitor detail page also show a red banner naming the status and the path, and in a group, the server.
 
 ### Streaming Protocols
 

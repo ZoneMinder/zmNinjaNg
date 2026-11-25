@@ -57,6 +57,7 @@ import { markPermissionDenied, useIsPermissionDenied } from '../stores/permissio
 import { MonitorControlsCard } from '../components/monitor-detail/MonitorControlsCard';
 import { ZoomControls } from '../components/ui/zoom-controls';
 import { ErrorBanner, DetailPageSkeleton } from '../components/ui/query-state';
+import { ZmsProbeBanner } from '../components/monitors/ZmsProbeBanner';
 import { MonitorRecentEvents } from '../components/monitors/MonitorRecentEvents';
 import { useMainScrollRestoration } from '../hooks/useMainScrollRestoration';
 
@@ -423,6 +424,9 @@ export default function MonitorDetail() {
       {isFullscreen && (
         <FullscreenExitButton title={monitor.Monitor.Name} onExit={handleToggleFullscreen} testIdPrefix="monitor-detail" />
       )}
+
+      {/* nph-zms refused the stream path probe (refs #603) */}
+      {!isFullscreen && <ZmsProbeBanner profileIds={[ownerProfile.id]} className="px-2 pt-2 sm:px-3" />}
 
       {/* Main Content */}
       <div className={cn(

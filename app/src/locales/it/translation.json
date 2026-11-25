@@ -166,7 +166,8 @@
     "no_monitor_permission": "Questo account non dispone dei permessi per i monitor.",
     "page_previous": "Pagina precedente",
     "page_next": "Pagina successiva",
-    "page_position": "{{page}} / {{pages}}"
+    "page_position": "{{page}} / {{pages}}",
+    "zms_probe_failed": "La vista live non parte: il percorso dello stream {{path}} ha risposto {{status}}. Controlla «URL streaming» nel profilo."
   },
   "events": {
     "thumbnail_labels": "Etichette sulle miniature",
@@ -701,7 +702,12 @@
     "search": {
       "placeholder": "Cerca impostazioni",
       "no_results": "Nessuna impostazione corrisponde"
-    }
+    },
+    "zms_probe_label": "Percorso stream",
+    "zms_probe_ok": "{{url}} risponde",
+    "zms_probe_failed": "Stream non riuscito ({{status}}): {{url}}",
+    "zms_probe_unknown": "Impossibile verificare {{url}}",
+    "zms_probe_checking": "Verifica di {{url}}…"
   },
   "ssl": {
     "trust_dialog_title": "Certificato non attendibile",
@@ -1117,6 +1123,12 @@
     "no_credentials": "Nessuna credenziale",
     "add_creds_hint": "Le credenziali sono facoltative per i server pubblici. Aggiungile se necessarie.",
     "manual_override_hint": "Override manuale disponibile in modalità modifica",
+    "cgi_url_guessed": "Il server non ha indicato il percorso dello stream, quindi questo URL è un'ipotesi. Se la vista live resta vuota, controllalo.",
+    "health_ok": "Portale, API e streaming rispondono",
+    "health_partial": "Alcuni indirizzi falliscono; apri Dettagli",
+    "health_failed": "Nessun indirizzo risponde; apri Dettagli",
+    "check_ok": "Risponde",
+    "check_failed": "Non riuscito: {{status}}",
     "switch_profile": "Cambia profilo",
     "switching": "Cambio in corso...",
     "switched_to": "Passato a {{name}}",
@@ -1207,7 +1219,8 @@
     "profile_name_placeholder": "Il mio ZoneMinder",
     "api_url_hint": "https://server.com/zm/api",
     "cgi_url_hint": "https://server.com/zm/cgi-bin",
-    "protocol_mismatch": "Protocollo non corrispondente! Il portale usa {{portalProtocol}}:// ma l'API usa {{apiProtocol}}://. Entrambi devono usare lo stesso protocollo (entrambi HTTP o entrambi HTTPS)."
+    "protocol_mismatch": "Protocollo non corrispondente! Il portale usa {{portalProtocol}}:// ma l'API usa {{apiProtocol}}://. Entrambi devono usare lo stesso protocollo (entrambi HTTP o entrambi HTTPS).",
+    "cgi_url_guessed": "Il server non ha indicato il percorso dello stream, quindi {{cgiUrl}} è un'ipotesi. Se la vista live resta vuota, controlla «URL streaming» nel profilo."
   },
   "live_activity": {
     "title": "Attività live",

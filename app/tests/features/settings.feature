@@ -22,6 +22,11 @@ Feature: Application Settings
     Then the Streaming Mode row explains which mode it recommends
 
   @all
+  Scenario: Live Streaming shows that the server's stream path answers
+    When I navigate to the "Settings" page
+    Then the stream path check should pass
+
+  @all
   Scenario: Change language and verify visible text updates
     When I navigate to the "Settings" page
     Then I should see language selector

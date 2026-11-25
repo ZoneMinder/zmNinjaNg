@@ -20,6 +20,7 @@ Question                                        Section
 Build any ZoneMinder URL                        URL builder (``lib/zm/url-builder.ts``)
 Route a monitor to the server that records it   Server resolver (``lib/zm/server-resolver.ts``)
 Close a ZMS stream without leaving a zombie     Delayed CMD_QUIT (``lib/zm/zms-quit.ts``)
+Tell a wrong CGI path from an offline monitor   Stream path probe (``lib/zm/zms-probe.ts``)
 Store a password or a PIN                       Secure storage, Crypto utilities
 Give a monitor its own streaming port           Multi-port resolution (``lib/monitor/multiport.ts``)
 Show a query error to the user                  Query error resolution (``lib/query/query-error.ts``)
@@ -275,7 +276,7 @@ Given credentials it also authenticates once, so it can read the real
      signal: abortController.signal,
      onClientCreated: (client) => { profileClient = client; },
    });
-   // { portalUrl, apiUrl, cgiUrl }
+   // { portalUrl, apiUrl, cgiUrl, cgiUrlSource }
 
 ``discoverUrls`` wraps the lower-level ``discoverZoneminder`` with the iOS
 retry logic and abort handling, so neither ``ProfileForm`` nor ``Profiles``
@@ -283,6 +284,13 @@ duplicates it. Failures throw a ``DiscoveryError`` whose ``code`` is
 ``API_NOT_FOUND``, ``PORTAL_UNREACHABLE``, ``CANCELLED``, or ``UNKNOWN``.
 ``CANCELLED`` is the one to swallow: it means the user typed another
 character and the previous probe was aborted.
+
+``cgiUrlSource`` is ``'server'`` when ``cgiUrl`` came from ``ZM_PATH_ZMS`` and
+``'default'`` when discovery fell back to ``<portal>/cgi-bin/nph-zms``. That
+happens without credentials, when the login fails, and on ZM 1.39.45, which
+returns an empty ``ZM_PATH_ZMS``. ``ProfileForm`` shows a warning toast for
+``'default'`` after it saves the profile, because the CGI field is hidden
+while discovery runs and the form leaves the page on success.
 
 **Used by:** ``pages/ProfileForm.tsx``, ``pages/Profiles.tsx``.
 
@@ -467,6 +475,73 @@ connection may already be gone by the time the timer runs.
 
 **Used by:** ``components/events/ZmsEventPlayer.tsx``,
 ``components/events/EventThumbnailHoverPreview.tsx``.
+
+Stream path probe (``lib/zm/zms-probe.ts``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A live feed is an ``<img>`` pointed at ``nph-zms``, and an ``<img>`` fires the
+same ``error`` event for a 404, a 403, and a dropped connection. So a profile
+with the wrong CGI path shows a row of feeds that look offline, with nothing to
+say why. ``probeZms(recordingUrl, monitorId, token)`` asks ``nph-zms`` for one
+``mode=single`` frame through ``lib/http.ts`` and reads the answer:
+
+* ``ok``: a 2xx with an ``image/*`` content type.
+* ``failed`` with the status and the URL path (never the query string, which
+  holds the token): any other status, or a 2xx that isn't an image, such as an
+  Apache that serves the CGI binary as a download.
+* ``unknown``: no status at all (network error, timeout, CORS). The UI never
+  shows this as red.
+
+A pass proves the path and the token work, not that a given monitor is
+capturing: ``nph-zms`` answers a "Not connected" JPEG for a monitor id that
+doesn't exist. The probe builds its URL with ``getMonitorStreamUrl`` from the
+URL builder rather than ``getStreamUrl`` in ``api/monitors.ts``, because
+``httpGet`` adds the dev proxy itself and ``getStreamUrl``'s image proxy would
+wrap it a second time.
+
+``pickProbeTargets`` picks which URLs to probe: one per distinct
+``recordingUrl``, through the first monitor on it whose ``Capturing`` isn't
+``None``. A multi-server profile gets one target per server.
+
+``useZmsProbes(profileIds)`` (``hooks/useZmsProbes.ts``) is the React side. It
+reads each profile's monitors from the same ``queryKeys.monitors`` cache the
+pages use, resolves each monitor's URL through that profile's own server map,
+and runs one query per target under ``queryKeys.zmsProbe(profileId,
+recordingUrl)``. The token comes from ``getFreshAccessToken``, so an expired
+token doesn't read as a 403. There is no refetch interval:
+``ZMS_PROBE.staleTimeMs`` (five minutes) keeps it to one request per URL, and
+editing the CGI path changes the key, so the next screen probes the new path.
+
+.. code:: typescript
+
+   import { useZmsProbes } from '../hooks/useZmsProbes';
+
+   const probes = useZmsProbes([profile.id]);
+   // [{ profileId, profileName, recordingUrl, result: { state: 'failed', status: 404, path } }]
+
+**Used by:** ``components/settings/ZmsProbeRow.tsx`` (one line per URL in
+Settings > Live Streaming) and ``components/monitors/ZmsProbeBanner.tsx`` (an
+``ErrorBanner`` on Monitors, Montage, and Monitor detail when a probe fails).
+
+``useProfileChecks(profile)`` (``hooks/useProfileChecks.ts``) adds the other
+two addresses for the Profiles screen. The portal check is
+``probePortal(portalUrl)`` in ``lib/zm/zms-probe.ts``: one GET of the portal
+page, cached under ``queryKeys.portalProbe`` for ``ZMS_PROBE.staleTimeMs``,
+where any status below 400 counts as answering (ZoneMinder serves its login
+page or a redirect). The API check reads the profile's ``queryKeys.monitors``
+query: data means it answers, and an error carrying ``status`` means it
+failed. The stream check is the profile's ``useZmsProbes`` results: failed
+when any URL fails, ok when any answers, since a multi-server install can list
+a server the app can't reach, which gives no status at all. Each check
+is ``{ state: 'ok' }``, ``{ state: 'failed', status }``, or ``undefined``
+while running or when there is no status to go on; a disabled profile gets
+none.
+
+**Used by:** ``components/profiles/ProfileHealthIcon.tsx`` (one summary icon
+by the profile name), ``components/profiles/ProfileUrlDetails.tsx`` (an icon on
+each row of a card's Details) and the edit dialog in ``pages/Profiles.tsx``, which
+drops a field's icon once its value differs from the saved one. Both draw
+through ``components/profiles/ProfileCheckIcon.tsx``.
 
 Multi-port resolution (``lib/monitor/multiport.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -166,7 +166,8 @@
     "no_monitor_permission": "Esta cuenta no tiene permisos de monitores.",
     "page_previous": "Página anterior",
     "page_next": "Página siguiente",
-    "page_position": "{{page}} / {{pages}}"
+    "page_position": "{{page}} / {{pages}}",
+    "zms_probe_failed": "La vista en vivo no se reproduce: la ruta del stream {{path}} respondió {{status}}. Revisa «URL de Transmisión» en el perfil."
   },
   "events": {
     "thumbnail_labels": "Etiquetas en miniaturas",
@@ -701,7 +702,12 @@
     "search": {
       "placeholder": "Buscar ajustes",
       "no_results": "Ningún ajuste coincide"
-    }
+    },
+    "zms_probe_label": "Ruta del stream",
+    "zms_probe_ok": "{{url}} responde",
+    "zms_probe_failed": "Stream fallido ({{status}}): {{url}}",
+    "zms_probe_unknown": "No se pudo comprobar {{url}}",
+    "zms_probe_checking": "Comprobando {{url}}…"
   },
   "ssl": {
     "trust_dialog_title": "Certificado no confiable",
@@ -1117,6 +1123,12 @@
     "no_credentials": "Sin credenciales",
     "add_creds_hint": "Las credenciales son opcionales para servidores públicos. Agrégalas si es necesario.",
     "manual_override_hint": "Anulación manual disponible en modo edición",
+    "cgi_url_guessed": "El servidor no informó su ruta de stream, así que esta URL es una suposición. Si la vista en vivo sigue en blanco, revísala.",
+    "health_ok": "Portal, API y transmisión responden",
+    "health_partial": "Algunas direcciones fallan; abre Detalles",
+    "health_failed": "Ninguna dirección responde; abre Detalles",
+    "check_ok": "Responde",
+    "check_failed": "Falló: {{status}}",
     "switch_profile": "Cambiar Perfil",
     "switching": "Cambiando...",
     "switched_to": "Cambiado a {{name}}",
@@ -1207,7 +1219,8 @@
     "profile_name_placeholder": "Mi ZoneMinder",
     "api_url_hint": "https://servidor.com/zm/api",
     "cgi_url_hint": "https://servidor.com/zm/cgi-bin",
-    "protocol_mismatch": "¡Conflicto de protocolo! El portal usa {{portalProtocol}}:// pero la API usa {{apiProtocol}}://. Ambos deben usar el mismo protocolo (HTTP o HTTPS)."
+    "protocol_mismatch": "¡Conflicto de protocolo! El portal usa {{portalProtocol}}:// pero la API usa {{apiProtocol}}://. Ambos deben usar el mismo protocolo (HTTP o HTTPS).",
+    "cgi_url_guessed": "El servidor no informó su ruta de stream, así que {{cgiUrl}} es una suposición. Si la vista en vivo sigue en blanco, revisa «URL de Transmisión» en el perfil."
   },
   "live_activity": {
     "title": "Actividad en vivo",

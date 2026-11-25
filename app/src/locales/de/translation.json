@@ -166,7 +166,8 @@
     "no_monitor_permission": "Dieses Konto hat keine Monitor-Berechtigungen.",
     "page_previous": "Vorherige Seite",
     "page_next": "Nächste Seite",
-    "page_position": "{{page}} / {{pages}}"
+    "page_position": "{{page}} / {{pages}}",
+    "zms_probe_failed": "Live-Ansicht kann nicht abspielen: Der Stream-Pfad {{path}} antwortete {{status}}. Prüfe «Streaming URL» im Profil."
   },
   "events": {
     "thumbnail_labels": "Beschriftung auf Vorschaubildern",
@@ -701,7 +702,12 @@
     "search": {
       "placeholder": "Einstellungen durchsuchen",
       "no_results": "Keine passenden Einstellungen"
-    }
+    },
+    "zms_probe_label": "Stream-Pfad",
+    "zms_probe_ok": "{{url}} antwortet",
+    "zms_probe_failed": "Stream fehlgeschlagen ({{status}}): {{url}}",
+    "zms_probe_unknown": "{{url}} konnte nicht geprüft werden",
+    "zms_probe_checking": "Prüfe {{url}}…"
   },
   "ssl": {
     "trust_dialog_title": "Nicht vertrauenswürdiges Zertifikat",
@@ -1117,6 +1123,12 @@
     "no_credentials": "Keine Anmeldeinformationen",
     "add_creds_hint": "Anmeldedaten sind für öffentliche Server optional. Fügen Sie sie hinzu, falls erforderlich.",
     "manual_override_hint": "Manuelle Überschreibung im Bearbeitungsmodus verfügbar",
+    "cgi_url_guessed": "Der Server hat keinen Stream-Pfad gemeldet, diese URL ist also geraten. Bleibt die Live-Ansicht leer, prüfe sie.",
+    "health_ok": "Portal, API und Streaming antworten",
+    "health_partial": "Einige Adressen schlagen fehl; siehe Details",
+    "health_failed": "Keine Adresse antwortet; siehe Details",
+    "check_ok": "Antwortet",
+    "check_failed": "Fehlgeschlagen: {{status}}",
     "switch_profile": "Profil wechseln",
     "switching": "Wechsle...",
     "switched_to": "Gewechselt zu {{name}}",
@@ -1207,7 +1219,8 @@
     "profile_name_placeholder": "Mein ZoneMinder",
     "api_url_hint": "https://server.com/zm/api",
     "cgi_url_hint": "https://server.com/zm/cgi-bin",
-    "protocol_mismatch": "Protokollkonflikt! Portal verwendet {{portalProtocol}}://, aber API verwendet {{apiProtocol}}://. Beide müssen dasselbe Protokoll verwenden (entweder HTTP oder HTTPS)."
+    "protocol_mismatch": "Protokollkonflikt! Portal verwendet {{portalProtocol}}://, aber API verwendet {{apiProtocol}}://. Beide müssen dasselbe Protokoll verwenden (entweder HTTP oder HTTPS).",
+    "cgi_url_guessed": "Der Server hat keinen Stream-Pfad gemeldet, {{cgiUrl}} ist also geraten. Bleibt die Live-Ansicht leer, prüfe «Streaming URL» im Profil."
   },
   "live_activity": {
     "title": "Live-Aktivität",

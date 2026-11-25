@@ -20,6 +20,7 @@ import { Button } from '../components/ui/button';
 import { LayoutGrid, List, Video, Layers } from 'lucide-react';
 import { PageContainer } from '../components/common/PageContainer';
 import { ErrorBanner } from '../components/ui/query-state';
+import { ZmsProbeBanner } from '../components/monitors/ZmsProbeBanner';
 import { EmptyState } from '../components/ui/empty-state';
 import { resolveQueryError } from '../lib/query/query-error';
 import { RefreshButton } from '../components/common/RefreshButton';
@@ -415,6 +416,8 @@ export default function Monitors() {
         </div>
       </div>
 
+      {/* nph-zms refused the stream path probe (refs #603) */}
+      <ZmsProbeBanner profileIds={scope?.profiles.map((p) => p.id) ?? []} />
       {/* Per-profile errors: one strip per profile whose query failed AND
           produced zero monitors. A profile with cached data and a background
           refetch error (e.g. offline) renders that data with no strip; the

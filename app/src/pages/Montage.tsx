@@ -20,6 +20,7 @@ import { Button } from '../components/ui/button';
 import { Video, Maximize, Pencil, ArrowLeftRight, Layers } from 'lucide-react';
 import { RefreshButton } from '../components/common/RefreshButton';
 import { ErrorBanner } from '../components/ui/query-state';
+import { ZmsProbeBanner } from '../components/monitors/ZmsProbeBanner';
 import { resolveQueryError } from '../lib/query/query-error';
 import { EmptyState } from '../components/ui/empty-state';
 import { filterMonitorsByGroup, countMonitorsByProfile } from '../lib/monitor/filters';
@@ -708,6 +709,9 @@ export default function Montage() {
 
       {/* Per-profile errors: All mode only, see visibleErrors above. */}
       {!isFullscreen && <MontageErrorStrips errors={visibleErrors} onRetry={refetchProfile} />}
+
+      {/* nph-zms refused the stream path probe (refs #603) */}
+      {!isFullscreen && <ZmsProbeBanner profileIds={[...profilesById.keys()]} className="px-2 pt-2 sm:px-3" />}
 
       {/* Grid Content */}
       <div

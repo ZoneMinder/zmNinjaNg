@@ -166,7 +166,8 @@
     "no_monitor_permission": "Ce compte n'a aucune permission sur les moniteurs.",
     "page_previous": "Page précédente",
     "page_next": "Page suivante",
-    "page_position": "{{page}} / {{pages}}"
+    "page_position": "{{page}} / {{pages}}",
+    "zms_probe_failed": "La vue en direct ne peut pas jouer : le chemin du flux {{path}} a répondu {{status}}. Vérifiez «URL de diffusion» dans le profil."
   },
   "events": {
     "thumbnail_labels": "Libellés sur les vignettes",
@@ -701,7 +702,12 @@
     "search": {
       "placeholder": "Rechercher dans les réglages",
       "no_results": "Aucun réglage ne correspond"
-    }
+    },
+    "zms_probe_label": "Chemin du flux",
+    "zms_probe_ok": "{{url}} répond",
+    "zms_probe_failed": "Échec du flux ({{status}}) : {{url}}",
+    "zms_probe_unknown": "Impossible de vérifier {{url}}",
+    "zms_probe_checking": "Vérification de {{url}}…"
   },
   "ssl": {
     "trust_dialog_title": "Certificat non fiable",
@@ -1117,6 +1123,12 @@
     "no_credentials": "Pas d'identifiants",
     "add_creds_hint": "Les identifiants sont facultatifs pour les serveurs publics. Ajoutez-les si nécessaire.",
     "manual_override_hint": "Remplacement manuel disponible en mode édition",
+    "cgi_url_guessed": "Le serveur n'a pas indiqué son chemin de flux, donc cette URL est une supposition. Si la vue en direct reste vide, vérifiez-la.",
+    "health_ok": "Portail, API et flux répondent",
+    "health_partial": "Certaines adresses échouent ; ouvrez Détails",
+    "health_failed": "Aucune adresse ne répond ; ouvrez Détails",
+    "check_ok": "Répond",
+    "check_failed": "Échec : {{status}}",
     "switch_profile": "Changer de profil",
     "switching": "Changement...",
     "switched_to": "Basculé vers {{name}}",
@@ -1207,7 +1219,8 @@
     "profile_name_placeholder": "Mon ZoneMinder",
     "api_url_hint": "https://serveur.com/zm/api",
     "cgi_url_hint": "https://serveur.com/zm/cgi-bin",
-    "protocol_mismatch": "Conflit de protocole ! Le portail utilise {{portalProtocol}}:// mais l'API utilise {{apiProtocol}}://. Les deux doivent utiliser le même protocole (HTTP ou HTTPS)."
+    "protocol_mismatch": "Conflit de protocole ! Le portail utilise {{portalProtocol}}:// mais l'API utilise {{apiProtocol}}://. Les deux doivent utiliser le même protocole (HTTP ou HTTPS).",
+    "cgi_url_guessed": "Le serveur n'a pas indiqué son chemin de flux, donc {{cgiUrl}} est une supposition. Si la vue en direct reste vide, vérifiez «URL de diffusion» dans le profil."
   },
   "live_activity": {
     "title": "Activité en direct",

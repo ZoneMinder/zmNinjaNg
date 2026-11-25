@@ -170,7 +170,8 @@
     "no_monitor_permission": "У этой учётной записи нет прав на мониторы.",
     "page_previous": "Предыдущая страница",
     "page_next": "Следующая страница",
-    "page_position": "{{page}} / {{pages}}"
+    "page_position": "{{page}} / {{pages}}",
+    "zms_probe_failed": "Живое видео не воспроизводится: путь потока {{path}} ответил {{status}}. Проверьте «URL потока» в профиле."
   },
   "events": {
     "thumbnail_labels": "Подписи на миниатюрах",
@@ -717,7 +718,12 @@
     "search": {
       "placeholder": "Поиск настроек",
       "no_results": "Нет подходящих настроек"
-    }
+    },
+    "zms_probe_label": "Путь потока",
+    "zms_probe_ok": "{{url}} отвечает",
+    "zms_probe_failed": "Ошибка потока ({{status}}): {{url}}",
+    "zms_probe_unknown": "Не удалось проверить {{url}}",
+    "zms_probe_checking": "Проверка {{url}}…"
   },
   "ssl": {
     "trust_dialog_title": "Недоверенный сертификат",
@@ -1137,6 +1143,12 @@
     "no_credentials": "Нет учётных данных",
     "add_creds_hint": "Учётные данные необязательны для публичных серверов. Добавьте, если требуется.",
     "manual_override_hint": "Ручное переопределение доступно в режиме редактирования",
+    "cgi_url_guessed": "Сервер не сообщил путь потока, поэтому этот URL — предположение. Если живое видео остаётся пустым, проверьте его.",
+    "health_ok": "Портал, API и поток отвечают",
+    "health_partial": "Некоторые адреса не отвечают; откройте «Подробнее»",
+    "health_failed": "Ни один адрес не отвечает; откройте «Подробнее»",
+    "check_ok": "Отвечает",
+    "check_failed": "Ошибка: {{status}}",
     "switch_profile": "Переключить профиль",
     "switching": "Переключение...",
     "switched_to": "Переключено на {{name}}",
@@ -1229,7 +1241,8 @@
     "profile_name_placeholder": "Мой ZoneMinder",
     "api_url_hint": "https://server.com/zm/api",
     "cgi_url_hint": "https://server.com/zm/cgi-bin",
-    "protocol_mismatch": "Несоответствие протоколов! Портал использует {{portalProtocol}}://, а API — {{apiProtocol}}://. Оба должны использовать один протокол (либо оба HTTP, либо оба HTTPS)."
+    "protocol_mismatch": "Несоответствие протоколов! Портал использует {{portalProtocol}}://, а API — {{apiProtocol}}://. Оба должны использовать один протокол (либо оба HTTP, либо оба HTTPS).",
+    "cgi_url_guessed": "Сервер не сообщил путь потока, поэтому {{cgiUrl}} — предположение. Если живое видео остаётся пустым, проверьте «URL потока» в профиле."
   },
   "live_activity": {
     "title": "Live Activity",

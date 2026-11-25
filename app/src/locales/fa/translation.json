@@ -166,7 +166,8 @@
     "no_monitor_permission": "این حساب مجوز مانیتور ندارد.",
     "page_previous": "صفحه قبل",
     "page_next": "صفحه بعد",
-    "page_position": "{{page}} / {{pages}}"
+    "page_position": "{{page}} / {{pages}}",
+    "zms_probe_failed": "نمای زنده پخش نمی‌شود: مسیر استریم {{path}} پاسخ {{status}} داد. «آدرس استریم» را در پروفایل بررسی کنید."
   },
   "events": {
     "thumbnail_labels": "نمایش برچسب روی تصاویر کوچک",
@@ -701,7 +702,12 @@
     "search": {
       "placeholder": "جستجوی تنظیمات",
       "no_results": "هیچ تنظیمی مطابقت ندارد"
-    }
+    },
+    "zms_probe_label": "مسیر استریم",
+    "zms_probe_ok": "{{url}} پاسخ می‌دهد",
+    "zms_probe_failed": "استریم ناموفق ({{status}}): {{url}}",
+    "zms_probe_unknown": "بررسی {{url}} ممکن نشد",
+    "zms_probe_checking": "در حال بررسی {{url}}…"
   },
   "ssl": {
     "trust_dialog_title": "گواهی غیرقابل‌اعتماد",
@@ -1117,6 +1123,12 @@
     "no_credentials": "بدون اعتبارنامه",
     "add_creds_hint": "اعتبارنامه برای سرورهای عمومی اختیاری است. در صورت نیاز اضافه کنید.",
     "manual_override_hint": "بازنویسی دستی در حالت ویرایش موجود است",
+    "cgi_url_guessed": "سرور مسیر استریم خود را گزارش نکرد، پس این آدرس حدسی است. اگر نمای زنده خالی ماند، آن را بررسی کنید.",
+    "health_ok": "پورتال، API و استریم همه پاسخ می‌دهند",
+    "health_partial": "برخی آدرس‌ها ناموفق‌اند؛ جزئیات را باز کنید",
+    "health_failed": "هیچ آدرسی پاسخ نمی‌دهد؛ جزئیات را باز کنید",
+    "check_ok": "پاسخ می‌دهد",
+    "check_failed": "ناموفق: {{status}}",
     "switch_profile": "تغییر پروفایل",
     "switching": "در حال تغییر...",
     "switched_to": "تغییر به {{name}}",
@@ -1207,7 +1219,8 @@
     "profile_name_placeholder": "ZoneMinder من",
     "api_url_hint": "https://server.com/zm/api",
     "cgi_url_hint": "https://server.com/zm/cgi-bin",
-    "protocol_mismatch": "عدم تطابق پروتکل! پورتال از {{portalProtocol}}:// و API از {{apiProtocol}}:// استفاده می‌کند. هر دو باید یک پروتکل باشند (هر دو HTTP یا هر دو HTTPS)."
+    "protocol_mismatch": "عدم تطابق پروتکل! پورتال از {{portalProtocol}}:// و API از {{apiProtocol}}:// استفاده می‌کند. هر دو باید یک پروتکل باشند (هر دو HTTP یا هر دو HTTPS).",
+    "cgi_url_guessed": "سرور مسیر استریم خود را گزارش نکرد، پس {{cgiUrl}} حدسی است. اگر نمای زنده خالی ماند، «آدرس استریم» را در پروفایل بررسی کنید."
   },
   "live_activity": {
     "title": "فعالیت زنده",

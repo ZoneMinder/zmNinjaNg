@@ -29,6 +29,8 @@ The Add New Profile form
 The Server URL should point to the base ZoneMinder web path, typically ending in `/zm`. zmNinjaNg will auto-discover the API endpoint from there.
 :::
 
+Discovery also asks the server where its live stream lives (`ZM_PATH_ZMS`). When the server doesn't say (no username and password, a failed login, or ZoneMinder 1.39.45, which reports it empty), the app guesses `<server>/cgi-bin/nph-zms` and shows a warning after saving. Editing the profile shows the same warning under **Streaming URL** until you change that field. If live view then stays blank, check the **Streaming URL** in the profile against your server, and see the [Stream path check](settings.md#stream-path-check).
+
 ## QR Code Import
 
 When adding a profile, tap the **Import from QR Code** button to populate the form by scanning a QR code that contains profile data. This avoids retyping the URL, username, and password on a new device.
@@ -92,6 +94,10 @@ Choose **Edit** from a profile card's ⋮ menu to modify the connection details.
 Each profile card keeps its portal, API, and streaming addresses behind
 **Details**. They are set once and only matter when something is wrong,
 so the card leads with the name, the badges, and the buttons instead.
+
+An icon next to each enabled profile's name sums up whether its addresses work: a green check circle when the portal, the API and live streaming all answer, an amber warning when some fail, and a red cross when something fails and nothing answers. Open **Details** to see which one. The app checks at most once every five minutes while the Profiles screen is open; streaming is checked by asking the server's streaming URL for one frame, so fix a failing **Streaming URL** with **Edit**. A profile with no icon hasn't answered yet, or the check couldn't reach the server.
+
+**Details** on each card and the **Edit** dialog mark the portal, API and streaming addresses the same way: a green check circle when that address answers, a red cross with the status when it fails, and nothing while the check runs or when it can't reach the server. The portal counts as answering when its page loads, the API when it returns the monitor list, and streaming when it returns a frame. In **Edit**, a field's mark disappears as soon as you change it, since the check was for the saved address.
 
 ## Disabling a Profile
 

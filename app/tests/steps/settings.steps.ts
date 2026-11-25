@@ -39,6 +39,15 @@ Then('the Streaming Mode row explains which mode it recommends', async ({ page }
   ).toBeVisible();
 });
 
+// Stream path probe (refs #603): the app asked nph-zms for one frame through
+// the profile's CGI path and token, and the row says it got one.
+Then('the stream path check should pass', async ({ page }) => {
+  await expect(page.getByTestId('settings-zms-probe-ok').first()).toBeVisible({
+    timeout: testConfig.timeouts.pageLoad,
+  });
+  await expect(page.getByTestId('settings-zms-probe-failed')).toHaveCount(0);
+});
+
 Then('I should see theme selector', async ({ page }) => {
   // Wait for settings page content to load
   await expect(page.getByRole('heading', { name: /settings/i })).toBeVisible({

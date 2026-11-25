@@ -20,15 +20,16 @@ vi.mock('react-router-dom', () => ({
   useSearchParams: () => [new URLSearchParams('returnTo=/monitors')],
 }));
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (k: string) => k }) }));
-vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn() } }));
 
+import { toast } from 'sonner';
 import ProfileForm from '../ProfileForm';
 import { seedProfiles, resetProfileFixture, fakeApiClient } from '../../tests/profile-fixture';
 import { installDefaultApiClient, resetFakeStoreGates } from '../../tests/fake-store-gates';
 import { useProfileStore } from '../../stores/profile';
 import { useAuthStore } from '../../stores/auth';
 
-const server = () =>
+const server = (zmsPath = '/zm/cgi-bin/nph-zms') =>
   fakeApiClient({
     '/host/getVersion.json': { version: '1.36.0', apiversion: '2.0' },
     '/host/login.json': {
@@ -36,7 +37,7 @@ const server = () =>
       refresh_token: 'ref', refresh_token_expires: 86400,
       version: '1.36.0', apiversion: '2.0',
     },
-    'ZM_PATH_ZMS': { config: { Value: '/zm/cgi-bin/nph-zms' } },
+    'ZM_PATH_ZMS': { config: { Value: zmsPath } },
     'ZM_GO2RTC_PATH': { config: { Value: '' } },
     '/servers.json': { servers: [] },
   });
@@ -49,6 +50,7 @@ describe('ProfileForm add-server', () => {
     client = server();
     installDefaultApiClient(client);
     navigateSpy.mockClear();
+    vi.mocked(toast.warning).mockClear();
   });
   afterEach(() => {
     resetProfileFixture();
@@ -90,5 +92,27 @@ describe('ProfileForm add-server', () => {
     const profile = useProfileStore.getState().profiles[0];
     expect(profile?.cgiUrl).toBe('http://zm.example.com/zm/cgi-bin/nph-zms');
     expect(useAuthStore.getState().slices[profile.id]?.accessToken).toBe('tok');
+    expect(toast.warning).not.toHaveBeenCalled();
+  });
+
+  // ZM 1.39.45 answers an empty ZM_PATH_ZMS (refs #584, #603): the saved path
+  // is a guess, and the user hears so after the form moves on.
+  it('warns that the stream path is a guess when the server reports none', async () => {
+    client = server('');
+    installDefaultApiClient(client);
+    const user = userEvent.setup();
+    render(<ProfileForm />);
+
+    await user.clear(screen.getByTestId('setup-portal-url'));
+    await user.type(screen.getByTestId('setup-portal-url'), 'http://zm.example.com');
+    await user.type(screen.getByTestId('setup-username'), 'admin');
+    await user.type(screen.getByTestId('setup-password'), 'pw');
+    await user.click(screen.getByTestId('connect-button'));
+
+    await waitFor(() => expect(navigateSpy).toHaveBeenCalledWith('/monitors'));
+    // Long enough to read a URL; a few seconds was missed (refs #603).
+    expect(toast.warning).toHaveBeenCalledWith('setup.cgi_url_guessed', { duration: 15_000, closeButton: true });
+    // Kept on the profile, so the edit dialog can still say so later.
+    expect(useProfileStore.getState().profiles[0]?.cgiUrlGuessed).toBe(true);
   });
 });

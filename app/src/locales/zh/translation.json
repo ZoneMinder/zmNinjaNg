@@ -166,7 +166,8 @@
     "no_monitor_permission": "此账户没有监视器权限。",
     "page_previous": "上一页",
     "page_next": "下一页",
-    "page_position": "{{page}} / {{pages}}"
+    "page_position": "{{page}} / {{pages}}",
+    "zms_probe_failed": "实时画面无法播放：流路径 {{path}} 返回 {{status}}。请检查配置文件中的「流媒体 URL」。"
   },
   "events": {
     "thumbnail_labels": "在缩略图上显示标签",
@@ -701,7 +702,12 @@
     "search": {
       "placeholder": "搜索设置",
       "no_results": "没有匹配的设置"
-    }
+    },
+    "zms_probe_label": "流路径",
+    "zms_probe_ok": "{{url}} 有响应",
+    "zms_probe_failed": "流失败（{{status}}）：{{url}}",
+    "zms_probe_unknown": "无法检查 {{url}}",
+    "zms_probe_checking": "正在检查 {{url}}…"
   },
   "ssl": {
     "trust_dialog_title": "不受信任的证书",
@@ -1117,6 +1123,12 @@
     "no_credentials": "无凭据",
     "add_creds_hint": "公共服务器的凭据是可选的。需要时再添加。",
     "manual_override_hint": "编辑模式下可手动覆盖",
+    "cgi_url_guessed": "服务器未报告流路径，因此此 URL 是推测值。如果实时画面一直空白，请检查它。",
+    "health_ok": "门户、API 和流均可访问",
+    "health_partial": "部分地址失败；请打开详情",
+    "health_failed": "所有地址均无响应；请打开详情",
+    "check_ok": "可访问",
+    "check_failed": "失败：{{status}}",
     "switch_profile": "切换配置",
     "switching": "切换中...",
     "switched_to": "已切换至 {{name}}",
@@ -1207,7 +1219,8 @@
     "profile_name_placeholder": "我的 ZoneMinder",
     "api_url_hint": "https://server.com/zm/api",
     "cgi_url_hint": "https://server.com/zm/cgi-bin",
-    "protocol_mismatch": "协议不匹配！门户使用 {{portalProtocol}}://，但 API 使用 {{apiProtocol}}://。两者必须使用相同的协议（HTTP 或 HTTPS）。"
+    "protocol_mismatch": "协议不匹配！门户使用 {{portalProtocol}}://，但 API 使用 {{apiProtocol}}://。两者必须使用相同的协议（HTTP 或 HTTPS）。",
+    "cgi_url_guessed": "服务器未报告流路径，因此 {{cgiUrl}} 是推测值。如果实时画面一直空白，请检查配置文件中的「流媒体 URL」。"
   },
   "live_activity": {
     "title": "实时动态",
