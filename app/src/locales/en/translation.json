@@ -1123,6 +1123,7 @@
     "no_credentials": "No credentials",
     "add_creds_hint": "Credentials are optional for public servers. Add them if required.",
     "manual_override_hint": "Manual override available in edit mode",
+    "cgi_url_guessed": "The server didn't report its stream path, so this URL is a guess. If live view stays blank, check it.",
     "switch_profile": "Switch Profile",
     "switching": "Switching...",
     "switched_to": "Switched to {{name}}",

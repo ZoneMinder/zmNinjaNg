@@ -319,6 +319,7 @@ export default function ProfileForm() {
         password: password || undefined,
         isDefault: isFirstProfile,
         go2rtcUrl: go2rtcPath || undefined,
+        ...(cgiUrlGuessed ? { cgiUrlGuessed: true } : {}),
       }, profileId);
       log.profileForm('Profile created', LogLevel.INFO, { profileName: finalProfileName, profileId });
 

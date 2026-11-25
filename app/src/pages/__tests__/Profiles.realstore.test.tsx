@@ -11,6 +11,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { act, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import Profiles from '../Profiles';
 import { useProfileStore } from '../../stores/profile';
 import { useSettingsStore } from '../../stores/settings';
@@ -73,5 +74,33 @@ describe('Profiles page against the real store', () => {
     expect(screen.queryByTestId(`profile-card-virtual-${id}`)).not.toBeInTheDocument();
     // The member profile is untouched, which is what the delete copy promises.
     expect(screen.getByText('Home')).toBeInTheDocument();
+  });
+
+  // ZM 1.39.45 reports an empty ZM_PATH_ZMS, so setup saves a guessed
+  // streaming URL (refs #584, #603). The edit dialog keeps saying so until
+  // the user changes the field.
+  it('says the streaming URL is a guess while the field still holds it', async () => {
+    useProfileStore.setState({
+      profiles: [{ ...server('p1', 'Home'), cgiUrlGuessed: true }, server('p2', 'Away')],
+    });
+    const user = userEvent.setup();
+    render(<Profiles />);
+
+    await user.click(screen.getByTestId('profile-actions-menu-p1'));
+    await user.click(await screen.findByTestId('profile-edit-button-p1'));
+    expect(await screen.findByTestId('profile-edit-cgi-url-guessed')).toHaveTextContent('profiles.cgi_url_guessed');
+
+    await user.type(screen.getByTestId('profile-edit-cgi-url'), '/x');
+    expect(screen.queryByTestId('profile-edit-cgi-url-guessed')).not.toBeInTheDocument();
+  });
+
+  it('shows no guess warning for a streaming URL the server reported', async () => {
+    const user = userEvent.setup();
+    render(<Profiles />);
+
+    await user.click(screen.getByTestId('profile-actions-menu-p1'));
+    await user.click(await screen.findByTestId('profile-edit-button-p1'));
+    expect(await screen.findByTestId('profile-edit-cgi-url')).toBeInTheDocument();
+    expect(screen.queryByTestId('profile-edit-cgi-url-guessed')).not.toBeInTheDocument();
   });
 });

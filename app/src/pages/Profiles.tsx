@@ -178,6 +178,8 @@ export default function Profiles() {
       // If URLs were manually edited, use them; otherwise discover from portal URL
       let apiUrl = formData.apiUrl;
       let cgiUrl = formData.cgiUrl;
+      // Still a guess only while the field holds the guessed URL (refs #603).
+      let cgiUrlGuessed = !!selectedProfile.cgiUrlGuessed && cgiUrl === selectedProfile.cgiUrl;
 
       // If URLs are empty, discover working URLs
       if (!apiUrl || !cgiUrl) {
@@ -190,6 +192,7 @@ export default function Profiles() {
         });
         apiUrl = discovered.apiUrl;
         cgiUrl = discovered.cgiUrl;
+        cgiUrlGuessed = discovered.cgiUrlSource === 'default';
         // Update portalUrl to match the discovered confirmed one
         portalUrl = discovered.portalUrl;
       } else {
@@ -205,6 +208,7 @@ export default function Profiles() {
         portalUrl,
         apiUrl,
         cgiUrl,
+        cgiUrlGuessed: cgiUrlGuessed || undefined,
         username: normalizedUsername || undefined,
         password: formData.password || undefined,
       };
@@ -613,9 +617,15 @@ export default function Profiles() {
                 autoCorrect="off"
                 data-testid="profile-edit-cgi-url"
               />
-              <p className="text-xs text-muted-foreground">
-                {t('profiles.manual_override_hint')}
-              </p>
+              {selectedProfile?.cgiUrlGuessed && formData.cgiUrl === selectedProfile.cgiUrl ? (
+                <p className="text-xs text-amber-600 dark:text-amber-400" data-testid="profile-edit-cgi-url-guessed">
+                  {t('profiles.cgi_url_guessed')}
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  {t('profiles.manual_override_hint')}
+                </p>
+              )}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="edit-username">{t('profiles.username')}</Label>

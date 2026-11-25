@@ -545,8 +545,10 @@ time, logs in to confirm the details, then saves the profile and switches to it.
    reads ``ZM_PATH_ZMS`` from config, so the streaming URL matches the server's
    real setup. Without it (no credentials, a failed login, or the empty value
    ZM 1.39.45 returns), discovery guesses ``<portal>/cgi-bin/nph-zms`` and sets
-   ``cgiUrlSource: 'default'``, and the form shows a warning toast as it
-   navigates away.
+   ``cgiUrlSource: 'default'``. The form saves the profile with
+   ``cgiUrlGuessed: true`` and shows a warning toast as it navigates away; the
+   edit dialog in ``Profiles.tsx`` repeats the warning under the streaming URL
+   until the user changes it.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/services/discovery.ts>`__
    · → :doc:`13-network-endpoints`
 

@@ -111,5 +111,7 @@ describe('ProfileForm add-server', () => {
 
     await waitFor(() => expect(navigateSpy).toHaveBeenCalledWith('/monitors'));
     expect(toast.warning).toHaveBeenCalledWith('setup.cgi_url_guessed');
+    // Kept on the profile, so the edit dialog can still say so later.
+    expect(useProfileStore.getState().profiles[0]?.cgiUrlGuessed).toBe(true);
   });
 });

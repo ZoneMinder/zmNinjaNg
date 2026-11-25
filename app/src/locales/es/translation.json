@@ -1123,6 +1123,7 @@
     "no_credentials": "Sin credenciales",
     "add_creds_hint": "Las credenciales son opcionales para servidores públicos. Agrégalas si es necesario.",
     "manual_override_hint": "Anulación manual disponible en modo edición",
+    "cgi_url_guessed": "El servidor no informó su ruta de stream, así que esta URL es una suposición. Si la vista en vivo sigue en blanco, revísala.",
     "switch_profile": "Cambiar Perfil",
     "switching": "Cambiando...",
     "switched_to": "Cambiado a {{name}}",

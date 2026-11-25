@@ -1123,6 +1123,7 @@
     "no_credentials": "Keine Anmeldeinformationen",
     "add_creds_hint": "Anmeldedaten sind für öffentliche Server optional. Fügen Sie sie hinzu, falls erforderlich.",
     "manual_override_hint": "Manuelle Überschreibung im Bearbeitungsmodus verfügbar",
+    "cgi_url_guessed": "Der Server hat keinen Stream-Pfad gemeldet, diese URL ist also geraten. Bleibt die Live-Ansicht leer, prüfe sie.",
     "switch_profile": "Profil wechseln",
     "switching": "Wechsle...",
     "switched_to": "Gewechselt zu {{name}}",
