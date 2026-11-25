@@ -17,6 +17,16 @@ import { useProfileStore } from '../../stores/profile';
 import { useSettingsStore } from '../../stores/settings';
 import { asProfileId } from '../../api/types';
 
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+// The cards' stream badge runs a query (refs #603).
+const renderProfiles = () =>
+  render(
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <Profiles />
+    </QueryClientProvider>,
+  );
+
 vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn() }));
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -57,7 +67,7 @@ describe('Profiles page against the real store', () => {
   });
 
   it('shows a group created after mount and drops the card when it is deleted', () => {
-    render(<Profiles />);
+    renderProfiles();
     expect(screen.queryByText('Upstairs')).not.toBeInTheDocument();
 
     let id = asProfileId('');
@@ -84,7 +94,7 @@ describe('Profiles page against the real store', () => {
       profiles: [{ ...server('p1', 'Home'), cgiUrlGuessed: true }, server('p2', 'Away')],
     });
     const user = userEvent.setup();
-    render(<Profiles />);
+    renderProfiles();
 
     await user.click(screen.getByTestId('profile-actions-menu-p1'));
     await user.click(await screen.findByTestId('profile-edit-button-p1'));
@@ -96,11 +106,11 @@ describe('Profiles page against the real store', () => {
 
   it('shows no guess warning for a streaming URL the server reported', async () => {
     const user = userEvent.setup();
-    render(<Profiles />);
+    renderProfiles();
 
     await user.click(screen.getByTestId('profile-actions-menu-p1'));
     await user.click(await screen.findByTestId('profile-edit-button-p1'));
-    expect(await screen.findByTestId('profile-edit-cgi-url')).toBeInTheDocument();
+    expect(await screen.findByTestId('profile-edit-cgi-url')).toHaveValue('http://p1/cgi-bin');
     expect(screen.queryByTestId('profile-edit-cgi-url-guessed')).not.toBeInTheDocument();
   });
 });

@@ -43,6 +43,7 @@ import { isAggregateProfileId } from '../api/types';
 import { VirtualProfileCard } from '../components/profiles/VirtualProfileCard';
 import { ServerUrlDisclosure } from '../components/profiles/ServerUrlDisclosure';
 import { ProfileActionsMenu } from '../components/profiles/ProfileActionsMenu';
+import { ProfileStreamBadge } from '../components/profiles/ProfileStreamBadge';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -473,6 +474,7 @@ export default function Profiles() {
                               ⚠ {t('profiles.no_credentials')}
                             </Badge>
                           )}
+                          <ProfileStreamBadge profile={profile} />
                         </div>
                         <ServerUrlDisclosure
                           testId={`profile-urls-${profile.id}`}
