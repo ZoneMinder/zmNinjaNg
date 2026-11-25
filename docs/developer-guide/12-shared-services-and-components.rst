@@ -530,7 +530,9 @@ page, cached under ``queryKeys.portalProbe`` for ``ZMS_PROBE.staleTimeMs``,
 where any status below 400 counts as answering (ZoneMinder serves its login
 page or a redirect). The API check reads the profile's ``queryKeys.monitors``
 query: data means it answers, and an error carrying ``status`` means it
-failed. The stream check is the profile's ``useZmsProbes`` results. Each check
+failed. The stream check is the profile's ``useZmsProbes`` results: failed
+when any URL fails, ok when any answers, since a multi-server install can list
+a server the app can't reach, which gives no status at all. Each check
 is ``{ state: 'ok' }``, ``{ state: 'failed', status }``, or ``undefined``
 while running or when there is no status to go on; a disabled profile gets
 none.

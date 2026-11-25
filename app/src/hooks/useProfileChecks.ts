@@ -54,7 +54,9 @@ export function useProfileChecks(profile: Profile | null | undefined): ProfileCh
     api: monitors.data ? { state: 'ok' } : errorStatus ? { state: 'failed', status: errorStatus } : undefined,
     streaming:
       failedStream?.state === 'failed' ? { state: 'failed', status: failedStream.status }
-      : streams.length > 0 && streams.every((r) => r?.state === 'ok') ? { state: 'ok' }
+      // One answering path is enough: a second server the app can't reach
+      // gives no status, which is no verdict either way.
+      : streams.some((r) => r?.state === 'ok') ? { state: 'ok' }
       : undefined,
   };
 }
