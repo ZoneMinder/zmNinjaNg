@@ -63,6 +63,11 @@ async function login(page) {
   await page.getByRole('button', { name: /connect/i }).click();
   await page.locator('[data-testid="mobile-menu-button"]:visible, [data-testid="nav-item-dashboard"]:visible')
     .first().waitFor({ timeout: 30_000 });
+  // Setup's "stream path is a guess" toast stays up 15s; keep it out of the shots.
+  const toasts = page.locator('[data-sonner-toast]');
+  await toasts.first().waitFor({ timeout: 3_000 }).catch(() => {});
+  for (const close of await page.locator('[data-sonner-toast] [data-close-button]').all()) await close.click();
+  await toasts.first().waitFor({ state: 'detached', timeout: 5_000 }).catch(() => {});
 }
 
 const browser = await chromium.launch({ args: ['--disable-web-security'] });
