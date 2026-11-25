@@ -1213,7 +1213,8 @@
     "profile_name_placeholder": "我的 ZoneMinder",
     "api_url_hint": "https://server.com/zm/api",
     "cgi_url_hint": "https://server.com/zm/cgi-bin",
-    "protocol_mismatch": "协议不匹配！门户使用 {{portalProtocol}}://，但 API 使用 {{apiProtocol}}://。两者必须使用相同的协议（HTTP 或 HTTPS）。"
+    "protocol_mismatch": "协议不匹配！门户使用 {{portalProtocol}}://，但 API 使用 {{apiProtocol}}://。两者必须使用相同的协议（HTTP 或 HTTPS）。",
+    "cgi_url_guessed": "服务器未报告流路径，因此 {{cgiUrl}} 是推测值。如果实时画面一直空白，请检查配置文件中的「流媒体 URL」。"
   },
   "live_activity": {
     "title": "实时动态",

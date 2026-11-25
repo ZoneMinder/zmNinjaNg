@@ -1213,7 +1213,8 @@
     "profile_name_placeholder": "My ZoneMinder",
     "api_url_hint": "https://server.com/zm/api",
     "cgi_url_hint": "https://server.com/zm/cgi-bin",
-    "protocol_mismatch": "Protocol mismatch! Portal uses {{portalProtocol}}:// but API uses {{apiProtocol}}://. Both must use the same protocol (either both HTTP or both HTTPS)."
+    "protocol_mismatch": "Protocol mismatch! Portal uses {{portalProtocol}}:// but API uses {{apiProtocol}}://. Both must use the same protocol (either both HTTP or both HTTPS).",
+    "cgi_url_guessed": "The server didn't report its stream path, so {{cgiUrl}} is a guess. If live view stays blank, check the \"Streaming URL\" in the profile."
   },
   "live_activity": {
     "title": "Live Activity",

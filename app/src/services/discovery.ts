@@ -35,6 +35,8 @@ export interface DiscoveryResult {
     portalUrl: string;
     apiUrl: string;
     cgiUrl: string;
+    /** 'default' when the server didn't report ZM_PATH_ZMS and cgiUrl is a guess. */
+    cgiUrlSource: 'server' | 'default';
     /**
      * The login discovery performed to read ZM_PATH_ZMS, when credentials
      * were given and the server issued tokens. ZoneMinder's login.json
@@ -315,20 +317,17 @@ export async function discoverZoneminder(inputUrl: string, options: DiscoveryOpt
                     // Try to fetch actual ZMS path from server (requires auth)
                     // Fall back to inference if auth fails or no credentials
                     const fetched = await fetchCgiUrl(fullApiUrl, portalUrl, options, profileId);
-                    let cgiUrl = fetched.cgiUrl;
+                    // Default when the server didn't say: derive from portalUrl
+                    const cgiUrlSource = fetched.cgiUrl ? 'server' : 'default';
+                    const cgiUrl = fetched.cgiUrl ?? portalUrl + '/cgi-bin/nph-zms';
 
-                    if (!cgiUrl) {
-                        // Default: derive from portalUrl
-                        cgiUrl = portalUrl + '/cgi-bin/nph-zms';
-                        log.discovery('Using default CGI URL', LogLevel.DEBUG, { cgiUrl });
-                    }
-
-                    log.discovery(`Discovery complete`, LogLevel.INFO, { portalUrl, apiUrl: fullApiUrl, cgiUrl });
+                    log.discovery(`Discovery complete`, LogLevel.INFO, { portalUrl, apiUrl: fullApiUrl, cgiUrl, cgiUrlSource });
 
                     return {
                         portalUrl,
                         apiUrl: fullApiUrl,
                         cgiUrl,
+                        cgiUrlSource,
                         ...(fetched.loginResponse ? { loginResponse: fetched.loginResponse } : {}),
                     };
                 }

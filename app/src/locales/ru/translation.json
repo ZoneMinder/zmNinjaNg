@@ -1235,7 +1235,8 @@
     "profile_name_placeholder": "Мой ZoneMinder",
     "api_url_hint": "https://server.com/zm/api",
     "cgi_url_hint": "https://server.com/zm/cgi-bin",
-    "protocol_mismatch": "Несоответствие протоколов! Портал использует {{portalProtocol}}://, а API — {{apiProtocol}}://. Оба должны использовать один протокол (либо оба HTTP, либо оба HTTPS)."
+    "protocol_mismatch": "Несоответствие протоколов! Портал использует {{portalProtocol}}://, а API — {{apiProtocol}}://. Оба должны использовать один протокол (либо оба HTTP, либо оба HTTPS).",
+    "cgi_url_guessed": "Сервер не сообщил путь потока, поэтому {{cgiUrl}} — предположение. Если живое видео остаётся пустым, проверьте «URL потока» в профиле."
   },
   "live_activity": {
     "title": "Live Activity",

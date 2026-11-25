@@ -1213,7 +1213,8 @@
     "profile_name_placeholder": "ZoneMinder من",
     "api_url_hint": "https://server.com/zm/api",
     "cgi_url_hint": "https://server.com/zm/cgi-bin",
-    "protocol_mismatch": "عدم تطابق پروتکل! پورتال از {{portalProtocol}}:// و API از {{apiProtocol}}:// استفاده می‌کند. هر دو باید یک پروتکل باشند (هر دو HTTP یا هر دو HTTPS)."
+    "protocol_mismatch": "عدم تطابق پروتکل! پورتال از {{portalProtocol}}:// و API از {{apiProtocol}}:// استفاده می‌کند. هر دو باید یک پروتکل باشند (هر دو HTTP یا هر دو HTTPS).",
+    "cgi_url_guessed": "سرور مسیر استریم خود را گزارش نکرد، پس {{cgiUrl}} حدسی است. اگر نمای زنده خالی ماند، «آدرس استریم» را در پروفایل بررسی کنید."
   },
   "live_activity": {
     "title": "فعالیت زنده",

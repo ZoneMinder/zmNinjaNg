@@ -61,6 +61,7 @@ describe('discoverZoneminder', () => {
         portalUrl: 'http://zm.example.com/zm',
         apiUrl: 'http://zm.example.com/zm/api',
         cgiUrl: 'http://zm.example.com/zm/cgi-bin/nph-zms',
+        cgiUrlSource: 'default',
       });
     });
 
@@ -79,6 +80,7 @@ describe('discoverZoneminder', () => {
         portalUrl: 'http://zm.example.com',
         apiUrl: 'http://zm.example.com/api',
         cgiUrl: 'http://zm.example.com/cgi-bin/nph-zms',
+        cgiUrlSource: 'default',
       });
     });
 
@@ -120,6 +122,7 @@ describe('discoverZoneminder', () => {
       });
 
       expect(result.cgiUrl).toBe('http://zm.example.com/custom/path/nph-zms');
+      expect(result.cgiUrlSource).toBe('server');
     });
 
     it('falls back to default cgiUrl if auth fails', async () => {
@@ -137,6 +140,7 @@ describe('discoverZoneminder', () => {
 
       // Should still succeed with default cgiUrl
       expect(result.cgiUrl).toBe('http://zm.example.com/zm/cgi-bin/nph-zms');
+      expect(result.cgiUrlSource).toBe('default');
     });
 
     it('handles HTTPS URLs correctly', async () => {

@@ -1213,7 +1213,8 @@
     "profile_name_placeholder": "Mein ZoneMinder",
     "api_url_hint": "https://server.com/zm/api",
     "cgi_url_hint": "https://server.com/zm/cgi-bin",
-    "protocol_mismatch": "Protokollkonflikt! Portal verwendet {{portalProtocol}}://, aber API verwendet {{apiProtocol}}://. Beide müssen dasselbe Protokoll verwenden (entweder HTTP oder HTTPS)."
+    "protocol_mismatch": "Protokollkonflikt! Portal verwendet {{portalProtocol}}://, aber API verwendet {{apiProtocol}}://. Beide müssen dasselbe Protokoll verwenden (entweder HTTP oder HTTPS).",
+    "cgi_url_guessed": "Der Server hat keinen Stream-Pfad gemeldet, {{cgiUrl}} ist also geraten. Bleibt die Live-Ansicht leer, prüfe «Streaming URL» im Profil."
   },
   "live_activity": {
     "title": "Live-Aktivität",

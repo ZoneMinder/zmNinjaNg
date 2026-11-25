@@ -178,6 +178,8 @@ export default function ProfileForm() {
       // Discovery logs in to read ZM_PATH_ZMS; reuse that instead of paying
       // ZoneMinder's ~0.6s password hash a second time.
       let discoveredLogin: LoginResponse | undefined;
+      // Discovery guessed the stream path: the server didn't report ZM_PATH_ZMS (refs #603).
+      let cgiUrlGuessed = false;
 
       if (showManualUrls) {
         // Manual URL entry mode
@@ -232,6 +234,7 @@ export default function ProfileForm() {
         apiUrl = discovered.apiUrl;
         cgiUrl = discovered.cgiUrl;
         discoveredLogin = discovered.loginResponse;
+        cgiUrlGuessed = discovered.cgiUrlSource === 'default';
         log.profileForm('URLs discovered', LogLevel.INFO, { portalUrl: confirmedPortalUrl, apiUrl, cgiUrl });
       }
 
@@ -340,6 +343,9 @@ export default function ProfileForm() {
 
       // The destination page is the confirmation; a fixed pause before it
       // was one more second on every first connect.
+      // A toast, not a hint by the CGI field: that field is hidden while
+      // discovery runs and the form navigates away on success.
+      if (cgiUrlGuessed) toast.warning(t('setup.cgi_url_guessed', { cgiUrl }));
       navigate(returnTo);
     } catch (err: unknown) {
       // The failed/cancelled attempt may have landed real tokens under this
