@@ -29,6 +29,10 @@ On a self-signed HTTPS server, API calls succeed (they go through the native HTT
 
 When this state is detected the app shows a **Certificate not trusted** banner at the top. Tap **Verify**, then accept the certificate in the dialog. That pins the fingerprint, and live view and thumbnails load. You can also re-pin from Settings > Network.
 
+### Login works but every live feed looks offline
+
+Open Settings > Live Streaming and look at the **Stream path** row. Red with 404 means the profile's **Streaming URL** points at the wrong `nph-zms` path, so fix it under Profiles > Edit. Red with 403 means the server refused the login token. See [Stream path check](settings.md#stream-path-check).
+
 ### Is zmNinjaNg free?
 
 Yes. zmNinjaNg is open source and free to use. The source code is available on [GitHub](https://github.com/ZoneMinder/zmNinjaNg).

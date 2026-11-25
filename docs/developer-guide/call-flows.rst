@@ -543,7 +543,10 @@ time, logs in to confirm the details, then saves the profile and switches to it.
 
 #. **Read the server's ZMS path.** With credentials, ``fetchCgiUrl`` logs in and
    reads ``ZM_PATH_ZMS`` from config, so the streaming URL matches the server's
-   real setup.
+   real setup. Without it (no credentials, a failed login, or the empty value
+   ZM 1.39.45 returns), discovery guesses ``<portal>/cgi-bin/nph-zms`` and sets
+   ``cgiUrlSource: 'default'``, and the form shows a warning toast as it
+   navigates away.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/services/discovery.ts>`__
    · → :doc:`13-network-endpoints`
 

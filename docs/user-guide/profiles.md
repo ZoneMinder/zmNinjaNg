@@ -29,6 +29,8 @@ The Add New Profile form
 The Server URL should point to the base ZoneMinder web path, typically ending in `/zm`. zmNinjaNg will auto-discover the API endpoint from there.
 :::
 
+Discovery also asks the server where its live stream lives (`ZM_PATH_ZMS`). When the server doesn't say (no username and password, a failed login, or ZoneMinder 1.39.45, which reports it empty), the app guesses `<server>/cgi-bin/nph-zms` and shows a warning after saving. If live view then stays blank, check the **Streaming URL** in the profile against your server, and see the [Stream path check](settings.md#stream-path-check).
+
 ## QR Code Import
 
 When adding a profile, tap the **Import from QR Code** button to populate the form by scanning a QR code that contains profile data. This avoids retyping the URL, username, and password on a new device.
