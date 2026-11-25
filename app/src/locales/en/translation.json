@@ -1126,6 +1126,8 @@
     "cgi_url_guessed": "The server didn't report its stream path, so this URL is a guess. If live view stays blank, check it.",
     "stream_ok": "Stream OK",
     "stream_failed": "Stream {{status}}",
+    "check_ok": "Answers",
+    "check_failed": "Failed: {{status}}",
     "switch_profile": "Switch Profile",
     "switching": "Switching...",
     "switched_to": "Switched to {{name}}",

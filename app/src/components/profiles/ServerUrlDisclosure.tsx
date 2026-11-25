@@ -8,7 +8,7 @@
  * shape: what a reader wants from it is which servers it aggregates.
  */
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 
@@ -16,6 +16,8 @@ export interface ServerUrlRow {
   /** What this address is: a URL kind on a server, a server name in a group. */
   label: string;
   url: string;
+  /** Shown before the label, such as whether this address answers. */
+  icon?: ReactNode;
 }
 
 interface ServerUrlDisclosureProps {
@@ -55,6 +57,7 @@ export function ServerUrlDisclosure({ rows, testId }: ServerUrlDisclosureProps) 
         <div className="space-y-1 text-xs font-mono mt-1" data-testid={testId}>
           {rows.map((row) => (
             <p key={`${row.label}-${row.url}`} className="text-muted-foreground break-all">
+              {row.icon && <>{row.icon} </>}
               <span className="font-sans font-medium text-foreground">{row.label}:</span> {row.url}
             </p>
           ))}

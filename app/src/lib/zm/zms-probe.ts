@@ -52,6 +52,26 @@ export async function probeZms(
   }
 }
 
+/**
+ * Whether the portal page answers. Any status below 400 counts: ZM serves its
+ * login page or a redirect to it. No status (network, CORS) is unknown.
+ */
+export async function probePortal(portalUrl: string): Promise<ZmsProbeResult> {
+  try {
+    const response = await httpGet<string>(portalUrl, {
+      responseType: 'text',
+      timeoutMs: ZMS_PROBE.timeoutMs,
+      validateStatus: () => true,
+      intent: 'Probe portal',
+    });
+    if (!response.status) return { state: 'unknown', reason: 'no status' };
+    if (response.status < 400) return { state: 'ok' };
+    return { state: 'failed', status: response.status, path: new URL(portalUrl).pathname };
+  } catch (error) {
+    return { state: 'unknown', reason: error instanceof Error ? error.message : String(error) };
+  }
+}
+
 export interface ZmsProbeTarget {
   recordingUrl: string;
   monitorId: string;

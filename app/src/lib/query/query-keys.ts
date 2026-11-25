@@ -49,6 +49,9 @@ export const queryKeys = {
   /** Stream path probe result for one nph-zms URL (refs #603). */
   zmsProbe: (profileId: MaybeProfileId, recordingUrl: string) =>
     ['zms-probe', profileId, recordingUrl] as const,
+  /** Portal page probe result for a profile (refs #603). */
+  portalProbe: (profileId: MaybeProfileId, portalUrl: string) =>
+    ['portal-probe', profileId, portalUrl] as const,
   /** Zones for a monitor. */
   zones: (profileId: MaybeProfileId, monitorId: string | undefined) =>
     ['zones', profileId, monitorId] as const,

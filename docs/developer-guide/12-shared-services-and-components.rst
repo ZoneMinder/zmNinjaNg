@@ -523,6 +523,23 @@ editing the CGI path changes the key, so the next screen probes the new path.
 Settings > Live Streaming) and ``components/monitors/ZmsProbeBanner.tsx`` (an
 ``ErrorBanner`` on Monitors, Montage, and Monitor detail when a probe fails).
 
+``useProfileChecks(profile)`` (``hooks/useProfileChecks.ts``) adds the other
+two addresses for the Profiles screen. The portal check is
+``probePortal(portalUrl)`` in ``lib/zm/zms-probe.ts``: one GET of the portal
+page, cached under ``queryKeys.portalProbe`` for ``ZMS_PROBE.staleTimeMs``,
+where any status below 400 counts as answering (ZoneMinder serves its login
+page or a redirect). The API check reads the profile's ``queryKeys.monitors``
+query: data means it answers, and an error carrying ``status`` means it
+failed. The stream check is the profile's ``useZmsProbes`` results. Each check
+is ``{ state: 'ok' }``, ``{ state: 'failed', status }``, or ``undefined``
+while running or when there is no status to go on; a disabled profile gets
+none.
+
+**Used by:** ``components/profiles/ProfileUrlDetails.tsx`` (an icon on each
+row of a card's Details) and the edit dialog in ``pages/Profiles.tsx``, which
+drops a field's icon once its value differs from the saved one. Both draw
+through ``components/profiles/ProfileCheckIcon.tsx``.
+
 Multi-port resolution (``lib/monitor/multiport.ts``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

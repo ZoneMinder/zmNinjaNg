@@ -41,7 +41,9 @@ import { Badge } from '../components/ui/badge';
 import type { Profile, VirtualProfile } from '../api/types';
 import { isAggregateProfileId } from '../api/types';
 import { VirtualProfileCard } from '../components/profiles/VirtualProfileCard';
-import { ServerUrlDisclosure } from '../components/profiles/ServerUrlDisclosure';
+import { ProfileUrlDetails } from '../components/profiles/ProfileUrlDetails';
+import { ProfileCheckIcon } from '../components/profiles/ProfileCheckIcon';
+import { useProfileChecks } from '../hooks/useProfileChecks';
 import { ProfileActionsMenu } from '../components/profiles/ProfileActionsMenu';
 import { ProfileStreamBadge } from '../components/profiles/ProfileStreamBadge';
 import {
@@ -85,6 +87,9 @@ export default function Profiles() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleteAllDialogOpen, setIsDeleteAllDialogOpen] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
+  // Saved addresses' checks for the edit dialog; a field edited away from
+  // its saved value drops its icon (refs #603).
+  const editChecks = useProfileChecks(isEditDialogOpen ? selectedProfile : null);
   // The group dialog is mounted only while open (never `open={false}`), so
   // opening it is what seeds its fields; `{ group: null }` is create mode.
   const [groupDialog, setGroupDialog] = useState<{ group: VirtualProfile | null } | null>(null);
@@ -476,14 +481,7 @@ export default function Profiles() {
                           )}
                           <ProfileStreamBadge profile={profile} />
                         </div>
-                        <ServerUrlDisclosure
-                          testId={`profile-urls-${profile.id}`}
-                          rows={[
-                            { label: t('profiles.portal'), url: profile.portalUrl },
-                            { label: t('profiles.api'), url: profile.apiUrl },
-                            { label: t('profiles.streaming'), url: profile.cgiUrl },
-                          ].filter((row) => row.url)}
-                        />
+                        <ProfileUrlDetails profile={profile} />
                         {!(profile.username && profile.password) && (
                           <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
                             {t('profiles.add_creds_hint')}
@@ -585,7 +583,12 @@ export default function Profiles() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="edit-portalUrl">{t('profiles.portal_url')}*</Label>
+              <Label htmlFor="edit-portalUrl" className="flex items-center gap-1.5">
+                {t('profiles.portal_url')}*
+                {formData.portalUrl === selectedProfile?.portalUrl && (
+                  <ProfileCheckIcon check={editChecks.portal} testId="profile-edit-check-portal" />
+                )}
+              </Label>
               <Input
                 id="edit-portalUrl"
                 value={formData.portalUrl}
@@ -596,7 +599,12 @@ export default function Profiles() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="edit-apiUrl">{t('profiles.api_url')}*</Label>
+              <Label htmlFor="edit-apiUrl" className="flex items-center gap-1.5">
+                {t('profiles.api_url')}*
+                {formData.apiUrl === selectedProfile?.apiUrl && (
+                  <ProfileCheckIcon check={editChecks.api} testId="profile-edit-check-api" />
+                )}
+              </Label>
               <Input
                 id="edit-apiUrl"
                 value={formData.apiUrl}
@@ -610,7 +618,12 @@ export default function Profiles() {
               </p>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="edit-cgiUrl">{t('profiles.streaming_url')}*</Label>
+              <Label htmlFor="edit-cgiUrl" className="flex items-center gap-1.5">
+                {t('profiles.streaming_url')}*
+                {formData.cgiUrl === selectedProfile?.cgiUrl && (
+                  <ProfileCheckIcon check={editChecks.streaming} testId="profile-edit-check-streaming" />
+                )}
+              </Label>
               <Input
                 id="edit-cgiUrl"
                 value={formData.cgiUrl}

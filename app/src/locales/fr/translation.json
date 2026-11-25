@@ -1126,6 +1126,8 @@
     "cgi_url_guessed": "Le serveur n'a pas indiqué son chemin de flux, donc cette URL est une supposition. Si la vue en direct reste vide, vérifiez-la.",
     "stream_ok": "Flux OK",
     "stream_failed": "Flux {{status}}",
+    "check_ok": "Répond",
+    "check_failed": "Échec : {{status}}",
     "switch_profile": "Changer de profil",
     "switching": "Changement...",
     "switched_to": "Basculé vers {{name}}",
