@@ -56,6 +56,18 @@ export const MAX_QUERY_RETRIES = 1;
 export const DEFAULT_QUERY_STALE_TIME_MS = 15000;
 
 /**
+ * Stream path probe (refs #603): one `mode=single` frame from nph-zms per
+ * distinct stream URL, to tell a wrong CGI path or a refused token apart from
+ * a monitor that is just offline. `staleTimeMs` keeps it to one request per URL
+ * per few minutes (no refetch interval). `scale` keeps the frame small.
+ */
+export const ZMS_PROBE = {
+  staleTimeMs: 5 * 60_000,
+  scale: 10,
+  timeoutMs: 10_000,
+} as const;
+
+/**
  * How far back the Server page asks for `Server_Stats` rows. zmstats writes one
  * row a minute, and the API cannot limit to the newest row, so the page asks for
  * this window and takes the last row. The margin covers clock drift between the
