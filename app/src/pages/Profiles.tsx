@@ -45,7 +45,7 @@ import { ProfileUrlDetails } from '../components/profiles/ProfileUrlDetails';
 import { ProfileCheckIcon } from '../components/profiles/ProfileCheckIcon';
 import { useProfileChecks } from '../hooks/useProfileChecks';
 import { ProfileActionsMenu } from '../components/profiles/ProfileActionsMenu';
-import { ProfileStreamBadge } from '../components/profiles/ProfileStreamBadge';
+import { ProfileHealthIcon } from '../components/profiles/ProfileHealthIcon';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -466,6 +466,7 @@ export default function Profiles() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-medium" data-testid="profile-name">{profile.name}</span>
+                          <ProfileHealthIcon profile={profile} />
                           {profile.isDefault && (
                             <Badge variant="secondary" className="text-xs">{t('profiles.default')}</Badge>
                           )}
@@ -479,7 +480,6 @@ export default function Profiles() {
                               ⚠ {t('profiles.no_credentials')}
                             </Badge>
                           )}
-                          <ProfileStreamBadge profile={profile} />
                         </div>
                         <ProfileUrlDetails profile={profile} />
                         {!(profile.username && profile.password) && (

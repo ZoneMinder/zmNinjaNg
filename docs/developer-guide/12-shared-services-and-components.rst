@@ -535,8 +535,9 @@ is ``{ state: 'ok' }``, ``{ state: 'failed', status }``, or ``undefined``
 while running or when there is no status to go on; a disabled profile gets
 none.
 
-**Used by:** ``components/profiles/ProfileUrlDetails.tsx`` (an icon on each
-row of a card's Details) and the edit dialog in ``pages/Profiles.tsx``, which
+**Used by:** ``components/profiles/ProfileHealthIcon.tsx`` (one summary icon
+by the profile name), ``components/profiles/ProfileUrlDetails.tsx`` (an icon on
+each row of a card's Details) and the edit dialog in ``pages/Profiles.tsx``, which
 drops a field's icon once its value differs from the saved one. Both draw
 through ``components/profiles/ProfileCheckIcon.tsx``.
 
