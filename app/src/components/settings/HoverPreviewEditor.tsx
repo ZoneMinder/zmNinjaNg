@@ -14,8 +14,12 @@ import { RowLabel } from './SettingsLayout';
 import { useSettingsSearching } from './settings-search';
 import { cn } from '../../lib/utils';
 import { STORAGE_KEYS } from '../../lib/zmninja-ng-constants';
+import { Platform } from '../../lib/platform';
 import type { HoverPreviewSettings, HoverPreviewPlaybackRate } from '../../stores/settings';
-import { HOVER_PREVIEW_PLAYBACK_RATES } from '../../stores/settings';
+import {
+  HOVER_PREVIEW_PLAYBACK_RATES, MIN_HOVER_PREVIEW_DELAY_MS, DEFAULT_HOVER_PREVIEW_DELAY_MS,
+} from '../../stores/settings';
+import { Input } from '../ui/input';
 
 const HOVER_PREVIEW_RATE_LABELS: Record<HoverPreviewPlaybackRate, string> = {
   50: '0.5x',
@@ -30,9 +34,13 @@ interface HoverPreviewEditorProps {
   onChange: (next: HoverPreviewSettings) => void;
   playbackRate: HoverPreviewPlaybackRate;
   onPlaybackRateChange: (rate: HoverPreviewPlaybackRate) => void;
+  delayMs: number;
+  onDelayChange: (ms: number) => void;
 }
 
-export function HoverPreviewEditor({ value, onChange, playbackRate, onPlaybackRateChange }: HoverPreviewEditorProps) {
+export function HoverPreviewEditor({
+  value, onChange, playbackRate, onPlaybackRateChange, delayMs, onDelayChange,
+}: HoverPreviewEditorProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(() => {
     try {
@@ -65,6 +73,17 @@ export function HoverPreviewEditor({ value, onChange, playbackRate, onPlaybackRa
   ];
 
   const searching = useSettingsSearching();
+
+  // Committed on blur, so typing 1000 doesn't clamp the leading 1 to the minimum.
+  const [delayDraft, setDelayDraft] = useState(String(delayMs));
+  const commitDelay = () => {
+    const v = Math.round(Number(delayDraft));
+    const ms = delayDraft.trim() && Number.isFinite(v)
+      ? Math.max(MIN_HOVER_PREVIEW_DELAY_MS, v)
+      : DEFAULT_HOVER_PREVIEW_DELAY_MS;
+    setDelayDraft(String(ms));
+    if (ms !== delayMs) onDelayChange(ms);
+  };
 
   return (
     <Collapsible open={open || searching} onOpenChange={handleOpenChange}>
@@ -128,6 +147,30 @@ export function HoverPreviewEditor({ value, onChange, playbackRate, onPlaybackRa
             </SelectContent>
           </Select>
         </div>
+        {/* The iOS and Android builds open previews with a long press on its own timer. */}
+        {Platform.isDesktopOrWeb && (
+          <div className="flex items-center justify-between gap-3 px-4 pb-3">
+            <RowLabel
+              label={t('settings.appearance.hover_preview.hover_delay')}
+              desc={t('settings.appearance.hover_preview.hover_delay_desc')}
+            />
+            <div className="flex items-center gap-2 shrink-0">
+              <Input
+                type="number"
+                min={MIN_HOVER_PREVIEW_DELAY_MS}
+                step={100}
+                value={delayDraft}
+                onChange={(e) => setDelayDraft(e.target.value)}
+                onBlur={commitDelay}
+                onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+                className="w-20"
+                aria-label={t('settings.appearance.hover_preview.hover_delay')}
+                data-testid="settings-hover-preview-delay"
+              />
+              <span className="text-xs text-muted-foreground">{t('settings.appearance.hover_preview.delay_unit')}</span>
+            </div>
+          </div>
+        )}
       </CollapsibleContent>
     </Collapsible>
   );

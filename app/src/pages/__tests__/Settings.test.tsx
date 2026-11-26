@@ -242,6 +242,7 @@ describe('Settings Page', () => {
       theme: 'settings-theme-select',
       hoverPreview: 'settings-hover-preview-trigger',
       hoverPreviewPlaybackRate: 'settings-hover-preview-playback-rate',
+      hoverPreviewDelayMs: 'settings-hover-preview-delay',
       insomnia: 'settings-insomnia-switch',
       landscapeFullscreen: 'settings-landscape-fullscreen-switch',
       tvMode: 'settings-tv-mode',

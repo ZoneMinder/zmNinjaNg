@@ -695,7 +695,10 @@
         "live_activity": "Live-Aktivität-Kacheln",
         "montage": "Montage-Kacheln",
         "event_context": "Ereignisse in der Nähe",
-        "replay": "Wiedergabe"
+        "replay": "Wiedergabe",
+        "hover_delay": "Hover-Verzögerung",
+        "hover_delay_desc": "Wie lange die Maus auf einem Vorschaubild ruht, bevor die Vorschau öffnet. Mindestens 300.",
+        "delay_unit": "ms"
       }
     },
     "monitors_per_page": "Monitore pro Seite",

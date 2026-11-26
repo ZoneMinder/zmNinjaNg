@@ -101,6 +101,10 @@ export const HOVER_PREVIEW_PLAYBACK_RATES: readonly HoverPreviewPlaybackRate[] =
 
 export const DEFAULT_HOVER_PREVIEW_PLAYBACK_RATE: HoverPreviewPlaybackRate = 200;
 
+/** How long the mouse rests on a thumbnail before its preview opens (ms). */
+export const MIN_HOVER_PREVIEW_DELAY_MS = 300;
+export const DEFAULT_HOVER_PREVIEW_DELAY_MS = 700;
+
 export const DEFAULT_THUMBNAIL_FALLBACK_CHAIN: ThumbnailFallbackEntry[] = [
   { type: 'alarm', enabled: true },
   { type: 'snapshot', enabled: true },
@@ -427,6 +431,8 @@ export interface ProfileSettings {
   // Playback speed for event hover/longpress preview (ZMS rate percentage).
   // Only affects EventZmsHoverPlayer; live monitor previews are real-time.
   hoverPreviewPlaybackRate: HoverPreviewPlaybackRate;
+  // Mouse rest before a hover preview opens. Touch builds long-press instead.
+  hoverPreviewDelayMs: number;
   // In-app assistant (Ask): on/off, which backend, and per-backend config.
   // The optional API key for the ollama/OpenAI-compatible backend is never
   // stored here (rule 7 settings are plaintext-persisted); it lives in
@@ -618,6 +624,7 @@ export const DEFAULT_SETTINGS: ProfileSettings = {
   showScrollPad: false,
   showMoreBelowCue: true,
   hoverPreviewPlaybackRate: DEFAULT_HOVER_PREVIEW_PLAYBACK_RATE,
+  hoverPreviewDelayMs: DEFAULT_HOVER_PREVIEW_DELAY_MS,
   assistantEnabled: false,
   // Off by default: the assistant already answers from the command palette and
   // the keyboard, and a toolbar it shares with per-page controls is the one

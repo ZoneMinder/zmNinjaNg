@@ -695,7 +695,10 @@
         "live_activity": "Tuiles d'activité en direct",
         "montage": "Tuiles de montage",
         "event_context": "Événements à proximité",
-        "replay": "Rejouer"
+        "replay": "Rejouer",
+        "hover_delay": "Délai de survol",
+        "hover_delay_desc": "Durée pendant laquelle la souris reste sur une miniature avant l'ouverture de l'aperçu. Au moins 300.",
+        "delay_unit": "ms"
       }
     },
     "monitors_per_page": "Moniteurs par page",

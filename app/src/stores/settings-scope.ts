@@ -25,6 +25,7 @@ export const SELECTION_SCOPED_SETTINGS = [
   'theme',
   'hoverPreview',
   'hoverPreviewPlaybackRate',
+  'hoverPreviewDelayMs',
   'insomnia',
   'landscapeFullscreen',
   'tvMode',

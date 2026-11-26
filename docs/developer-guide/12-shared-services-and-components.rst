@@ -1889,10 +1889,14 @@ long-press the same tile on a phone and you get the same preview.
      renderPreview: () => ReactNode;
      children: ReactNode;
      previewWidth?: number;   // default UI_INTERACTIONS.previewWidthPx (400)
-     hoverDelayMs?: number;   // default UI_INTERACTIONS.hoverDelayMs (700)
+     hoverDelayMs?: number;   // default: the hoverPreviewDelayMs setting (700)
      testId?: string;
      className?: string;
    }
+
+Callers don't pass ``hoverDelayMs`` (only tests do). Without it the component
+reads ``hoverPreviewDelayMs`` from ``useCurrentProfile()`` settings, so every
+surface follows the Hover delay picker under Settings > Previews.
 
 ``children`` is the trigger. ``renderPreview`` is a function, not a node, and
 runs only while the preview is open. That is what lets ``MonitorHoverPreview``
