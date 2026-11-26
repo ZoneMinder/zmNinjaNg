@@ -59,6 +59,7 @@ export function HoverPreviewEditor({ value, onChange, playbackRate, onPlaybackRa
     { key: 'notifications', labelKey: 'settings.appearance.hover_preview.notifications' },
     { key: 'assistant', labelKey: 'settings.appearance.hover_preview.assistant' },
     { key: 'liveActivity', labelKey: 'settings.appearance.hover_preview.live_activity' },
+    { key: 'montage', labelKey: 'settings.appearance.hover_preview.montage' },
     { key: 'eventContext', labelKey: 'settings.appearance.hover_preview.event_context' },
     { key: 'replay', labelKey: 'settings.appearance.hover_preview.replay' },
   ];

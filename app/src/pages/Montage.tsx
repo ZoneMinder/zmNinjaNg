@@ -760,6 +760,7 @@ export default function Montage() {
             focusedMonitorIndex={focusedMonitorIndex}
             showMonitorLabels={showMonitorLabels}
             objectFit={settings.montageFeedFit}
+            hoverPreview={settings.hoverPreview.montage}
             accessToken={accessToken}
             isMonitorPinned={isMonitorPinned}
             onPinToggle={togglePinMonitor}

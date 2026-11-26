@@ -709,6 +709,7 @@
         "playback_speed": "Скорость воспроизведения",
         "playback_speed_desc": "Скорость предпросмотра событий при наведении/долгом нажатии.",
         "live_activity": "Плитки Live Activity",
+        "montage": "Плитки монтажа",
         "event_context": "События рядом",
         "replay": "Воспроизвести"
       }

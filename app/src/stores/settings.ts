@@ -68,6 +68,8 @@ export interface HoverPreviewSettings {
   assistant: boolean;
   /** Alarm tiles on Live Activity. */
   liveActivity: boolean;
+  /** Montage tiles; off by default for the same reason as liveActivity. */
+  montage: boolean;
   /** Rows in the "around this event" panel (refs #494). */
   eventContext: boolean;
   /** Tiles in the panel's Replay grid; mirrors the tile's own picture. */
@@ -87,6 +89,7 @@ export const DEFAULT_HOVER_PREVIEW: HoverPreviewSettings = {
   // size, so a hover preview opens a second connection for a bigger copy of
   // what is on screen. Worth having on a wall of small tiles, not by default.
   liveActivity: false,
+  montage: false,
   eventContext: true,
   replay: true,
 };

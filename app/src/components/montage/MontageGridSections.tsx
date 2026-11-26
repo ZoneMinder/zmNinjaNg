@@ -101,6 +101,8 @@ interface MontageGridSectionsProps {
   focusedMonitorIndex: number;
   showMonitorLabels: boolean;
   objectFit: MonitorFeedFit;
+  /** The Montage hover-preview setting; dropped while the layout is edited. */
+  hoverPreview: boolean;
   accessToken: string | null;
   isMonitorPinned: (tileId: string) => boolean;
   onPinToggle: (tileId: string) => void;
@@ -149,6 +151,7 @@ export function MontageGridSections({
   focusedMonitorIndex,
   showMonitorLabels,
   objectFit,
+  hoverPreview,
   accessToken,
   isMonitorPinned,
   onPinToggle,
@@ -241,6 +244,8 @@ export function MontageGridSections({
               // learning a second way to be off.
               paused={paused || isTileGated(tileId)}
               forceViewMode={forceViewMode}
+              // A preview popping up under a tile being dragged gets in the way.
+              hoverPreview={hoverPreview && !isEditMode}
             />
           </MontageTileErrorBoundary>
         </div>
