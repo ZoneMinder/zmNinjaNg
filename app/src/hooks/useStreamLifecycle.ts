@@ -83,7 +83,7 @@ async function quitAndReport(
 async function quitStreamForParams(
   params: StreamCleanupParams,
   logFn: ComponentLogger,
-  reason: 'unmount' | 'profile-switch' | 'disable' | 'view-mode' | 'scale',
+  reason: 'unmount' | 'profile-switch' | 'disable' | 'view-mode' | 'scale' | 'token',
 ): Promise<void> {
   if (
     params.viewMode !== 'streaming' ||
@@ -362,11 +362,30 @@ export function useStreamLifecycle({
   // Both directions then mint a fresh key. The new mode needs one (a snapshot
   // URL carries a connkey too), and reusing the quit key risks colliding with
   // whatever server-side state it left behind.
-  const prevStreamIdentityRef = useRef({ viewMode, monitorId, enabled, minStreamingPort, scale });
+  //
+  // A change of owning profile mints a fresh key too. A tile keyed by bare
+  // monitor id stays mounted across a profile switch when the new server has
+  // a monitor with the same id, and would otherwise carry the old server's key
+  // over to the new one (refs #609).
+  //
+  // So does a new access token. The token is part of the stream URL, so the
+  // <img> re-requests the same connkey under a new URL while zms still holds
+  // the first request's process; the login at the end of a profile switch did
+  // this to every tile, and some sat 20s+ before zms answered (refs #609).
+  // A moved portal (the server map arriving after login re-homes a monitor)
+  // gets a fresh key too, without a quit: the old request went to the other
+  // host, and the params ref already points at the new one.
+  const prevStreamIdentityRef = useRef({ viewMode, monitorId, enabled, minStreamingPort, scale, profileId, accessToken, portalUrl });
   useEffect(() => {
     const prev = prevStreamIdentityRef.current;
-    prevStreamIdentityRef.current = { viewMode, monitorId, enabled, minStreamingPort, scale };
-    if (prev.viewMode === viewMode && prev.scale === scale) return;
+    prevStreamIdentityRef.current = { viewMode, monitorId, enabled, minStreamingPort, scale, profileId, accessToken, portalUrl };
+    if (
+      prev.viewMode === viewMode &&
+      prev.scale === scale &&
+      prev.profileId === profileId &&
+      prev.accessToken === accessToken &&
+      prev.portalUrl === portalUrl
+    ) return;
     // Only a mode flip on an otherwise unchanged stream is this effect's to
     // handle. When the enabled flag moved in the same commit, the disable
     // teardown or the regeneration effect already owns that key. When the
@@ -387,7 +406,18 @@ export function useStreamLifecycle({
     // and re-enabling mints a fresh one, so there is nothing to do here.
     if (!enabled || !monitorId) return;
 
-    if (prev.viewMode === 'streaming') {
+    // A profile switch quits every stream on the old server before it changes
+    // the current profile (quitAllActiveStreams), and the params ref already
+    // points at the new server, which never had this key.
+    // A stream opened before any token existed never started, so it has
+    // nothing to quit.
+    const tokenOnly = prev.viewMode === viewMode && prev.scale === scale && prev.profileId === profileId;
+    if (
+      prev.viewMode === 'streaming' &&
+      prev.profileId === profileId &&
+      prev.portalUrl === portalUrl &&
+      !(tokenOnly && !prev.accessToken)
+    ) {
       // Both values are forced back to what the key was opened under. The
       // params effect above runs earlier in this same commit and has already
       // rebuilt the ref for the NEW mode, where viewMode is 'snapshot' (which
@@ -404,7 +434,7 @@ export function useStreamLifecycle({
           minStreamingPort: prev.minStreamingPort,
         },
         logFn,
-        prev.viewMode === viewMode ? 'scale' : 'view-mode',
+        prev.viewMode !== viewMode ? 'view-mode' : prev.scale !== scale ? 'scale' : 'token',
       );
     }
 
@@ -416,7 +446,7 @@ export function useStreamLifecycle({
     // current stream was opened on, even when it changes without a flip (the
     // force-disable-multi-port setting does that).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewMode, monitorId, enabled, minStreamingPort, scale]);
+  }, [viewMode, monitorId, enabled, minStreamingPort, scale, profileId, accessToken, portalUrl]);
 
   // Capture the live media element on every render. The unmount cleanup runs as
   // a passive effect, by which point React has already nulled mediaRef, so we

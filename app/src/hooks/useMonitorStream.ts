@@ -280,10 +280,30 @@ export function useMonitorStream({
     return () => clearInterval(interval);
   }, [enabled, effectiveViewMode, settings.snapshotRefreshInterval]);
 
+  // The token each connkey was minted under. A new token re-mints the key
+  // (useStreamLifecycle), but only in an effect after the render that brought
+  // the token, and a URL built in that render sends the old connkey again
+  // under a new URL while zms still holds the first request (refs #609).
+  // Until the new key lands, there is no URL. A key minted before any token
+  // existed never carried a request, so it takes the first token that comes.
+  // The host counts the same way: the server map can re-home a monitor after
+  // login, and the old connkey must not go out to the new server.
+  // Recorded by adjusting state during render, so the render that sees a new
+  // key re-runs with the record already updated.
+  const streamHost = recordingUrl || currentProfile?.cgiUrl;
+  const [keyMint, setKeyMint] = useState({ connKey, accessToken, streamHost });
+  if (!Object.is(keyMint.connKey, connKey)) {
+    setKeyMint({ connKey, accessToken, streamHost });
+  } else if (!keyMint.accessToken && accessToken) {
+    setKeyMint({ ...keyMint, accessToken });
+  }
+  const keyMatchesToken =
+    Object.is(keyMint.connKey, connKey) && keyMint.accessToken === accessToken && keyMint.streamHost === streamHost;
+
   // Build stream URL - ONLY when we have a valid connKey to prevent zombie
   // streams, and only while enabled: a disabled hook exposes no URL, so nothing
   // can mount an <img> on a connkey the disable teardown has already quit.
-  const streamUrl = enabled && currentProfile && connKey !== 0 && isAccessTokenFresh
+  const streamUrl = enabled && currentProfile && connKey !== 0 && isAccessTokenFresh && keyMatchesToken
     ? getStreamUrl(recordingUrl || currentProfile.cgiUrl, monitorId, {
       mode: effectiveViewMode === 'snapshot' && !snapshotSendsOneJpeg ? 'single' : 'jpeg',
       frames: snapshotSendsOneJpeg ? 1 : undefined,

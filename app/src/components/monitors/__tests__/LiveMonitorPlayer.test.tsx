@@ -184,6 +184,38 @@ describe('LiveMonitorPlayer MJPEG recovery', () => {
     expect(mockMjpegReturn.reportStreamError).toHaveBeenCalledTimes(1);
   });
 
+  // A profile switch keeps a tile mounted when the new server has a monitor
+  // with the same id. Everything this player learned about the old server's
+  // stream (an error latch, go2rtc failure, frame state) must not carry over:
+  // the tile stayed blank until the view was re-entered (refs #609).
+  it('starts fresh when the owning profile changes under a mounted tile', () => {
+    const other = { ...profile, id: asProfileId('profile-b') } as Profile;
+    const { rerender } = render(withQuery(<LiveMonitorPlayer monitor={monitor} profile={profile} />));
+
+    fireEvent.error(screen.getByTestId('video-player-mjpeg'));
+    expect(screen.queryByTestId('video-player-mjpeg')).not.toBeInTheDocument();
+
+    rerender(withQuery(<LiveMonitorPlayer monitor={monitor} profile={other} />));
+
+    expect(screen.getByTestId('video-player-mjpeg')).toHaveAttribute('src', 'https://t/stream?connkey=1');
+  });
+
+  // A detached <img> keeps loading. An MJPEG response never ends, so the old
+  // request stays open, and Chromium holds a second request for the same URL
+  // behind it on the HTTP cache lock for ~20s: the tile sat black for that
+  // long after a profile switch (refs #609). Dropping the element has to drop
+  // its request too.
+  it('cancels the stream request of an <img> that leaves the page', async () => {
+    render(withQuery(<LiveMonitorPlayer monitor={monitor} profile={profile} />));
+    const img = screen.getByTestId('video-player-mjpeg');
+
+    fireEvent.error(img);
+    expect(screen.queryByTestId('video-player-mjpeg')).not.toBeInTheDocument();
+
+    await Promise.resolve();
+    expect(img.getAttribute('src')).toBeNull();
+  });
+
   it('asks the stream hook to auto-reconnect when the MJPEG <img> errors', () => {
     render(withQuery(<LiveMonitorPlayer monitor={monitor} profile={profile} />));
     fireEvent.error(screen.getByTestId('video-player-mjpeg'));

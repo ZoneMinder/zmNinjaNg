@@ -1348,6 +1348,31 @@ profile's SSL-trust setting can flip before the old self-signed server's
 ``nph-zms`` process is orphaned. A central quit keyed only by monitor ID could
 not do this either, having no record of which server each stream used.
 
+Not every tile unmounts on a switch. Single-server tiles are keyed by bare
+monitor ID, so a tile stays mounted when the new server has a monitor with the
+same ID. ``LiveMonitorPlayer`` is keyed on its ``profile`` id, so such a
+player remounts and drops what it learned about the old server's stream (the
+MJPEG error latch, a cached go2rtc failure, frame state). The hook also treats
+a ``profileId`` change like a scale change and mints a fresh key, for callers
+that use it without the player, but sends no ``CMD_QUIT``: the switch already
+quit the old key on the old server, and the new server never had it
+(refs #609).
+
+The switch also changes a mounted stream's token and host after it opens.
+Tiles mount with the stored token, then the switch's login mints a new one, and
+on a multi-server profile the server map arrives later and can move a monitor
+to another host. ZoneMinder will not serve one connkey under a second token or
+on a second host, so the hook mints a fresh key on either change (with a
+``CMD_QUIT`` for a token change on the same host). Until that key exists,
+``useMonitorStream`` builds no URL, so the old key never pairs with the new
+token or host.
+
+An ``<img>`` that leaves the page keeps downloading its MJPEG response, which
+never ends. Chromium serializes GETs for the same URL behind its cache lock, so
+a new tile on that URL waited about 20 seconds. ``LiveMonitorPlayer``'s img ref
+cleanup removes ``src`` once the element is detached, which cancels the
+request.
+
 **Used by:** ``hooks/useMonitorStream.ts``,
 ``components/monitors/MonitorHoverPreview.tsx``.
 
