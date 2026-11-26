@@ -630,6 +630,23 @@ function LiveMonitorPlayerForProfile({
     onLoad?.();
   }, [onLoad, mjpegStream, showMjpegImg]);
 
+  // A detached <img> keeps loading, and an MJPEG response never ends. Left
+  // open, that request also holds Chromium's HTTP cache lock for its URL, so
+  // the next <img> asking for the same URL waits ~20s before it is even sent
+  // (a profile switch left tiles black that long, refs #609). Dropping the src
+  // once the element is really out of the page cancels it. The microtask lets
+  // StrictMode's detach-and-reattach of a still-mounted node pass untouched.
+  const attachMjpegImg = useCallback((el: HTMLImageElement | null) => {
+    imgRef.current = el;
+    if (!el) return;
+    return () => {
+      imgRef.current = null;
+      queueMicrotask(() => {
+        if (!el.isConnected) el.removeAttribute('src');
+      });
+    };
+  }, [imgRef]);
+
   const handleMjpegError = useCallback(() => {
     // Log so an occlusion-induced drop is visible. The <img> onError is
     // otherwise silent, which made this look like "0 logs". refs #150
@@ -789,7 +806,7 @@ function LiveMonitorPlayerForProfile({
 
       {showMjpegElement && (
         <img
-          ref={mjpegStream.imgRef}
+          ref={attachMjpegImg}
           className={`w-full h-full ${className}`}
           // visibility, not conditional mounting: the element has to be in the
           // tree to load at all, and it must not paint until it has a frame.

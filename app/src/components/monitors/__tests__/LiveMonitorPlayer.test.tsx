@@ -200,6 +200,22 @@ describe('LiveMonitorPlayer MJPEG recovery', () => {
     expect(screen.getByTestId('video-player-mjpeg')).toHaveAttribute('src', 'https://t/stream?connkey=1');
   });
 
+  // A detached <img> keeps loading. An MJPEG response never ends, so the old
+  // request stays open, and Chromium holds a second request for the same URL
+  // behind it on the HTTP cache lock for ~20s: the tile sat black for that
+  // long after a profile switch (refs #609). Dropping the element has to drop
+  // its request too.
+  it('cancels the stream request of an <img> that leaves the page', async () => {
+    render(withQuery(<LiveMonitorPlayer monitor={monitor} profile={profile} />));
+    const img = screen.getByTestId('video-player-mjpeg');
+
+    fireEvent.error(img);
+    expect(screen.queryByTestId('video-player-mjpeg')).not.toBeInTheDocument();
+
+    await Promise.resolve();
+    expect(img.getAttribute('src')).toBeNull();
+  });
+
   it('asks the stream hook to auto-reconnect when the MJPEG <img> errors', () => {
     render(withQuery(<LiveMonitorPlayer monitor={monitor} profile={profile} />));
     fireEvent.error(screen.getByTestId('video-player-mjpeg'));
