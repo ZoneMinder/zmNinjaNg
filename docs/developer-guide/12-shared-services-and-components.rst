@@ -541,7 +541,9 @@ profile, and any other one only when the user opens its Details. The portal chec
 ``probePortal(portalUrl)`` in ``lib/zm/zms-probe.ts``: one GET of the portal
 page, cached under ``queryKeys.portalProbe`` for ``ZMS_PROBE.staleTimeMs``,
 where any status below 400 counts as answering (ZoneMinder serves its login
-page or a redirect). The API check reads the profile's ``queryKeys.monitors``
+page or a redirect). Both probes accept any status, so the HTTP layer logs
+their answer at DEBUG; a failed check adds its own WARN line under ``HTTP``
+with the host, path and status. The API check reads the profile's ``queryKeys.monitors``
 query: data means it answers, and an error carrying ``status`` means it
 failed. The stream check is the profile's ``useZmsProbes`` results: failed
 when any URL fails, ok when any answers, since a multi-server install can list

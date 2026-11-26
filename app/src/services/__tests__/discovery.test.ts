@@ -30,6 +30,7 @@ vi.mock('../../api/auth', () => ({
 vi.mock('../../lib/logger', () => ({
   log: {
     discovery: vi.fn(),
+    http: vi.fn(),
   },
   LogLevel: {
     DEBUG: 'DEBUG',

@@ -7,7 +7,8 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 const httpGet = vi.fn();
 vi.mock('../../http', () => ({ httpGet: (...args: unknown[]) => httpGet(...args) }));
 
-import { probeZms, pickProbeTargets } from '../zms-probe';
+import { probeZms, probePortal, pickProbeTargets } from '../zms-probe';
+import { log, LogLevel } from '../../logger';
 import type { MonitorData } from '../../../api/types';
 
 const CGI = 'https://zm.example.com/zm/cgi-bin/nph-zms';
@@ -81,5 +82,39 @@ describe('pickProbeTargets', () => {
 
   it('probes nothing without monitors', () => {
     expect(pickProbeTargets([], urlFor)).toEqual([]);
+  });
+});
+
+/**
+ * A failed check is a WARN line, so filtering the console to warnings shows a
+ * broken streaming or portal URL (refs #613). The probes accept any status, so
+ * the HTTP layer only logs the answer at DEBUG.
+ */
+describe('failed checks are logged', () => {
+  beforeEach(() => httpGet.mockReset());
+
+  it('warns with the stream path and status, and no token', async () => {
+    const warn = vi.spyOn(log, 'http').mockImplementation(() => {});
+    httpGet.mockResolvedValueOnce(reply(404, 'text/html'));
+
+    await probeZms(CGI, '3', 'secret-token');
+
+    const warned = warn.mock.calls.filter(([, level]) => level === LogLevel.WARN);
+    expect(warned).toHaveLength(1);
+    expect(JSON.stringify(warned[0])).toContain('/zm/cgi-bin/nph-zms');
+    expect(JSON.stringify(warned[0])).toContain('404');
+    expect(JSON.stringify(warned[0])).not.toContain('secret-token');
+    warn.mockRestore();
+  });
+
+  it('warns when the portal answers with an error status', async () => {
+    const warn = vi.spyOn(log, 'http').mockImplementation(() => {});
+    httpGet.mockResolvedValueOnce(reply(503, 'text/html'));
+
+    await probePortal('https://zm.example.com/zm');
+
+    const warned = warn.mock.calls.filter(([, level]) => level === LogLevel.WARN);
+    expect(JSON.stringify(warned)).toContain('503');
+    warn.mockRestore();
   });
 });
