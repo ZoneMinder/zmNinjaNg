@@ -42,7 +42,7 @@ function answer(portal: number, stream: number) {
   });
 }
 
-async function renderDetails(monitors: unknown = monitorsBody) {
+async function renderDetails(monitors: unknown = monitorsBody, open = true) {
   const [p] = seedProfiles([
     makeProfile('p1', {
       portalUrl: 'http://p1.test/zm',
@@ -57,7 +57,8 @@ async function renderDetails(monitors: unknown = monitorsBody) {
       <ProfileUrlDetails profile={p} />
     </QueryClientProvider>,
   );
-  await userEvent.setup().click(screen.getByTestId(`profile-urls-${p.id}-toggle`));
+  if (open) await userEvent.setup().click(screen.getByTestId(`profile-urls-${p.id}-toggle`));
+  return p;
 }
 
 describe('ProfileUrlDetails', () => {
@@ -66,6 +67,14 @@ describe('ProfileUrlDetails', () => {
     clearAllServerMaps();
     resetProfileFixture();
     resetFakeStoreGates();
+  });
+
+  it('asks the server nothing until Details is opened', async () => {
+    answer(200, 200);
+    await renderDetails(monitorsBody, false);
+    await new Promise((r) => setTimeout(r, 50));
+
+    expect(httpGet.mock.calls).toEqual([]);
   });
 
   it('marks portal, API and streaming green when each answers', async () => {

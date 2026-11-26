@@ -63,4 +63,27 @@ describe('Profiles edit dialog address checks', () => {
     expect(screen.queryByTestId(/profile-edit-check-streaming/)).not.toBeInTheDocument();
     expect(screen.getByTestId('profile-edit-check-portal-ok')).toHaveAttribute('aria-label', 'profiles.check_ok');
   });
+
+  // Checking every row logged in to servers nobody was using; only the
+  // current profile's row gets a health icon now.
+  it('checks only the current profile', async () => {
+    const monitors = { monitors: [{ Monitor: { Id: '7', Name: 'Door', Function: 'Modect', Enabled: '1', Capturing: 'Always' } }] };
+    const [p1, p2] = seedProfiles([
+      makeProfile('p1', { cgiUrl: 'http://p1.test/cgi-bin/nph-zms' }),
+      makeProfile('p2', { cgiUrl: 'http://p2.test/cgi-bin/nph-zms' }),
+    ]);
+    installApiClient(p1.id, fakeApiClient({ '/monitors.json': monitors }));
+    const other = fakeApiClient({ '/monitors.json': monitors });
+    installApiClient(p2.id, other);
+    httpGet.mockResolvedValue({ status: 200, statusText: '', data: '', headers: { 'content-type': 'image/jpeg' } });
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <Profiles />
+      </QueryClientProvider>,
+    );
+
+    expect(await screen.findByTestId('profile-health-ok')).toHaveAttribute('aria-label', 'profiles.health_ok');
+    expect(httpGet.mock.calls.filter(([url]) => String(url).includes('p2.test'))).toEqual([]);
+    expect(other.calls).toEqual([]);
+  });
 });

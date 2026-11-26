@@ -466,7 +466,8 @@ export default function Profiles() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-medium" data-testid="profile-name">{profile.name}</span>
-                          <ProfileHealthIcon profile={profile} />
+                          {/* Current only: checking another row logs in to its server. */}
+                          {profile.id === currentProfile?.id && <ProfileHealthIcon profile={profile} />}
                           {profile.isDefault && (
                             <Badge variant="secondary" className="text-xs">{t('profiles.default')}</Badge>
                           )}

@@ -524,7 +524,9 @@ Settings > Live Streaming) and ``components/monitors/ZmsProbeBanner.tsx`` (an
 ``ErrorBanner`` on Monitors, Montage, and Monitor detail when a probe fails).
 
 ``useProfileChecks(profile)`` (``hooks/useProfileChecks.ts``) adds the other
-two addresses for the Profiles screen. The portal check is
+two addresses for the Profiles screen. Checking a profile that isn't current
+builds its session and logs in to its server, so the screen checks the current
+profile, and any other one only when the user opens its Details. The portal check is
 ``probePortal(portalUrl)`` in ``lib/zm/zms-probe.ts``: one GET of the portal
 page, cached under ``queryKeys.portalProbe`` for ``ZMS_PROBE.staleTimeMs``,
 where any status below 400 counts as answering (ZoneMinder serves its login
@@ -538,8 +540,9 @@ while running or when there is no status to go on; a disabled profile gets
 none.
 
 **Used by:** ``components/profiles/ProfileHealthIcon.tsx`` (one summary icon
-by the profile name), ``components/profiles/ProfileUrlDetails.tsx`` (an icon on
-each row of a card's Details) and the edit dialog in ``pages/Profiles.tsx``, which
+by the current profile's name),
+``components/profiles/ProfileUrlDetails.tsx`` (an icon on each row of a card's
+Details, mounted only while Details is open) and the edit dialog in ``pages/Profiles.tsx``, which
 drops a field's icon once its value differs from the saved one. Both draw
 through ``components/profiles/ProfileCheckIcon.tsx``.
 
