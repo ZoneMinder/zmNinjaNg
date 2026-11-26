@@ -93,6 +93,29 @@ describe('ProfileUrlDetails', () => {
     await waitFor(() => expect([probes(), portals()]).toEqual([2, 2]));
   });
 
+  // React Query keeps the last good data next to a refetch error, so a
+  // profile whose API URL broke still held a monitor list (refs #613).
+  it('marks the API red when a refetch fails, even with an old monitor list cached', async () => {
+    answer(200, 200);
+    let apiUp = true;
+    const monitors = () => {
+      if (!apiUp) throw Object.assign(new Error('Not Found'), { status: 404 });
+      return monitorsBody;
+    };
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const first = await renderDetails(monitors, true, client);
+    await screen.findByTestId('profile-url-check-api-ok');
+    first.unmount();
+
+    apiUp = false;
+    await renderDetails(monitors, true, client);
+
+    expect(await screen.findByTestId('profile-url-check-api-failed')).toHaveAttribute(
+      'aria-label',
+      'profiles.check_failed:{"status":404}',
+    );
+  });
+
   it('marks portal, API and streaming green when each answers', async () => {
     answer(200, 200);
     await renderDetails();

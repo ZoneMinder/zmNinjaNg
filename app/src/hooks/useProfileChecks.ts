@@ -56,7 +56,11 @@ export function useProfileChecks(profile: Profile | null | undefined): ProfileCh
       portal.data?.state === 'ok' ? { state: 'ok' }
       : portal.data?.state === 'failed' ? { state: 'failed', status: portal.data.status }
       : undefined,
-    api: monitors.data ? { state: 'ok' } : errorStatus ? { state: 'failed', status: errorStatus } : undefined,
+    // The error first: a failed refetch keeps the last good data alongside it,
+    // and that data can come from an API URL the profile no longer uses.
+    api: monitors.isError
+      ? (errorStatus ? { state: 'failed', status: errorStatus } : undefined)
+      : monitors.data ? { state: 'ok' } : undefined,
     streaming:
       failedStream?.state === 'failed' ? { state: 'failed', status: failedStream.status }
       // One answering path is enough: a second server the app can't reach
