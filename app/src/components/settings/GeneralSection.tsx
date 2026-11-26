@@ -135,6 +135,8 @@ export function GeneralSection({
             onChange={(next) => update('hoverPreview', next)}
             playbackRate={settings.hoverPreviewPlaybackRate}
             onPlaybackRateChange={(rate) => update('hoverPreviewPlaybackRate', rate)}
+            delayMs={settings.hoverPreviewDelayMs}
+            onDelayChange={(ms) => update('hoverPreviewDelayMs', ms)}
           />
 
           {/* Same key and bucket as the sidebar's Insomnia toggle. */}

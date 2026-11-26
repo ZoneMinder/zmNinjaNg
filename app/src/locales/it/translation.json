@@ -695,7 +695,10 @@
         "live_activity": "Riquadri attività live",
         "montage": "Riquadri montage",
         "event_context": "Eventi vicini",
-        "replay": "Riproduci"
+        "replay": "Riproduci",
+        "hover_delay": "Ritardo al passaggio",
+        "hover_delay_desc": "Quanto resta il mouse su una miniatura prima che si apra l'anteprima. Almeno 300.",
+        "delay_unit": "ms"
       }
     },
     "monitors_per_page": "Monitor per pagina",

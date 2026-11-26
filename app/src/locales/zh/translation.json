@@ -695,7 +695,10 @@
         "live_activity": "实时活动图块",
         "montage": "蒙太奇图块",
         "event_context": "附近事件",
-        "replay": "回放"
+        "replay": "回放",
+        "hover_delay": "悬停延迟",
+        "hover_delay_desc": "鼠标在缩略图上停留多久后打开预览。最少 300。",
+        "delay_unit": "毫秒"
       }
     },
     "monitors_per_page": "每页监视器数量",

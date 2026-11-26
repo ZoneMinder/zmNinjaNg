@@ -57,6 +57,8 @@ import { createPortal } from 'react-dom';
 import { Platform } from '../../lib/platform';
 import { UI_INTERACTIONS, Z_INDEX } from '../../lib/zmninja-ng-constants';
 import { useCapacitorListener } from '../../hooks/useCapacitorListener';
+import { useCurrentProfile } from '../../hooks/useCurrentProfile';
+import { DEFAULT_HOVER_PREVIEW_DELAY_MS } from '../../stores/settings';
 
 /**
  * Module-level reference count of open hover previews. Multiple
@@ -101,7 +103,7 @@ export interface HoverPreviewProps {
   renderPreview: () => ReactNode;
   /** Trigger element(s). */
   children: ReactNode;
-  /** Delay before opening, in ms. Defaults to 400. */
+  /** Delay before opening, in ms. Defaults to the Hover delay setting. */
   hoverDelayMs?: number;
   /** data-testid on the preview portal root. */
   testId?: string;
@@ -116,11 +118,12 @@ export function HoverPreview({
   aspectRatio,
   renderPreview,
   children,
-  hoverDelayMs = UI_INTERACTIONS.hoverDelayMs,
+  hoverDelayMs,
   testId,
   className = 'w-full h-full',
   disabled = false,
 }: HoverPreviewProps) {
+  const settingsDelayMs = useCurrentProfile().settings?.hoverPreviewDelayMs ?? DEFAULT_HOVER_PREVIEW_DELAY_MS;
   const anchorRef = useRef<HTMLDivElement | null>(null);
   const timerRef = useRef<number | null>(null);
   const startRectRef = useRef<Rect | null>(null);
@@ -168,7 +171,7 @@ export function HoverPreview({
   const handleEnter = () => {
     if (!Platform.isDesktopOrWeb || disabled) return;
     clearTimer();
-    timerRef.current = window.setTimeout(openFromAnchor, hoverDelayMs);
+    timerRef.current = window.setTimeout(openFromAnchor, hoverDelayMs ?? settingsDelayMs);
   };
 
   const handleLeave = () => {

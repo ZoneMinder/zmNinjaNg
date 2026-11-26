@@ -695,7 +695,10 @@
         "live_activity": "Mosaicos de Actividad en vivo",
         "montage": "Mosaicos de Montaje",
         "event_context": "Eventos cercanos",
-        "replay": "Reproducir"
+        "replay": "Reproducir",
+        "hover_delay": "Retraso al pasar",
+        "hover_delay_desc": "Cuánto tiempo descansa el ratón sobre una miniatura antes de abrir la vista previa. Mínimo 300.",
+        "delay_unit": "ms"
       }
     },
     "monitors_per_page": "Monitores por página",

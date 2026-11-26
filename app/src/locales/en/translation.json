@@ -695,7 +695,10 @@
         "live_activity": "Live Activity tiles",
         "montage": "Montage tiles",
         "event_context": "Nearby events",
-        "replay": "Replay"
+        "replay": "Replay",
+        "hover_delay": "Hover delay",
+        "hover_delay_desc": "How long the mouse rests on a thumbnail before its preview opens. At least 300.",
+        "delay_unit": "ms"
       }
     },
     "monitors_per_page": "Monitors per page",
