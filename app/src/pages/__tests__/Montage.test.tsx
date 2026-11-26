@@ -176,12 +176,14 @@ vi.mock('../../components/monitors/MontageMonitor', () => ({
     reduceStream,
     paused,
     forceViewMode,
+    hoverPreview,
   }: {
     monitor: { Id: string; Name: string };
     profileChip?: string;
     reduceStream?: boolean;
     paused?: boolean;
     forceViewMode?: string;
+    hoverPreview?: boolean;
   }) => {
     pausedRenders.push(paused ?? false);
     return (
@@ -195,6 +197,7 @@ vi.mock('../../components/monitors/MontageMonitor', () => ({
           data-reduce-stream={String(reduceStream ?? false)}
           data-paused={String(paused ?? false)}
           data-force-view-mode={forceViewMode ?? 'none'}
+          data-hover-preview={String(hoverPreview ?? false)}
         />
       </div>
     );
@@ -389,6 +392,40 @@ describe('Montage Page', () => {
     expect(screen.getByTestId('montage-monitor-2')).toHaveTextContent('Back Door');
     expect(screen.queryByTestId('montage-profile-chip')).not.toBeInTheDocument();
     expect(screen.getByTestId('montage-edit-toggle')).not.toBeDisabled();
+  });
+
+  it('gives tiles the hover preview only when the Montage setting is on', () => {
+    const monitors = {
+      monitors: [{ profileId: 'profile-1', profileName: 'Home', item: monitor('1', 'Front Door') }],
+      errors: [],
+      isLoading: false,
+      refetchProfile: vi.fn(),
+    };
+    useScopedMonitorsMock.mockReturnValue(monitors);
+
+    singleProfile();
+    const { unmount } = render(<Montage />);
+    expect(screen.getByTestId('montage-tile-tuning')).toHaveAttribute('data-hover-preview', 'false');
+    unmount();
+
+    singleProfile({ hoverPreview: { ...DEFAULT_SETTINGS.hoverPreview, montage: true } });
+    render(<Montage />);
+    expect(screen.getByTestId('montage-tile-tuning')).toHaveAttribute('data-hover-preview', 'true');
+  });
+
+  it('drops the hover preview while the layout is being edited', () => {
+    singleProfile({ hoverPreview: { ...DEFAULT_SETTINGS.hoverPreview, montage: true } });
+    useScopedMonitorsMock.mockReturnValue({
+      monitors: [{ profileId: 'profile-1', profileName: 'Home', item: monitor('1', 'Front Door') }],
+      errors: [],
+      isLoading: false,
+      refetchProfile: vi.fn(),
+    });
+
+    render(<Montage />);
+    fireEvent.click(screen.getByTestId('montage-edit-toggle'));
+
+    expect(screen.getByTestId('montage-tile-tuning')).toHaveAttribute('data-hover-preview', 'false');
   });
 
   // Layout is a view preference, so All mode edits it against the ALL bucket

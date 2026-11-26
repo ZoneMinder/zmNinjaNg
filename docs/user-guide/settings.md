@@ -83,6 +83,7 @@ Previews enlarge a feed or event in place when you hover over it on desktop, or 
 - Notifications
 - Assistant cards (the event cards under a Ninjii answer)
 - Live Activity tiles (off by default: the tile already streams that camera, so the preview opens a second connection for a larger copy)
+- Montage tiles (off by default, for the same reason; no preview while you're editing the layout)
 - Nearby events
 - Replay (tiles in the nearby events Replay grid; the preview copies the tile's own picture, so it opens no second connection)
 

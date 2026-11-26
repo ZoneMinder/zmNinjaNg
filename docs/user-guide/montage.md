@@ -10,6 +10,8 @@ The Montage on desktop
 
 The Montage view shows multiple camera feeds at once in a drag-and-drop grid.
 
+On a computer, hovering a tile can open an enlarged live preview, the same one the monitor and event lists offer (long-press on mobile). It's off by default, since the tile is already streaming that camera and the preview opens a second connection for a bigger copy. Turn it on under Settings ▸ General ▸ Previews ▸ **Montage tiles**. Tiles don't preview while you're in Edit Mode.
+
 ## Toolbar
 
 ```{figure} ../_static/img/screens/montage/toolbar.jpg

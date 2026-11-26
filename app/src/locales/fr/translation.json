@@ -693,6 +693,7 @@
         "playback_speed": "Vitesse",
         "playback_speed_desc": "Vitesse des aperçus d'événement.",
         "live_activity": "Tuiles d'activité en direct",
+        "montage": "Tuiles de montage",
         "event_context": "Événements à proximité",
         "replay": "Rejouer"
       }
