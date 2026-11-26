@@ -1015,6 +1015,57 @@ describe('useStreamLifecycle', () => {
       expect(mockHttpGet).not.toHaveBeenCalled();
     });
 
+    // The token is part of the stream URL. A new one on a live stream (login
+    // during a profile switch, a refresh) re-requests the same connkey with a
+    // different URL while zms still holds the first; the tile then waited 20s+
+    // for a response (refs #609). A new token is a new stream: quit, re-mint.
+    it('quits and re-opens the stream when the access token changes', async () => {
+      const mediaRef = makeMediaRef();
+      const { result, rerender } = renderHook(
+        ({ accessToken }: { accessToken: string }) =>
+          useStreamLifecycle({ ...baseOptions, mediaRef, accessToken }),
+        { initialProps: { accessToken: 'tok-old' } },
+      );
+
+      await waitFor(() => {
+        expect(result.current.connKey).not.toBe(0);
+      });
+      const oldKey = result.current.connKey;
+      mockHttpGet.mockClear();
+
+      rerender({ accessToken: 'tok-new' });
+
+      await waitFor(() => {
+        expect(quitCountFor(oldKey)).toBe(1);
+      });
+      expect(result.current.connKey).not.toBe(oldKey);
+    });
+
+    // The server map arrives after login and can move a monitor to another
+    // host. The old request went to the wrong server, so there is nothing to
+    // quit here, but the stream needs a key of its own on the new host (#609).
+    it('mints a fresh key without a quit when the portal moves', async () => {
+      const mediaRef = makeMediaRef();
+      const { result, rerender } = renderHook(
+        ({ portalUrl }: { portalUrl: string }) =>
+          useStreamLifecycle({ ...baseOptions, mediaRef, portalUrl }),
+        { initialProps: { portalUrl: 'http://a.local' } },
+      );
+
+      await waitFor(() => {
+        expect(result.current.connKey).not.toBe(0);
+      });
+      const oldKey = result.current.connKey;
+      mockHttpGet.mockClear();
+
+      rerender({ portalUrl: 'http://b.local' });
+
+      await waitFor(() => {
+        expect(result.current.connKey).not.toBe(oldKey);
+      });
+      expect(mockHttpGet).not.toHaveBeenCalled();
+    });
+
     it('quits a multi-port stream on the port it was opened on', async () => {
       // useMonitorStream computes minStreamingPort from the view mode, so a
       // flip to snapshot drops it to undefined in the same commit as the flip.

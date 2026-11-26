@@ -176,4 +176,74 @@ describe('useMonitorStream: token freshness gate', () => {
     });
     expect(result.current.streamUrl).not.toContain('STALE-MARKER');
   });
+
+  // A new token on a live stream gets a new connkey (useStreamLifecycle), but
+  // the render that brings the token runs before that effect. Building the URL
+  // there sends the old connkey again under a new URL while zms still holds
+  // the first request: the duplicate left Montage tiles black after a profile
+  // switch (refs #609). No URL may pair a connkey with a token it was not
+  // minted under.
+  it('never pairs a connkey with a token it was not minted under', async () => {
+    let next = 100;
+    useMonitorStore.setState({ connKeys: {}, regenerateConnKey: vi.fn(() => ++next) });
+    setAuthSlice({
+      accessToken: 'TOKEN-A',
+      accessTokenExpires: Date.now() + 60 * 60 * 1000,
+      isAuthenticated: true,
+    });
+    useAuthStore.setState({ getFreshAccessToken: vi.fn().mockResolvedValue(null) });
+
+    const urls: string[] = [];
+    const { result } = renderHook(() => {
+      const r = useMonitorStream({ monitorId: '1' });
+      if (r.streamUrl) urls.push(r.streamUrl);
+      return r;
+    });
+
+    await waitFor(() => expect(result.current.streamUrl).toContain('token=TOKEN-A'));
+    const firstKey = new URL(result.current.streamUrl).searchParams.get('connkey');
+
+    act(() => {
+      setAuthSlice({ accessToken: 'TOKEN-B', accessTokenExpires: Date.now() + 60 * 60 * 1000 });
+    });
+
+    await waitFor(() => expect(result.current.streamUrl).toContain('token=TOKEN-B'));
+    const pairedWithB = urls.filter((u) => u.includes('token=TOKEN-B'))
+      .map((u) => new URL(u).searchParams.get('connkey'));
+    expect(pairedWithB).not.toContain(firstKey);
+  });
+
+  // Same for the host: the server map can move a monitor to another server
+  // after login, and the old connkey must not go out to the new host (#609).
+  it('never pairs a connkey with a stream host it was not minted for', async () => {
+    let next = 200;
+    useMonitorStore.setState({ connKeys: {}, regenerateConnKey: vi.fn(() => ++next) });
+    setAuthSlice({
+      accessToken: 'TOKEN-A',
+      accessTokenExpires: Date.now() + 60 * 60 * 1000,
+      isAuthenticated: true,
+    });
+    useAuthStore.setState({ getFreshAccessToken: vi.fn().mockResolvedValue(null) });
+
+    const urls: string[] = [];
+    const { result } = renderHook(() => {
+      const r = useMonitorStream({ monitorId: '1' });
+      if (r.streamUrl) urls.push(r.streamUrl);
+      return r;
+    });
+
+    await waitFor(() => expect(result.current.streamUrl).toContain('https://test.com/cgi-bin'));
+    const firstKey = new URL(result.current.streamUrl).searchParams.get('connkey');
+
+    act(() => {
+      useProfileStore.setState({
+        profiles: [{ ...mockProfile, portalUrl: 'https://other.com', cgiUrl: 'https://other.com/cgi-bin' }],
+      });
+    });
+
+    await waitFor(() => expect(result.current.streamUrl).toContain('https://other.com/cgi-bin'));
+    const onNewHost = urls.filter((u) => u.startsWith('https://other.com'))
+      .map((u) => new URL(u).searchParams.get('connkey'));
+    expect(onNewHost).not.toContain(firstKey);
+  });
 });
