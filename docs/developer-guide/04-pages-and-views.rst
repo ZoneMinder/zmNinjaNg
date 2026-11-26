@@ -1021,7 +1021,10 @@ app has ever seen is pre-filled with the ZoneMinder demo server.
 
 This page only creates. It has no ``:id`` parameter and no update path.
 Editing an existing profile happens in a dialog on ``Profiles.tsx``, which
-calls ``updateProfile`` from the profile store. ``ProfileForm`` reads
+calls ``updateProfile`` from the profile store. When the save changes the
+portal, API or streaming URL, ``updateProfile`` also calls
+``resetProfileQueries`` (``stores/query-cache.ts``), so no data cached from the
+old address stands in for the new server. ``ProfileForm`` reads
 ``useSearchParams`` rather than ``useParams``, and uses it for one thing:
 
 .. code:: tsx

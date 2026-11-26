@@ -134,6 +134,32 @@ describe('Profile Store', () => {
     ).rejects.toThrow('already exists');
   });
 
+  // A monitor list fetched from the old URL would stand in for the new
+  // server's on the live pages and in the Profiles checks (refs #613).
+  describe('updateProfile clears cached data when an address changes', () => {
+    const p1 = asProfileId('p1');
+    const seed = () => {
+      useProfileStore.setState({
+        profiles: [{ id: p1, name: 'Home', apiUrl: 'http://a/api', portalUrl: 'http://a', cgiUrl: 'http://a/cgi-bin', isDefault: true, createdAt: 1 }],
+      });
+      queryClient.setQueryData(['monitors', p1], { monitors: ['old'] });
+    };
+
+    it('drops the profile\'s cached queries when its API URL changes', async () => {
+      seed();
+      await useProfileStore.getState().updateProfile('p1', { apiUrl: 'http://b/api' });
+      expect(queryClient.getQueryData(['monitors', p1])).toBeUndefined();
+    });
+
+    it('keeps them when the save carries the same addresses', async () => {
+      seed();
+      await useProfileStore.getState().updateProfile('p1', {
+        name: 'Home 2', apiUrl: 'http://a/api', portalUrl: 'http://a', cgiUrl: 'http://a/cgi-bin',
+      });
+      expect(queryClient.getQueryData(['monitors', p1])).toEqual({ monitors: ['old'] });
+    });
+  });
+
   it('updates profile and enforces unique names', async () => {
     useProfileStore.setState({
       profiles: [
