@@ -987,6 +987,34 @@ describe('useStreamLifecycle', () => {
       );
     });
 
+    // A profile switch keeps a tile mounted when both servers have a monitor
+    // with its id (single-mode tiles are keyed by bare id). The switch already
+    // quit the old key on the old server; the tile has to open the new server
+    // on a key of its own rather than carry the old one across (refs #609).
+    it('mints a fresh key without a quit when the owning profile changes', async () => {
+      const mediaRef = makeMediaRef();
+      const { result, rerender } = renderHook(
+        ({ profileId, portalUrl }: { profileId: ReturnType<typeof asProfileId>; portalUrl: string }) =>
+          useStreamLifecycle({ ...baseOptions, mediaRef, profileId, portalUrl }),
+        { initialProps: { profileId: asProfileId('p-old'), portalUrl: 'http://old.local' } },
+      );
+
+      await waitFor(() => {
+        expect(result.current.connKey).not.toBe(0);
+      });
+      const oldKey = result.current.connKey;
+      mockHttpGet.mockClear();
+
+      rerender({ profileId: asProfileId('p-new'), portalUrl: 'http://new.local' });
+
+      await waitFor(() => {
+        expect(result.current.connKey).not.toBe(oldKey);
+      });
+      expect(mockRegenerateConnKey).toHaveBeenLastCalledWith('p-new:1');
+      // The new server never had the old key; quitting it there is noise.
+      expect(mockHttpGet).not.toHaveBeenCalled();
+    });
+
     it('quits a multi-port stream on the port it was opened on', async () => {
       // useMonitorStream computes minStreamingPort from the view mode, so a
       // flip to snapshot drops it to undefined in the same commit as the flip.

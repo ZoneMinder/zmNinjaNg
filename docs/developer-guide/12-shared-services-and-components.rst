@@ -1348,6 +1348,12 @@ profile's SSL-trust setting can flip before the old self-signed server's
 ``nph-zms`` process is orphaned. A central quit keyed only by monitor ID could
 not do this either, having no record of which server each stream used.
 
+Not every tile unmounts on a switch. Single-server tiles are keyed by bare
+monitor ID, so a tile stays mounted when the new server has a monitor with the
+same ID. The hook treats a ``profileId`` change like a scale change and mints a
+fresh key, but sends no ``CMD_QUIT``: the switch already quit the old key on
+the old server, and the new server never had it (refs #609).
+
 **Used by:** ``hooks/useMonitorStream.ts``,
 ``components/monitors/MonitorHoverPreview.tsx``.
 
