@@ -184,6 +184,22 @@ describe('LiveMonitorPlayer MJPEG recovery', () => {
     expect(mockMjpegReturn.reportStreamError).toHaveBeenCalledTimes(1);
   });
 
+  // A profile switch keeps a tile mounted when the new server has a monitor
+  // with the same id. Everything this player learned about the old server's
+  // stream (an error latch, go2rtc failure, frame state) must not carry over:
+  // the tile stayed blank until the view was re-entered (refs #609).
+  it('starts fresh when the owning profile changes under a mounted tile', () => {
+    const other = { ...profile, id: asProfileId('profile-b') } as Profile;
+    const { rerender } = render(withQuery(<LiveMonitorPlayer monitor={monitor} profile={profile} />));
+
+    fireEvent.error(screen.getByTestId('video-player-mjpeg'));
+    expect(screen.queryByTestId('video-player-mjpeg')).not.toBeInTheDocument();
+
+    rerender(withQuery(<LiveMonitorPlayer monitor={monitor} profile={other} />));
+
+    expect(screen.getByTestId('video-player-mjpeg')).toHaveAttribute('src', 'https://t/stream?connkey=1');
+  });
+
   it('asks the stream hook to auto-reconnect when the MJPEG <img> errors', () => {
     render(withQuery(<LiveMonitorPlayer monitor={monitor} profile={profile} />));
     fireEvent.error(screen.getByTestId('video-player-mjpeg'));

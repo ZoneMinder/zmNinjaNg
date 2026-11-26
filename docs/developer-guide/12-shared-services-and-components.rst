@@ -1350,9 +1350,13 @@ not do this either, having no record of which server each stream used.
 
 Not every tile unmounts on a switch. Single-server tiles are keyed by bare
 monitor ID, so a tile stays mounted when the new server has a monitor with the
-same ID. The hook treats a ``profileId`` change like a scale change and mints a
-fresh key, but sends no ``CMD_QUIT``: the switch already quit the old key on
-the old server, and the new server never had it (refs #609).
+same ID. ``LiveMonitorPlayer`` is keyed on its ``profile`` id, so such a
+player remounts and drops what it learned about the old server's stream (the
+MJPEG error latch, a cached go2rtc failure, frame state). The hook also treats
+a ``profileId`` change like a scale change and mints a fresh key, for callers
+that use it without the player, but sends no ``CMD_QUIT``: the switch already
+quit the old key on the old server, and the new server never had it
+(refs #609).
 
 **Used by:** ``hooks/useMonitorStream.ts``,
 ``components/monitors/MonitorHoverPreview.tsx``.

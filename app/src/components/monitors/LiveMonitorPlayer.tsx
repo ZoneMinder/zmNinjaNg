@@ -189,7 +189,18 @@ export interface LiveMonitorPlayerProps {
   paused?: boolean;
 }
 
-export function LiveMonitorPlayer({
+/**
+ * Keyed on the owning profile, so a player that stays mounted across a profile
+ * switch (single-server tiles are keyed by bare monitor id, and the new server
+ * can have a monitor with the same id) starts over instead of carrying the old
+ * server's error latch, go2rtc failure and frame state. That is what leaving
+ * and re-entering the view did by hand (refs #609).
+ */
+export function LiveMonitorPlayer(props: LiveMonitorPlayerProps) {
+  return <LiveMonitorPlayerForProfile key={props.profile?.id} {...props} />;
+}
+
+function LiveMonitorPlayerForProfile({
   monitor,
   profile,
   profileId,
