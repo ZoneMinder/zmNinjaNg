@@ -18,7 +18,7 @@ import type { ApiClient } from '../api/client';
 import type { LoginResponse } from '../api/types';
 import { createStoreApiClient } from '../api/store-gates';
 import { asProfileId } from '../api/types';
-import { discoverUrls, DiscoveryError } from '../services/discovery';
+import { streamUrlUnconfirmed, discoverUrls, DiscoveryError } from '../services/discovery';
 import { Switch } from '../components/ui/switch';
 import { Video, Server, ShieldCheck, ArrowRight, Loader2, Eye, EyeOff, ArrowLeft, QrCode, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -92,6 +92,9 @@ export default function ProfileForm() {
   // Abort controller for cancelling discovery
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  // The URLs the last attempt worked out before it failed, for Save anyway (refs #613).
+  const attemptUrlsRef = useRef<{ portalUrl: string; apiUrl: string; cgiUrl: string } | null>(null);
+
   // Handle QR code scan result
   const handleQRScan = (data: string) => {
     const result = parseQRProfile(data);
@@ -132,6 +135,37 @@ export default function ProfileForm() {
     setError('');
   };
 
+  const nameFor = (portal: string) =>
+    profileName.trim() || (portal.includes('demo.zoneminder.com') ? 'Demo Server' : 'My ZoneMinder');
+
+  // Saves what the failed attempt got to, or what was typed, without a login
+  // (refs #613). The Profiles page then shows what fails.
+  const handleSaveAnyway = async () => {
+    const typed = (/^https?:\/\//.test(portalUrl) ? portalUrl : `https://${portalUrl}`).replace(/\/+$/, '');
+    const urls = attemptUrlsRef.current ?? (showManualUrls && manualApiUrl && manualCgiUrl
+      ? { portalUrl: typed, apiUrl: manualApiUrl, cgiUrl: manualCgiUrl }
+      : { portalUrl: typed, apiUrl: `${typed}/api`, cgiUrl: `${typed}/cgi-bin/nph-zms` });
+    try {
+      const id = asProfileId(crypto.randomUUID());
+      await addProfile({
+        name: nameFor(urls.portalUrl),
+        ...urls,
+        username: username.trim() || undefined,
+        password: password || undefined,
+        isDefault: isFirstProfile,
+        cgiUrlGuessed: true,
+      }, id);
+      if (allowSelfSignedCerts) {
+        const { useSettingsStore } = await import('../stores/settings');
+        useSettingsStore.getState().updateProfileSettings(id, { allowSelfSignedCerts: true, trustedCertFingerprint: null });
+      }
+      log.profileForm('Profile saved without a working connection', LogLevel.INFO, { profileId: id });
+      navigate(isFirstProfile ? returnTo : '/profiles');
+    } catch (err: unknown) {
+      setError((err as Error).message || t('setup.connection_failed'));
+    }
+  };
+
   const handleTestConnection = async () => {
     setError('');
     setSuccess(false);
@@ -143,6 +177,7 @@ export default function ProfileForm() {
     // addProfile saves at the end of this flow, share the same id instead of
     // the test session being orphaned under a scratch id. Refs #337.
     const profileId = asProfileId(crypto.randomUUID());
+    attemptUrlsRef.current = null;
 
     // Create abort controller for this connection attempt
     abortControllerRef.current = new AbortController();
@@ -179,8 +214,9 @@ export default function ProfileForm() {
       // Discovery logs in to read ZM_PATH_ZMS; reuse that instead of paying
       // ZoneMinder's ~0.6s password hash a second time.
       let discoveredLogin: LoginResponse | undefined;
-      // Discovery guessed the stream path: the server didn't report ZM_PATH_ZMS (refs #603).
+      // No frame confirmed the stream path (refs #603, #613).
       let cgiUrlGuessed = false;
+      let cgiUrlUnverified = false;
 
       if (showManualUrls) {
         // Manual URL entry mode
@@ -235,9 +271,12 @@ export default function ProfileForm() {
         apiUrl = discovered.apiUrl;
         cgiUrl = discovered.cgiUrl;
         discoveredLogin = discovered.loginResponse;
-        cgiUrlGuessed = discovered.cgiUrlSource === 'default';
+        cgiUrlGuessed = streamUrlUnconfirmed(discovered);
+        cgiUrlUnverified = discovered.cgiUrlVerified === false;
         log.profileForm('URLs discovered', LogLevel.INFO, { portalUrl: confirmedPortalUrl, apiUrl, cgiUrl });
       }
+
+      attemptUrlsRef.current = { portalUrl: confirmedPortalUrl, apiUrl, cgiUrl };
 
       // TOFU: after discovery succeeds, fetch the server cert and ask user to trust it
       if (allowSelfSignedCerts && Platform.isNative) {
@@ -306,9 +345,7 @@ export default function ProfileForm() {
       setError('');
 
       // Generate profile name if not provided
-      const finalProfileName = profileName.trim() || (
-        confirmedPortalUrl.includes('demo.zoneminder.com') ? 'Demo Server' : 'My ZoneMinder'
-      );
+      const finalProfileName = nameFor(confirmedPortalUrl);
 
       log.profileForm('Adding new profile', LogLevel.INFO, { profileName: finalProfileName });
       await addProfile({
@@ -348,7 +385,8 @@ export default function ProfileForm() {
       // A toast, not a hint by the CGI field: that field is hidden while
       // discovery runs and the form navigates away on success.
       if (cgiUrlGuessed) {
-        toast.warning(t('setup.cgi_url_guessed', { cgiUrl }), { duration: ZMS_PROBE.guessedToastMs, closeButton: true });
+        const key = cgiUrlUnverified ? 'setup.cgi_url_unverified' : 'setup.cgi_url_guessed';
+        toast.warning(t(key, { cgiUrl }), { duration: ZMS_PROBE.guessedToastMs, closeButton: true });
       }
       navigate(returnTo);
     } catch (err: unknown) {
@@ -610,6 +648,17 @@ export default function ProfileForm() {
             >
               {isFirstProfile ? t('setup.connect') : t('profiles.add')}
               <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          )}
+
+          {error && !testing && (
+            <Button
+              variant="outline"
+              onClick={handleSaveAnyway}
+              className="w-full"
+              data-testid="setup-save-anyway"
+            >
+              {t('setup.save_anyway')}
             </Button>
           )}
 

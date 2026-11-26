@@ -6,6 +6,7 @@ import type { HttpError } from '../lib/http';
 import { log, LogLevel } from '../lib/logger';
 import { isAbortError } from '../lib/is-abort-error';
 import { DISCOVERY_TIMEOUTS } from '../lib/zmninja-ng-constants';
+import { firstAnsweringStreamUrl } from '../lib/zm/zms-probe';
 
 /**
  * Options for the discoverUrls helper used by UI pages.
@@ -35,8 +36,10 @@ export interface DiscoveryResult {
     portalUrl: string;
     apiUrl: string;
     cgiUrl: string;
-    /** 'default' when the server didn't report ZM_PATH_ZMS and cgiUrl is a guess. */
+    /** 'server' when cgiUrl is the server's ZM_PATH_ZMS, 'default' for `<portal>/cgi-bin/nph-zms`. */
     cgiUrlSource: 'server' | 'default';
+    /** Whether cgiUrl returned a frame; absent when there was no monitor to ask (refs #613). */
+    cgiUrlVerified?: boolean;
     /**
      * The login discovery performed to read ZM_PATH_ZMS, when credentials
      * were given and the server issued tokens. ZoneMinder's login.json
@@ -44,6 +47,11 @@ export interface DiscoveryResult {
      * a caller that holds this can install it instead of logging in again.
      */
     loginResponse?: LoginResponse;
+}
+
+/** The streaming URL wasn't confirmed by a frame: it failed, or it's the fallback and there was no monitor to ask. */
+export function streamUrlUnconfirmed(result: Pick<DiscoveryResult, 'cgiUrlSource' | 'cgiUrlVerified'>): boolean {
+    return result.cgiUrlVerified === false || (result.cgiUrlVerified === undefined && result.cgiUrlSource === 'default');
 }
 
 /**
@@ -186,22 +194,20 @@ async function probeApi(apiUrl: string, profileId: ProfileId, signal?: AbortSign
 }
 
 /**
- * Fetch ZMS path from server config after authentication.
- * Returns the full cgiUrl or null if fetch fails.
- * Throws if signal is aborted.
+ * Read the server's ZM_PATH_ZMS and one monitor id to test stream URLs with,
+ * logging in first when credentials are given (a server with auth off answers
+ * without a token). Returns nulls for whatever it couldn't read. Throws if
+ * signal is aborted.
  */
 interface CgiFetch {
     cgiUrl: string | null;
+    monitorId?: string;
+    token?: string;
     loginResponse?: LoginResponse;
 }
 
 async function fetchCgiUrl(apiUrl: string, portalUrl: string, options: DiscoveryOptions, profileId: ProfileId): Promise<CgiFetch> {
     const { username, password, signal } = options;
-
-    if (!username || !password) {
-        log.discovery('No credentials provided, skipping ZMS path fetch', LogLevel.DEBUG);
-        return { cgiUrl: null };
-    }
 
     // Check if already aborted
     if (signal?.aborted) {
@@ -212,22 +218,28 @@ async function fetchCgiUrl(apiUrl: string, portalUrl: string, options: Discovery
         // Create the API client for this API URL
         const client = createStoreApiClient(apiUrl, undefined, profileId);
 
-        // Authenticate using direct POST to avoid circular dependency with auth store
-        log.discovery('Authenticating to fetch ZMS path', LogLevel.DEBUG);
-        const formData = `user=${encodeURIComponent(username)}&pass=${encodeURIComponent(password)}`;
-        const loginResponse = await client.post<{ access_token?: string }>('/host/login.json', formData, {
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            signal
-        });
+        let token: string | undefined;
+        let validLogin: LoginResponse | undefined;
+        if (username && password) {
+            // Authenticate using direct POST to avoid circular dependency with auth store
+            log.discovery('Authenticating to fetch ZMS path', LogLevel.DEBUG);
+            const formData = `user=${encodeURIComponent(username)}&pass=${encodeURIComponent(password)}`;
+            const loginResponse = await client.post<{ access_token?: string }>('/host/login.json', formData, {
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                signal
+            });
 
-        if (!loginResponse.data?.access_token) {
-            log.discovery('Login did not return access token', LogLevel.DEBUG);
-            return { cgiUrl: null };
+            if (!loginResponse.data?.access_token) {
+                log.discovery('Login did not return access token', LogLevel.DEBUG);
+                return { cgiUrl: null };
+            }
+            token = loginResponse.data.access_token;
+            // Validated so the caller can hand it to the auth store as-is; a body
+            // the schema rejects is treated as no login rather than a bad one.
+            const parsedLogin = LoginResponseSchema.safeParse(loginResponse.data);
+            validLogin = parsedLogin.success ? parsedLogin.data : undefined;
         }
-        // Validated so the caller can hand it to the auth store as-is; a body
-        // the schema rejects is treated as no login rather than a bad one.
-        const parsedLogin = LoginResponseSchema.safeParse(loginResponse.data);
-        const validLogin = parsedLogin.success ? parsedLogin.data : undefined;
+        const tokenQuery = token ? `?token=${token}` : '';
 
         // Check if aborted before fetching config
         if (signal?.aborted) {
@@ -237,20 +249,23 @@ async function fetchCgiUrl(apiUrl: string, portalUrl: string, options: Discovery
         // Fetch ZMS path from server config (include token in request)
         log.discovery('Fetching ZM_PATH_ZMS from server config', LogLevel.DEBUG);
         const configResponse = await client.get<{ config?: { Value?: string } }>(
-            `/configs/viewByName/ZM_PATH_ZMS.json?token=${loginResponse.data.access_token}`,
+            `/configs/viewByName/ZM_PATH_ZMS.json${tokenQuery}`,
             { signal }
         );
+        const zmsPath = configResponse?.data?.config?.Value;
+        // ZMS path is absolute from web root (e.g., /zm/cgi-bin/nph-zms)
+        const cgiUrl = zmsPath ? `${new URL(portalUrl).origin}${zmsPath}` : null;
+        if (cgiUrl) log.discovery('ZMS path fetched from server', LogLevel.INFO, { zmsPath, cgiUrl });
 
-        const zmsPath = configResponse.data?.config?.Value;
-        if (zmsPath) {
-            // ZMS path is absolute from web root (e.g., /zm/cgi-bin/nph-zms)
-            // Combine with origin to get full URL
-            const url = new URL(portalUrl);
-            const cgiUrl = `${url.origin}${zmsPath}`;
-            log.discovery('ZMS path fetched from server', LogLevel.INFO, { zmsPath, cgiUrl });
-            return { cgiUrl, loginResponse: validLogin };
-        }
-        return { cgiUrl: null, loginResponse: validLogin };
+        // Any monitor proves a stream path: nph-zms answers a frame for one
+        // that isn't capturing, but a capturing one is the likelier answer.
+        type MonitorList = { monitors?: Array<{ Monitor?: { Id?: string; Capturing?: string } }> };
+        const monitorsResponse = await Promise.resolve()
+            .then(() => client.get<MonitorList>(`/monitors.json${tokenQuery}`, { signal }))
+            .catch(() => undefined); // no list, no frame check
+        const list = (monitorsResponse?.data?.monitors ?? []).flatMap((m) => (m.Monitor?.Id ? [m.Monitor] : []));
+        const monitorId = (list.find((m) => m.Capturing !== 'None') ?? list[0])?.Id;
+        return { cgiUrl, monitorId, token, loginResponse: validLogin };
     } catch (error) {
         // Re-throw abort/cancel errors
         if (error instanceof DiscoveryError && error.code === 'CANCELLED') {
@@ -314,12 +329,17 @@ export async function discoverZoneminder(inputUrl: string, options: DiscoveryOpt
                     // portalUrl = API URL minus "/api" suffix
                     const portalUrl = fullApiUrl.replace(/\/api$/, '');
 
-                    // Try to fetch actual ZMS path from server (requires auth)
-                    // Fall back to inference if auth fails or no credentials
                     const fetched = await fetchCgiUrl(fullApiUrl, portalUrl, options, profileId);
-                    // Default when the server didn't say: derive from portalUrl
-                    const cgiUrlSource = fetched.cgiUrl ? 'server' : 'default';
-                    const cgiUrl = fetched.cgiUrl ?? portalUrl + '/cgi-bin/nph-zms';
+                    // The server's path first, then the usual one; the first
+                    // that returns a frame wins (refs #613).
+                    const fallback = portalUrl + '/cgi-bin/nph-zms';
+                    const candidates = [...new Set([fetched.cgiUrl ?? fallback, fallback])];
+                    const answering = fetched.monitorId
+                        ? await firstAnsweringStreamUrl(candidates, fetched.monitorId, fetched.token)
+                        : null;
+                    if (signal?.aborted) throw new DiscoveryError('Discovery cancelled', 'CANCELLED');
+                    const cgiUrl = answering ?? candidates[0];
+                    const cgiUrlSource = cgiUrl === fetched.cgiUrl ? 'server' : 'default';
 
                     log.discovery(`Discovery complete`, LogLevel.INFO, { portalUrl, apiUrl: fullApiUrl, cgiUrl, cgiUrlSource });
 
@@ -328,6 +348,7 @@ export async function discoverZoneminder(inputUrl: string, options: DiscoveryOpt
                         apiUrl: fullApiUrl,
                         cgiUrl,
                         cgiUrlSource,
+                        ...(fetched.monitorId ? { cgiUrlVerified: answering !== null } : {}),
                         ...(fetched.loginResponse ? { loginResponse: fetched.loginResponse } : {}),
                     };
                 }

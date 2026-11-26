@@ -41,7 +41,8 @@ async function runProbe(profileId: ProfileId, recordingUrl: string, monitorId: s
   return probeZms(recordingUrl, monitorId, token);
 }
 
-export function useZmsProbes(profileIds: readonly ProfileId[]): ZmsProbeEntry[] {
+/** `fresh` probes again on every mount, ignoring a cached result (the Profiles page diagnoses with it). */
+export function useZmsProbes(profileIds: readonly ProfileId[], { fresh = false }: { fresh?: boolean } = {}): ZmsProbeEntry[] {
   const allProfiles = useProfileStore((state) => state.profiles);
   const idsKey = profileIds.join('\n');
   const profiles = useMemo(() => {
@@ -77,6 +78,7 @@ export function useZmsProbes(profileIds: readonly ProfileId[]): ZmsProbeEntry[] 
       queryFn: () => runProbe(t.profileId, t.recordingUrl, t.monitorId),
       staleTime: ZMS_PROBE.staleTimeMs,
       retry: false,
+      ...(fresh ? { refetchOnMount: 'always' as const } : {}),
     })),
     combine: (results) =>
       targets.map(({ profileId, profileName, recordingUrl }, i) => ({

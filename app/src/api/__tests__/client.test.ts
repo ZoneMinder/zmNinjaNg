@@ -260,6 +260,14 @@ describe('API Client', () => {
       );
       expect(vi.mocked(httpRequest)).not.toHaveBeenCalled();
     });
+
+    // A saved profile with a wrong password: the Profiles page marks its API
+    // red only when the error carries a status (refs #613).
+    it('rejects a failed login with status 401', async () => {
+      const client = createApiClient('https://zm.example.com/api', mockGates(), vi.fn(async () => false));
+
+      await expect(client.get('/monitors.json')).rejects.toMatchObject({ status: 401 });
+    });
   });
 
   describe('401 recovery retry', () => {

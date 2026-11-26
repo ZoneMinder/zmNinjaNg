@@ -1127,7 +1127,7 @@
     "no_credentials": "Keine Anmeldeinformationen",
     "add_creds_hint": "Anmeldedaten sind für öffentliche Server optional. Fügen Sie sie hinzu, falls erforderlich.",
     "manual_override_hint": "Manuelle Überschreibung im Bearbeitungsmodus verfügbar",
-    "cgi_url_guessed": "Der Server hat keinen Stream-Pfad gemeldet, diese URL ist also geraten. Bleibt die Live-Ansicht leer, prüfe sie.",
+    "cgi_url_guessed": "Diese Streaming-URL wurde beim Speichern des Profils nicht bestätigt. Bleibt die Live-Ansicht leer, prüfe sie.",
     "health_ok": "Portal, API und Streaming antworten",
     "health_partial": "Einige Adressen schlagen fehl; siehe Details",
     "health_failed": "Keine Adresse antwortet; siehe Details",
@@ -1224,7 +1224,9 @@
     "api_url_hint": "https://server.com/zm/api",
     "cgi_url_hint": "https://server.com/zm/cgi-bin",
     "protocol_mismatch": "Protokollkonflikt! Portal verwendet {{portalProtocol}}://, aber API verwendet {{apiProtocol}}://. Beide müssen dasselbe Protokoll verwenden (entweder HTTP oder HTTPS).",
-    "cgi_url_guessed": "Der Server hat keinen Stream-Pfad gemeldet, {{cgiUrl}} ist also geraten. Bleibt die Live-Ansicht leer, prüfe «Streaming URL» im Profil."
+    "cgi_url_guessed": "Der Server hat keinen Stream-Pfad gemeldet, {{cgiUrl}} ist also geraten. Bleibt die Live-Ansicht leer, prüfe «Streaming URL» im Profil.",
+    "cgi_url_unverified": "{{cgiUrl}} hat bei der Einrichtung kein Bild geliefert. Bleibt die Live-Ansicht leer, prüfe die „Streaming-URL“ im Profil.",
+    "save_anyway": "Trotzdem speichern"
   },
   "live_activity": {
     "title": "Live-Aktivität",

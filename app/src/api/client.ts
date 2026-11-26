@@ -157,7 +157,9 @@ export function createApiClient(
 
       // Check if login actually succeeded before retrying
       if (!loginSuccess) {
-        throw new Error('Authentication required but login failed');
+        // 401 like the server's own refusal, so queries stop retrying and the
+        // Profiles page can mark the API as failing (refs #613).
+        throw Object.assign(new Error('Authentication required but login failed'), { status: 401 });
       }
 
       // Retry the original request now that we're authenticated

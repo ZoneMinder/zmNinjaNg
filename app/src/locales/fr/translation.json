@@ -1127,7 +1127,7 @@
     "no_credentials": "Pas d'identifiants",
     "add_creds_hint": "Les identifiants sont facultatifs pour les serveurs publics. Ajoutez-les si nécessaire.",
     "manual_override_hint": "Remplacement manuel disponible en mode édition",
-    "cgi_url_guessed": "Le serveur n'a pas indiqué son chemin de flux, donc cette URL est une supposition. Si la vue en direct reste vide, vérifiez-la.",
+    "cgi_url_guessed": "Cette URL de streaming n'a pas été confirmée à l'enregistrement du profil. Si la vue en direct reste vide, vérifiez-la.",
     "health_ok": "Portail, API et flux répondent",
     "health_partial": "Certaines adresses échouent ; ouvrez Détails",
     "health_failed": "Aucune adresse ne répond ; ouvrez Détails",
@@ -1224,7 +1224,9 @@
     "api_url_hint": "https://serveur.com/zm/api",
     "cgi_url_hint": "https://serveur.com/zm/cgi-bin",
     "protocol_mismatch": "Conflit de protocole ! Le portail utilise {{portalProtocol}}:// mais l'API utilise {{apiProtocol}}://. Les deux doivent utiliser le même protocole (HTTP ou HTTPS).",
-    "cgi_url_guessed": "Le serveur n'a pas indiqué son chemin de flux, donc {{cgiUrl}} est une supposition. Si la vue en direct reste vide, vérifiez «URL de diffusion» dans le profil."
+    "cgi_url_guessed": "Le serveur n'a pas indiqué son chemin de flux, donc {{cgiUrl}} est une supposition. Si la vue en direct reste vide, vérifiez «URL de diffusion» dans le profil.",
+    "cgi_url_unverified": "{{cgiUrl}} n'a renvoyé aucune image pendant la configuration. Si la vue en direct reste vide, vérifiez l'« URL de streaming » du profil.",
+    "save_anyway": "Enregistrer quand même"
   },
   "live_activity": {
     "title": "Activité en direct",

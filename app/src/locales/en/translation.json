@@ -1127,7 +1127,7 @@
     "no_credentials": "No credentials",
     "add_creds_hint": "Credentials are optional for public servers. Add them if required.",
     "manual_override_hint": "Manual override available in edit mode",
-    "cgi_url_guessed": "The server didn't report its stream path, so this URL is a guess. If live view stays blank, check it.",
+    "cgi_url_guessed": "This streaming URL wasn't confirmed when the profile was saved. If live view stays blank, check it.",
     "health_ok": "Portal, API and streaming all answer",
     "health_partial": "Some addresses fail; open Details",
     "health_failed": "No address answers; open Details",
@@ -1224,7 +1224,9 @@
     "api_url_hint": "https://server.com/zm/api",
     "cgi_url_hint": "https://server.com/zm/cgi-bin",
     "protocol_mismatch": "Protocol mismatch! Portal uses {{portalProtocol}}:// but API uses {{apiProtocol}}://. Both must use the same protocol (either both HTTP or both HTTPS).",
-    "cgi_url_guessed": "The server didn't report its stream path, so {{cgiUrl}} is a guess. If live view stays blank, check the \"Streaming URL\" in the profile."
+    "cgi_url_guessed": "The server didn't report its stream path, so {{cgiUrl}} is a guess. If live view stays blank, check the \"Streaming URL\" in the profile.",
+    "cgi_url_unverified": "{{cgiUrl}} didn't return a picture during setup. If live view stays blank, check the \"Streaming URL\" in the profile.",
+    "save_anyway": "Save anyway"
   },
   "live_activity": {
     "title": "Live Activity",

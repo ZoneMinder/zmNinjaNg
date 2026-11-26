@@ -21,6 +21,12 @@ vi.mock('react-router-dom', () => ({
 }));
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (k: string) => k }) }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn() } }));
+// The stream-path frame check (refs #613) goes through lib/http.
+const httpGet = vi.fn();
+vi.mock('../../lib/http', async (orig) => ({
+  ...(await orig<typeof import('../../lib/http')>()),
+  httpGet: (...args: unknown[]) => httpGet(...args),
+}));
 
 import { toast } from 'sonner';
 import ProfileForm from '../ProfileForm';
@@ -29,7 +35,7 @@ import { installDefaultApiClient, resetFakeStoreGates } from '../../tests/fake-s
 import { useProfileStore } from '../../stores/profile';
 import { useAuthStore } from '../../stores/auth';
 
-const server = (zmsPath = '/zm/cgi-bin/nph-zms') =>
+const server = (zmsPath = '/zm/cgi-bin/nph-zms', extra: Record<string, unknown> = {}) =>
   fakeApiClient({
     '/host/getVersion.json': { version: '1.36.0', apiversion: '2.0' },
     '/host/login.json': {
@@ -40,6 +46,7 @@ const server = (zmsPath = '/zm/cgi-bin/nph-zms') =>
     'ZM_PATH_ZMS': { config: { Value: zmsPath } },
     'ZM_GO2RTC_PATH': { config: { Value: '' } },
     '/servers.json': { servers: [] },
+    ...extra,
   });
 
 describe('ProfileForm add-server', () => {
@@ -115,4 +122,53 @@ describe('ProfileForm add-server', () => {
     // Kept on the profile, so the edit dialog can still say so later.
     expect(useProfileStore.getState().profiles[0]?.cgiUrlGuessed).toBe(true);
   });
+
+  // Discovery asked both stream URLs for a frame and got none (refs #613).
+  it('warns when neither streaming URL returned a frame', async () => {
+    client = server('/zm/cgi-bin/nph-zms', {
+      '/monitors.json': { monitors: [{ Monitor: { Id: '4', Capturing: 'Always' } }] },
+    });
+    installDefaultApiClient(client);
+    httpGet.mockResolvedValue({ status: 404, statusText: '', data: '', headers: { 'content-type': 'text/html' } });
+    const user = userEvent.setup();
+    render(<ProfileForm />);
+
+    await user.clear(screen.getByTestId('setup-portal-url'));
+    await user.type(screen.getByTestId('setup-portal-url'), 'http://zm.example.com');
+    await user.type(screen.getByTestId('setup-username'), 'admin');
+    await user.type(screen.getByTestId('setup-password'), 'pw');
+    await user.click(screen.getByTestId('connect-button'));
+
+    await waitFor(() => expect(navigateSpy).toHaveBeenCalledWith('/monitors'));
+    expect(toast.warning).toHaveBeenCalledWith('setup.cgi_url_unverified', { duration: 15_000, closeButton: true });
+    expect(useProfileStore.getState().profiles[0]?.cgiUrlGuessed).toBe(true);
+  });
+
+  // A failed connect used to leave nothing to do but try again (refs #613).
+  it('saves a profile whose login fails when the user asks to save anyway', async () => {
+    client = server('/zm/cgi-bin/nph-zms', {
+      '/host/login.json': () => { throw Object.assign(new Error('Unauthorized'), { status: 401 }); },
+    });
+    installDefaultApiClient(client);
+    const user = userEvent.setup();
+    render(<ProfileForm />);
+
+    await user.clear(screen.getByTestId('setup-portal-url'));
+    await user.type(screen.getByTestId('setup-portal-url'), 'http://zm.example.com');
+    await user.type(screen.getByTestId('setup-username'), 'admin');
+    await user.type(screen.getByTestId('setup-password'), 'wrong');
+    await user.click(screen.getByTestId('connect-button'));
+    await user.click(await screen.findByTestId('setup-save-anyway'));
+
+    await waitFor(() => expect(navigateSpy).toHaveBeenCalledWith('/monitors'));
+    const profile = useProfileStore.getState().profiles[0];
+    expect(profile).toMatchObject({
+      portalUrl: 'http://zm.example.com/zm',
+      apiUrl: 'http://zm.example.com/zm/api',
+      cgiUrl: 'http://zm.example.com/zm/cgi-bin/nph-zms',
+      username: 'admin',
+    });
+    expect(useAuthStore.getState().slices[profile.id]?.accessToken ?? null).toBeNull();
+  });
 });
+

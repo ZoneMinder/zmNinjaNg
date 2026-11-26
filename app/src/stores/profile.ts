@@ -247,9 +247,20 @@ export const useProfileStore = create<ProfileState>()(
             processedUpdates.password = 'stored-securely';
           }
 
+          const before = get().profiles.find((p) => p.id === id);
           set((state) => ({
             profiles: state.profiles.map((p) => (p.id === id ? { ...p, ...processedUpdates } : p)),
           }));
+
+          // Another address can mean another server: data cached from the old
+          // one must not stand in for it (refs #613).
+          const moved = (['portalUrl', 'apiUrl', 'cgiUrl'] as const).some(
+            (k) => updates[k] !== undefined && updates[k] !== before?.[k],
+          );
+          if (moved) {
+            const { resetProfileQueries } = await import('./query-cache');
+            resetProfileQueries(asProfileId(id));
+          }
 
           // Connection details changed: evict the cached session so the next
           // getSession rebuilds it against the new URL/credentials. Refs #337.

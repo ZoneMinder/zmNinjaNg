@@ -30,6 +30,7 @@ vi.mock('../../api/auth', () => ({
 vi.mock('../../lib/logger', () => ({
   log: {
     discovery: vi.fn(),
+    http: vi.fn(),
   },
   LogLevel: {
     DEBUG: 'DEBUG',
@@ -38,6 +39,10 @@ vi.mock('../../lib/logger', () => ({
     ERROR: 'ERROR',
   },
 }));
+
+// The stream-path probe goes through lib/http; each test scripts its answers.
+const httpGet = vi.fn();
+vi.mock('../../lib/http', () => ({ httpGet: (...args: unknown[]) => httpGet(...args) }));
 
 // Import after mocks
 import { createStoreApiClient } from '../../api/store-gates';
@@ -276,17 +281,21 @@ describe('discoverZoneminder', () => {
       expect(result.apiUrl).toBe('http://zm.example.com/zm/api');
     });
 
-    it('skips ZMS fetch if no credentials provided', async () => {
+    // A server with auth off serves its config without a token (refs #613).
+    it('reads ZM_PATH_ZMS without logging in when no credentials are given', async () => {
       const mockGet = vi.fn()
-        .mockResolvedValueOnce({ status: 200, data: { version: '1.36.0' } });
+        .mockResolvedValueOnce({ status: 200, data: { version: '1.36.0' } })
+        .mockResolvedValueOnce({ status: 200, data: { config: { Value: '/custom/nph-zms' } } });
       const mockPost = vi.fn();
 
       (createStoreApiClient as any).mockReturnValue({ get: mockGet, post: mockPost });
 
-      await discoverZoneminder('http://zm.example.com');
+      const result = await discoverZoneminder('http://zm.example.com');
 
-      // No login attempt without credentials
       expect(mockPost).not.toHaveBeenCalled();
+      expect(mockGet.mock.calls[1][0]).toBe('/configs/viewByName/ZM_PATH_ZMS.json');
+      expect(result.cgiUrl).toBe('http://zm.example.com/custom/nph-zms');
+      expect(result.cgiUrlSource).toBe('server');
     });
 
     it('throws CANCELLED error when signal is already aborted', async () => {
@@ -365,5 +374,71 @@ describe('discovery returns the login it performed', () => {
 
     expect(result.loginResponse).toBeUndefined();
     expect(result.cgiUrl).toBe('http://zm.example.com/zm/cgi-bin/nph-zms');
+  });
+});
+
+/**
+ * Discovery asks each streaming URL candidate for one frame, the server's
+ * ZM_PATH_ZMS first and `<portal>/cgi-bin/nph-zms` second, and keeps the
+ * first that returns an image (refs #613).
+ */
+describe('discovery checks the streaming URL with a frame', () => {
+  const monitors = { monitors: [{ Monitor: { Id: '4', Capturing: 'Always' } }] };
+  const image = { status: 200, statusText: '', data: '', headers: { 'content-type': 'image/jpeg' } };
+  const notFound = { status: 404, statusText: '', data: '', headers: { 'content-type': 'text/html' } };
+
+  function serverWith(zmsPath: string, monitorList: unknown = monitors) {
+    const mockGet = vi.fn()
+      .mockResolvedValueOnce({ status: 200, data: { version: '1.36.0' } })
+      .mockResolvedValueOnce({ status: 200, data: { config: { Value: zmsPath } } })
+      .mockResolvedValueOnce({ status: 200, data: monitorList });
+    const mockPost = vi.fn().mockResolvedValueOnce({ status: 200, data: { access_token: 'tok' } });
+    vi.mocked(createStoreApiClient).mockReturnValue({ get: mockGet, post: mockPost } as unknown as ApiClient);
+  }
+  const probed = () => httpGet.mock.calls.map(([url]) => String(url).split('?')[0]);
+  const creds = { username: 'admin', password: 'pw' };
+
+  beforeEach(() => { httpGet.mockReset(); });
+
+  it('keeps the server-reported URL when it returns a frame', async () => {
+    serverWith('/proxied/nph-zms');
+    httpGet.mockResolvedValue(image);
+
+    const result = await discoverZoneminder('http://zm.example.com', creds);
+
+    expect(result.cgiUrl).toBe('http://zm.example.com/proxied/nph-zms');
+    expect(result.cgiUrlVerified).toBe(true);
+    expect(probed()).toEqual(['http://zm.example.com/proxied/nph-zms']);
+  });
+
+  it('moves to <portal>/cgi-bin/nph-zms when the server-reported URL returns no frame', async () => {
+    serverWith('/proxied/nph-zms');
+    httpGet.mockImplementation(async (url: string) => (url.includes('/proxied/') ? notFound : image));
+
+    const result = await discoverZoneminder('http://zm.example.com', creds);
+
+    expect(result.cgiUrl).toBe('http://zm.example.com/zm/cgi-bin/nph-zms');
+    expect(result.cgiUrlVerified).toBe(true);
+  });
+
+  it('keeps the server-reported URL, unverified, when neither returns a frame', async () => {
+    serverWith('/proxied/nph-zms');
+    httpGet.mockResolvedValue(notFound);
+
+    const result = await discoverZoneminder('http://zm.example.com', creds);
+
+    expect(result.cgiUrl).toBe('http://zm.example.com/proxied/nph-zms');
+    expect(result.cgiUrlVerified).toBe(false);
+    expect(probed()).toEqual(['http://zm.example.com/proxied/nph-zms', 'http://zm.example.com/zm/cgi-bin/nph-zms']);
+  });
+
+  it('checks nothing when the server has no monitor to ask for a frame', async () => {
+    serverWith('/proxied/nph-zms', { monitors: [] });
+
+    const result = await discoverZoneminder('http://zm.example.com', creds);
+
+    expect(result.cgiUrl).toBe('http://zm.example.com/proxied/nph-zms');
+    expect(result.cgiUrlVerified).toBeUndefined();
+    expect(httpGet).not.toHaveBeenCalled();
   });
 });

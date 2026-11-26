@@ -10,6 +10,7 @@
  */
 
 import { httpGet } from '../http';
+import { log, LogLevel } from '../logger';
 import { getMonitorStreamUrl } from './url-builder';
 import { ZMS_PROBE } from '../zmninja-ng-constants';
 import type { MonitorData } from '../../api/types';
@@ -46,10 +47,28 @@ export async function probeZms(
       return { state: 'ok' };
     }
     if (!response.status) return { state: 'unknown', reason: 'no status' };
+    // The request itself logs at DEBUG (any status is accepted here), so a
+    // console filtered to warnings would hide a broken stream path.
+    log.http('Stream path check failed', LogLevel.WARN, { url: streamUrlLabel(recordingUrl), status: response.status, contentType });
     return { state: 'failed', status: response.status, path: new URL(recordingUrl).pathname };
   } catch (error) {
     return { state: 'unknown', reason: error instanceof Error ? error.message : String(error) };
   }
+}
+
+/**
+ * The first of `candidates` that returns a frame for `monitorId`, asked one at
+ * a time in order, or null when none does (refs #613).
+ */
+export async function firstAnsweringStreamUrl(
+  candidates: readonly string[],
+  monitorId: string,
+  token: string | null | undefined,
+): Promise<string | null> {
+  for (const url of candidates) {
+    if ((await probeZms(url, monitorId, token)).state === 'ok') return url;
+  }
+  return null;
 }
 
 /**
@@ -66,6 +85,7 @@ export async function probePortal(portalUrl: string): Promise<ZmsProbeResult> {
     });
     if (!response.status) return { state: 'unknown', reason: 'no status' };
     if (response.status < 400) return { state: 'ok' };
+    log.http('Portal check failed', LogLevel.WARN, { url: streamUrlLabel(portalUrl), status: response.status });
     return { state: 'failed', status: response.status, path: new URL(portalUrl).pathname };
   } catch (error) {
     return { state: 'unknown', reason: error instanceof Error ? error.message : String(error) };

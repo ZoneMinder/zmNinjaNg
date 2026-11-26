@@ -23,13 +23,13 @@ The Add New Profile form
 | **Username** | ZoneMinder login username | `admin` |
 | **Password** | ZoneMinder login password | |
 
-4. Tap **Add**. The app verifies the credentials and API access before saving the profile
+4. Tap **Add**. The app verifies the credentials and API access before saving the profile. If that fails, for any reason including a wrong password, a **Save anyway** button appears. It saves the profile with the addresses the app worked out so far, or the ones you typed, and the profile's **Details** then show what doesn't answer
 
 :::{tip}
 The Server URL should point to the base ZoneMinder web path, typically ending in `/zm`. zmNinjaNg will auto-discover the API endpoint from there.
 :::
 
-Discovery also asks the server where its live stream lives (`ZM_PATH_ZMS`). When the server doesn't say (no username and password, a failed login, or ZoneMinder 1.39.45, which reports it empty), the app guesses `<server>/cgi-bin/nph-zms` and shows a warning after saving. Editing the profile shows the same warning under **Streaming URL** until you change that field. If live view then stays blank, check the **Streaming URL** in the profile against your server, and see the [Stream path check](settings.md#stream-path-check).
+Discovery also asks the server where its live stream lives (`ZM_PATH_ZMS`), with or without a username and password. It then asks that address for one picture from one of your monitors. If no picture comes back, it tries `<server>/cgi-bin/nph-zms` the same way, and keeps whichever answers first. When neither answers, the app keeps the server's address and shows a warning after saving. When the server didn't report an address (a failed login, or ZoneMinder 1.39.45, which reports it empty) and there's no monitor to ask, the app uses `<server>/cgi-bin/nph-zms` and warns that it's a guess. Editing the profile shows a warning under **Streaming URL** in both cases until you change that field. If live view then stays blank, check the **Streaming URL** in the profile against your server, and see the [Stream path check](settings.md#stream-path-check).
 
 ## QR Code Import
 
@@ -95,7 +95,7 @@ Each profile card keeps its portal, API, and streaming addresses behind
 **Details**. They are set once and only matter when something is wrong,
 so the card leads with the name, the badges, and the buttons instead.
 
-An icon next to the current profile's name sums up whether its addresses work: a green check circle when the portal, the API and live streaming all answer, an amber warning when some fail, and a red cross when something fails and nothing answers. Other profiles aren't checked until you open their **Details**, since checking a server means logging in to it. Open **Details** to see which address fails. The app checks at most once every five minutes; streaming is checked by asking the server's streaming URL for one frame, so fix a failing **Streaming URL** with **Edit**. A profile with no icon hasn't answered yet, or the check couldn't reach the server.
+An icon next to the current profile's name sums up whether its addresses work: a green check circle when the portal, the API and live streaming all answer, an amber warning when some fail, and a red cross when something fails and nothing answers. Other profiles aren't checked until you open their **Details**, since checking a server means logging in to it. Open **Details** to see which address fails. The checks run again each time you open the Profiles screen or a profile's **Details**, so a fix on the server shows up straight away; streaming is checked by asking the server's streaming URL for one frame, so fix a failing **Streaming URL** with **Edit**. A profile with no icon hasn't answered yet, or the check couldn't reach the server.
 
 **Details** on each card and the **Edit** dialog mark the portal, API and streaming addresses the same way: a green check circle when that address answers, a red cross with the status when it fails, and nothing while the check runs or when it can't reach the server. The portal counts as answering when its page loads, the API when it returns the monitor list, and streaming when it returns a frame. In **Edit**, a field's mark disappears as soon as you change it, since the check was for the saved address.
 

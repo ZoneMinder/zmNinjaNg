@@ -67,3 +67,13 @@ export function removeProfileQueries(profileId: ProfileId): void {
   if (!queryClient) return;
   queryClient.removeQueries({ predicate: (q) => q.queryKey.includes(profileId) });
 }
+
+/**
+ * Drop one profile's cached data and refetch what is on screen. Used when a
+ * profile's addresses change, so nothing fetched from the old server stands
+ * in for the new one (refs #613).
+ */
+export function resetProfileQueries(profileId: ProfileId): void {
+  if (!queryClient) return;
+  void queryClient.resetQueries({ predicate: (q) => q.queryKey.includes(profileId) });
+}
