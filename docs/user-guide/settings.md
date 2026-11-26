@@ -69,7 +69,7 @@ The server rows under General hold **Hidden Monitors**. See [Hidden Monitors](#h
 ```{figure} ../_static/img/screens/settings/previews.jpg
 :align: center
 :width: 360px
-:alt: Previews folded open, with a checkbox for each screen and a Playback speed picker and a Hover delay box
+:alt: Previews folded open, with a checkbox for each screen and a Hover delay box and a Playback speed picker
 
 Previews folded open
 ```
@@ -87,9 +87,9 @@ Previews enlarge a feed or event in place when you hover over it on desktop, or 
 - Nearby events
 - Replay (tiles in the nearby events Replay grid; the preview copies the tile's own picture, so it opens no second connection)
 
-The **Playback speed** control (0.5x, 1x, 1.5x, 2x, 4x) sets how fast an event preview plays. Live monitor previews open a fresh stream while the preview is on screen and close it when you move away.
-
 On desktop and in a browser, **Hover delay** sets how long, in milliseconds, the mouse has to rest on a thumbnail before its preview opens. It starts at 700, and anything under 300 is saved as 300. The iOS and Android apps don't show it, because a preview there opens on a long press.
+
+The **Playback speed** control (0.5x, 1x, 1.5x, 2x, 4x) sets how fast an event preview plays. Live monitor previews open a fresh stream while the preview is on screen and close it when you move away.
 
 ### Fullscreen when turned sideways
 

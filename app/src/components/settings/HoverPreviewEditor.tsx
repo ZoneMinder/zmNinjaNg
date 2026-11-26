@@ -120,6 +120,30 @@ export function HoverPreviewEditor({
             </li>
           ))}
         </ul>
+        {/* The iOS and Android builds open previews with a long press on its own timer. */}
+        {Platform.isDesktopOrWeb && (
+          <div className="flex items-center justify-between gap-3 px-4 pb-3">
+            <RowLabel
+              label={t('settings.appearance.hover_preview.hover_delay')}
+              desc={t('settings.appearance.hover_preview.hover_delay_desc')}
+            />
+            <div className="flex items-center gap-2 shrink-0">
+              <Input
+                type="number"
+                min={MIN_HOVER_PREVIEW_DELAY_MS}
+                step={100}
+                value={delayDraft}
+                onChange={(e) => setDelayDraft(e.target.value)}
+                onBlur={commitDelay}
+                onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+                className="w-20"
+                aria-label={t('settings.appearance.hover_preview.hover_delay')}
+                data-testid="settings-hover-preview-delay"
+              />
+              <span className="text-xs text-muted-foreground">{t('settings.appearance.hover_preview.delay_unit')}</span>
+            </div>
+          </div>
+        )}
         <div
           className="flex items-center justify-between gap-3 px-4 pb-3"
           data-testid="settings-hover-preview-playback-rate-row"
@@ -147,30 +171,6 @@ export function HoverPreviewEditor({
             </SelectContent>
           </Select>
         </div>
-        {/* The iOS and Android builds open previews with a long press on its own timer. */}
-        {Platform.isDesktopOrWeb && (
-          <div className="flex items-center justify-between gap-3 px-4 pb-3">
-            <RowLabel
-              label={t('settings.appearance.hover_preview.hover_delay')}
-              desc={t('settings.appearance.hover_preview.hover_delay_desc')}
-            />
-            <div className="flex items-center gap-2 shrink-0">
-              <Input
-                type="number"
-                min={MIN_HOVER_PREVIEW_DELAY_MS}
-                step={100}
-                value={delayDraft}
-                onChange={(e) => setDelayDraft(e.target.value)}
-                onBlur={commitDelay}
-                onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
-                className="w-20"
-                aria-label={t('settings.appearance.hover_preview.hover_delay')}
-                data-testid="settings-hover-preview-delay"
-              />
-              <span className="text-xs text-muted-foreground">{t('settings.appearance.hover_preview.delay_unit')}</span>
-            </div>
-          </div>
-        )}
       </CollapsibleContent>
     </Collapsible>
   );
