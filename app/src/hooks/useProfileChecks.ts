@@ -5,6 +5,9 @@
  * API (its monitor list, the same `queryKeys.monitors` query the pages hold)
  * and the stream path (useZmsProbes). Each check is undefined while it runs or
  * when it can't tell; a disabled or missing profile gets no checks.
+ *
+ * The Profiles page is where a broken address gets diagnosed, so every check
+ * runs again on mount instead of showing a cached result (refs #613).
  */
 
 import { useMemo } from 'react';
@@ -34,14 +37,16 @@ export function useProfileChecks(profile: Profile | null | undefined): ProfileCh
     queryFn: () => probePortal(profile!.portalUrl),
     enabled: active,
     staleTime: ZMS_PROBE.staleTimeMs,
+    refetchOnMount: 'always',
     retry: false,
   });
   const monitors = useQuery({
     queryKey: queryKeys.monitors(profile?.id),
     queryFn: () => getMonitors(getSession(profile!.id).client, profile!.id),
     enabled: active,
+    refetchOnMount: 'always',
   });
-  const streams = useZmsProbes(ids).map((e) => e.result);
+  const streams = useZmsProbes(ids, { fresh: true }).map((e) => e.result);
 
   const failedStream = streams.find((r) => r?.state === 'failed');
   const errorStatus = (monitors.error as { status?: number } | null)?.status;

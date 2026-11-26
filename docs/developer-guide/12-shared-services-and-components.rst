@@ -552,6 +552,12 @@ is ``{ state: 'ok' }``, ``{ state: 'failed', status }``, or ``undefined``
 while running or when there is no status to go on; a disabled profile gets
 none.
 
+All three queries use ``refetchOnMount: 'always'`` (``useZmsProbes(ids, {
+fresh: true })`` for the stream), so the Profiles screen checks again on every
+visit. The live pages' ``ZmsProbeBanner`` calls ``useZmsProbes`` without
+``fresh`` and keeps the ``ZMS_PROBE.staleTimeMs`` cache, so moving between
+pages doesn't probe each time.
+
 **Used by:** ``components/profiles/ProfileHealthIcon.tsx`` (one summary icon
 by the current profile's name),
 ``components/profiles/ProfileUrlDetails.tsx`` (an icon on each row of a card's

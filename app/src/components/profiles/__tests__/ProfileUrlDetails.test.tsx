@@ -42,7 +42,7 @@ function answer(portal: number, stream: number) {
   });
 }
 
-async function renderDetails(monitors: unknown = monitorsBody, open = true) {
+async function renderDetails(monitors: unknown = monitorsBody, open = true, client = new QueryClient({ defaultOptions: { queries: { retry: false } } })) {
   const [p] = seedProfiles([
     makeProfile('p1', {
       portalUrl: 'http://p1.test/zm',
@@ -51,14 +51,13 @@ async function renderDetails(monitors: unknown = monitorsBody, open = true) {
     }),
   ]);
   installApiClient(p.id, fakeApiClient({ '/monitors.json': monitors }));
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  render(
+  const view = render(
     <QueryClientProvider client={client}>
       <ProfileUrlDetails profile={p} />
     </QueryClientProvider>,
   );
   if (open) await userEvent.setup().click(screen.getByTestId(`profile-urls-${p.id}-toggle`));
-  return p;
+  return view;
 }
 
 describe('ProfileUrlDetails', () => {
@@ -75,6 +74,23 @@ describe('ProfileUrlDetails', () => {
     await new Promise((r) => setTimeout(r, 50));
 
     expect(httpGet.mock.calls).toEqual([]);
+  });
+
+  // The Profiles page is where a broken address gets diagnosed, so a result
+  // cached from a visit minutes ago must not stand in for a fresh one (refs #613).
+  it('checks again each time Details is opened, even with results cached', async () => {
+    answer(200, 200);
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const first = await renderDetails(monitorsBody, true, client);
+    await screen.findByTestId('profile-url-check-streaming-ok');
+    first.unmount();
+    const probes = () => httpGet.mock.calls.filter(([u]) => String(u).includes('nph-zms')).length;
+    const portals = () => httpGet.mock.calls.filter(([u]) => !String(u).includes('nph-zms')).length;
+    expect([probes(), portals()]).toEqual([1, 1]);
+
+    await renderDetails(monitorsBody, true, client);
+
+    await waitFor(() => expect([probes(), portals()]).toEqual([2, 2]));
   });
 
   it('marks portal, API and streaming green when each answers', async () => {
