@@ -8,6 +8,10 @@
 [![GitHub release](https://img.shields.io/github/v/release/ZoneMinder/zmNinjaNg)](https://github.com/ZoneMinder/zmNinjaNg/releases)
 [![GitHub downloads](https://img.shields.io/github/downloads/ZoneMinder/zmNinjaNg/total?cache=none)](https://github.com/ZoneMinder/zmNinjaNg/releases)
 
+<!-- yarkr:badges:start -->
+[![Indexed on Yarkr](https://api.yarkr.com/functions/v1/api/api/v1/badges/repos/ZoneMinder/zmNinjaNg/version.svg)](https://yarkr.com/arks/zoneminder/zmninjang)
+<!-- yarkr:badges:end -->
+
 <img src="app/assets/logo.png" align="right" width="120" />
 
 **[Documentation](https://zmninjang.readthedocs.io/en/latest/)**
@@ -64,6 +68,40 @@ I'm happy to accept PRs, including ones written by agents, as long as they aren'
 ### Binaries
 - Download from the [zmNinjaNg site](https://zmninjang.zoneminder.com/).
 - [GitHub workflows](https://github.com/ZoneMinder/zmNinjaNg/tree/main/.github/workflows) build the release binaries for specific platforms. If a binary doesn't work on your Linux distribution, [build from source](#build-from-source).
+
+<!-- yarkr:install:start -->
+## Install with Yarkr
+
+This repo is indexed on [Yarkr](https://yarkr.com/arks/zoneminder/zmninjang) as the ark [zoneminder/zmninjang](https://yarkr.com/arks/zoneminder/zmninjang), so its skills install into Claude Code, Codex, Cursor and other agent harnesses with one command.
+
+### CLI
+
+Install the whole ark, which Yarkr keeps equal to this repo:
+
+```bash
+npx yarkr-cli sync zoneminder/zmninjang
+```
+
+Or add individual skills:
+
+```bash
+npx yarkr-cli add skill:zoneminder/zmninjang/add-language
+npx yarkr-cli add skill:zoneminder/zmninjang/fable-review
+npx yarkr-cli add skill:zoneminder/zmninjang/mine-history
+```
+
+No Node.js? `curl -fsSL https://yarkr.com/install.sh | sh` (macOS, Linux) or `irm https://yarkr.com/install.ps1 | iex` (Windows PowerShell) installs `yarkr` as a standalone binary; then type `yarkr` in place of `npx yarkr-cli`.
+
+### MCP
+
+Connect your agent to the ark over MCP:
+
+```bash
+npx yarkr-cli mcp add zoneminder/zmninjang
+```
+
+Or point any MCP client at `https://api.yarkr.com/functions/v1/api/mcp/o/zoneminder/zmninjang`.
+<!-- yarkr:install:end -->
 
 ## Build from source
 
