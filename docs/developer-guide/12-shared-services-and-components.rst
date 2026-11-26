@@ -264,8 +264,12 @@ and derives ``portalUrl``, ``apiUrl``, and ``cgiUrl`` from wherever it finds
 one. It tries HTTPS before HTTP for a scheme-less input, probes ``/zm/api``
 then ``/api``, and skips the remaining probes on a connection error rather
 than a 404, since a refused connection means the host is wrong, not the path.
-Given credentials it also authenticates once, so it can read the real
-``ZM_PATH_ZMS`` from the server config instead of guessing the CGI path.
+It reads ``ZM_PATH_ZMS`` from the server config, logging in once first when
+given credentials (a server with auth off answers without a token), and reads
+the monitor list. It then asks the server-reported path for one frame of the
+first capturing monitor through ``firstAnsweringStreamUrl`` in
+``lib/zm/zms-probe.ts``, then ``<portal>/cgi-bin/nph-zms`` if that returns no
+image, and keeps the first that does. One request at a time, in that order.
 
 .. code:: typescript
 
@@ -276,7 +280,7 @@ Given credentials it also authenticates once, so it can read the real
      signal: abortController.signal,
      onClientCreated: (client) => { profileClient = client; },
    });
-   // { portalUrl, apiUrl, cgiUrl, cgiUrlSource }
+   // { portalUrl, apiUrl, cgiUrl, cgiUrlSource, cgiUrlVerified? }
 
 ``discoverUrls`` wraps the lower-level ``discoverZoneminder`` with the iOS
 retry logic and abort handling, so neither ``ProfileForm`` nor ``Profiles``
@@ -286,11 +290,18 @@ duplicates it. Failures throw a ``DiscoveryError`` whose ``code`` is
 character and the previous probe was aborted.
 
 ``cgiUrlSource`` is ``'server'`` when ``cgiUrl`` came from ``ZM_PATH_ZMS`` and
-``'default'`` when discovery fell back to ``<portal>/cgi-bin/nph-zms``. That
-happens without credentials, when the login fails, and on ZM 1.39.45, which
-returns an empty ``ZM_PATH_ZMS``. ``ProfileForm`` shows a warning toast for
-``'default'`` after it saves the profile, because the CGI field is hidden
-while discovery runs and the form leaves the page on success.
+``'default'`` when it is ``<portal>/cgi-bin/nph-zms``. ``cgiUrlVerified`` says
+whether ``cgiUrl`` returned a frame; it is absent when there was no monitor to
+ask. When neither candidate answers, ``cgiUrl`` is the first candidate and
+``cgiUrlVerified`` is ``false``. ``streamUrlUnconfirmed(result)`` is true for
+that case and for an unchecked fallback, and both callers store it as the
+profile's ``cgiUrlGuessed``. ``ProfileForm`` shows a warning toast for it after
+it saves the profile, because the CGI field is hidden while discovery runs and
+the form leaves the page on success.
+
+When the connect fails, ``ProfileForm`` offers Save anyway. It saves the URLs
+the attempt worked out before failing (kept in a ref), or ones derived from
+what was typed, with no tokens and ``cgiUrlGuessed`` set.
 
 **Used by:** ``pages/ProfileForm.tsx``, ``pages/Profiles.tsx``.
 

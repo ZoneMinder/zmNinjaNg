@@ -1127,7 +1127,7 @@
     "no_credentials": "Sin credenciales",
     "add_creds_hint": "Las credenciales son opcionales para servidores públicos. Agrégalas si es necesario.",
     "manual_override_hint": "Anulación manual disponible en modo edición",
-    "cgi_url_guessed": "El servidor no informó su ruta de stream, así que esta URL es una suposición. Si la vista en vivo sigue en blanco, revísala.",
+    "cgi_url_guessed": "Esta URL de streaming no se confirmó al guardar el perfil. Si la vista en directo sigue en blanco, revísala.",
     "health_ok": "Portal, API y transmisión responden",
     "health_partial": "Algunas direcciones fallan; abre Detalles",
     "health_failed": "Ninguna dirección responde; abre Detalles",
@@ -1224,7 +1224,9 @@
     "api_url_hint": "https://servidor.com/zm/api",
     "cgi_url_hint": "https://servidor.com/zm/cgi-bin",
     "protocol_mismatch": "¡Conflicto de protocolo! El portal usa {{portalProtocol}}:// pero la API usa {{apiProtocol}}://. Ambos deben usar el mismo protocolo (HTTP o HTTPS).",
-    "cgi_url_guessed": "El servidor no informó su ruta de stream, así que {{cgiUrl}} es una suposición. Si la vista en vivo sigue en blanco, revisa «URL de Transmisión» en el perfil."
+    "cgi_url_guessed": "El servidor no informó su ruta de stream, así que {{cgiUrl}} es una suposición. Si la vista en vivo sigue en blanco, revisa «URL de Transmisión» en el perfil.",
+    "cgi_url_unverified": "{{cgiUrl}} no devolvió ninguna imagen durante la configuración. Si la vista en directo sigue en blanco, revisa la \"URL de streaming\" del perfil.",
+    "save_anyway": "Guardar de todos modos"
   },
   "live_activity": {
     "title": "Actividad en vivo",

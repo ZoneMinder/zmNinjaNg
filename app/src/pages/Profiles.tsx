@@ -57,7 +57,7 @@ import { resolveSwitchDestination } from '../lib/navigation';
 import { VirtualProfileDialog } from '../components/profiles/VirtualProfileDialog';
 import { useToast } from '../hooks/use-toast';
 import { toast as sonnerToast } from 'sonner';
-import { discoverUrls } from '../services/discovery';
+import { discoverUrls, streamUrlUnconfirmed } from '../services/discovery';
 import { useTranslation } from 'react-i18next';
 import { NotificationBadge } from '../components/NotificationBadge';
 
@@ -198,7 +198,7 @@ export default function Profiles() {
         });
         apiUrl = discovered.apiUrl;
         cgiUrl = discovered.cgiUrl;
-        cgiUrlGuessed = discovered.cgiUrlSource === 'default';
+        cgiUrlGuessed = streamUrlUnconfirmed(discovered);
         // Update portalUrl to match the discovered confirmed one
         portalUrl = discovered.portalUrl;
       } else {

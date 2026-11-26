@@ -53,6 +53,21 @@ export async function probeZms(
 }
 
 /**
+ * The first of `candidates` that returns a frame for `monitorId`, asked one at
+ * a time in order, or null when none does (refs #613).
+ */
+export async function firstAnsweringStreamUrl(
+  candidates: readonly string[],
+  monitorId: string,
+  token: string | null | undefined,
+): Promise<string | null> {
+  for (const url of candidates) {
+    if ((await probeZms(url, monitorId, token)).state === 'ok') return url;
+  }
+  return null;
+}
+
+/**
  * Whether the portal page answers. Any status below 400 counts: ZM serves its
  * login page or a redirect to it. No status (network, CORS) is unknown.
  */

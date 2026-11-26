@@ -1127,7 +1127,7 @@
     "no_credentials": "Nessuna credenziale",
     "add_creds_hint": "Le credenziali sono facoltative per i server pubblici. Aggiungile se necessarie.",
     "manual_override_hint": "Override manuale disponibile in modalità modifica",
-    "cgi_url_guessed": "Il server non ha indicato il percorso dello stream, quindi questo URL è un'ipotesi. Se la vista live resta vuota, controllalo.",
+    "cgi_url_guessed": "Questo URL di streaming non è stato confermato al salvataggio del profilo. Se la vista live resta vuota, controllalo.",
     "health_ok": "Portale, API e streaming rispondono",
     "health_partial": "Alcuni indirizzi falliscono; apri Dettagli",
     "health_failed": "Nessun indirizzo risponde; apri Dettagli",
@@ -1224,7 +1224,9 @@
     "api_url_hint": "https://server.com/zm/api",
     "cgi_url_hint": "https://server.com/zm/cgi-bin",
     "protocol_mismatch": "Protocollo non corrispondente! Il portale usa {{portalProtocol}}:// ma l'API usa {{apiProtocol}}://. Entrambi devono usare lo stesso protocollo (entrambi HTTP o entrambi HTTPS).",
-    "cgi_url_guessed": "Il server non ha indicato il percorso dello stream, quindi {{cgiUrl}} è un'ipotesi. Se la vista live resta vuota, controlla «URL streaming» nel profilo."
+    "cgi_url_guessed": "Il server non ha indicato il percorso dello stream, quindi {{cgiUrl}} è un'ipotesi. Se la vista live resta vuota, controlla «URL streaming» nel profilo.",
+    "cgi_url_unverified": "{{cgiUrl}} non ha restituito alcuna immagine durante la configurazione. Se la vista live resta vuota, controlla l'\"URL di streaming\" nel profilo.",
+    "save_anyway": "Salva comunque"
   },
   "live_activity": {
     "title": "Attività live",

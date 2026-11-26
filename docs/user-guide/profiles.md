@@ -23,13 +23,13 @@ The Add New Profile form
 | **Username** | ZoneMinder login username | `admin` |
 | **Password** | ZoneMinder login password | |
 
-4. Tap **Add**. The app verifies the credentials and API access before saving the profile
+4. Tap **Add**. The app verifies the credentials and API access before saving the profile. If that fails, for any reason including a wrong password, a **Save anyway** button appears. It saves the profile with the addresses the app worked out so far, or the ones you typed, and the profile's **Details** then show what doesn't answer
 
 :::{tip}
 The Server URL should point to the base ZoneMinder web path, typically ending in `/zm`. zmNinjaNg will auto-discover the API endpoint from there.
 :::
 
-Discovery also asks the server where its live stream lives (`ZM_PATH_ZMS`). When the server doesn't say (no username and password, a failed login, or ZoneMinder 1.39.45, which reports it empty), the app guesses `<server>/cgi-bin/nph-zms` and shows a warning after saving. Editing the profile shows the same warning under **Streaming URL** until you change that field. If live view then stays blank, check the **Streaming URL** in the profile against your server, and see the [Stream path check](settings.md#stream-path-check).
+Discovery also asks the server where its live stream lives (`ZM_PATH_ZMS`), with or without a username and password. It then asks that address for one picture from one of your monitors. If no picture comes back, it tries `<server>/cgi-bin/nph-zms` the same way, and keeps whichever answers first. When neither answers, the app keeps the server's address and shows a warning after saving. When the server didn't report an address (a failed login, or ZoneMinder 1.39.45, which reports it empty) and there's no monitor to ask, the app uses `<server>/cgi-bin/nph-zms` and warns that it's a guess. Editing the profile shows a warning under **Streaming URL** in both cases until you change that field. If live view then stays blank, check the **Streaming URL** in the profile against your server, and see the [Stream path check](settings.md#stream-path-check).
 
 ## QR Code Import
 
