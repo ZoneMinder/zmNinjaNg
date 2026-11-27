@@ -247,6 +247,37 @@ describe('Notification Store', () => {
     expect(events[0].source).toBe('push');
   });
 
+  it('keeps a duplicate event\'s time, read state and position (issue #615)', () => {
+    const store = useNotificationStore.getState();
+
+    store.addEvent(profileId, baseEvent, 'websocket', 1_000);
+    store.addEvent(profileId, { ...baseEvent, EventId: 102 }, 'websocket', 2_000);
+    store.markEventRead(profileId, 101);
+    // A late copy of 101 (a tray read on resume) arrives "now".
+    store.addEvent(profileId, baseEvent, 'push', 9_000);
+
+    const events = store.getEvents(profileId);
+    expect(events.map((e) => e.EventId)).toEqual([102, 101]);
+    const old = events.find((e) => e.EventId === 101)!;
+    expect(old.receivedAt).toBe(1_000);
+    expect(old.read).toBe(true);
+    expect(old.source).toBe('push');
+  });
+
+  it('keeps the list newest first when events arrive out of order (issue #615)', () => {
+    const store = useNotificationStore.getState();
+
+    // iOS hands back delivered notifications newest first; each is timed by
+    // its event, so the list must not end up oldest on top.
+    store.addEvent(profileId, { ...baseEvent, EventId: 103 }, 'push', 3_000);
+    store.addEvent(profileId, { ...baseEvent, EventId: 102 }, 'push', 2_000);
+    store.addEvent(profileId, { ...baseEvent, EventId: 101 }, 'push', 1_000);
+
+    const events = store.getEvents(profileId);
+    expect(events.map((e) => e.EventId)).toEqual([103, 102, 101]);
+    expect(events.map((e) => e.receivedAt)).toEqual([3_000, 2_000, 1_000]);
+  });
+
   it('marks events read and clears all', () => {
     const store = useNotificationStore.getState();
 

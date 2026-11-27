@@ -86,6 +86,8 @@ Each history entry shows:
 
 Tap a notification entry to jump to the corresponding event.
 
+The list is newest first. Push notifications that arrived while the app was closed are added the next time you open it, each timed by when your phone received it rather than by when you opened the app. A notification for an event already in the history doesn't add a second entry or move the first.
+
 ## Troubleshooting
 
 **No in-app notifications (ES mode)**

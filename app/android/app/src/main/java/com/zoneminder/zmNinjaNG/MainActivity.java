@@ -20,6 +20,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(TvDetectorPlugin.class);
         registerPlugin(WindowThemePlugin.class);
         registerPlugin(GeminiNanoPlugin.class);
+        registerPlugin(DeliveredNotificationsPlugin.class);
         super.onCreate(savedInstanceState);
 
         if (isTVDevice()) {

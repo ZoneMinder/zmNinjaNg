@@ -328,7 +328,10 @@ When the user re-opens the app:
 - **Badge Clear**: ``useNotificationDelivered`` listens for ``appStateChange``,
   ingests any notifications delivered while backgrounded into the history
   store, then clears the native badge via
-  ``FirebaseMessaging.removeAllDeliveredNotifications()``.
+  ``FirebaseMessaging.removeAllDeliveredNotifications()``. The tray is read
+  through the app's own ``DeliveredNotifications`` plugin, which returns the
+  time the OS delivered each notification, and each entry is timed by it
+  (issue #615).
 
 Resume has no idle timeout: the app does not track a last-interaction timestamp
 and does not re-lock after a period away. Biometric authentication is not a

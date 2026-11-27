@@ -6,6 +6,11 @@
  * - Cold start: reads delivered notifications when the profile first loads
  * - App resume: reads notifications that arrived while the app was backgrounded,
  *   clears native badges, and syncs badge count with the server
+ *
+ * The tray is read through the app's DeliveredNotifications plugin, not
+ * @capacitor-firebase/messaging, because only the OS knows when each push
+ * arrived and that plugin drops the time (issue #615). Each entry is timed by
+ * that delivery time, or by now when the OS gives none.
  */
 
 import { useEffect } from 'react';
@@ -18,16 +23,18 @@ import { getEventImageUrl } from '../lib/zm/url-builder';
 import { parseEidFromPushTag } from '../lib/event/push-tag';
 import { useCapacitorListener } from './useCapacitorListener';
 import type { Profile } from '../api/types';
+import type { DeliveredNotification } from '../plugins/delivered-notifications';
 
 interface DeliveredParams {
   currentProfile: Profile | null;
 }
 
 /**
- * Parse a single delivered notification and add it to the notification store.
+ * Parse a single delivered notification and add it to the notification store,
+ * timed by when the OS delivered it.
  */
 function ingestDeliveredNotification(
-  notif: { data?: unknown; title?: string | null; body?: string | null; tag?: string | null },
+  notif: DeliveredNotification,
   profileId: string,
   store: ReturnType<typeof useNotificationStore.getState>,
   profiles: Profile[],
@@ -62,7 +69,7 @@ function ingestDeliveredNotification(
     Cause: cause,
     Name: monitorName,
     ImageUrl: imageUrl,
-  }, 'push');
+  }, 'push', notif.time);
 }
 
 export function useNotificationDelivered({
@@ -79,7 +86,8 @@ export function useNotificationDelivered({
     const processDelivered = async () => {
       try {
         const { FirebaseMessaging } = await import('@capacitor-firebase/messaging');
-        const { notifications } = await FirebaseMessaging.getDeliveredNotifications();
+        const { DeliveredNotifications } = await import('../plugins/delivered-notifications');
+        const { notifications } = await DeliveredNotifications.getDelivered();
 
         if (notifications.length > 0) {
           const store = useNotificationStore.getState();
@@ -124,7 +132,8 @@ export function useNotificationDelivered({
 
       // Read delivered notifications that arrived while backgrounded
       try {
-        const { notifications } = await FirebaseMessaging.getDeliveredNotifications();
+        const { DeliveredNotifications } = await import('../plugins/delivered-notifications');
+        const { notifications } = await DeliveredNotifications.getDelivered();
         if (notifications.length > 0) {
           const { profiles } = useProfileStore.getState();
 

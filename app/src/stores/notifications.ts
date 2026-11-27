@@ -79,7 +79,7 @@ interface NotificationState {
   reconnect: (profileId: string, force?: boolean) => Promise<void>;
 
   // Actions - Events
-  addEvent: (profileId: string, event: ZMAlarmEvent, source?: NotificationSource) => void;
+  addEvent: (profileId: string, event: ZMAlarmEvent, source?: NotificationSource, receivedAt?: number) => void;
   markEventRead: (profileId: string, eventId: number) => void;
   markAllRead: (profileId: string) => void;
   clearEvents: (profileId: string) => void;
@@ -121,6 +121,16 @@ function _aggregateOwnsConnection(appCurrentProfileId: string, profileId: string
     (v) => v.id === appCurrentProfileId
   );
   return !!group?.memberProfileIds.includes(asProfileId(profileId));
+}
+
+/**
+ * Insert into a newest-first list by receivedAt. Ties go first, so live
+ * events stamped in the same millisecond keep the latest on top.
+ */
+function _insertNewestFirst(current: NotificationEvent[], event: NotificationEvent): NotificationEvent[] {
+  const at = current.findIndex((e) => e.receivedAt <= event.receivedAt);
+  if (at < 0) return [...current, event];
+  return [...current.slice(0, at), event, ...current.slice(at)];
 }
 
 /**
@@ -414,9 +424,20 @@ export const useNotificationStore = create<NotificationState>()(
       /**
        * Add notification event to history
        * Events can come from WebSocket (when connected) or FCM push notifications
-       * Duplicate prevention: if an event with the same ID already exists, it will be replaced
+       * Duplicate prevention: an event whose ID is already in the list updates
+       * that entry in place, keeping its time, its read state and its position,
+       * so a late copy (a tray read on resume, FCM after WebSocket) never
+       * re-stamps an old event as new (issue #615).
+       * `receivedAt` defaults to now; a caller that knows when the
+       * notification really arrived (a tray read) passes that instead. The
+       * list stays newest first by receivedAt.
        */
-      addEvent: (profileId: string, event: ZMAlarmEvent, source: NotificationSource = 'websocket') => {
+      addEvent: (
+        profileId: string,
+        event: ZMAlarmEvent,
+        source: NotificationSource = 'websocket',
+        receivedAt: number = Date.now(),
+      ) => {
         log.notifications('Adding notification event', LogLevel.INFO, { profileId,
           monitor: event.MonitorName,
           eventId: event.EventId,
@@ -424,21 +445,25 @@ export const useNotificationStore = create<NotificationState>()(
 
         const notificationEvent: NotificationEvent = {
           ...event,
-          receivedAt: Date.now(),
+          receivedAt,
           read: false,
           source,
         };
 
         set((state) =>
           _updateProfileEvents(state, profileId, (current) => {
-            // Remove any existing event with the same ID to avoid duplicates.
-            // This prevents duplicate entries when receiving the same event from both WebSocket and FCM.
             // EventId 0 means "no ZM event" (issue #242): those are distinct
             // notifications, not duplicates, so never collapse them together.
-            const otherEvents = event.EventId > 0
-              ? current.filter((e) => e.EventId !== event.EventId)
-              : current;
-            return [notificationEvent, ...otherEvents].slice(0, NOTIFICATIONS_SERVICE.maxEvents);
+            const existing = event.EventId > 0
+              ? current.findIndex((e) => e.EventId === event.EventId)
+              : -1;
+            if (existing >= 0) {
+              const kept = current[existing];
+              const updated = current.slice();
+              updated[existing] = { ...kept, ...event, source, receivedAt: kept.receivedAt, read: kept.read };
+              return updated;
+            }
+            return _insertNewestFirst(current, notificationEvent).slice(0, NOTIFICATIONS_SERVICE.maxEvents);
           })
         );
 

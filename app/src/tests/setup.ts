@@ -223,6 +223,10 @@ vi.mock('../plugins/storefront', () => ({
   Storefront: { getCountryCode: vi.fn().mockResolvedValue({ countryCode: null }) },
 }));
 
+vi.mock('../plugins/delivered-notifications', () => ({
+  DeliveredNotifications: { getDelivered: vi.fn().mockResolvedValue({ notifications: [] }) },
+}));
+
 // Mock SafeArea plugin
 vi.mock('../src/plugins/safe-area', () => ({
   SafeArea: {

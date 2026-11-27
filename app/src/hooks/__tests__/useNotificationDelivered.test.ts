@@ -12,7 +12,9 @@ vi.mock('../../api/store-gates', () => import('../../tests/fake-store-gates'));
 vi.mock('../../lib/security/secureStorage', () => import('../../tests/fake-secure-storage'));
 
 import { useNotificationDelivered } from '../useNotificationDelivered';
-import { resetProfileFixture } from '../../tests/profile-fixture';
+import { resetProfileFixture, seedProfiles, makeProfile } from '../../tests/profile-fixture';
+import { useNotificationStore } from '../../stores/notifications';
+import { DeliveredNotifications } from '../../plugins/delivered-notifications';
 import { resetFakeStoreGates } from '../../tests/fake-store-gates';
 
 // Mock Platform (mutable so individual tests can flip isNative)
@@ -22,10 +24,11 @@ vi.mock('../../lib/platform', () => ({
 }));
 
 // Mock logger
+// Every component logger is a mock: the real stores seeded below log too.
 vi.mock('../../lib/logger', () => ({
-  log: {
-    notificationHandler: vi.fn(),
-  },
+  log: new Proxy({} as Record<string, unknown>, {
+    get: (loggers, name: string) => (loggers[name] ??= vi.fn()),
+  }),
   LogLevel: {
     DEBUG: 'DEBUG',
     INFO: 'INFO',
@@ -45,6 +48,13 @@ vi.mock('@capacitor-firebase/messaging', () => ({
   FirebaseMessaging: {
     getDeliveredNotifications: vi.fn().mockResolvedValue({ notifications: [] }),
     removeAllDeliveredNotifications: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+
+// Mock the app's tray reader (dynamically imported by the hook)
+vi.mock('../../plugins/delivered-notifications', () => ({
+  DeliveredNotifications: {
+    getDelivered: vi.fn().mockResolvedValue({ notifications: [] }),
   },
 }));
 
@@ -119,5 +129,48 @@ describe('useNotificationDelivered', () => {
     });
 
     expect(remove).toHaveBeenCalledTimes(1);
+  });
+
+  it('times tray notifications by when the OS delivered them and lists them newest first (issue #615)', async () => {
+    const [profile] = seedProfiles([makeProfile('home')], { current: 'home' });
+    useNotificationStore.setState({ profileEvents: {} });
+    const delivered: Record<string, number> = {
+      '37562': Date.UTC(2026, 10, 26, 11, 55, 7),
+      '38073': Date.UTC(2026, 10, 26, 21, 12, 37),
+      '38085': Date.UTC(2026, 10, 26, 21, 15, 49),
+    };
+    // iOS returns them newest first.
+    vi.mocked(DeliveredNotifications.getDelivered).mockResolvedValueOnce({
+      notifications: ['38085', '38073', '37562'].map((eid) => ({
+        id: eid, title: 'Garage Gate Camera', body: 'detected:person', data: { eid, mid: '12' }, time: delivered[eid],
+      })),
+    });
+
+    renderHook(() => useNotificationDelivered({ currentProfile: profile }));
+    await vi.waitFor(() => {
+      expect(useNotificationStore.getState().getEvents(profile.id)).toHaveLength(3);
+    });
+
+    const events = useNotificationStore.getState().getEvents(profile.id);
+    expect(events.map((e) => e.EventId)).toEqual([38085, 38073, 37562]);
+    expect(events.map((e) => e.receivedAt)).toEqual([delivered['38085'], delivered['38073'], delivered['37562']]);
+  });
+
+  it('falls back to now when the OS gives no delivery time', async () => {
+    const [profile] = seedProfiles([makeProfile('home')], { current: 'home' });
+    useNotificationStore.setState({ profileEvents: {} });
+    vi.mocked(DeliveredNotifications.getDelivered).mockResolvedValueOnce({
+      notifications: [{ id: '1', tag: 'zmninja_38085_alarm', title: 'Garage Alarm', body: 'detected:person' }],
+    });
+    const before = Date.now();
+
+    renderHook(() => useNotificationDelivered({ currentProfile: profile }));
+    await vi.waitFor(() => {
+      expect(useNotificationStore.getState().getEvents(profile.id)).toHaveLength(1);
+    });
+
+    const [event] = useNotificationStore.getState().getEvents(profile.id);
+    expect(event.EventId).toBe(38085);
+    expect(event.receivedAt).toBeGreaterThanOrEqual(before);
   });
 });
