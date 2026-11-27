@@ -479,7 +479,13 @@ a token on startup, and reacting when a push arrives.
    with ``EventId`` 0 and rendered with the shared no-image thumbnail. The code
    never invents an id from ``Date.now()``: a fabricated id would drive a
    ``view=image&eid=<timestamp>`` request ZoneMinder logs as "Event not found"
-   (issue #242). The same rule holds for the two live handlers above.
+   (issue #242). The same rule holds for the two live handlers above. The
+   plugin also drops each item's delivery time, and iOS returns the tray newest
+   first, so stamping each item with ``Date.now()`` and prepending it listed a
+   morning's pushes in reverse, all at the time the app opened (issue #615).
+   Each item is timed instead by its event's ``StartDateTime``, fetched with
+   ``getEvent`` and converted by ``eventInstant``; ``addEvent`` inserts by that
+   time and leaves an event already in history where it is.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/hooks/useNotificationDelivered.ts>`__
    · → :doc:`11-application-lifecycle`
 
