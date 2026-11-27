@@ -473,19 +473,24 @@ a token on startup, and reacting when a push arrives.
 
 #. **Reconcile pushes you missed.** ``useNotificationDelivered`` covers pushes
    that arrived while the app was killed or backgrounded: on cold start and on
-   ``appStateChange`` it reads ``getDeliveredNotifications()``, ingests them into
+   ``appStateChange`` it reads the tray with ``DeliveredNotifications.getDelivered()``, ingests them into
    history, clears them, and syncs the badge. A tray item read back this way can
    arrive without its FCM ``data`` payload, so it has no event id. It is stored
    with ``EventId`` 0 and rendered with the shared no-image thumbnail. The code
    never invents an id from ``Date.now()``: a fabricated id would drive a
    ``view=image&eid=<timestamp>`` request ZoneMinder logs as "Event not found"
-   (issue #242). The same rule holds for the two live handlers above. The
-   plugin also drops each item's delivery time, and iOS returns the tray newest
+   (issue #242). The same rule holds for the two live handlers above.
+   ``DeliveredNotifications`` is a small app plugin
+   (``ios/App/App/DeliveredNotificationsPlugin.swift``,
+   ``android/.../DeliveredNotificationsPlugin.java``) rather than
+   ``FirebaseMessaging.getDeliveredNotifications()``, because the Firebase
+   plugin drops each item's delivery time. iOS also returns the tray newest
    first, so stamping each item with ``Date.now()`` and prepending it listed a
    morning's pushes in reverse, all at the time the app opened (issue #615).
-   Each item is timed instead by its event's ``StartDateTime``, fetched with
-   ``getEvent`` and converted by ``eventInstant``; ``addEvent`` inserts by that
-   time and leaves an event already in history where it is.
+   Each item now carries ``time``, the OS delivery time (``UNNotification.date``
+   on iOS, ``getPostTime()`` on Android), which ``addEvent`` takes as
+   ``receivedAt``, falling back to now when it's missing. ``addEvent`` inserts
+   by that time and leaves an event already in history where it is.
    `source <https://github.com/ZoneMinder/zmNinjaNg/blob/main/app/src/hooks/useNotificationDelivered.ts>`__
    · → :doc:`11-application-lifecycle`
 
